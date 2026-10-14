@@ -53,3 +53,20 @@ bundle 与 dist 新鲜度 / files 闭包）全绿。
 
 残留自查：工作树对旧品牌名、旧英文名、旧仓库名、旧位图名、旧小写标识**零命中**
 （模式表见 `scripts/hooks/pre-push` 与提交 `a7f35a4` 的历史值；`.git/` 与 `node_modules/` 除外）。
+
+## 五、遗留待办（本次未动，需单独决策）
+
+1. **npm 包名与 scope**：`@ybkk/gate-01` 已实发布 1.2.1，`@ybkk/*` scope 为装机装配契约。
+   更名需另起发版决策（新包名发布 + 旧包 deprecate，非纯文案改动）。
+2. **Mac 部署机路径**（`docs/deploy-mac-form-b.md`）：文内工作区路径与 launchd Label 已按新品牌
+   同步改写（`~/yuanbingke-ops`、`ai.yuanbingke.dsh`）。**若该 Mac 上已按旧路径部署，迁移需同步
+   改 launchd plist 的 Label/路径与 overlay 的 `<PROJECT_ROOT>`，并把数据目录一起搬移**——
+   改名不自动迁移现有部署。
+3. **对外已发布链接**：产品页测试环境 `http://mdzx.fun:8801/product.html` 等外部入口，
+   需按新文案重新部署（`scripts/deploy-product-page.py` 可直接推送）。
+
+## 六、推送通道备注
+
+本次推送备份仓库时，HTTPS 通道的 credential manager 无人值守即挂起（交互式弹窗）；
+改用 SSH 通道（`git@github.com:01men/RQ-DSH.git`，密钥 `~/.ssh/ybkk_github_global_ed25519`）成功。
+后续无人值守推送建议直接用 SSH 形式，勿依赖 HTTPS 交互式凭据。
