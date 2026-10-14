@@ -41,4 +41,4 @@ SSE 通道：面板 `GET /api/panel/stream` 现扇出 `flow.created / flow.step.
 - 装配：flow-core 已入 `src/boot-all.ts` + `cordis.yml` + `cordis.patch.yml`（console 之后、dingtalk-bridge 之前）；
 - 双目标部署：按 `D:\DSH-07\daily-sync-deploy.py` 例行双发（测试环境自动重启+健康检查；正式环境只传文件不自动重启）。
 
-—— main 轨 ybkk-AIOS · 2026-09-11 · IAW 缺口批次
+—— main 轨 ybkkasi · 2026-09-11 · IAW 缺口批次

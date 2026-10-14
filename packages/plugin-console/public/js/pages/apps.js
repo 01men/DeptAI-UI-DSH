@@ -293,7 +293,7 @@ function renderSsoTab(holder, app, ctx) {
         </div>
         ${enforced ? `<div class="muted-box mb-14" style="display:flex;gap:8px;border-color:var(--warn-border);background:var(--warn-bg)">${icon('alert', 15)}<span><b>${esc(app.attrs['appType'])} 形态应用上线门禁</b>：未完成 SSO 签发前，上线审批将被拒绝。</span></div>` : ''}
         <button class="btn btn-primary" id="sso-issue">${icon('key', 14)}签发 SSO 客户端</button>
-        <a class="btn btn-default" href="https://github.com/01men/ybkk-AIOS/blob/main/docs/app-sso-integration.md" target="_blank" style="margin-left:8px">接入文档</a>
+        <a class="btn btn-default" href="https://github.com/01men/ybkkasi/blob/main/docs/app-sso-integration.md" target="_blank" style="margin-left:8px">接入文档</a>
         <div class="form-hint mt-8">本机联调免控制台：回调地址为环回（127.0.0.1 / localhost / 0.0.0.0）时，应用机器凭证可直接 <code class="mono">POST /api/apps/${esc(app.id)}/sso-client</code> 自助签发并一次性取回 secret（改回调 PATCH 同路径，换 secret POST …/rotate）。</div>
       </div>
       ${entryDirectCardHtml(app)}`
@@ -344,7 +344,7 @@ function renderSsoTab(holder, app, ctx) {
       </div>
       <div class="flex mt-8" style="gap:8px">
         <button class="btn btn-default btn-sm" id="sso-copy-discovery">复制 discovery 地址</button>
-        <a class="btn btn-default btn-sm" href="https://github.com/01men/ybkk-AIOS/blob/main/docs/app-sso-integration.md" target="_blank">接入文档</a>
+        <a class="btn btn-default btn-sm" href="https://github.com/01men/ybkkasi/blob/main/docs/app-sso-integration.md" target="_blank">接入文档</a>
       </div>
       <div class="form-hint mt-8">应用侧按 OIDC 标准接入（openid-client / oidc-client-ts 一行 discovery 驱动）；id_token 验签公钥见 JWKS：<code class="mono">${esc(sso.discovery.issuer)}/.well-known/jwks.json</code></div>
     </div>

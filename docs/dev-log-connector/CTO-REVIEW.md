@@ -104,7 +104,7 @@
 
 ## [2026-08-27 14:25] CTO —— 发布纪律确立（老板批示）
 
-- 老板批准推送门禁序列：**①本地提交 → ②selftest 全绿 → ③lint:manifests 复核 → ④push origin main**（origin = github.com/01men/ybkk-AIOS，已核实）。
+- 老板批准推送门禁序列：**①本地提交 → ②selftest 全绿 → ③lint:manifests 复核 → ④push origin main**（origin = github.com/01men/ybkkasi，已核实）。
 - 已固化为 §〇 区块顶部【发布纪律】条目（研发侧可见、必读）+ 定时审查任务书第 7 步（CTO 侧执行）：完成判定满足后，CTO 亲自按序过三道门禁——终验 selftest、lint 复核——全绿才 push，任一失败不推送、回审查循环。
 - 当前推送状态基线：本地 ahead 1（卫生提交 7c64723）；连接器全部改动仍在工作区未提交，待 #13/#14 收口后由研发提交（或 CTO 在发布流程 a 步代提交）。
 
@@ -186,7 +186,7 @@
 | ①本地提交 | ✅ | 卫生提交 7c64723（遗留 6 文件隔离）+ 主提交 80ec600（39 文件 +5411/-16，工作树清零） |
 | ②selftest 终验 | ✅ | **CTO 亲跑**：521/521 通过，exit=0（较上项目 +76 连接器断言；T-24 凭证原文全目录扫描零命中） |
 | ③lint 复核 | ✅ | CTO 亲跑：清单校验 70/70，exit=0 |
-| ④push | ✅ | `ac0698a..80ec600 main -> main` 已推 github.com/01men/ybkk-AIOS，本地远程同步 |
+| ④push | ✅ | `ac0698a..80ec600 main -> main` 已推 github.com/01men/ybkkasi，本地远程同步 |
 
 **上线/发布确认意见（CTO 批准上线）**：
 

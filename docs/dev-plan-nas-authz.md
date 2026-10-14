@@ -1,6 +1,6 @@
 # 开发计划：NAS 数据权限（组织位置 + 角色层级 RBAC）——平台决策 + 网关强制 + 双层兜底
 
-> 版本：v1.0（2026-08-29）· 关联需求：`Hermes_NAS访问控制规则.md`（RBAC 方案）在榕器平台的工程化落地
+> 版本：v1.0（2026-08-29）· 关联需求：`Hermes_NAS访问控制规则.md`（RBAC 方案）在元冰可平台的工程化落地
 > 方案来源与取舍：
 > ① 附件方案提供**领域模型**（组织层级锚点、P/D/T/M/C 角色推导、操作矩阵、特殊账号、灰度建议）；
 > ② `saas-permission-service`（skill 开发库·服务 B）提供**判定引擎语义**（deny > allow > 角色 > 默认拒绝、
@@ -16,7 +16,7 @@
 
 | 事实 | 证据 | 对本计划的意义 |
 |---|---|---|
-| 6 个 hermes agent 已按平台维度接入并 online | `GET /api/agents`：榕器nas(0.196)/财务(0.191)/战略(0.192)/产品营销(0.193)/研发(0.194)/智造质量(0.195) | 附件"平台"维度已物化，无需再建平台映射层 |
+| 6 个 hermes agent 已按平台维度接入并 online | `GET /api/agents`：元冰可nas(0.196)/财务(0.191)/战略(0.192)/产品营销(0.193)/研发(0.194)/智造质量(0.195) | 附件"平台"维度已物化，无需再建平台映射层 |
 | 6 台 NAS 已纳管 online，rootPath=/ | `GET /api/nas` | 网关唯一通道 + 资产级 rootPath 收敛已存在 |
 | 网关令牌已支持绑定 NAS / 绑定 NAS 账户 | 网关 `src/tokens.js` 条目 `{token,name,nasIp,accountId,createdAt}`；`http.js:117-128` 凭据解析 | DSM 账户兜底是**现成配置能力**，零代码 |
 | IAM 有组织树 + 钉钉连接器实时同步 + `bindings` 三方身份映射 | `plugin-iam/src/index.ts`（OrgRecord.customFields / UserRecord.bindings / linkIdentity） | "取身份"是现成查询；缺的只有"负责人"字段 |
@@ -198,16 +198,16 @@ hermes 容器（NAS 上）直接读本地文件的通道不经过网关，需单
 | # | 步骤 | 落点 | 仓库 |
 |---|---|---|---|
 | 0 | DSM 账户兜底绑定（先行，零代码） | 网关管理界面 + nas-accounts.json | 网关部署侧 |
-| 1 | IAM：leaderUserIds / accountType + 连接器同步负责人 | packages/plugin-iam | ybkk-AIOS |
-| 2 | 决策服务 NasAuthzService（推导/判定序/例外/事件/种子导入） | packages/plugin-nas/src/authz.ts + index.ts 导出 + inject 增 'iam' | ybkk-AIOS |
-| 3 | NAS 资产 orgRoot 接入组属性（schema access 组） | packages/plugin-nas/src/schema.ts | ybkk-AIOS |
-| 4 | REST：check/scope/rules/import/exceptions + 权限点/内置角色 | packages/plugin-console + plugin-iam | ybkk-AIOS |
-| 5 | selftest 引擎用例（见 §四）+ rules 种子文件入库 | tests/selftest.mjs、seed | ybkk-AIOS |
+| 1 | IAM：leaderUserIds / accountType + 连接器同步负责人 | packages/plugin-iam | ybkkasi |
+| 2 | 决策服务 NasAuthzService（推导/判定序/例外/事件/种子导入） | packages/plugin-nas/src/authz.ts + index.ts 导出 + inject 增 'iam' | ybkkasi |
+| 3 | NAS 资产 orgRoot 接入组属性（schema access 组） | packages/plugin-nas/src/schema.ts | ybkkasi |
+| 4 | REST：check/scope/rules/import/exceptions + 权限点/内置角色 | packages/plugin-console + plugin-iam | ybkkasi |
+| 5 | selftest 引擎用例（见 §四）+ rules 种子文件入库 | tests/selftest.mjs、seed | ybkkasi |
 | 6 | 网关 authz.js 钩子 + enforce 令牌字段 + authz-smoke 测试 | src/authz.js、src/http.js、src/tokens.js、test/ | synology-filestation-mcp |
-| 7 | 平台侧调用方接线：plugin-nas 客户端透传 X-On-Behalf-User；控制台 fs 端点带当前用户 | packages/plugin-nas/src/client.ts、plugin-console fs 路由 | ybkk-AIOS |
+| 7 | 平台侧调用方接线：plugin-nas 客户端透传 X-On-Behalf-User；控制台 fs 端点带当前用户 | packages/plugin-nas/src/client.ts、plugin-console fs 路由 | ybkkasi |
 | 8 | hermes apply_patch6 本地 guard | NAS 持久卷 /opt/data/hermes-dingtalk-patch/ | hermes 部署侧 |
-| 9 | share 审批闭环（exceptions + 审批单联动） | plugin-nas + plugin-audit | ybkk-AIOS |
-| 10 | 控制台「数据权限」页 + CLI 扩展 + 文档（README/本文档） | public/js、examples/dshctl.mjs | ybkk-AIOS |
+| 9 | share 审批闭环（exceptions + 审批单联动） | plugin-nas + plugin-audit | ybkkasi |
+| 10 | 控制台「数据权限」页 + CLI 扩展 + 文档（README/本文档） | public/js、examples/dshctl.mjs | ybkkasi |
 
 依赖关系：2 依赖 1；4 依赖 2/3；6 依赖 4（联调）；8 依赖 4；9 依赖 4。步骤 0 与 1 可并行先行。
 
@@ -215,7 +215,7 @@ hermes 容器（NAS 上）直接读本地文件的通道不经过网关，需单
 
 ## 四、测试计划
 
-**selftest 新增分节（ybkk-AIOS，引擎与 API 层）**：
+**selftest 新增分节（ybkkasi，引擎与 API 层）**：
 
 - 角色推导：平台/部门/班组负责人 → P/D/T；挂根非负责人 → deny；未落班组 → 部门根 readonly；
 - 判定序：显式 deny 通配 > 显式 allow > 角色矩阵 > 默认 deny；readonly 语义（write/modify/delete/share 拒、read/download 放）；

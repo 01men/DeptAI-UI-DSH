@@ -160,7 +160,7 @@ const CONFIG_PAGE_HTML = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>榕器 · 平台接入配置（dsh 本机）</title>
+<title>元冰可 · 平台接入配置（dsh 本机）</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -197,7 +197,7 @@ const CONFIG_PAGE_HTML = `<!doctype html>
 </head>
 <body>
 <div class="wrap">
-  <h1>榕器 · 企业AI资源管理平台 — 接入配置</h1>
+  <h1>元冰可 · 企业AI资源管理平台 — 接入配置</h1>
   <div class="sub">本页只在本机（127.0.0.1）可访问；配置保存于本机 data 目录，凭证不会发往宿主以外的任何地方。</div>
 
   <div class="card">

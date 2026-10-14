@@ -22,7 +22,7 @@ process.on('unhandledRejection', (reason) => {
 await bootAll(ctx, { dataDir, port })
 
 const logger = ctx.logger('main')
-logger.info('榕器|企业AI资源管理平台已启动')
+logger.info('元冰可|企业AI资源管理平台已启动')
 logger.info(`控制台地址：http://0.0.0.0:${port}（本机访问 http://127.0.0.1:${port}）`)
 
 process.on('SIGINT', () => {

@@ -2,17 +2,17 @@
 
 > 部署日期：2026-09-03 · 目标机：`mdzx.fun`（macOS 15.7.1，Apple Silicon，用户 xiaodaoqin）
 > 端口：**8801**（用户指定 8802 被 `ai.hermes.gateway`（Hermes 钉钉助手）占用，经确认换端口；形态 A 曾短暂占用 8801，现已**彻底移除**——launchd 服务定义与数据目录均已删除，8801 归 dsh 单一服务）
-> 形态：**B 单进程单入口**——`/` 为 dsh 对话界面，`/rq/*` 为榕器数据面（控制台/REST/docs/MCP）
+> 形态：**B 单进程单入口**——`/` 为 dsh 对话界面，`/rq/*` 为元冰可数据面（控制台/REST/docs/MCP）
 
 ## 一、部署布局
 
 | 项 | 路径 |
 |---|---|
 | dsh harness 检出（rc.7 + 本地适配） | `/Users/xiaodaoqin/dsh/deepseek-harness` |
-| 榕器工作区（本仓库完整检出） | `/Users/xiaodaoqin/rongqi-ops` |
-| 平台数据目录（种子+运行数据） | `/Users/xiaodaoqin/rongqi-ops/dsh-data` |
-| overlay（cordis.yml 生成，`<PROJECT_ROOT>` → `file:///Users/xiaodaoqin/rongqi-ops`） | `/Users/xiaodaoqin/rongqi-ops/overlay-rq.yml` |
-| launchd | `~/Library/LaunchAgents/ai.rongqi.dsh.plist`（Label `ai.rongqi.dsh`，KeepAlive） |
+| 元冰可工作区（本仓库完整检出） | `/Users/xiaodaoqin/yuanbingke-ops` |
+| 平台数据目录（种子+运行数据） | `/Users/xiaodaoqin/yuanbingke-ops/dsh-data` |
+| overlay（cordis.yml 生成，`<PROJECT_ROOT>` → `file:///Users/xiaodaoqin/yuanbingke-ops`） | `/Users/xiaodaoqin/yuanbingke-ops/overlay-rq.yml` |
+| launchd | `~/Library/LaunchAgents/ai.yuanbingke.dsh.plist`（Label `ai.yuanbingke.dsh`，KeepAlive） |
 | 日志 | `/Users/xiaodaoqin/dsh/web-stdout.log`、`web-stderr.log` |
 | node | `/opt/homebrew/bin/node`（v25.5.0，满足 ≥22.6 原生 TS 运行） |
 
@@ -24,9 +24,9 @@
    （`host ?? '0.0.0.0'`、`port ?? 8801`，已改，原文件备份为 `cordis.patch.yml.bak`）；
    公网域名访问还需 CLI 带 `--trusted-host mdzx.fun:8801` 过 DNS-rebinding fence。
 2. **rq-card（dsh.client 双面插件）解析链**：client-modules 从「cordis.yml 所在目录」向上
-   require.resolve 包名 → 依赖 `~/rongqi-ops/node_modules/@dsh-ops/plugin-rq-card`（npm workspace
+   require.resolve 包名 → 依赖 `~/yuanbingke-ops/node_modules/@dsh-ops/plugin-rq-card`（npm workspace
    链接，`npm ci` 自动建）；且包 `exports` 必须导出 `./package.json`（本仓库已修复，见 §三）。
-3. **数据目录**：overlay 中 `ops-platform-core` 显式 `dataDir: /Users/xiaodaoqin/rongqi-ops/dsh-data`
+3. **数据目录**：overlay 中 `ops-platform-core` 显式 `dataDir: /Users/xiaodaoqin/yuanbingke-ops/dsh-data`
    （默认 cwd/data 会落进 harness 检出目录）。
 4. **demo 种子**：当前以 `DEMO_SEED=1` 运行（演示账号 admin/dev/audit/ops/hr/yqz，口令 `Ybk@2026`）。
    种子已修复为「键锚定确定性内容」（见 §三），重启重种 = 幂等重放，不再冲突。
@@ -44,20 +44,20 @@
 ## 四、运维速查
 
 ```bash
-launchctl kickstart -k gui/501/ai.rongqi.dsh     # 重启（SIGTERM → 优雅落盘 → 拉起）
-launchctl unload ~/Library/LaunchAgents/ai.rongqi.dsh.plist   # 停止
+launchctl kickstart -k gui/501/ai.yuanbingke.dsh     # 重启（SIGTERM → 优雅落盘 → 拉起）
+launchctl unload ~/Library/LaunchAgents/ai.yuanbingke.dsh.plist   # 停止
 tail -f ~/dsh/web-stderr.log                     # 看日志
-# 升级：本地 git archive 覆盖 ~/rongqi-ops（或单文件 scp）→ launchctl kickstart
+# 升级：本地 git archive 覆盖 ~/yuanbingke-ops（或单文件 scp）→ launchctl kickstart
 ```
 
 验证基线（部署完成时实测）：`/` 200（dsh UI，boot manifest 含 rq-card）、`/rq/` 200（控制台）、
 `/rq/api/*` 登录+卡片包下发正常、`/plugins/@dsh-ops/plugin-rq-card/client.js` 200、
-重启循环 ×3 零冲突零 fatal、`/api/health`（dsh 侧无此端点，榕器健康检查在 `/rq/api/health`）。
+重启循环 ×3 零冲突零 fatal、`/api/health`（dsh 侧无此端点，元冰可健康检查在 `/rq/api/health`）。
 
 ## 五、安全声明（务必阅读）
 
 - dsh 自有 `/api/*` 无鉴权（上游明示 "fence is not auth"），0.0.0.0 绑定 = 对公网暴露该面；
-  榕器数据面（`/rq/api/*`）有完整 Bearer + RBAC + 审计。建议：路由器端口转发仅在需要时开启，
+  元冰可数据面（`/rq/api/*`）有完整 Bearer + RBAC + 审计。建议：路由器端口转发仅在需要时开启，
   或加 IP 白名单 / 反向代理 + HTTPS。
 - 演示模式含默认口令账号。长期生产：清 `dsh-data` → 去掉 `DEMO_SEED` → plist 加
   `ADMIN_PASSWORD=<强口令>` → 重启（平台以生产基线初始化，无演示账号）。

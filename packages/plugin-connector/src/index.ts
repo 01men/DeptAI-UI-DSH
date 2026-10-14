@@ -1,7 +1,7 @@
 /**
  * @dsh-ops/plugin-connector —— SaaS 连接器纳管（open-connector v1.4.0 融合，roadmap 第 9 步之二数据面）。
  *
- * 控制面/数据面分工：榕器=治理控制面（RBAC + 连接器权限组 + 高危审批 + 计量计费 + 审计）；
+ * 控制面/数据面分工：元冰可=治理控制面（RBAC + 连接器权限组 + 高危审批 + 计量计费 + 审计）；
  * open-connector sidecar=数据面网关 + 凭证保险库（AES-256-GCM，凭证永不回平台）。
  * 本插件只做映射与接线：不自研 provider 目录、不自研 OAuth、不自研密钥库。
  *

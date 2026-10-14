@@ -1,6 +1,6 @@
 # J3 契约：会话直通（宿主桥身份链）v1（冻结稿）
 
-> 冻结日期：2026-09-11 ｜ 所有者：宿主轨 main（ybkk-AIOS）｜ 消费方：定制侧面板（panel-core/rq-card）、远程 dsh 面板向导、门户
+> 冻结日期：2026-09-11 ｜ 所有者：宿主轨 main（ybkkasi）｜ 消费方：定制侧面板（panel-core/rq-card）、远程 dsh 面板向导、门户
 > 变更纪律：本契约升版须发发布说明并双侧同步（红线 1）。
 > 实现锚点：`packages/plugin-dsh-bridge/src/index.ts`（挂载半 + 身份半）、
 > `packages/plugin-authn/src/entry-ticket.ts`（票据服务）、`packages/plugin-console/src/index.ts`

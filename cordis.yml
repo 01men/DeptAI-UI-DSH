@@ -8,11 +8,11 @@
 #
 # 说明：
 #   - <PROJECT_ROOT> 需替换为 file:// URL 形式的绝对路径（Windows 下裸盘符路径会被
-#     ESM 判为 ERR_UNSUPPORTED_ESM_URL_SCHEME），例如 file:///D:/mycode/ybkk-AIOS
+#     ESM 判为 ERR_UNSUPPORTED_ESM_URL_SCHEME），例如 file:///D:/mycode/ybkkasi
 #     （路径含中文等非 ASCII 字符时用百分号编码）
 #   - provideToolRuntime=false：完整 dsh 自带 ToolRuntime（ctx.tools），
 #     平台插件注册的全部运维工具将直接对模型可见、可被调用
-#   - startHttp=false + plugin-dsh-bridge：榕器数据面（REST/控制台 SPA/docs/mcp）
+#   - startHttp=false + plugin-dsh-bridge：元冰可数据面（REST/控制台 SPA/docs/mcp）
 #     以 /gate01 前缀挂进 dsh webServer——单进程单入口（dsh web 端口即唯一入口），
 #     独立进程形态（node src/main.ts）保留为开发形态，两种形态不再要求并跑
 - insert:
@@ -75,7 +75,7 @@
     # 钉钉桥接（群桥/出向投递/审批推送/告警通道）：订阅 panel.message.created / audit.alert.fired
     - id: ops-dingtalk-bridge
       name: '<PROJECT_ROOT>/packages/plugin-dingtalk-bridge/src/index.ts'
-    # 单进程单入口：把榕器数据面挂进 dsh webServer（/gate01 前缀），必须在 console 之后装配
+    # 单进程单入口：把元冰可数据面挂进 dsh webServer（/gate01 前缀），必须在 console 之后装配
     - id: ops-dsh-bridge
       name: '<PROJECT_ROOT>/packages/plugin-dsh-bridge/src/index.ts'
       config:

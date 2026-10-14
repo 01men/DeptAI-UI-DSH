@@ -11,7 +11,7 @@
 
 | 轨道 | 分支 | 职责 |
 |---|---|---|
-| 宿主轨 | 上游 `01men/ybkk-AIOS` main | 宿主平台/控制台开发：platform-core、console、authn/oidc、agent、portal、iam、usage、skillhub、nas-authz、**plugin-dsh-bridge（宿主桥=宿主入口设施）**；API/事件契约所有者 |
+| 宿主轨 | 上游 `01men/ybkkasi` main | 宿主平台/控制台开发：platform-core、console、authn/oidc、agent、portal、iam、usage、skillhub、nas-authz、**plugin-dsh-bridge（宿主桥=宿主入口设施）**；API/事件契约所有者 |
 | 定制轨 | `custom/dsh-rq`（本分支） | dsh 前端交互插件/看板研发：plugin-panel-core、plugin-rq-card、plugin-dingtalk-bridge、scenegraphs 业务数据；dsh 部署装配（cordis 链、宿主形态验证）；**部署物理真相**（dsh 单进程 /rq 挂载） |
 
 代码流向：合并方向唯一（main → custom）；定制 → 上游仅允许「交接清单 + cherry-pick/重放」受控回流。
@@ -165,7 +165,7 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
 
 ### C1 第一波 · 一线面板极简（2026-09-09 交付）
 
-计划依据：《榕器开发计划-子分支-RQ-DSH.md》（D:/DSH-07/榕器开发计划-子分支-RQ-DSH.md）。
+计划依据：《元冰可开发计划-子分支-RQ-DSH.md》（D:/DSH-07/元冰可开发计划-子分支-RQ-DSH.md）。
 
 - **C1-1 信息架构收敛 ✅**：/panel 进入即对话框（boot 固定落 chat Tab）；顶栏「工作台 | 战略看板」
   双视图拆除，看板/面板设置/模型管理收进「☰ 更多」二级入口（`#/board` 深链保留）；用户可见文案

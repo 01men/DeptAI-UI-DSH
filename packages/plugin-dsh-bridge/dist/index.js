@@ -183,7 +183,7 @@ function apply(ctx, config = {}) {
       void httpServer.dispatch(req, res);
     }
   });
-  ctx.logger("dsh-bridge").info(`\u6995\u5668\u6570\u636E\u9762\u5DF2\u6302\u8F7D\u81F3 dsh webServer\uFF1A${mountPath}/*\uFF08\u5355\u8FDB\u7A0B\u5355\u5165\u53E3\uFF09`);
+  ctx.logger("dsh-bridge").info(`\u5143\u51B0\u53EF\u6570\u636E\u9762\u5DF2\u6302\u8F7D\u81F3 dsh webServer\uFF1A${mountPath}/*\uFF08\u5355\u8FDB\u7A0B\u5355\u5165\u53E3\uFF09`);
   const binding = bindingService;
   const entryTicketsAt = () => softRead(ctx, "entryTickets");
   if (!binding) {
@@ -334,7 +334,7 @@ function apply(ctx, config = {}) {
             resourceId: "rq_sid",
             resourceName: "\u5BBF\u4E3B\u4F1A\u8BDD",
             result: "ok",
-            detail: "\u5BBF\u4E3B Cookie \u7ED1\u5B9A\u8EAB\u4EFD\u5151\u6362\u5E73\u53F0\u4F1A\u8BDD\uFF08\u514D\u767B\u76F4\u8FBE\u6995\u5668\u6570\u636E\u9762\uFF09"
+            detail: "\u5BBF\u4E3B Cookie \u7ED1\u5B9A\u8EAB\u4EFD\u5151\u6362\u5E73\u53F0\u4F1A\u8BDD\uFF08\u514D\u767B\u76F4\u8FBE\u5143\u51B0\u53EF\u6570\u636E\u9762\uFF09"
           });
           json(200, {
             ok: true,

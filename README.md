@@ -1,11 +1,12 @@
-# 榕器 · 企业AI资源管理平台
+# 元冰可 · 企业AI资源管理平台
 
-> **本仓库定位（定制轨 RQ-DSH）**：本仓库是榕器的**定制轨发布仓**（分支 `custom/dsh-rq`），唯一交付物为
+> **本仓库定位（定制轨 RQ-DSH）**：本仓库是元冰可的**定制轨发布仓**（分支 `custom/dsh-rq`），唯一交付物为
 > **「01门」——AI 代理与人类的协作前台**：cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/RQ-DSH`
 > / npm `@ybkk/gate-01`），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接宿主后全量数据
 > 经本机代理接入（浏览器零跨域），登录在宿主侧完成。定制轨范围：一线面板/看板（plugin-panel-core）、
 > 执行卡（plugin-rq-card）、钉钉桥（plugin-dingtalk-bridge）、scenegraphs 业务数据。宿主平台主仓库见
-> [01men/ybkk-AIOS](https://github.com/01men/ybkk-AIOS)（本分支经 merge 吸收上游 main，下文为宿主平台说明）。
+> [01men/ybkkasi](https://github.com/01men/ybkkasi)（本分支经 merge 吸收上游 main，下文为宿主平台说明）。
+> **产权归属**：本项目（含「01门」与元冰可治理底座）产权归 **杭州元冰可科技有限公司** 所有。
 > 产品定版：[docs/plan-gate01.md](docs/plan-gate01.md)。产品介绍单页：[产品.html](产品.html)——首屏 slogan「AI 会做事，管得住才算数」；版式借鉴 agent-git.com 的排版骨架与留白节奏，配色为**科技深蓝主色（#1554e8）+ 微信绿语义色（#07c160）**：蓝承担权威与主 CTA，绿只用于「通过 / 安全 / 验证 / 复制成功 / 微信联系」；CFO 财务卡保留独立暖金，避免与主色抢位。内容仍为治理层定位：两张装机卡（终端命令 + Agent 提示词，各带一键复制）/ 四通道安装 / 市场数据带 / CIO·CTO·CFO 三决策者 / 前台×底座架构图（六类资产 + 四支柱）/ 四场景 tabs / 交付与定价 / 三阶段路线 / FAQ / 联系。交互动效（光标聚光灯卡片、hero 视差与渐变标题、架构图连线流动、数字滚动、阅读进度条、按钮扫光、导航下划线、FAQ 淡入、可收起微信入口）**全部为增强层**：默认 CSS 不生效，JS 完整跑通才加 `.fx-on` 打开；`prefers-reduced-motion` 整体关闭。**单文件自包含**：零外部 CSS/JS/字体依赖，内网与私有化环境可离线打开。测试环境 `http://mdzx.fun:8801/product.html`（及 `/%E4%BA%A7%E5%93%81.html`、`/产品.html`）。
 > 现状（2026-09-12）：**行业 AI 工作台（IAW）v1.0** 已落地——五空间信息架构、14 行业图谱包
 > （packages/platform-core/scenegraphs/）与 14 行业主题引擎、未激活行业只读演示预览；钉钉设备流登录
@@ -15,7 +16,7 @@
 基于 **DeepSeek Harness（dsh）「一切皆插件」** 架构实现的企业级 AI 资源管理平台。
 对应设计方案：《企业服务资源统一管理方案 V1.0》与《技术实现规划》；生态平台演进设计见
 [docs/ecosystem-design-v1.2.md](docs/ecosystem-design-v1.2.md)（商业化部分已随 M0 废止，见文内横幅），
-宿主轨迭代计划以《榕器开发计划-主分支》为最新基线（M1-1 契约冻结见下）。
+宿主轨迭代计划以《元冰可开发计划-主分支》为最新基线（M1-1 契约冻结见下）。
 
 > 组织账号（IAM）· 统一认证（Authn + OIDC Provider）· MCP 部署服务 · Skill/插件市场 · Agent 本体 ·
 > AI 应用本体 · 用量透明计量（usage）· 模型接入网关（modelgw）· 审计与告警
@@ -134,7 +135,7 @@ DSHCTL_USER=admin DSHCTL_PASS=*** node cli/dshctl.mjs help    # CLI 帮助（凭
   **运维工具**直接进入 dsh 原生 ToolRuntime、对模型可见可调用（`provideToolRuntime: false`），
   Agent 即可按自然语言运维整个平台（「列出所有 MCP 服务和健康状态」→ `mcp_service_list`，
   「Skill 市场里能装什么」→ `skill_search`）。
-- **单进程单入口（宿主挂载形态）**：`plugin-dsh-bridge` 把榕器数据面（REST/控制台 SPA/docs/MCP）
+- **单进程单入口（宿主挂载形态）**：`plugin-dsh-bridge` 把元冰可数据面（REST/控制台 SPA/docs/MCP）
   以 `/rq` 前缀挂进 dsh webServer，dsh web 端口即唯一入口；`startHttp: false` 关闭平台独立端口。
   配套 `plugin-panel-core`（部门 Agent 工作台面板）、`plugin-dingtalk-bridge`（群桥/审批推送/告警通道）、
   `plugin-rq-card`（会话内四态执行卡，dsh.client 双面插件）。升级与运维须知
@@ -161,7 +162,7 @@ pnpm dsh web --patch <本项目绝对路径>/cordis.yml
 「包名 + 子路径」声明（Node 从 profile 目录沿 node_modules 解析，无需感知安装位置）：
 
 ```bash
-dsh plugin --profile web add github:01men/ybkk-AIOS
+dsh plugin --profile web add github:01men/ybkkasi
 # 验证：dsh --profile web --dump-config 应列出全部 ops-* entry；
 # 会话中问「列出所有 MCP 服务和健康状态」，模型应调用 mcp_service_list 而非静态作答。
 ```
@@ -404,7 +405,7 @@ NAS 成为第六类受管资产（FS 文件存储类），Skill 上架产物可�
 
 ## 三G、连接器纳管：open-connector 融合（本迭代）
 
-SaaS 数据面网关（roadmap 第 9 步之二「连接器市场」执行缺口）：榕器=治理控制面，open-connector v1.4.0 sidecar=数据面 + 凭证保险库（AES-256-GCM）。能力零重叠强互补——不自研 provider 目录（1,000+ Provider / 10,000+ Action）、不自研 OAuth、不自研密钥库。
+SaaS 数据面网关（roadmap 第 9 步之二「连接器市场」执行缺口）：元冰可=治理控制面，open-connector v1.4.0 sidecar=数据面 + 凭证保险库（AES-256-GCM）。能力零重叠强互补——不自研 provider 目录（1,000+ Provider / 10,000+ Action）、不自研 OAuth、不自研密钥库。
 
 - **新插件 `packages/plugin-connector`**：OcClient 版本锁定适配层（契约面单文件）+ ConnectorHubService。六个集合 `connector:gateway|connections|catalog|permGroups|tokens|runs`；强制 env fail-closed（`OOMOL_CONNECT_ENCRYPTION_KEY`/`OOMOL_CONNECT_ADMIN_TOKEN` 缺失即拒绝一切 invoke 并告警）；30s 探活熔断。
 - **三层调用同契约**：REST `/api/connector/*` guarded 路由段 + 5 个工具 `connector_catalog_search/connector_connection_list/connector_execute/connector_perm_group_list/connector_run_list`（REST 工具桥与 POST /mcp 自动暴露）+ CLI `dshctl connector …` 全树。
@@ -481,7 +482,7 @@ packages/
     src/tools.ts            对模型暴露的工具（dsh ToolRuntime 契约）
   plugin-connect/           远程 dsh 接入插件（宿主端点 + 客户端代理 + 本机配置页，一份代码两种角色）
   plugin-console/public/    控制台 SPA（原生 ES Modules，零构建）
-  plugin-dsh-bridge/        宿主桥：榕器数据面以 /rq 前缀挂进 dsh webServer + 票据免登/Cookie 会话直通/OIDC 通道
+  plugin-dsh-bridge/        宿主桥：元冰可数据面以 /rq 前缀挂进 dsh webServer + 票据免登/Cookie 会话直通/OIDC 通道
   plugin-panel-core/        部门 Agent 工作台面板（/panel SPA + /api/panel/* REST + SSE）
   plugin-dingtalk-bridge/   钉钉桥接（群桥/出向投递/审批推送/告警通道/回决 fail-closed）
   plugin-rq-card/           会话侧注入卡片（四态执行卡 + 反馈条；浏览器半需 node packages/plugin-rq-card/build.mjs 预构建）

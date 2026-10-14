@@ -1,4 +1,4 @@
-# 交接清单 H1-H5 宿主侧落地与 H1 排查结论（ybkk-AIOS main · 2026-09-09）
+# 交接清单 H1-H5 宿主侧落地与 H1 排查结论（ybkkasi main · 2026-09-09）
 
 > 对应文档：`D:\DSH-RQ\docs\handoff-qa-fixes-to-main-20260908.md`（QA 2026-09-08 验收缺陷 ·
 > 宿主平台侧修复清单）。本文档记录 main 上 H1~H5 的评估结论、实现与回归结果。

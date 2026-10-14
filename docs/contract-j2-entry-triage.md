@@ -1,6 +1,6 @@
 # J2 契约：统一入口分诊 v1（冻结稿）
 
-> 冻结日期：2026-09-11 ｜ 所有者：宿主轨 main（ybkk-AIOS）｜ 消费方：定制侧面板、门户/登录页
+> 冻结日期：2026-09-11 ｜ 所有者：宿主轨 main（ybkkasi）｜ 消费方：定制侧面板、门户/登录页
 > 变更纪律：本契约升版须发发布说明并双侧同步（红线 1）。
 > 设计全文（背景与修复清单）：[docs/entry-switching.md](entry-switching.md)；本文件冻结的是「分诊判定」可消费面。
 > 实现锚点：`packages/plugin-console/public/js/landing.js`（纯函数，Node 可导入直测）；

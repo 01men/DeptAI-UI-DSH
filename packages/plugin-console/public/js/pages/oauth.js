@@ -32,9 +32,9 @@ function pageShell(inner) {
     <div class="oauth-page">
       <div class="oauth-card">
         <div class="oauth-brand">
-          <img class="brand-mark brand-logo" src="rongqi_ai.png" alt="榕器">
+          <img class="brand-mark brand-logo" src="ybk-mark.png" alt="元冰可">
           <div>
-            <div class="oauth-title">榕器|企业AI资源管理平台</div>
+            <div class="oauth-title">元冰可|企业AI资源管理平台</div>
             <div class="oauth-sub">统一身份源 · OIDC 授权</div>
           </div>
         </div>

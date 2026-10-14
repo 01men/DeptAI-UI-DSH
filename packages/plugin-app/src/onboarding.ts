@@ -4,7 +4,7 @@
  * 控制台注册弹窗仍用前端模板（onboarding.js buildAppOnboardingText）；
  * 本模块服务「注册后随时重新生成」场景：
  *   - POST /api/apps/:id/onboarding-prompt {rotate} → 控制台详情页「生成接入提示词」按钮
- *   - 外部推送方（hermes rongqi-asset-push 技能）注册成功后拉取全文并推送钉钉 connector webhook
+ *   - 外部推送方（hermes asset-push 资产推送技能）注册成功后拉取全文并推送钉钉 connector webhook
  * 首行含「接入提示词」关键词：钉钉 connector 流程按该关键词触发记录。
  */
 import type { ResourceEntity } from '../../platform-core/src/index.ts'
@@ -27,7 +27,7 @@ export function buildAppOnboardingPrompt(app: ResourceEntity, credential: AppOnb
    不慎丢失可在控制台「AI 应用 → 应用详情 → 生成接入提示词」重新生成（旧 secret 立即失效）。`
     : `1. client_secret 未随本提示词下发：首次接入或密钥丢失时，在控制台
    「AI 应用 → 应用详情 → 生成接入提示词」选择「重新生成密钥」获取完整凭证（旧 secret 立即失效）。`
-  return `【接入提示词 · 任务】按《榕器平台 · AI 应用接入指引》完成下方应用的接入验证、用户登录打通（SSO）与指标提报。平台地址：${origin}
+  return `【接入提示词 · 任务】按《元冰可平台 · AI 应用接入指引》完成下方应用的接入验证、用户登录打通（SSO）与指标提报。平台地址：${origin}
 
 【资源与凭证】（client_secret 仅此一次展示，请立即安全保存，不落明文日志）
 - 应用 ID：${app.id}

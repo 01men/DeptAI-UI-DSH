@@ -9,14 +9,16 @@
 
 ## 这个仓库是什么（双轨模型）
 
-`D:\DSH-RQ` 是围绕上游平台 `01men/ybkk-AIOS`（榕器 · 企业AI资源管理平台）的**定制化项目工作区**，
+`D:\DSH-RQ` 是围绕上游平台 `01men/ybkkasi`（元冰可 · 企业AI资源管理平台）的**定制化项目工作区**，
+项目产权归属 **杭州元冰可科技有限公司**；全仓品牌口径为「元冰可」（英文 Yuanbingke），
+不得残留更名前的中文旧称与旧仓库名（更名决策与规则见 `docs/rebrand-yuanbingke-20261014.md`）。
 开发分支为 `custom/dsh-rq`。
 
 自 2026-09 起实行**双轨开发模型**（定版文档：`docs/plan-dual-track-custom.md`）：
 
 | 轨道 | 分支 | 职责 |
 |---|---|---|
-| **宿主轨** | 上游 `01men/ybkk-AIOS` main | 宿主平台/控制台开发：platform-core、console、authn/oidc、agent、portal、iam、usage、skillhub、nas-authz、plugin-dsh-bridge（宿主桥）；API/事件**契约所有者** |
+| **宿主轨** | 上游 `01men/ybkkasi` main | 宿主平台/控制台开发：platform-core、console、authn/oidc、agent、portal、iam、usage、skillhub、nas-authz、plugin-dsh-bridge（宿主桥）；API/事件**契约所有者** |
 | **定制轨** | `custom/dsh-rq`（本分支） | **唯一交付物＝「01门」**（AI 代理与人类的协作前台，2026-09-10 定版）：@ybkk/gate-01 一键装进 dsh（6×dist 预构建产物，`/gate01` 挂载；2026-09-11 可用性补环 4→6：+iam/+authn 登录与身份面），包内随附 ops-platform-core/ops-iam/ops-authn/ops-dsh-bridge 基座 + ops-panel-core/ops-rq-card 定制面；产品定版 `docs/plan-gate01.md` |
 
 宿主平台功能已于 2026-09 整体移植进上游 main（89074d9/80a65e3/ff1a8de，交接清单
@@ -87,7 +89,7 @@ cordis.yml 装配字段、plugin-dsh-bridge inject 收缩 8→3 键），均为 
 ## 标准同步节奏（上游有更新时）
 
 ```bash
-git fetch origin main                      # 拉上游（origin fetch 指向 ybkk-AIOS）
+git fetch origin main                      # 拉上游（origin fetch 指向 ybkkasi）
 git log --oneline custom/dsh-rq..origin/main   # 看上游新增了什么
 git merge origin/main                      # 合并进定制分支（冲突按铁律 5 解决）
 npm install                                # 依赖/包名若有变化先同步（workspace 包改名等）
@@ -100,7 +102,7 @@ git push                                   # 备份（origin push 指向 RQ-DSH�
 ## 远程配置（已固化，不要改动）
 
 ```
-origin  fetch → https://github.com/01men/ybkk-AIOS.git   # 上游，只进不出
+origin  fetch → https://github.com/01men/ybkkasi.git   # 上游，只进不出
 origin  push  → https://github.com/01men/RQ-DSH.git      # 备份，push 即备份到其 main
 ```
 
@@ -109,7 +111,7 @@ origin  push  → https://github.com/01men/RQ-DSH.git      # 备份，push 即�
 - 已知无害怪象：`origin/main` 追踪引用在「push 后=备份仓库的 main」与「fetch 后=上游 main」
   之间摇摆（fetch/push 分离的副作用）。判断同步状态永远以 `git ls-remote` 两仓库实测为准。
 - 本地已装 `.git/hooks/pre-push` 钩子（脚本版本化在 `scripts/hooks/pre-push`）：
-  任何指向 ybkk-AIOS 的推送会被**直接拦截**。换机器/重克隆后需重装：
+  任何指向 ybkkasi 的推送会被**直接拦截**。换机器/重克隆后需重装：
   `cp scripts/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push`
 
 ## 网络说明

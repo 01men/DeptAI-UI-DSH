@@ -1,7 +1,7 @@
 /**
  * @dsh-ops/plugin-dsh-bridge —— dsh 宿主桥：数据面挂载（M1）+ 平台身份绑定（M4）。
  *
- * 【挂载半】把榕器数据面（platform-core httpServer 的全部路由/中间件/静态资源）
+ * 【挂载半】把元冰可数据面（platform-core httpServer 的全部路由/中间件/静态资源）
  * 以 URL 前缀方式挂进 dsh webServer（ctx.webServer，dsh web 进程内唯一监听器）：
  *   http://<host>:<port>/rq/*   →  剥离 /rq 前缀后交给 httpServer.dispatch
  *   http://<host>:<port>/rq     →  302 /rq/（目录形态归一，保证 SPA 相对引用可解析）
@@ -29,7 +29,7 @@
  * dsh 侧挂载契约（deepseek-harness packages/host/webserver/src/index.ts:94-101）：
  *   WebRoute = { kind:'exact'|'prefix', path, handler(req,res) }，handler 拥有完整响应生命周期。
  * 硬约束：`/api` 前缀与全站 fallback 席位均已被 dsh 占用（重复注册 throw），
- * 榕器数据面必须整体走独立前缀（/rq）。
+ * 元冰可数据面必须整体走独立前缀（/rq）。
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
@@ -49,7 +49,7 @@ interface DshWebServerLike {
 }
 
 export interface DshBridgeConfig {
-  /** 榕器数据面对外前缀（默认 /rq；须为以 / 开头的非根路径）。 */
+  /** 元冰可数据面对外前缀（默认 /rq；须为以 / 开头的非根路径）。 */
   mountPath?: string
   /** 身份绑定 Cookie 名（默认 rq_sid）。 */
   cookieName?: string
@@ -308,7 +308,7 @@ export function apply(ctx: Context, config: DshBridgeConfig = {}) {
     throw new Error('dsh-bridge 需要 ctx.httpServer（platform-core 必须先于本插件装配）')
   }
 
-  // ---- 挂载半：榕器数据面 → /rq 前缀 ----------------------------------------
+  // ---- 挂载半：元冰可数据面 → /rq 前缀 ----------------------------------------
   webServer.register({
     kind: 'prefix',
     path: mountPath,
@@ -323,7 +323,7 @@ export function apply(ctx: Context, config: DshBridgeConfig = {}) {
       void httpServer.dispatch(req, res)
     },
   })
-  ctx.logger('dsh-bridge').info(`榕器数据面已挂载至 dsh webServer：${mountPath}/*（单进程单入口）`)
+  ctx.logger('dsh-bridge').info(`元冰可数据面已挂载至 dsh webServer：${mountPath}/*（单进程单入口）`)
 
   // ---- 身份半：票据兑换 + 绑定 + 会话关联 ------------------------------------
   const binding = bindingService
@@ -470,7 +470,7 @@ export function apply(ctx: Context, config: DshBridgeConfig = {}) {
           deps.audit?.record({
             type: 'auth', actorType: 'human', actorId: user.id, actorName: user.displayName,
             action: 'dsh_bridge.cookie.session', resourceType: 'dsh_bridge', resourceId: 'rq_sid',
-            resourceName: '宿主会话', result: 'ok', detail: '宿主 Cookie 绑定身份兑换平台会话（免登直达榕器数据面）',
+            resourceName: '宿主会话', result: 'ok', detail: '宿主 Cookie 绑定身份兑换平台会话（免登直达元冰可数据面）',
           })
           json(200, {
             ok: true,

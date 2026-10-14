@@ -1,4 +1,4 @@
-# 榕器 ybkk-AIOS 质量闸门（OPT-P3-01）：契约 lint + 定时器卫生 + 全量自测 + P95 尾延迟
+# 元冰可 ybkkasi 质量闸门（OPT-P3-01）：契约 lint + 定时器卫生 + 全量自测 + P95 尾延迟
 # P95 阈值键（可按机器性能经环境覆盖）：
 #   P95_GATE_LOGIN_MS    登录换票 P95 上限（默认 800ms）
 #   P95_GATE_INVOKE_MS   connector invoke P95 上限（默认 1500ms）

@@ -12,8 +12,8 @@
 | 要求 | 落地 |
 |---|---|
 | ① 铁律：每次功能/面板更新，全新 dsh 装插件即可安装、启动、完整体验 | AGENTS.md 铁律 7 + selftest「fresh-install 装机模拟」段（patch entry 逐个解析导入 / 三链一致 / bundle build-id 新鲜度 / files 覆盖） |
-| ② 装好插件后主动连接、配置宿主（选 IP），完成钉钉/账号登录 | `plugin-rq-card` 宿主半 HostLinkService（`/rqcard/*` 免登向导命名空间）+ 面板首启连接向导（wizard.js）+ dsh 设置分区「榕器宿主」+ 未连接角标 |
-| ③ dsh 标准模式对话与看板打通，作为默认 Agent 对话界面，其他 Agent 协作调用 | dsh 会话「榕器工作台」视图 Tab（内嵌 /rq/panel/）+ 面板「Agent 对话」默认内嵌 dsh 根对话（嵌套防护/可退回内置）+ `panel_agent_invoke` / `panel_board_digest` 工具族 |
+| ② 装好插件后主动连接、配置宿主（选 IP），完成钉钉/账号登录 | `plugin-rq-card` 宿主半 HostLinkService（`/rqcard/*` 免登向导命名空间）+ 面板首启连接向导（wizard.js）+ dsh 设置分区「元冰可宿主」+ 未连接角标 |
+| ③ dsh 标准模式对话与看板打通，作为默认 Agent 对话界面，其他 Agent 协作调用 | dsh 会话「元冰可工作台」视图 Tab（内嵌 /rq/panel/）+ 面板「Agent 对话」默认内嵌 dsh 根对话（嵌套防护/可退回内置）+ `panel_agent_invoke` / `panel_board_digest` 工具族 |
 
 ## 二、连接与登录（M2）—— B/C 双形态
 
@@ -64,7 +64,7 @@ console 鉴权中间件只拦 `/api/*`——向导必须在**持令牌之前**�
 ## 三、对话与看板双向打通（M3）
 
 - **dsh 侧**（rq-card 浏览器半，`conversation.view` list 条目 id `rq-workbench`）：
-  会话视图 Tab「榕器工作台」整页内嵌 `/rq/panel/?embed=1`（同源 iframe，顶栏保留浏览器外链兜底）。
+  会话视图 Tab「元冰可工作台」整页内嵌 `/rq/panel/?embed=1`（同源 iframe，顶栏保留浏览器外链兜底）。
 - **面板侧**（app.js）：「Agent 对话」= 默认交互面——`hostBridge` 且非嵌入态时 chat 视图渲染
   同源 iframe `/`（dsh 标准模式对话）；`?embed=1` / `window.self !== window.top` / 用户显式退回
   （`panel_chat_embed_off`）时回落内置协作会话（panelAgentRuntime），at-row 提供「改用 dsh 对话」。
@@ -76,7 +76,7 @@ console 鉴权中间件只拦 `/api/*`——向导必须在**持令牌之前**�
   `panel_board_digest {platform?}`——战略看板聚合摘要（对话接地）。写通道沿用既有
   `panel_msg_send` / `panel_task_*` / `panel_scene_diag`；平台即 MCP Server（`POST /mcp`）对外不变。
 - **主动连接提醒**：宿主连接为 none 时 `shell.overlay` 挂「未连接宿主」角标，点击打开面板（即向导入口）；
-  dsh 设置页 `settings.section`「榕器宿主」分区常驻显示连接状态与入口。
+  dsh 设置页 `settings.section`「元冰可宿主」分区常驻显示连接状态与入口。
 
 ## 四、fresh-install 装机铁律（M1）—— 门禁怎么工作
 

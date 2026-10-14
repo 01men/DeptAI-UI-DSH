@@ -7,7 +7,7 @@
 
 ## [2026-08-27] lead-agent —— 项目启动 + 进度体系建立
 
-- 通读《dev-plan-connector.md》（C:\Users\Administrator\Downloads\dev-plan-connector.md），确认仓库 `D:\DSH-07\ybkk-AIOS` 与计划落点对应（17 个插件包、cordis 双装载面、scripts 三脚本齐全）。
+- 通读《dev-plan-connector.md》（C:\Users\Administrator\Downloads\dev-plan-connector.md），确认仓库 `D:\DSH-07\ybkkasi` 与计划落点对应（17 个插件包、cordis 双装载面、scripts 三脚本齐全）。
 - 建立 `docs/dev-log-connector/{PROGRESS.md,journal.md}` 协作体系（协议/状态表/冲突地图/占用登记/T 进度）。
 - 教训记录：第一版 PROGRESS.md 误把规划状态写成了已完成态，已重写为真实 todo 态——**后续任何 Agent 禁止预写未来状态**。
 - 下一步：复制计划书到 `docs/dev-plan-connector.md`；创建 pre-M0 快照；开始精读参考代码（plugin-modelgw 骨架 / plugin-mcp 权限组与 invoke / console guarded 区 / boot-all 装载）后开工 #2。
@@ -141,5 +141,5 @@
 - 已知轻微观察项（不阻塞）：签发凭证「已保存」后主体表格不即时自刷，重进页面计数正确（16→17）；权限编辑路径则即时刷新，两路径体验不一致，可后续统一。
 
 ### 发布
-- GitHub：01men/ybkk-AIOS main 提交并推送。
+- GitHub：01men/ybkkasi main 提交并推送。
 - 宿主平台：192.168.0.7:/opt/ops-platform（systemd ops-platform，:7300）同步变更文件后重启，健康探活 + 关键接口验证。

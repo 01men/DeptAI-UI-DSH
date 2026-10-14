@@ -10,7 +10,7 @@
 
 > 完整审查历史见 `CTO-REVIEW.md`（CTO 唯一写入点，append-only）。最近更新：2026-08-27 15:08。
 >
-> **【项目完成，已发布推送，审查终止 15:08】** 发布门禁全绿（老板 14:24 批准序列）：①本地提交 80ec600（39 文件 +5411/-16，工作树清零）→ ②selftest 终验 521/521、exit=0（CTO 亲跑，非采信板载）→ ③lint:manifests 70/70（CTO 亲跑）→ ④push `ac0698a..80ec600 main -> main` 至 github.com/01men/ybkk-AIOS 成功。终审结论与上线意见见 CTO-REVIEW.md 末条。
+> **【项目完成，已发布推送，审查终止 15:08】** 发布门禁全绿（老板 14:24 批准序列）：①本地提交 80ec600（39 文件 +5411/-16，工作树清零）→ ②selftest 终验 521/521、exit=0（CTO 亲跑，非采信板载）→ ③lint:manifests 70/70（CTO 亲跑）→ ④push `ac0698a..80ec600 main -> main` 至 github.com/01men/ybkkasi 成功。终审结论与上线意见见 CTO-REVIEW.md 末条。
 >
 > 遗留交接（不阻塞）：①M0 真实桥接联调按集成指南 §八 清单在生产环境执行，回填后 #1 转 done；②#12 市场化业务触发启动；③connector_latency 告警规则运营按需播种；④多实例部署时 oct_ 内存令牌缓存需改造（技术债）。
 

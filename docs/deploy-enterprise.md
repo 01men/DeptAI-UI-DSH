@@ -48,7 +48,7 @@ npm start -- --port 7300 --data ./data
 ```
 
 - [ ] 日志出现「平台基线初始化完成」+ 「上线三步走」引导框（首启一次性）
-- [ ] 日志出现「榕器|企业AI资源管理平台已启动」与「控制台地址：http://0.0.0.0:7300」
+- [ ] 日志出现「元冰可|企业AI资源管理平台已启动」与「控制台地址：http://0.0.0.0:7300」
 - [ ] `curl -s http://127.0.0.1:7300/api/health` → `{"status":"ok",...}`
 - [ ] （若未设 ADMIN_PASSWORD）确认 `data/admin-initial-password.txt` 已生成，**读完立即转到步骤 4 改密**
 
@@ -108,7 +108,7 @@ Restart=always
   - **源码检出（source）**：控制台抽屉「一键升级」或 `dshctl update apply --dry-run` 预演后
     `dshctl update apply --reason="…"`（内部执行 `git pull --ff-only` + `npm install`，本地有未提交
     修改会安全失败而非强改），随后 `systemctl restart ops-platform` 生效；先跑 `npm run selftest` 再切换流量。
-  - **插件市场安装（bundle）**：在宿主 dsh 侧执行 `dsh plugin update github:01men/ybkk-AIOS`，重启 dsh 宿主。
+  - **插件市场安装（bundle）**：在宿主 dsh 侧执行 `dsh plugin update github:01men/ybkkasi`，重启 dsh 宿主。
   - Agent 亦可在会话中直接说「检查平台更新」/「升级平台」（`update_status` / `update_check` / `update_apply` 工具）。
 - **对外发布**：用 Nginx 等反代 7300 并做 TLS；平台自身按 Bearer 令牌鉴权。
 - **企业定制**（按需）：钉钉真实连接器（`mode: real` + `apiBase`，控制台「组织与账号 → 三方集成」配置）。
@@ -144,7 +144,7 @@ Agent 运维凭据（环境变量）：`DSHCTL_URL`（默认 `http://127.0.0.1:7
 
 ## 四、远程 dsh 接入（形态 C：插件市场安装 → 接入码 → 自动申请凭证）
 
-适用：其他电脑的 dsh 经 `dsh plugin --profile web add github:01men/ybkk-AIOS` 安装本平台后，
+适用：其他电脑的 dsh 经 `dsh plugin --profile web add github:01men/ybkkasi` 安装本平台后，
 不知道如何配置宿主签发的凭证/口令。整个流程**无需在远程电脑手工编辑任何配置文件**。
 
 ### 4.1 宿主侧：签发一次性接入码（管理员，控制台或 CLI）
@@ -204,7 +204,7 @@ DSHCTL_URL=http://宿主IP:7300 DSHCTL_USER=admin DSHCTL_PASS=*** \
 
 ```text
 【任务】在 <目标服务器，如 10.0.0.5 或本机> 上部署「衡 · 企业 AI 资源统一管理平台」并完成验证。
-仓库：<git 克隆地址，如 git@github.com:01men/ybkk-AIOS.git>；部署目录：<如 /opt/ops-platform>；
+仓库：<git 克隆地址，如 git@github.com:01men/ybkkasi.git>；部署目录：<如 /opt/ops-platform>；
 监听端口：<7300>；管理员口令：<ADMIN_PASSWORD 强口令>；部署后是否接入 dsh 运行时：<是/否>。
 
 【执行步骤】

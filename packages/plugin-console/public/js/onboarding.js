@@ -6,7 +6,7 @@ const base = () => location.origin
 /** Agent 接入指引全文（可直接交给执行 Agent 照做；凭证已填好）。 */
 export function buildAgentOnboardingText(agent, credential) {
   const origin = base()
-  return `【任务】按《榕器平台 · Agent 接入指引》完成下方 Agent 的接入验证与运营数据提报。平台地址：${origin}
+  return `【任务】按《元冰可平台 · Agent 接入指引》完成下方 Agent 的接入验证与运营数据提报。平台地址：${origin}
 
 【资源与凭证】（client_secret 仅此一次展示，请立即安全保存，不落明文日志）
 - Agent ID：${agent.id}
@@ -60,7 +60,7 @@ NAS 文件操作经文件网关（MCP：url=<网关地址>/mcp + Authorization: 
 /** AI 应用接入指引全文（可直接交给执行 Agent 照做；凭证已填好）。 */
 export function buildAppOnboardingText(app, credential) {
   const origin = base()
-  return `【任务】按《榕器平台 · AI 应用接入指引》完成下方应用的接入验证、用户登录打通（SSO）与指标提报。平台地址：${origin}
+  return `【任务】按《元冰可平台 · AI 应用接入指引》完成下方应用的接入验证、用户登录打通（SSO）与指标提报。平台地址：${origin}
 
 【资源与凭证】（client_secret 仅此一次展示，请立即安全保存，不落明文日志）
 - 应用 ID：${app.id}

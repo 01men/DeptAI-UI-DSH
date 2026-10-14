@@ -10,7 +10,7 @@
 
 ## 一、定位与适用范围
 
-open-connector v1.4.0（Apache-2.0）作为**连接器数据面网关 + 凭证保险库**以 sidecar 形态与榕器平台同机部署：1,000+ Provider / 10,000+ Action 目录、OAuth 全流程、oct_ 运行时令牌、`/v1/actions/:actionId` 执行面。
+open-connector v1.4.0（Apache-2.0）作为**连接器数据面网关 + 凭证保险库**以 sidecar 形态与元冰可平台同机部署：1,000+ Provider / 10,000+ Action 目录、OAuth 全流程、oct_ 运行时令牌、`/v1/actions/:actionId` 执行面。
 
 两条接入路径：
 - **M0 桥接（本文 §五）**：零代码。把 sidecar 的 `POST /mcp`（stateless JSON-RPC，与平台 `/mcp` 同形态）经平台既有 `POST /api/mcp/import`（console L1279-1293 + plugin-mcp `importServices()` L350-418）注册为 external MCP 服务，即刻获得平台 Bearer 鉴权、MCP 服务级权限组、计量（`mcp:<slug>` 口径）、熔断探活。**仅用于连通性验证与过渡期**（治理降级声明见 §六）。
@@ -35,7 +35,7 @@ open-connector v1.4.0（Apache-2.0）作为**连接器数据面网关 + 凭证�
                             │ M1+：①authn ②RBAC connector.invoke ③权限组
                             │      ④admin 审批 ⑤限流 ⑥billing.precheck
 ┌───────────────────────────▼────────────────────────────────────┐
-│               榕器平台（治理控制面，node src/main.ts）              │
+│               元冰可平台（治理控制面，node src/main.ts）              │
 │   plugin-console guarded 路由 · plugin-mcp · plugin-connector     │
 └─────────┬─────────────────────────────────────┬────────────────┘
  【管理面】 │ M0：POST /api/mcp/import 注册桥接服务   │ 【数据面】M0：POST /api/mcp/invoke

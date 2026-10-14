@@ -663,7 +663,7 @@ export async function renderIam(content, params, ctx) {
         title: '批量导入账号',
         body: `
           <div class="form-hint" style="margin-bottom:10px">每行一个账号，格式：<code>用户名,姓名,组织ID或组织全路径,职位</code>（支持 Excel/CSV 导出后粘贴；组织可填 org_xxx、完整路径或唯一短名）</div>
-          ${field('导入数据', textareaField('raw', { placeholder: 'wangwu,王五,org_xxx,算法工程师\nzhaoliu,赵六,杭州榕器创科技有限公司 / 数字化技术服务平台,产品经理', rows: 6 }), { full: true })}
+          ${field('导入数据', textareaField('raw', { placeholder: 'wangwu,王五,org_xxx,算法工程师\nzhaoliu,赵六,杭州元冰可科技有限公司 / 数字化技术服务平台,产品经理', rows: 6 }), { full: true })}
           <div class="muted-box" id="import-preview">粘贴数据后在此预览解析结果…</div>`,
         foot: '<button class="btn btn-default" data-cancel>取消</button><button class="btn btn-primary" data-ok>导入</button>',
       })

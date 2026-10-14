@@ -1,6 +1,6 @@
 # J4 契约：用量报表数据口径 v1（冻结稿）
 
-> 冻结日期：2026-09-09 ｜ 所有者：宿主轨 main（ybkk-AIOS）｜ 消费方：定制侧面板报表、控制台资产运营页
+> 冻结日期：2026-09-09 ｜ 所有者：宿主轨 main（ybkkasi）｜ 消费方：定制侧面板报表、控制台资产运营页
 > 变更纪律：本契约升版须发发布说明并双侧同步（红线 1）；定制侧以发布说明为 merge 翻译层。
 > 实现锚点：`packages/plugin-usage/src/index.ts` `UsageService.monthlyReport()`；控制台端点 `GET /api/usage/report/monthly`。
 

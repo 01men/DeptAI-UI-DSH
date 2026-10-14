@@ -1,4 +1,4 @@
-/* rq-card-build-id: 60979d6003d97b3f */
+/* rq-card-build-id: 43e95815bd33a6d9 */
 (function () {
   var PLUGIN_ID = "@ybkk/plugin-rq-card";
   var DIAG = window.__RQ_CARD_DIAG__ = window.__RQ_CARD_DIAG__ || { installed: false, attempts: [] };
@@ -496,7 +496,7 @@ var en = {
   "fb.like": "Helpful",
   "fb.dislike": "Not helpful",
   "fb.done": "Recorded \u2014 thanks for the feedback",
-  "settings.nav": "RongQi host",
+  "settings.nav": "Yuanbingke host",
   "settings.mode.local": "This machine is the host",
   "settings.mode.remote": "Connected to remote host",
   "settings.mode.none": "Host not linked",
@@ -508,7 +508,7 @@ var en = {
   "settings.hint": "Link a host (pick an IP) and sign in with DingTalk/account on the panel; panel lives at /gate01/panel/.",
   "view.workbench": "Industry AI Workbench",
   "view.open.external": "Open in browser",
-  "overlay.unlinked": "RongQi: host not linked \u2014 click to open the wizard"
+  "overlay.unlinked": "Yuanbingke: host not linked \u2014 click to open the wizard"
 };
 
 // src/client/styles.ts

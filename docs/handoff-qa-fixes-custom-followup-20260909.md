@@ -1,6 +1,6 @@
 # 回执：H1-H5 宿主侧落地的定制面配合批（custom/dsh-rq · 2026-09-09）
 
-> 对应文档：ybkk-AIOS main `docs/handoff-qa-fixes-host-implementation-20260909.md`
+> 对应文档：ybkkasi main `docs/handoff-qa-fixes-host-implementation-20260909.md`
 > （H1~H5 宿主侧评估/实现/回归）。本文档记录定制分支的配合落地与一处**根因修正**。
 > 定制分支自本地宿主克隆合并 37880a2（GitHub 代理未通，`git fetch <本地克隆> main` 等效），
 > 合并后 selftest 1056/1056、lint:manifests 85/85 绿。

@@ -1,6 +1,6 @@
-# 双轨开发计划 · 宿主平台主分支参考（ybkk-AIOS main）
+# 双轨开发计划 · 宿主平台主分支参考（ybkkasi main）
 
-> 目标读者：ybkk-AIOS main 开发 Agent。生成：2026-09-08，由定制分支（RQ）侧起草。
+> 目标读者：ybkkasi main 开发 Agent。生成：2026-09-08，由定制分支（RQ）侧起草。
 > 前置事实：宿主功能域已移植进 main（89074d9 / 80a65e3 / ff1a8de，selftest 927/927 绿），
 > RQ 侧已逐条回复 8 项风险/疑点（[handoff-host-features-clarification.md](handoff-host-features-clarification.md)）。
 > 本文档确立双轨制下主分支的角色、边界与协作协议。定制分支侧计划：[plan-dual-track-custom.md](plan-dual-track-custom.md)。

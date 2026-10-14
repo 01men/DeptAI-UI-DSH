@@ -1,15 +1,15 @@
 #!/bin/sh
 # pre-push 钩子：仓库同步铁律 2/4 的硬拦截（版本化于 scripts/hooks/pre-push）。
 # 安装：cp scripts/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
-# 规则：任何指向 ybkk-AIOS（上游主仓库）的推送一律拒绝——定制代码绝不回流主分支。
+# 规则：任何指向 ybkkasi（上游主仓库）的推送一律拒绝——定制代码绝不回流主分支。
 #       合法推送目标只有备份仓库 01men/RQ-DSH。
 
 remote_url="$2"
 
 case "$remote_url" in
-  *ybkk-AIOS*)
+  *ybkkasi*)
     echo "" >&2
-    echo "⛔ 已拦截：检测到向上游主仓库（ybkk-AIOS）的推送。" >&2
+    echo "⛔ 已拦截：检测到向上游主仓库（ybkkasi）的推送。" >&2
     echo "" >&2
     echo "   这是本项目的最高禁令（见 AGENTS.md 仓库同步铁律 2/4）：" >&2
     echo "   定制代码回流主分支 = 主分支污染。" >&2

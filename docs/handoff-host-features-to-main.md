@@ -1,6 +1,6 @@
 # 宿主平台相关功能差异 · 交接清单（custom/dsh-rq → 上游 main）
 
-> 目标读者：负责 ybkk-AIOS 主分支（main）的开发 Agent。
+> 目标读者：负责 ybkkasi 主分支（main）的开发 Agent。
 > 目标：把定制分支 `custom/dsh-rq` 上**宿主平台相关**的功能差异移植/推送到 main。
 > 生成时间：2026-09-07；对比基点见下。
 
@@ -39,7 +39,7 @@
 
 | 功能 | 承载提交 | 文件 | 内容 |
 |---|---|---|---|
-| M1 单进程单入口 | 7fa29b5 | `packages/plugin-dsh-bridge/src/index.ts`（**全新包**） | 把榕器数据面（REST/控制台 SPA/面板/docs/mcp）以 `/rq` 前缀挂进 dsh webServer；dsh web 端口即唯一入口 |
+| M1 单进程单入口 | 7fa29b5 | `packages/plugin-dsh-bridge/src/index.ts`（**全新包**） | 把元冰可数据面（REST/控制台 SPA/面板/docs/mcp）以 `/rq` 前缀挂进 dsh webServer；dsh web 端口即唯一入口 |
 | M2 OIDC-agent 关联 | db72c39 | `packages/plugin-authn/src/oidc.ts`（+32/-10）、`packages/plugin-agent/src/index.ts`（+112） | oidc：refType 扩 `'agent'`、`clientsForAgent()`、Agent 上下线事件联动 enable/disable 客户端、issuer 与 webBase 带 externalBase 前缀。agent：`POST/PATCH /api/agents/:id/sso-client`、`POST .../sso-client/rotate` 签发/轮换/启停（owner 或 authn.oidc.write 授权）；`AGENT_SSO_ENFORCE=oidc` 上线门禁（上线前必须完成身份纳管）；inject 增 `oidc` |
 | M3 一键登记脚本 | 569a7e6 | `scripts/register-dsh-agent.mjs`（**新增**） | 平台自营 dsh Agent 资产登记：注册/机器凭证落盘/OIDC 客户端签发，幂等可重跑 |
 | M4/M5 身份绑定+免登+授权码通道 | e2fc09c、c6a0cd8 | `plugin-dsh-bridge/src/index.ts`（同包累积）、`plugin-console/src/index.ts`（`POST /api/auth/entry-ticket-session` 公开路径） | `/auth/entry` 票据免登；`/dsh-bridge/redeem\|status\|logout\|bind-session\|session`（Cookie→平台会话直通，同源收紧 fail-closed）；OIDC 授权码通道；tapIndex 免登脚本注入 |

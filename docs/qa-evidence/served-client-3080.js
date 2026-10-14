@@ -417,7 +417,7 @@ var zh = {
   "fb.like": "\u6709\u5E2E\u52A9",
   "fb.dislike": "\u6CA1\u5E2E\u52A9",
   "fb.done": "\u5DF2\u8BB0\u5F55\uFF0C\u611F\u8C22\u53CD\u9988",
-  // ── 设置分区「榕器宿主」（M2）──
+  // ── 设置分区「元冰可宿主」（M2）──
   "settings.nav": "\u6995\u5668\u5BBF\u4E3B",
   "settings.mode.local": "\u672C\u673A\u5373\u5BBF\u4E3B",
   "settings.mode.remote": "\u5DF2\u8FDE\u63A5\u8FDC\u7AEF\u5BBF\u4E3B",
@@ -428,7 +428,7 @@ var zh = {
   "settings.open.wizard": "\u6253\u5F00\u8FDE\u63A5\u5411\u5BFC",
   "settings.open.panel": "\u6253\u5F00\u6995\u5668\u5DE5\u4F5C\u53F0",
   "settings.hint": "\u8FDE\u63A5\u5BBF\u4E3B\uFF08\u9009\u62E9 IP\uFF09\u5E76\u5728\u9762\u677F\u5B8C\u6210\u9489\u9489/\u8D26\u53F7\u767B\u5F55\uFF1B\u9762\u677F\u5730\u5740 /rq/panel/\u3002",
-  // ── 会话视图 Tab「榕器工作台」（M3）──
+  // ── 会话视图 Tab「元冰可工作台」（M3）──
   "view.workbench": "\u6995\u5668\u5DE5\u4F5C\u53F0",
   "view.open.external": "\u5728\u6D4F\u89C8\u5668\u6253\u5F00",
   // ── 未连接角标（M3，shell.overlay）──
@@ -464,7 +464,7 @@ var en = {
   "fb.like": "Helpful",
   "fb.dislike": "Not helpful",
   "fb.done": "Recorded \u2014 thanks for the feedback",
-  "settings.nav": "RongQi host",
+  "settings.nav": "Yuanbingke host",
   "settings.mode.local": "This machine is the host",
   "settings.mode.remote": "Connected to remote host",
   "settings.mode.none": "Host not linked",
@@ -472,11 +472,11 @@ var en = {
   "settings.probe.fail": "unreachable",
   "settings.refresh": "Refresh",
   "settings.open.wizard": "Open connect wizard",
-  "settings.open.panel": "Open RongQi workbench",
+  "settings.open.panel": "Open Yuanbingke workbench",
   "settings.hint": "Link a host (pick an IP) and sign in with DingTalk/account on the panel; panel lives at /rq/panel/.",
-  "view.workbench": "RongQi workbench",
+  "view.workbench": "Yuanbingke workbench",
   "view.open.external": "Open in browser",
-  "overlay.unlinked": "RongQi: host not linked \u2014 click to open the wizard"
+  "overlay.unlinked": "Yuanbingke: host not linked \u2014 click to open the wizard"
 };
 
 // src/client/styles.ts

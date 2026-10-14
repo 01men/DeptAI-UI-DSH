@@ -1,6 +1,6 @@
 # QA 2026-09-08 验收缺陷 · 宿主平台侧修复清单（custom/dsh-rq → 上游 main）
 
-> 目标读者：负责宿主平台（上游 `01men/ybkk-AIOS` main / dsh 平台侧）的开发团队。
+> 目标读者：负责宿主平台（上游 `01men/ybkkasi` main / dsh 平台侧）的开发团队。
 > 依据：`docs/qa-report-dsh-plugin-first-20260908.md`（出口判定：不通过，P0=1）。
 > 定制面（plugin-panel-core / plugin-rq-card / plugin-dingtalk-bridge / 面板前端）可修部分
 > 已在定制分支同批修复并全量回归（selftest 1012/1012 + lint:manifests 85/85，含新增
@@ -13,7 +13,7 @@
 
 **现象**（两台独立实例复现：E1 3080 源码 patch 形态 / 3099 link 安装形态）：
 `/plugins/@dsh-ops/plugin-rq-card/client.js` 加载成功且与构建产物逐字节一致、
-`__DSH_BOOT__.entries` 含该插件，但「榕器工作台」视图 Tab / 设置分区 / 未连接角标 /
+`__DSH_BOOT__.entries` 含该插件，但「元冰可工作台」视图 Tab / 设置分区 / 未连接角标 /
 降级角标全部静默缺失（连兜底角标都不出现，说明 apply 从未执行或五处 slot 探测全数失败）。
 
 **请宿主/dsh 团队排查三个环节**：

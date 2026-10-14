@@ -1,6 +1,6 @@
 # F 域余量 · 受控回流清单（custom/dsh-rq → 上游 main · 第二批）
 
-> 目标读者：ybkk-AIOS main 开发 Agent。生成：2026-09-08（双轨改造 Phase 3 交付物）。
+> 目标读者：ybkkasi main 开发 Agent。生成：2026-09-08（双轨改造 Phase 3 交付物）。
 > 前置：宿主平台 A–E 域已于 2026-09 移植进 main；看板/卡片包域已由定制侧整体迁入
 > `plugin-panel-core`（/panel 面），定制分支对上游的宿主面差异已收敛至本清单所列余量。
 > 模板沿用 [handoff-host-features-to-main.md](handoff-host-features-to-main.md)。
@@ -88,7 +88,7 @@ selftest 对照：`审批 SLA 与公司级终审（WP-10）` 分节水印断言�
 
 定制侧已完成「装好插件即可用」的连接向导与对话打通（定版设计：[plan-dsh-plugin-first.md](plan-dsh-plugin-first.md)）：
 免登 `/rqcard/*` 向导命名空间、LAN 扫描选宿主、账号密码经本机插件代理全闭环登录、dsh 会话
-「榕器工作台」视图 Tab 与面板「Agent 对话」双向内嵌、`panel_agent_invoke`/`panel_board_digest`
+「元冰可工作台」视图 Tab 与面板「Agent 对话」双向内嵌、`panel_agent_invoke`/`panel_board_digest`
 协作工具族。以下为**远程形态（C）钉钉扫码登录闭环**的宿主侧增强建议——不采纳也能用
 （定制侧维持「跳宿主登录页 + 回导向导校验」降级），采纳后体验闭环：
 
@@ -150,6 +150,30 @@ selftest 装机段已同步适配（前缀解析/双 scope 正则/防泄露探�
 | 文件 | 改动 | 说明 |
 |---|---|---|
 | `packages/platform-core/src/http.ts`（`file()`） | 补 `res.headersSent` 幂等守卫（与同文件 `ok`/`fail` 同款） | `file()` 方法体运行在异步 IIFE 中，双写路径下二次 `writeHead` 抛 `ERR_HTTP_HEADERS_SENT` 且无人接——以 uncaughtException 打死整个宿主进程（gate01-smoke 真机运行期崩溃实证，栈=dist/http.js:228）。`ok`/`fail` 已有守卫，`file` 是遗漏点 |
+
+## Q. 品牌与仓库更名（2026-10-14）——纯文案替换，零逻辑改动
+
+全仓品牌口径随上游改名收敛（决策凭据：`docs/rebrand-yuanbingke-20261014.md`）：品牌中文名「元冰可」、
+英文 `Yuanbingke`、宿主仓库切至 `01men/ybkkasi`、品牌位图换为 `ybk-mark.png`、
+版权主体 → 杭州元冰可科技有限公司。上游侧已先行同批切换（commit `894137b`），本仓库措辞以上游为准。
+
+涉及宿主机区文件的改动**全部为字符串替换**（品牌名/仓库地址/版权行），零逻辑与装配语义变化：
+
+| 文件 | 改动 | 定性说明 |
+|---|---|---|
+| `packages/plugin-console/src/index.ts`、`src/routes/finops.ts` | 品牌串（控制台名、MCP serverInfo title/instructions、`/docs` 页标题与正文、FinOps 报表头） | 与 main 同口径，上游已同形替换 |
+| `packages/plugin-console/public/**` | 控制台 SPA 品牌串 + 位图引用改名（换为 `ybk-mark.png`，位图随上游现行官方标） | 同上；位图文件为二进制替换 |
+| `packages/plugin-dsh-bridge/src/index.ts`、`packages/plugin-usage/src/index.ts`、`packages/plugin-modelgw/src/index.ts` | 注释中的品牌串 | 纯注释 |
+| `packages/plugin-agent/src/onboarding.ts`、`packages/plugin-app/src/onboarding.ts` | 注释中的外部技能名 → `hermes asset-push`（去品牌化，与上游一致，不臆造重命名） | 纯注释 |
+| `packages/plugin-iam/src/index.ts`、`packages/plugin-console/src/seed.ts`、`packages/plugin-panel-core/src/index.ts` | 演示组织名「元冰可集团」（随上游：main 侧 seed 已同为「元冰可集团」） | 演示数据，与 main 同口径 |
+| `scripts/hooks/pre-push`、`.github/workflows/selftest.yml` | 上游仓库名哨兵/标题 | 定制侧治理资产 |
+
+**不回流项**：根 `package.json`（`@ybkk/gate-01` 已发布包名与 `repository` 指向 RQ-DSH）、
+`README.md`/`llms.txt`/`产品.html`（定制轨对外口径）、`AGENTS.md`/`PROJECT.md`（治理文档）、
+npm scope `@ybkk/*`（装配契约，改名即装机破裂，另行决策）。
+
+验证：`npm run build:dist`（dist build-id `e5921e9691177d27`）+ `node packages/plugin-rq-card/build.mjs`
++ `npm run selftest`（1322/1322 绿）+ `npm run lint:manifests`（105/105 绿）。
 
 ## 闭环记录（2026-09-10，main 侧回执 `handoff-f-remainder-adoption-20260910.md` ＋ 定制侧吸收）
 

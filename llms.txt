@@ -1,12 +1,12 @@
-# 榕器（ybkk-AIOS）· 企业 AI 资源管理平台
+# 元冰可（ybkkasi）· 企业 AI 资源管理平台
 
-> 榕器是基于 dsh/cordis「一切皆插件」架构的企业级 AI 资源统一管理平台：把 MCP 服务、Skill、Agent、AI 应用、模型路由、NAS 文件存储六类资产纳入一套身份（IAM/OIDC SSO）、一套权限、一套用量计量、一套审计；按「团队 + 领域资产」定价（制造业客户可走私有化交付项目制），对外只呈现用量透明与内部成本穿透，不含任何金额结算语义。
+> 元冰可是基于 dsh/cordis「一切皆插件」架构的企业级 AI 资源统一管理平台：把 MCP 服务、Skill、Agent、AI 应用、模型路由、NAS 文件存储六类资产纳入一套身份（IAM/OIDC SSO）、一套权限、一套用量计量、一套审计；按「团队 + 领域资产」定价（制造业客户可走私有化交付项目制），对外只呈现用量透明与内部成本穿透，不含任何金额结算语义。
 
-RongQi (ybkk-AIOS) is a self-hosted enterprise AI resource management platform: unified identity (IAM / OIDC SSO), permissions, usage metering and audit for six asset types — MCP services, skills, agents, AI apps, model routes and NAS file storage — priced by team and domain assets (private project-based delivery available for manufacturing).
+Yuanbingke (ybkkasi) is a self-hosted enterprise AI resource management platform: unified identity (IAM / OIDC SSO), permissions, usage metering and audit for six asset types — MCP services, skills, agents, AI apps, model routes and NAS file storage — priced by team and domain assets (private project-based delivery available for manufacturing).
 
 ## 本仓库定位（定制轨 · 01门）
 
-> 本仓库（01men/RQ-DSH）是榕器的**定制轨发布仓**，唯一交付物为**「01门」——AI 代理与人类的协作前台**。cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/RQ-DSH` / npm `@ybkk/gate-01`（已发布 1.2.1） / `link:` / `file:` 四通道），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接宿主后全量数据经本机代理接入（浏览器零跨域），登录在宿主侧完成；`dsh plugin remove` 卸载干净、重装即恢复；安装产物为预构建 dist（零 TS 装载/零生命周期脚本）。宿主平台主仓库见 [01men/ybkk-AIOS](https://github.com/01men/ybkk-AIOS)。
+> 本仓库（01men/RQ-DSH）是元冰可的**定制轨发布仓**，唯一交付物为**「01门」——AI 代理与人类的协作前台**。cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/RQ-DSH` / npm `@ybkk/gate-01`（已发布 1.2.1） / `link:` / `file:` 四通道），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接宿主后全量数据经本机代理接入（浏览器零跨域），登录在宿主侧完成；`dsh plugin remove` 卸载干净、重装即恢复；安装产物为预构建 dist（零 TS 装载/零生命周期脚本）。宿主平台主仓库见 [01men/ybkkasi](https://github.com/01men/ybkkasi)。
 
 - 定制轨范围：一线面板/看板（plugin-panel-core）、会话执行卡（plugin-rq-card）、钉钉桥（plugin-dingtalk-bridge）、scenegraphs 业务数据；dsh 部署装配
 - 行业 AI 工作台（IAW）v1.0：五空间信息架构、14 行业图谱包（packages/platform-core/scenegraphs/）与 14 行业主题引擎；未激活行业可只读预览预置图谱与演示数据
@@ -15,7 +15,7 @@ RongQi (ybkk-AIOS) is a self-hosted enterprise AI resource management platform: 
 - 产品定版：[docs/plan-gate01.md](docs/plan-gate01.md) ｜ 降级台账：[docs/gate01-degradation-ledger.md](docs/gate01-degradation-ledger.md)
 - 产品介绍单页：[产品.html](https://github.com/01men/RQ-DSH/blob/main/产品.html)，测试环境已上线 [http://mdzx.fun:8801/product.html](http://mdzx.fun:8801/product.html)——首屏 slogan「AI 会做事，管得住才算数」；单文件自包含（零外部 CSS/JS/字体依赖，内网与私有化环境离线可开）；科技深蓝 #1554e8 + 微信绿 #07c160 配色；内容：四通道安装 / CIO·CTO·CFO 三决策者视角 / 前台×底座架构图（六类资产+四支柱）/ 资产实况（三列资产卡+链路徽标）/ 四场景 / 交付与定价 / FAQ / 联系（电话与微信）；动效全部为渐进增强层（prefers-reduced-motion 整体关闭）
 - 联系与咨询：见产品页联系区块——电话 [182-9193-7101](tel:182-9193-7101) 与微信名片
-- 双轨治理：宿主面需求在主分支（ybkk-AIOS）进行，定制分支经 merge 吸收上游；定制→上游仅允许交接清单文档受控回流
+- 双轨治理：宿主面需求在主分支（ybkkasi）进行，定制分支经 merge 吸收上游；定制→上游仅允许交接清单文档受控回流
 
 ## 核心能力（均为已实现功能）
 
@@ -47,18 +47,18 @@ RongQi (ybkk-AIOS) is a self-hosted enterprise AI resource management platform: 
 
 ## 文档
 
-- [README](https://github.com/01men/ybkk-AIOS#readme)：产品全景、插件架构与能力对照
-- [企业部署与接入](https://github.com/01men/ybkk-AIOS/blob/main/docs/deploy-enterprise.md)：部署 runbook 与 dsh 运行时接入
-- [App SSO 接入指南](https://github.com/01men/ybkk-AIOS/blob/main/docs/app-sso-integration.md)：企业 AI 应用身份纳管全流程
-- [用量报表契约（J4）](https://github.com/01men/ybkk-AIOS/blob/main/docs/contract-j4-usage-report.md)：部门/Agent/Skill tokens 三维聚合月报与 CSV 导出
-- [连接器集成](https://github.com/01men/ybkk-AIOS/blob/main/docs/connector-integration.md)：open-connector sidecar 部署拓扑与故障排查
-- [NAS 数据权限](https://github.com/01men/ybkk-AIOS/blob/main/docs/nas-authz.md)：组织位置 + 角色层级 RBAC 设计与灰度
-- [M0 发布说明](https://github.com/01men/ybkk-AIOS/blob/main/docs/release-notes-2026-09-09-m0.md)：当前商业模式口径与契约变更清单
-- [M1-1 契约冻结 v1 发布说明](https://github.com/01men/ybkk-AIOS/blob/main/docs/release-notes-2026-09-11-optimization.md)：J1 面板技能/Agent 点名直调、J2 统一入口分诊、J3 会话直通契约与安全/数据治理加固
-- [IAW 缺口批次发布说明](https://github.com/01men/ybkk-AIOS/blob/main/docs/release-notes-2026-09-11-iaw-batch.md)：flow-core 流程编排、数据要素域、模型渠道治理、Agent 自治与 A2A、场景级授权
-- [季度系统性测试报告](https://github.com/01men/ybkk-AIOS/blob/main/docs/qa-report-20260912-overview.md)：安全/计量/编排/市场四组详录与全链路、早高峰并发演练结论（2026-09-12）
-- [QA 优化批次交付说明](https://github.com/01men/ybkk-AIOS/blob/main/docs/release-notes-2026-09-13-qa-fixes.md)：15 项安全与正确性修复、验证结论与防复发（2026-09-13）
-- [M2 迭代发布说明](https://github.com/01men/ybkk-AIOS/blob/main/docs/release-notes-2026-09-16-m2.md)：FinOps 报告 v1、首启体验产品化、技术债收尾与契约变更登记（2026-09-16）
+- [README](https://github.com/01men/ybkkasi#readme)：产品全景、插件架构与能力对照
+- [企业部署与接入](https://github.com/01men/ybkkasi/blob/main/docs/deploy-enterprise.md)：部署 runbook 与 dsh 运行时接入
+- [App SSO 接入指南](https://github.com/01men/ybkkasi/blob/main/docs/app-sso-integration.md)：企业 AI 应用身份纳管全流程
+- [用量报表契约（J4）](https://github.com/01men/ybkkasi/blob/main/docs/contract-j4-usage-report.md)：部门/Agent/Skill tokens 三维聚合月报与 CSV 导出
+- [连接器集成](https://github.com/01men/ybkkasi/blob/main/docs/connector-integration.md)：open-connector sidecar 部署拓扑与故障排查
+- [NAS 数据权限](https://github.com/01men/ybkkasi/blob/main/docs/nas-authz.md)：组织位置 + 角色层级 RBAC 设计与灰度
+- [M0 发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-09-m0.md)：当前商业模式口径与契约变更清单
+- [M1-1 契约冻结 v1 发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-11-optimization.md)：J1 面板技能/Agent 点名直调、J2 统一入口分诊、J3 会话直通契约与安全/数据治理加固
+- [IAW 缺口批次发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-11-iaw-batch.md)：flow-core 流程编排、数据要素域、模型渠道治理、Agent 自治与 A2A、场景级授权
+- [季度系统性测试报告](https://github.com/01men/ybkkasi/blob/main/docs/qa-report-20260912-overview.md)：安全/计量/编排/市场四组详录与全链路、早高峰并发演练结论（2026-09-12）
+- [QA 优化批次交付说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-13-qa-fixes.md)：15 项安全与正确性修复、验证结论与防复发（2026-09-13）
+- [M2 迭代发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-16-m2.md)：FinOps 报告 v1、首启体验产品化、技术债收尾与契约变更登记（2026-09-16）
 
 ## 边界与口径
 

@@ -11,8 +11,8 @@ export function renderLogin(app) {
       <div class="login-hero">
         <div class="login-hero-inner">
           <div style="display:flex;align-items:center;gap:14px">
-            <img class="brand-mark brand-logo" src="rongqi_ai.png" alt="榕器" style="width:46px;height:46px;border-radius:12px">
-            <div style="font-size:19px;font-weight:600;letter-spacing:2px">榕器 · 企业AI资源管理平台</div>
+            <img class="brand-mark brand-logo" src="ybk-mark.png" alt="元冰可" style="width:46px;height:46px;border-radius:12px">
+            <div style="font-size:19px;font-weight:600;letter-spacing:2px">元冰可 · 企业AI资源管理平台</div>
           </div>
           <h1>让团队一起用 AI<br>把每一份资源都管起来</h1>
           <p>组织账号、MCP 服务、Skill 市场、Agent 本体、AI 应用——五类资源一套身份、一套权限、一套审计。一个工作台，撑起企业的全部 AI 资产。</p>

@@ -113,7 +113,7 @@ export const en = {
   'fb.dislike': 'Not helpful',
   'fb.done': 'Recorded — thanks for the feedback',
 
-  'settings.nav': 'RongQi host',
+  'settings.nav': 'Yuanbingke host',
   'settings.mode.local': 'This machine is the host',
   'settings.mode.remote': 'Connected to remote host',
   'settings.mode.none': 'Host not linked',
@@ -127,5 +127,5 @@ export const en = {
   'view.workbench': 'Industry AI Workbench',
   'view.open.external': 'Open in browser',
 
-  'overlay.unlinked': 'RongQi: host not linked — click to open the wizard',
+  'overlay.unlinked': 'Yuanbingke: host not linked — click to open the wizard',
 } satisfies Record<RqCardKey, string>

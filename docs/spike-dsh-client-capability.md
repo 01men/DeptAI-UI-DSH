@@ -2,7 +2,7 @@
 
 > 状态：已完成（静态证据，rc.7 检出 `D:\DSH\deepseek-harness`，零改动）
 > 日期：2026-09-02
-> 结论承接方：WP-06（榕器能力卡片/反馈条注入插件实现）
+> 结论承接方：WP-06（元冰可能力卡片/反馈条注入插件实现）
 
 ---
 
@@ -240,7 +240,7 @@ export type ToolCallBlock = RunningToolCall | ToolResultNode
 
 外加 Turn 级异常：`TurnErrorNode`（turn/error）与 `conversation.chat.turnTail` 链槽。四态映射：`tool/call` 已见+无 result → 调用中/执行中；`tool/result.isError=false` → 已完成；`isError=true` 或 `TurnErrorNode` → 异常阻断（审批阻断另有 user-questions/ApprovalPanel 面板）。
 
-### 2.6 客户端→榕器数据面的 RPC 通道（判据：反馈条数据回流）
+### 2.6 客户端→元冰可数据面的 RPC 通道（判据：反馈条数据回流）
 
 **证据 F1 — 自定义 RPC 通道范本（ui-auth，双面插件）**：
 宿主端 `packages\client\ui-auth\src\index.ts:137-140`：
@@ -260,7 +260,7 @@ const call: AuthCall = (endpoint, payload) =>
   rpc.call(AUTH_RPC_CHANNEL, endpoint, payload) as Promise<...>
 ```
 
-**证据 F2 — 备选：webServer 自有 REST 路由**：`packages\host\webserver\src\index.ts:94-101`（`webServer.register({kind, path, handler})`，任何宿主插件可注册；RQ 的 `packages\plugin-dsh-bridge\src\index.ts:231-314` 已经用它在 `/rq` 前缀挂载数据面）。浏览器同源 `fetch('/rq/...')` 即可复用榕器现有鉴权。
+**证据 F2 — 备选：webServer 自有 REST 路由**：`packages\host\webserver\src\index.ts:94-101`（`webServer.register({kind, path, handler})`，任何宿主插件可注册；RQ 的 `packages\plugin-dsh-bridge\src\index.ts:231-314` 已经用它在 `/rq` 前缀挂载数据面）。浏览器同源 `fetch('/rq/...')` 即可复用元冰可现有鉴权。
 
 ### 2.7 webserver 伺服细节
 
@@ -290,9 +290,9 @@ const call: AuthCall = (endpoint, payload) =>
 | `conversation.chat.assistant-actions` | list / session | **每定稿 assistant 消息动作条**（👍/👎 反馈条；owner 提供 `messageId`） |
 | `conversation.chat.turnTail` | chain / session | Turn 收尾业务扩展（选择器路由，可渲染追加卡片） |
 | `conversation.chat.node` | keyed(Node kind) / session | 消息流行渲染器（`tool-call` 已被 ui-tool 占；**勿抢**，用上面的子槽） |
-| `shell.overlay` | list / root | 全局浮层（榕器全局状态丸/徽标） |
+| `shell.overlay` | list / root | 全局浮层（元冰可全局状态丸/徽标） |
 | `conversation.input.dock` / `conversation.composer.dock` / `conversation.input.left|right` | list / session | 输入区加法位 |
-| `conversation.view` | list / session | 整个视图 Tab（如"榕器资源"页） |
+| `conversation.view` | list / session | 整个视图 Tab（如"元冰可资源"页） |
 | `conversation.session.header.actions` / `.utilities` | list / session | 会话头按钮 |
 | `settings.section` | list | 设置页分区（ui-auth 即注册于此） |
 | `conversation.details.tool` | single / session | 右栏工具详情整板（已被占，替换式） |
@@ -304,8 +304,8 @@ const call: AuthCall = (endpoint, payload) =>
 | 通道 | API | 说明 |
 |---|---|---|
 | 自定义 RPC（推荐给"原生感"通道） | 宿主：`ctx.inject(['connection'], scope => scope.connection.rpc.handle('/<channel>', handler, { authority: 'loopback' }))`；浏览器：`ctx.get('connection').rpc.call('/<channel>', endpoint, payload)` | ui-auth 范本；authority:'loopback' 走可信请求校验 |
-| 同源 REST | 浏览器 `fetch('/rq/...')` | 复用 plugin-dsh-bridge 已挂的榕器数据面与现有鉴权，零新增宿主面 |
-| 会话事件（工具生命周期） | `ctx.conversationEvents.register({ kind, match(event){...}, start, update, publication?, buildViewNode?, buildLocationData? })` | `match` 里识别 `tool/call`/`tool/result`（`SessionEventMap` 为 merge 可扩展，榕器宿主插件甚至可 `Session.append` 自定义事件类型并为其注册渲染 Definition） |
+| 同源 REST | 浏览器 `fetch('/rq/...')` | 复用 plugin-dsh-bridge 已挂的元冰可数据面与现有鉴权，零新增宿主面 |
+| 会话事件（工具生命周期） | `ctx.conversationEvents.register({ kind, match(event){...}, start, update, publication?, buildViewNode?, buildLocationData? })` | `match` 里识别 `tool/call`/`tool/result`（`SessionEventMap` 为 merge 可扩展，元冰可宿主插件甚至可 `Session.append` 自定义事件类型并为其注册渲染 Definition） |
 | 会话快照 | slot 组件标准具 `useSession(snapshot => ...)` | `snapshot.chat.nodes`（ToolCallBlock 四态）、`snapshot.chat.locations.getTurn(turn)` |
 | 连接事件 | `ctx.on('connection/reset', ...)` | 重连后控制器 resync（feedback 范本同款） |
 
@@ -355,7 +355,7 @@ export const inject = ['slots', 'locale']        // 若走 connection.rpc 再加
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'rq-card: dictionaries')
 
-  // ① 四态执行卡：为榕器工具名注册 toolview（未列名的榕器工具自动回落 GenericToolCard）
+  // ① 四态执行卡：为元冰可工具名注册 toolview（未列名的元冰可工具自动回落 GenericToolCard）
   for (const tool of RQ_TOOL_NAMES) {
     ctx.slots.inject('tool.call.toolview', () => ctx.slots.register({
       name: 'tool.call.toolview', key: tool, locale: NS,
@@ -383,7 +383,7 @@ export function ExecutionCard({ block, toolName, ... }: ToolCallViewProps) {
 
 数据回流二选一（建议先 ②）：
 1. 原生通道：宿主半 `connection.rpc.handle('/rq-card', handler, { authority: 'loopback' })`，浏览器半 `rpc.call`；
-2. 同源 REST：浏览器直接 `fetch('/rq/api/...', { method:'POST' })` 打到 plugin-dsh-bridge 已注册的路由，复用榕器鉴权与审计，宿主半可以只是占位。
+2. 同源 REST：浏览器直接 `fetch('/rq/api/...', { method:'POST' })` 打到 plugin-dsh-bridge 已注册的路由，复用元冰可鉴权与审计，宿主半可以只是占位。
 
 ### 4.4 构建门禁（必须）
 
@@ -397,7 +397,7 @@ export function ExecutionCard({ block, toolName, ... }: ToolCallViewProps) {
 2. **显式探测**：apply() 内用 `ctx.slots.specDynamic('tool.call.toolview' | 'conversation.chat.assistant-actions')` 做存在性检查；`slots.inject` 回调执行时再校验 spec.kind === 'keyed'/'list'。任一不满足 → 置降级标志。
 3. **boot 面探测**：`window.__DSH_BOOT__` 缺失或 `/plugins/@dsh-ops/plugin-rq-card/client.js` 404 → 视为机制不存在。
 4. **apply() 全体 try/catch**：任何抛错吞掉并降级；slot 边界本身还有 `reportEntryError` 让位机制（`ui-slots\src\index.ts:1098-1106`），单卡崩溃只让出单元格、不拖垮聊天区——双保险。
-5. **降级态 = 纯文本+链接（天然兜底）**：榕器工具的 `tool/result` 文本内容里**始终**携带纯 markdown 摘要 + `/rq` 控制台链接（这是工具侧输出，不依赖任何客户端插件）；客户端卡片只是把同一信息升级为富卡。上游升级导致注入失效时，用户体验自动回落为 markdown 文本，无需发版。
+5. **降级态 = 纯文本+链接（天然兜底）**：元冰可工具的 `tool/result` 文本内容里**始终**携带纯 markdown 摘要 + `/rq` 控制台链接（这是工具侧输出，不依赖任何客户端插件）；客户端卡片只是把同一信息升级为富卡。上游升级导致注入失效时，用户体验自动回落为 markdown 文本，无需发版。
 6. 降级标志可经 `shell.overlay`（若该槽仍在）挂一枚"卡片插件未生效"角标，便于运维发现。
 
 ---
@@ -411,7 +411,7 @@ export function ExecutionCard({ block, toolName, ... }: ToolCallViewProps) {
 | R3 | `conversation.chat.assistant-actions` 只渲染在 Turn 收尾行（closing assistant 消息），粒度是"每 Turn 收尾消息"而非字面每条消息 | 低 | 对 👍/👎 反馈条语义足够（与 dsh 自带 feedback 一致） |
 | R4 | 客户端 bundle 与 React 18 / 平台模块表强耦合；不得自带 react 或 import 其他插件包的值 | 中 | 严格用 tsdown.client.ts 预设与外部白名单；type-only import 规矩照 ui-message-feedback |
 | R5 | `immediately` 未标记时 bundle 走懒加载，但所有 boot 图条目最终都会被 Loader 激活——顺序由 `inject` 边保证；错列 inject 边可能导致 `ctx.slots` 未就绪 | 中 | inject 边照抄 ui-message-feedback（runtime + ui-conversation） |
-| R6 | `authority: 'loopback'` 的可信请求判定（`connection\src\rpc-host.ts:82`）细节未深挖；若 dsh web 被反代/远端访问，RPC 通道可能拒绝 | 低-中 | 优先选同源 REST `/rq`（复用榕器自身鉴权），原生通道作为增强 |
+| R6 | `authority: 'loopback'` 的可信请求判定（`connection\src\rpc-host.ts:82`）细节未深挖；若 dsh web 被反代/远端访问，RPC 通道可能拒绝 | 低-中 | 优先选同源 REST `/rq`（复用元冰可自身鉴权），原生通道作为增强 |
 | R7 | `/plugins/<id>/client.js` 无鉴权（同源静态伺服 + no-cache）；插件代码对页面同源可见 | 低 | bundle 只含非敏感 UI 逻辑；密钥类数据留在宿主半（ui-auth 范本：secret 永不进浏览器） |
 | R8 | 未做起服实测（`pnpm dsh web` + curl boot manifest）；结论全部来自 rc.7 静态证据 + 已构建产物（lib/client.js）佐证 | - | WP-06 首个联调里程碑先做"空插件上链"冒烟：声明包 → 观察 `window.__DSH_BOOT__` 含该行 → apply 打日志 |
 | R9 | HMR 面（`/plugins/events` SSE）仅开发态存在（`modules\src\index.ts:428-431` 注释）；生产路径不依赖 | 低 | 生产不用 HMR 通道 |

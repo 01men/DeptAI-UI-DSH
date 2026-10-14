@@ -138,9 +138,9 @@ function renderShell(page, params, builder) {
     <div class="layout">
       <aside class="sidebar">
         <div class="sidebar-brand">
-          <img class="brand-mark brand-logo" src="rongqi_ai.png" alt="榕器">
+          <img class="brand-mark brand-logo" src="ybk-mark.png" alt="元冰可">
           <div>
-            <div class="brand-name" style="white-space:normal;font-size:13px;line-height:1.35">榕器|企业AI资源管理平台</div>
+            <div class="brand-name" style="white-space:normal;font-size:13px;line-height:1.35">元冰可|企业AI资源管理平台</div>
             <div class="brand-sub">DeepSeek Harness · 一切皆插件</div>
           </div>
         </div>

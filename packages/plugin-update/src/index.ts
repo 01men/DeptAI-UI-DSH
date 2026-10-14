@@ -1,7 +1,7 @@
 /**
  * @dsh-ops/plugin-update —— 平台自更新插件（版本检查 / 更新通知 / 一键升级）。
  *
- * 面向两类安装形态（上游均为 GitHub 仓库 01men/ybkk-AIOS）：
+ * 面向两类安装形态（上游均为 GitHub 仓库 01men/ybkkasi）：
  *   - source（git 源码检出）：版本比对 + GitHub compare API 给出「落后 N 个提交及摘要」；
  *     支持控制台/CLI/Agent 一键升级（git pull --ff-only + npm install + 提示重启），
  *     支持 dry-run 预演，全程审计留痕
@@ -43,7 +43,7 @@ export interface UpdateConfig {
   autoCheck?: boolean
   /** 自动检查间隔小时数（默认 24；运行期可调，0 视为关闭自动检查）。 */
   intervalHours?: number
-  /** 上游仓库 owner/name（默认 01men/ybkk-AIOS）。 */
+  /** 上游仓库 owner/name（默认 01men/ybkkasi）。 */
   repo?: string
   /** 上游默认分支（默认 main）。 */
   branch?: string
@@ -63,7 +63,7 @@ export interface ResolvedSource {
   timeoutMs: number
 }
 
-const DEFAULT_REPO = '01men/ybkk-AIOS'
+const DEFAULT_REPO = '01men/ybkkasi'
 const DEFAULT_BRANCH = 'main'
 const DEFAULT_API_BASE = 'https://api.github.com'
 const DEFAULT_RAW_BASE = 'https://raw.githubusercontent.com'

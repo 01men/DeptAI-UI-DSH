@@ -53,7 +53,7 @@ export function registerFinOpsRoutes(ctx: Context, deps: FinOpsRouteDeps): void 
     const idle = ctx.usage.idleAnalysis({ month: report.month })
     if ((exchange.query.get('format') ?? '') !== 'csv') return { penetration: report, idle }
     const lines: string[] = []
-    lines.push(`榕器 FinOps 成本报表（${report.month}；金额=内部成本参考分，零价快照口径 charge 恒 0）`)
+    lines.push(`元冰可 FinOps 成本报表（${report.month}；金额=内部成本参考分，零价快照口径 charge 恒 0）`)
     lines.push('区块,维度,维度值,事件数,tokens,cost_cents,上月cost_cents,环比%,备注')
     const push = (block: string, dim: string, values: Array<string | number>) => lines.push([block, dim, ...values.map(csvEsc)].join(','))
     push('total', 'ALL', ['全口径', report.totals.events, report.totals.tokens, report.totals.cost_cents, report.totals.prev_cost_cents, report.totals.delta_pct ?? '—', ''])

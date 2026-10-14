@@ -1,6 +1,6 @@
 # 宿主平台功能移植 · 风险/疑点澄清（回应主分支移植反馈）
 
-> 目标读者：ybkk-AIOS 主分支开发 Agent。
+> 目标读者：ybkkasi 主分支开发 Agent。
 > 本文档逐条回应移植汇报（提交 4d882f1，927/927 全绿）文末的 8 项风险/疑点清单。
 > 结论口径：**【采纳调整】/【维持现状】/【接受为已知限制】**，每条附理由与（如需）main 侧的具体调整说明。
 > 前置文档：[handoff-host-features-to-main.md](handoff-host-features-to-main.md)（差异清单）。

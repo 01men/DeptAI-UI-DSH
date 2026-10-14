@@ -2,7 +2,7 @@
 
 > **输入**：① 行动方案目标（目标 1 资产统一调运与权限贯通 / 目标 2 宿主 Agent 一体化 / 目标 3 多平台差异化交互 + 机制 3.1 / 3.2）；② 《DSH 前端产品设计方案 V2.0》；③ RQ-DSH 仓库代码级核对与架构评审结论（2026-09-02）。
 > **V2 修订**：执行主体改为 **Agent 超级开发团队**。删除日历/人天排期，改为**依赖门禁 + 并行泳道**；任务全部改造为**契约先行、文件所有权明确、机器可验验收**的工作包（WP）；原「待评审决策」改为**默认决议 + 否决协议**，执行不被人类会话阻塞。
-> **铁律（AGENTS.md）**：开发只在 `custom/dsh-rq`；上游 `01men/ybkk-AIOS` 只读；每个 WP 合并前 `npm run selftest` + `npm run lint:manifests` 全绿，绿后 `git push` 备份。
+> **铁律（AGENTS.md）**：开发只在 `custom/dsh-rq`；上游 `01men/ybkkasi` 只读；每个 WP 合并前 `npm run selftest` + `npm run lint:manifests` 全绿，绿后 `git push` 备份。
 
 ---
 

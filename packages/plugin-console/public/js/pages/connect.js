@@ -9,7 +9,7 @@ import {
 const TEMPLATE_LABEL = { readonly: '只读运维', operator: '运维（读+变更）', full: '全部权限' }
 
 /** Agent 本体一键接入口令：复制给 Agent 的中文一句话任务模板（含必填占位）。 */
-const AGENT_NL_INSTRUCTION = `【任务】按《榕器平台 · Agent 接入规范》把下面这个 Agent 接入平台 http://192.168.0.7:7300。
+const AGENT_NL_INSTRUCTION = `【任务】按《元冰可平台 · Agent 接入规范》把下面这个 Agent 接入平台 http://192.168.0.7:7300。
 
 Agent 名称：<全局唯一名称>
 描述：<一句话说明>
@@ -48,7 +48,7 @@ export DSHCTL_TOKEN=<步骤3拿到的token>
 dshctl agent list   # 列表中能找到自己的 agt_ 前缀 id 即接入完成`
 
 /** AI 应用一键接入口令：复制给 Agent 的中文一句话任务模板。 */
-const APP_NL_INSTRUCTION = `【任务】按《榕器平台 · AI 应用接入规范》把下面这个应用接入平台 http://192.168.0.7:7300。
+const APP_NL_INSTRUCTION = `【任务】按《元冰可平台 · AI 应用接入规范》把下面这个应用接入平台 http://192.168.0.7:7300。
 
 应用名称：<全局唯一名称>
 应用说明：<一句话说明>
@@ -110,7 +110,7 @@ export async function renderConnect(content, params) {
     <div class="card mb-20">
       <div class="card-head"><span class="card-title">${icon('fingerprint', 15)} 远程 dsh 一键接入（三步）</span></div>
       <div class="card-body fs-13" style="line-height:2">
-        <div><b>1. 安装插件</b>（远程电脑执行）：<code class="mono">dsh plugin --profile web add github:01men/ybkk-AIOS</code></div>
+        <div><b>1. 安装插件</b>（远程电脑执行）：<code class="mono">dsh plugin --profile web add github:01men/ybkkasi</code></div>
         <div><b>2. 申请口令</b>（任选其一）：
           ① 在 dsh 界面对 Agent 说「<span class="mono">接入宿主 &lt;本机局域网地址&gt;，接入码 &lt;下方创建的码&gt;</span>」，Agent 调 <span class="mono">connect_setup</span> 自动完成；
           ② 浏览器打开远程电脑的 <span class="mono">http://127.0.0.1:7390</span> 配置页可视化填写（可随时更新/断开）</div>

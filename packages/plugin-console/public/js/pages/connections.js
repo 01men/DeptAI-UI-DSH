@@ -38,7 +38,7 @@ export function renderConnections(content, params, { standalone = false } = {}) 
       ${standalone ? `
         <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f3f5f9;padding:24px">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
-            <img src="rongqi_ai.png" alt="榕器" style="width:40px;height:40px;border-radius:10px">
+            <img src="ybk-mark.png" alt="元冰可" style="width:40px;height:40px;border-radius:10px">
             <div style="font-size:17px;font-weight:600">宿主服务连接</div>
           </div>
           <div class="card" style="width:100%;max-width:720px" id="conn-card">` : `

@@ -1,6 +1,6 @@
 # 开发计划：dsh 宿主统一入口与 Agent 身份打通——单进程单入口 · OIDC-agent · 自然免登
 
-> 版本：v1.0（2026-09-02）· 分支：`custom/dsh-rq`（定制化项目，不合并回 ybkk-AIOS main）
+> 版本：v1.0（2026-09-02）· 分支：`custom/dsh-rq`（定制化项目，不合并回 ybkkasi main）
 > 关联需求：在 dsh 上启动宿主服务；对 dsh Agent 本身进行宿主资产登记；账号/登录/权限与宿主平台打通；
 > 前端业务交互与后端管理服务统一。
 > 方案决策（需求方拍板，2026-09-02）：
@@ -18,13 +18,13 @@
 | 事实 | 证据 | 对本计划的意义 |
 |---|---|---|
 | dsh web = 纯 node:http 服务器（`ctx.webServer`），默认 3080/127.0.0.1，CLI 拒绝 `--host 0.0.0.0` | `deepseek-harness/packages/host/webserver/src/index.ts:11,170`；`packages/bundle/web-app/src/startup.ts:69-71` | 单入口的宿主侧监听器已经存在，无需新建 |
-| 插件可注册前缀/精确路由，handler 拥有完整 req/res 生命周期（可 Set-Cookie、可流式） | `webserver/src/index.ts:94-145`（register/registerUpgrade/registerFallback/tapIndex） | 榕器数据面挂载点现成；`/api` 前缀已被 client-connection 占用（重复注册 throw，`connection/src/index.ts:96-98`）→ 榕器必须挂 `/rq` 前缀 |
+| 插件可注册前缀/精确路由，handler 拥有完整 req/res 生命周期（可 Set-Cookie、可流式） | `webserver/src/index.ts:94-145`（register/registerUpgrade/registerFallback/tapIndex） | 元冰可数据面挂载点现成；`/api` 前缀已被 client-connection 占用（重复注册 throw，`connection/src/index.ts:96-98`）→ 元冰可必须挂 `/rq` 前缀 |
 | fallback 席位只有一个且已被 dsh 前端占用（二次注册 throw） | `webserver/src/index.ts:125-131`、`frontend-static/src/index.ts:93-110` | 控制台 SPA 只能在 `/rq` 前缀内自管静态与 miss 回退 |
 | index.html 每次响应都过 index taps（`__DSH_BOOT__` 注入即走此通道） | `webserver/src/index.ts:139-145,259-263`；`client/modules/src/index.ts:168-175` | 免登引导脚本可零源码注入 dsh UI |
 | 浏览器端插件机制：包声明 `dsh.client` 即被伺服于 `/plugins/<id>/client.js` 并入启动图；ui-auth 是双面插件完整范本 | `packages/client/modules/src/index.ts:150-158,241-249`；`packages/client/ui-auth/` | 平台身份的浏览器半（查身份/触发 OIDC 跳转）有现成范式 |
 | dsh web 无认证层（fence 防的是 DNS rebinding/跨站，README 自认 not auth）；工具执行无 HTTP 请求上下文（`ToolRunContext` 只有 agent/session） | `connection/README.md`；`packages/core/tools/src/index.ts:313-338` | 身份必须在宿主侧持久化（绑定存储），由会话关联；不能依赖请求上下文透传 |
 | `session.create` 走 `POST /api/session.create`，可通过 `connection.rpc.intercept('/api', matcher, handler)` 认领端点（Typert 网关先例） | `apiproxy/src/api-proxy.ts:2107-2108`；`connection/src/rpc-host.ts:117-141`；`packages/api/gateway/src/index.ts:105-111` | 「浏览器会话 ↔ 平台身份」绑定可在插件内完成，不改 dsh 源码 |
-| 榕器 HTTP 是自研 `HttpServerService`（路由/中间件/静态/spa fallback 完整），请求入口收敛于 `dispatch(req,res)` | `packages/platform-core/src/http.ts:62-260` | 单进程挂载 = 抽出请求入口挂到 dsh webServer 前缀路由，改动面小 |
+| 元冰可 HTTP 是自研 `HttpServerService`（路由/中间件/静态/spa fallback 完整），请求入口收敛于 `dispatch(req,res)` | `packages/platform-core/src/http.ts:62-260` | 单进程挂载 = 抽出请求入口挂到 dsh webServer 前缀路由，改动面小 |
 | 控制台 SPA 全部 API 调用收敛于 `api.js request()`，静态引用在 index.html 为绝对路径 | `packages/plugin-console/public/js/api.js:64-86`；`public/index.html` | base-path 改造点集中（api.js + index.html），一次性可控 |
 | OIDC Provider 完整（授权码+PKCE+JWKS+discovery），但 `OidcClientRecord.refType` 仅 `'app'`；生命周期联动只听 App 事件；上线门禁 `APP_SSO_ENFORCE` 只覆盖 app | `plugin-authn/src/oidc.ts:48-50,154-169`；`plugin-app/src/index.ts:125-135` | OIDC-agent 一步到位 = 三处对等扩展（关联+联动+门禁），全部在本仓库 |
 | entry-ticket 已有（一次性、120s、fragment 不进服务端日志、redeem 返回身份 JSON 不返令牌） | `plugin-authn/src/entry-ticket.ts`；console:2580-2651 | 免登通道复用；补「兑换→绑定 Cookie→（可选）短时令牌」一跳 |
@@ -38,7 +38,7 @@
 **目标**
 
 1. **单进程单入口**：dsh web 进程（cordis fiber）内同时承载——dsh 宿主（会话/ToolRuntime/技能）、
-   榕器平台数据面（全部 `/api/*` REST、控制台 SPA、`/docs`、`/mcp`），一个端口对外。
+   元冰可平台数据面（全部 `/api/*` REST、控制台 SPA、`/docs`、`/mcp`），一个端口对外。
    独立进程形态（`node src/main.ts`）保留为开发形态，行为不回退。
 2. **dsh Agent 资产登记自动化**：一条命令完成 Agent 注册 → 机器凭证落盘（0600）→ OIDC 客户端签发
    → entryUrl/metrics 提报 → 试运行/上线审批材料就绪；登记产物被平台治理闭环覆盖（L4 审批、审计、计量）。
@@ -76,7 +76,7 @@
 │   ├─ /plugins/*        dsh client modules（既有，不动）                      │
 │   ├─ /auth/entry       [新] plugin-dsh-bridge：ticket 兑换→Set-Cookie→302 / │
 │   ├─ /auth/oidc/*      [新] plugin-dsh-bridge：OIDC 回跳→换码→Set-Cookie    │
-│   ├─ /rq/*             [新] plugin-dsh-bridge：前缀剥离→榕器数据面           │
+│   ├─ /rq/*             [新] plugin-dsh-bridge：前缀剥离→元冰可数据面           │
 │   │    ├─ /rq/api/*        全部平台 REST（复用现有路由，原 /api 语义不变）    │
 │   │    ├─ /rq/console/     控制台 SPA（base-path 感知）                      │
 │   │    ├─ /rq/docs         文档静态                                          │
@@ -89,7 +89,7 @@
 └──────────────────────────────────────────────────────────────────────────┘
                     │ 共享 data/ 目录（同进程内即同份数据，无需双进程）
                     ▼
-              榕器插件树（iam/authn/agent/app/nas/… 全量，console+portal 首次进入 dsh 形态）
+              元冰可插件树（iam/authn/agent/app/nas/… 全量，console+portal 首次进入 dsh 形态）
 ```
 
 ### 2.1 关键决策映射
@@ -137,7 +137,7 @@ dsh web 侧身份绑定与审计归因，权限面最小化。
 3. 控制台 SPA base-path 感知：
    - `public/js/api.js`：`const BASE = window.__RQ_BASE__ ?? ''`，`fetch(BASE + path)`；
      `PUBLIC_TOKEN_PATHS` 等路径判断同步适配；
-   - `public/index.html`：静态引用改相对路径（`css/base.css`、`js/app.js`、`rongqi_ai.png`）；
+   - `public/index.html`：静态引用改相对路径（`css/base.css`、`js/app.js`、`ybk-mark.png`）；
    - 全量排查其余绝对引用（`fetch(`/`EventSource`/`window.open`/`href="/`/下载链接）。
 4. `cordis.yml`（源码模式 overlay）：insert 追加 `portal`（先）与 `console`（后）与
    `dsh-bridge`（最后）；platform-core 配置保持 `startHttp:false, provideToolRuntime:false`。
@@ -223,7 +223,7 @@ NAS 注入头（绑定存在）/standalone 不注入（无绑定服务）断言�
 | dsh 自有 `/api/*` 无认证（会话/设置/凭证面），单入口绑定 0.0.0.0 后暴露面从本机扩到局域网 | 本期：同源化收敛（多数入口收敛到 3080 一个端口）+ 文档明示；dsh webserver host 覆盖 `0.0.0.0` 需 patch 直写（绕过 CLI 拒绝）并在部署文档标注残余风险与内网信任前提；hardening 迭代（`/api` 全量 cookie 门禁）列入 §一非目标的后续项 |
 | rq_sid Cookie 泄露 = 身份冒用 | httpOnly + SameSite=Lax + 绑定表服务端 TTL + 实时账号状态校验；不发放长期 Bearer |
 | OIDC secret 落 dsh 侧 | 仅存 bridge 插件 data 目录（0600），丢失走平台轮换；redirect_uri 白名单强制 |
-| `/api` 前缀冲突、fallback 席位冲突 | 已核实（重复注册 throw），榕器一律 `/rq` 前缀 + 前缀内自管静态 |
+| `/api` 前缀冲突、fallback 席位冲突 | 已核实（重复注册 throw），元冰可一律 `/rq` 前缀 + 前缀内自管静态 |
 | 计量双计 | 沿用红线：经宿主 ToolRuntime/网关自动归集，禁止手动重复推送 |
 | cordis 双实例 | junction 方向固化为部署文档一步（vendor/cordis → 本项目 node_modules），启动脚本内置校验 |
 | 上游 dsh 升级 | 全部走插件挂载面（register/tapIndex/rpc.handle/intercept/client 插件），零源码 fork；rc.7 接口已逐一核实 |

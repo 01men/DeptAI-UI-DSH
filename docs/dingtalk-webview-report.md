@@ -8,7 +8,7 @@
 
 ## 一、部署形态（单入口，同源）
 
-钉钉微应用后台只需配置一个主页 URL，指向榕器控制台，dsh 对话面与之同源、共享同一会话身份：
+钉钉微应用后台只需配置一个主页 URL，指向元冰可控制台，dsh 对话面与之同源、共享同一会话身份：
 
 ```
 https://<企业域名>/rq/console/          ← 钉钉微应用主页 URL（单入口）
@@ -17,7 +17,7 @@ https://<企业域名>/rq/console/          ← 钉钉微应用主页 URL（单�
   └─ /rq/* 之 dsh 面  dsh 对话 web 同源挂载（无跳转无二次登录，dsh-bridge 通道）
 ```
 
-- 单进程单入口由 `plugin-dsh-bridge` 承担（`/rq` 前缀剥离 → 榕器数据面），详见
+- 单进程单入口由 `plugin-dsh-bridge` 承担（`/rq` 前缀剥离 → 元冰可数据面），详见
   `docs/dev-plan-agent-host-unification.md` §路由表。
 - 控制台 SPA 对钉钉入口做了 **UA 探测**（`js/app.js` 顶部，WP-11 最小改动）：
   `/DingTalk/i.test(navigator.userAgent)` 且无记忆平台时，写 `localStorage.heng_ops_dingtalk = '1'`
@@ -108,7 +108,7 @@ node tests/walkthrough.mjs # 走查结果：6/6 通过；核心路径实测 3 �
 ## 六、P3 路径：钉钉 → 工作台 ≤2 步入口链
 
 ```
-[钉钉工作台] 点击「榕器」微应用        ← 第 1 步（钉钉侧）
+[钉钉工作台] 点击「元冰可」微应用        ← 第 1 步（钉钉侧）
   └→ webview 顶级导航 GET /rq/console/（可携 ?ticket= 由页面内免登，消费即清参）
       └→ [控制台] 打开即工作台（四区：问候/场景卡片/最近调用/对话入口） ← 第 2 步
           ├→ 点场景卡片直达功能页（同步进智造包卡片）

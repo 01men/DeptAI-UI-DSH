@@ -1,5 +1,5 @@
 /**
- * @dsh-ops/plugin-modelgw —— 统一模型接入网关（用量透明计量版，榕器开发计划 M0-3）。
+ * @dsh-ops/plugin-modelgw —— 统一模型接入网关（用量透明计量版，元冰可开发计划 M0-3）。
  *
  * 平台统一代理外部模型厂商（OpenAI 兼容 chat/completions 形态）：
  *   真实 HTTP 转发 → usage 计量（input/output tokens 实测值，不伪造）→

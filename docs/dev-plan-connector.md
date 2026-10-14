@@ -1,7 +1,7 @@
 # 开发计划：连接器纳管（open-connector 融合）——数据面网关 + 凭证托管 + 双层授权
 
 > 版本：v1.0（2026-08-27）· 关联需求：roadmap 第 9 步之二「连接器市场」数据面执行缺口 · 参考实现：[oomol-lab/open-connector](https://github.com/oomol-lab/open-connector) v1.4.0（Apache-2.0，1,000+ Provider / 10,000+ Action 目录、OAuth 全流程、凭证保险库、oct_ 运行时令牌）
-> 前置评审：《评审报告：榕器 × open-connector 融合开发计划》（2026-08-27）——结论「批准按蓝图撰写」，P0/P1/P2 修正项已全部落实进本文（§〇 事实核验、§一 决策变更注记、§2.2 强制配置、§2.11 M0 端点修正、§2.12 manual-settlement 锁定等，逐条位置见文末自查表）。
+> 前置评审：《评审报告：元冰可 × open-connector 融合开发计划》（2026-08-27）——结论「批准按蓝图撰写」，P0/P1/P2 修正项已全部落实进本文（§〇 事实核验、§一 决策变更注记、§2.2 强制配置、§2.11 M0 端点修正、§2.12 manual-settlement 锁定等，逐条位置见文末自查表）。
 
 ---
 
@@ -38,7 +38,7 @@
 
 ## 一、背景与目标
 
-1. **控制面/数据面分工（本计划最核心决策）**：榕器 = 治理控制面（双轨身份 + RBAC + 连接器权限组 + 高危审批 + 计量计费 + 审计 + 市场）；open-connector v1.4.0（Apache-2.0）= 连接器数据面网关 + 凭证保险库（1,000+ Provider / 10,000+ Action 目录、OAuth 全流程、oct_ 运行时令牌、`/v1/actions/:actionId` + `/api/connections` + `/api/oauth/authorizations` + `/api/runtime-tokens` + `/api/runs` + `POST /mcp`）。两者能力零重叠、强互补：不自研 provider 目录、不自研 OAuth、不自研密钥库，全部研发预算投在平台独有的治理语义上。
+1. **控制面/数据面分工（本计划最核心决策）**：元冰可 = 治理控制面（双轨身份 + RBAC + 连接器权限组 + 高危审批 + 计量计费 + 审计 + 市场）；open-connector v1.4.0（Apache-2.0）= 连接器数据面网关 + 凭证保险库（1,000+ Provider / 10,000+ Action 目录、OAuth 全流程、oct_ 运行时令牌、`/v1/actions/:actionId` + `/api/connections` + `/api/oauth/authorizations` + `/api/runtime-tokens` + `/api/runs` + `POST /mcp`）。两者能力零重叠、强互补：不自研 provider 目录、不自研 OAuth、不自研密钥库，全部研发预算投在平台独有的治理语义上。
 2. **三条红线**：
    - **凭证零进平台**：平台任何集合（含 `data/` 目录）不落 provider 凭证；API Key 表单代理直达 sidecar，OAuth 全程在 sidecar 完成，平台只见连接引用。
    - **授权双出验证**：平台侧（RBAC `connector.invoke` → 连接器权限组 → 高危审批 → 限流 → `billing.precheck`）与数据面侧（oct_ 令牌策略镜像：`allowedActions` + `allowedConnections`）两层各自独立拒绝，任一层越权均 fail-closed。
@@ -57,7 +57,7 @@
 调用方（人 / Agent / App，REST / 工具桥 / POST /mcp 三端）
   │
   ▼
-榕器网关（plugin-console guarded 路由 + plugin-connector）
+元冰可网关（plugin-console guarded 路由 + plugin-connector）
   ① authn 双轨身份校验（console/src/index.ts L143-166 http.use 中间件，写 exchange.principal 含 actChain）
   ② RBAC 权限点 connector.invoke（requirePermission L170-181，拒绝发 audit.authz.denied）
   ③ 连接器权限组授权（plugin-connector authorize()，对齐 McpPermGroup.authorize L688-716：

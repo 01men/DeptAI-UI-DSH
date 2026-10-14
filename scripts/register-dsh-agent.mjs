@@ -35,7 +35,7 @@ const CRED_FILE = join(DATA_DIR, 'dsh-agent-credential.json')
 const OIDC_CALLBACK_PATH = arg('--redirect', '/auth/oidc/callback')
 const SYSTEM_PROMPT_VERSION = arg('--prompt-version', 'prompt-v1')
 const DATA_CLASS = arg('--data-class', 'internal')
-const DESCRIPTION = arg('--desc', `榕器平台自营 dsh Agent（宿主：${BASE_URL}）。由 register-dsh-agent.mjs 登记与维护。`)
+const DESCRIPTION = arg('--desc', `元冰可平台自营 dsh Agent（宿主：${BASE_URL}）。由 register-dsh-agent.mjs 登记与维护。`)
 
 const log = (msg) => console.log(`[register-dsh-agent] ${msg}`)
 const fail = (msg) => { console.error(`[register-dsh-agent] ✘ ${msg}`); process.exit(1) }
