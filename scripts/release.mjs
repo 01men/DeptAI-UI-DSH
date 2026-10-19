@@ -6,7 +6,7 @@
  *   git 护栏 → npmjs 登录校验（失效自动拉起 npm login 浏览器 2FA）→ 版本决策与落盘 →
  *   build:dist + rq-card 浏览器半重建 → lint:manifests + selftest → npm pack 校验 →
  *   publish（官方源，scope 包显式 --access public）→ npm view 发布验证 →
- *   发布记录回填手册 → 提交 + 推送备份（铁律 3：推送即备份）。
+ *   发布记录回填手册 → 提交 + 推送交付（铁律 3：推送即交付）。
  *
  * 用法：
  *   npm run release                        # 常规发布：树版本 > npm latest 直接复用；相等自动 patch
@@ -194,7 +194,7 @@ async function main() {
     console.log('\n[release][dry-run] 演练通过。实际执行将依次：')
     console.log(`  - ${needBump ? `版本落盘 ${treeV} → ${target}（package.json + package-lock.json）` : `版本保持 ${target}（树版本已领先 npm latest）`}`)
     console.log('  - npm pack 校验 → npm publish --access public --registry https://registry.npmjs.org/')
-    console.log('  - npm view 发布验证 → docs/release-gate01.md 发布记录回填 → git add/commit → git push（备份）')
+    console.log('  - npm view 发布验证 → docs/release-gate01.md 发布记录回填 → git add/commit → git push（交付）')
     return
   }
 
@@ -233,15 +233,15 @@ async function main() {
   /* 9. 发布记录回填 */
   backfillReleaseDoc(target, opts.note)
 
-  /* 10. 提交 + 推送备份（铁律 3：推送即备份） */
+  /* 10. 提交 + 推送交付（铁律 3：推送即交付） */
   sh('git add package.json package-lock.json docs/release-gate01.md packages')
   const hasStaged = !sh('git diff --cached --quiet', { capture: true }).ok
   if (hasStaged) {
     if (!sh(`git commit -m "chore(release): ${PKG_NAME}@${target} —— npm 通道一键发布（release.mjs）"`).ok) {
-      die(`npm 版本已发布但 git commit 失败——请手工提交并 git push 完成备份`)
+      die(`npm 版本已发布但 git commit 失败——请手工提交并 git push 完成交付`)
     }
     if (!sh('git push').ok) {
-      console.warn('[release] ⚠ git push 失败——npm 已发布但备份未推（铁律 3），请手工 git push')
+      console.warn('[release] ⚠ git push 失败——npm 已发布但交付未推（铁律 3），请手工 git push')
     }
   }
 

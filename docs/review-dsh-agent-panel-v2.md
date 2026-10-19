@@ -110,7 +110,7 @@
 
 1. **R-SPIKE（阻塞性）**：`@dingtalk-real-ai/dsh-dingtalk` 不在仓内，其是否向 dsh 共享 ToolRuntime 暴露发送/事件面未知——实施前先做 spike 拿连接器文档核对；且同一 clientId 全企业仅一条 Stream 连接，官方连接器与自建入向不能并存
 2. **凭证单一来源**：iam connector config（appKey/secret）为唯一事实源，禁止 `$DSH_HOME/.credentials.yaml` 双源
-3. **架构约束**：宿主 web diff=0（面板只活 `/rq` 下，不进宿主会话 UI）；console 零构建；上游合并摩擦——新建 plugin-panel-* 是定制分支独占目录，合并摩擦为零
+3. **架构约束**：宿主 web diff=0（面板只活 `/rq` 下，不进宿主会话 UI）；console 零构建；上游合并摩擦——新建 plugin-panel-* 是本项目独占目录，合并摩擦为零
 4. **安全治理**：消息 XSS 白名单渲染、绑定/解绑/推送全量审计、钉钉回决身份校验（staffId↔identityLinks 反查）+ fail-closed、计量键格式裁决先行
 5. **钉钉 webview**：SSE 必须配 30s 轮询兜底（既有结论），stream+poll 双端点都要提供
 
@@ -158,4 +158,4 @@
 20. 市场 L0 契约扩展（`content.scenegraph`）→ 图谱包上架 → 复制其余 13 行业（数据建模工作量）
 21. 测试收口：装配一致性断言、面板 RBAC 矩阵全覆盖
 
-全程铁律：每阶段 `npm run selftest`（820+ 递增）+ `npm run lint:manifests` 全绿方可推送备份；只开发 `custom/dsh-rq`，上游只 fetch 不 push，推送目标仅 RQ-DSH。
+全程铁律：每阶段 `npm run selftest`（820+ 递增）+ `npm run lint:manifests` 全绿方可推送交付；只开发 `custom/dsh-rq`，上游只 fetch 不 push，推送目标仅 RQ-DSH。

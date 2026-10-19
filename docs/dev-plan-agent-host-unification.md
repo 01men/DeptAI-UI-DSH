@@ -1,6 +1,6 @@
 # 开发计划：dsh 宿主统一入口与 Agent 身份打通——单进程单入口 · OIDC-agent · 自然免登
 
-> 版本：v1.0（2026-09-02）· 分支：`custom/dsh-rq`（定制化项目，不合并回 ybkkasi main）
+> 版本：v1.0（2026-09-02）· 分支：`custom/dsh-rq`（本项目主分支线，不合并回 ybkkasi main）
 > 关联需求：在 dsh 上启动宿主服务；对 dsh Agent 本身进行宿主资产登记；账号/登录/权限与宿主平台打通；
 > 前端业务交互与后端管理服务统一。
 > 方案决策（需求方拍板，2026-09-02）：
@@ -241,7 +241,7 @@ M4 阶段三-B（绑定）   IdentityBindingService + 会话绑定 + NAS 出站�
                        会话绑定改走自有前缀路由 /dsh-bridge/bind-session，由引导脚本显式调用）
 M5 阶段四（免登 UI）  /auth/entry + 引导脚本 + OIDC 授权码通道（start/callback PKCE）+ 部署文档                    ✅ 2026-09-02
                       （浏览器半插件「登录态 UI 显示」降为后续迭代：免登/登录链路已闭环）
-每步交付物 commit 并推送备份仓库（RQ-DSH main），selftest 全绿为准。
+每步交付物 commit 并推送本项目主仓（RQ-DSH main），selftest 全绿为准。
 落地验证：selftest 721/721；真实 dsh 宿主冒烟（127.0.0.1:3080 单端口承载 dsh UI + /rq/* 全数据面）；
 register-dsh-agent.mjs 隔离实例端到端（首跑/幂等重跑/门禁放行）。
 后续迭代（非阻塞）：dsh /api 全量 cookie 门禁（hardening）；浏览器半插件登录态 UI；多用户并发会话归因精确化。

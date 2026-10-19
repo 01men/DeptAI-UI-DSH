@@ -40,7 +40,7 @@
 
 ## 四、验证要求
 
-更名属「随附包 src 变更」，触发 fresh-install 装机不变量，推送备份前必须：
+更名属「随附包 src 变更」，触发 fresh-install 装机不变量，推送交付前必须：
 
 ```bash
 node packages/plugin-rq-card/build.mjs   # 浏览器半 build-id 指纹
@@ -67,6 +67,6 @@ bundle 与 dist 新鲜度 / files 闭包）全绿。
 
 ## 六、推送通道备注
 
-本次推送备份仓库时，HTTPS 通道的 credential manager 无人值守即挂起（交互式弹窗）；
+本次推送本项目主仓时，HTTPS 通道的 credential manager 无人值守即挂起（交互式弹窗）；
 改用 SSH 通道（`git@github.com:01men/RQ-DSH.git`，密钥 `~/.ssh/ybkk_github_global_ed25519`）成功。
 后续无人值守推送建议直接用 SSH 形式，勿依赖 HTTPS 交互式凭据。

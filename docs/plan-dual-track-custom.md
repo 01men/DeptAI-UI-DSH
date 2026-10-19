@@ -1,22 +1,29 @@
-# 双轨开发计划 · 定制分支（custom/dsh-rq）
+# 双轨协作计划 · 本项目（01men/RQ-DSH · custom/dsh-rq）
 
-> 生成：2026-09-08。前置事实：宿主平台功能域已按 [handoff-host-features-to-main.md](handoff-host-features-to-main.md)
+> 生成：2026-09-08。前置事实：底座平台功能域已按 [handoff-host-features-to-main.md](handoff-host-features-to-main.md)
 > 移植进上游 main（89074d9 + 80a65e3 + ff1a8de，selftest 927/927 绿），8 项风险/疑点结论见
 > [handoff-host-features-clarification.md](handoff-host-features-clarification.md)。
-> 本计划确立双轨模型与本分支落地路线。主分支侧参考计划：[plan-dual-track-host-main.md](plan-dual-track-host-main.md)。
+> 本计划确立双轨协作模型与本分支落地路线。主分支侧参考计划：[plan-dual-track-host-main.md](plan-dual-track-host-main.md)。
+>
+> **术语说明（2026-10-19）**：本项目定位为**面向不同行业的部门交互面板项目**（与上游 `01men/ybkkasi`
+> 是两个不同的项目，调用其资产与权限，不是它的备份仓库——决策记录
+> [positioning-rq-dsh-panel-project-20261019.md](positioning-rq-dsh-panel-project-20261019.md)）。
+> 本文档 2026-09-08 定版时的旧术语按此读：**「定制轨」= 面板轨（本项目）**、**「宿主轨」= 底座轨（上游）**、
+> 「定制面」= 面板面、「宿主面」= 底座面、「定制侧」= 本项目侧；下文各 Phase 的步骤描述与执行纪要为
+> 当时的执行记录，保留原文。
 
 ---
 
-## 0. 双轨模型与收敛判据（北极星）
+## 0. 双轨协作模型与收敛判据（北极星）
 
 | 轨道 | 分支 | 职责 |
 |---|---|---|
-| 宿主轨 | 上游 `01men/ybkkasi` main | 宿主平台/控制台开发：platform-core、console、authn/oidc、agent、portal、iam、usage、skillhub、nas-authz、**plugin-dsh-bridge（宿主桥=宿主入口设施）**；API/事件契约所有者 |
-| 定制轨 | `custom/dsh-rq`（本分支） | dsh 前端交互插件/看板研发：plugin-panel-core、plugin-rq-card、plugin-dingtalk-bridge、scenegraphs 业务数据；dsh 部署装配（cordis 链、宿主形态验证）；**部署物理真相**（dsh 单进程 /rq 挂载） |
+| 底座轨 | 上游 `01men/ybkkasi` main | 治理底座/控制台开发：platform-core、console、authn/oidc、agent、portal、iam、usage、skillhub、nas-authz、**plugin-dsh-bridge（宿主桥=底座入口设施）**；六类资产与身份权限面提供者；API/事件契约所有者 |
+| 面板轨 | `custom/dsh-rq`（本项目主仓本分支） | 部门交互面板研发：plugin-panel-core、plugin-rq-card、plugin-dingtalk-bridge、scenegraphs 业务数据；dsh 部署装配（cordis 链、形态验证）；**部署物理真相**（dsh 单进程 /gate01 挂载） |
 
-代码流向：合并方向唯一（main → custom）；定制 → 上游仅允许「交接清单 + cherry-pick/重放」受控回流。
+代码流向：合并方向唯一（main → custom）；本项目 → 上游仅允许「交接清单 + cherry-pick/重放」受控回流。
 
-**北极星（收敛判据）**：定制轨对宿主轨的**代码差异收敛为零**——
+**北极星（收敛判据）**：本项目对底座的**底座面代码差异收敛为零**——
 
 ```bash
 # 锚点=真上游 main 头（当前 33f786a；上游前进后更新锚点哈希）。
@@ -29,8 +36,8 @@ git diff 33f786a custom/dsh-rq -- \
   src/boot-all.ts README.md cordis.yml cordis.patch.yml
 ```
 
-输出应为空。全部差异集中于：定制自有三包、scenegraphs/*.json、docs/、治理文件（AGENTS.md / PROJECT.md / scripts/hooks）。
-cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；定制部署个性走 gitignore 的 cordis.local.yml。达成后，日常上游同步不再产生宿主面冲突。
+输出应为空。全部差异集中于：本项目自有三包、scenegraphs/*.json、docs/、治理文件（AGENTS.md / PROJECT.md / scripts/hooks）。
+cordis.yml / cordis.patch.yml 属底座面（装配清单随 main 演进）；本项目部署个性走 gitignore 的 cordis.local.yml。达成后，日常上游同步不再产生底座面冲突。
 **建议每次 push 前跑一次北极星 diff 作为纪律护栏。**
 
 ---
@@ -49,13 +56,13 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
      （移植已含 ff8e275 模型配置面，实质取 main，逐块 diff 确认定制侧无丢失）。
    - **portal 单独处理**：main 侧有 4bcde8e 端点扩展 + 已移植的 behavior inject（A–E）；定制侧另有 board
      端点（F 域）——逐 hunk 取 main 为底、保留 board 端点块（Phase 2 会拆除）。
-   - **F 域保留定制**：cardpacks.ts + cardpacks/*.json、console board/register/asset-filters 及页面改动、
+   - **F 域保留本项目改动**：cardpacks.ts + cardpacks/*.json、console board/register/asset-filters 及页面改动、
      portal board 端点、审批深化（audit 终审 + SLA）、nas-authz、integrations、AGENTS.md / PROJECT.md /
      hooks / .gitignore、docs。
    - **README、cordis.yml、cordis.patch.yml 以 main**（宿主面；所有权修正后装配清单随 main 演进，
-     定制部署个性走 gitignore 的 cordis.local.yml），核对 main 侧新增装配条目。
+     本项目部署个性走 gitignore 的 cordis.local.yml），核对 main 侧新增装配条目。
 3. selftest 口径更新：CORS `*` 断言改为澄清第 1 条新口径（`*` 不作用于 `/api/auth/*`；精确来源配置可放行）。
-4. `npm run selftest && npm run lint:manifests` 全绿 → `git push` 备份。
+4. `npm run selftest && npm run lint:manifests` 全绿 → `git push` 交付。
 
 **验收**：合并提交落分支、回归全绿、RQ-DSH main 同步到新头。
 
@@ -67,12 +74,12 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
 
 1. 铁律 1「唯一开发分支是 custom/dsh-rq」→ **双轨条款**：上游 main 承载宿主平台开发线；
    custom/dsh-rq 承载 dsh 交互插件/看板开发线 + 部署装配。
-2. 铁律 2「上游只读」→ git 层面 fetch-only 不变；语义改为「宿主面改进在主分支开发，
-   定制分支不携带宿主面补丁」。
+2. 铁律 2「上游只读」→ git 层面 fetch-only 不变；语义改为「底座面改进在主分支开发，
+   本项目不携带底座面补丁」。
 3. 铁律 4「方向唯一」→ 保留（合并方向唯一），补唯一例外通道「受控回流」：
    交接清单文档 + 主分支侧 cherry-pick/重放；整分支反向 merge 仍然禁止；pre-push 钩子保留。
-4. 新增**目录所有权三区表**（宿主面 / 定制面 / 治理/文档，与主分支参考计划 §2 同一张表）。
-5. 新增**修改纪律**：定制分支禁止修改宿主面文件；宿主面缺陷/需求 → `docs/handoff-*.md` 清单 →
+4. 新增**目录所有权三区表**（底座面 / 面板面 / 治理/文档，与主分支参考计划 §2 同一张表）。
+5. 新增**修改纪律**：本项目禁止修改底座面文件；底座面缺陷/需求 → `docs/handoff-*.md` 清单 →
    主分支落地 → merge 吸收。
 6. PROJECT.md 背景段同步双轨模型。
 
@@ -101,7 +108,7 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
 1. `git diff origin/main -- packages/platform-core packages/plugin-console packages/plugin-portal` 为空
    （如出现无法收敛的残留，逐项登记进 Phase 3 清单后再放宽）。
 2. selftest + lint:manifests 全绿；/panel 战略看板可用；`scripts/verify-live-host.mjs` 增补看板断言并通过。
-3. push 备份。
+3. push 交付。
 
 ---
 
@@ -112,7 +119,7 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
   dingtalk-h5-smoke.mjs / walkthrough.mjs 测试（随对应功能域）。
 - **形式**：`docs/handoff-f-remainder-to-main.md`，沿用 handoff-host-features-to-main.md 模板
   （功能域 / 承载提交 / 文件 / 冲突预警 / 验收基线）。
-- **闭环规则**：主分支采纳 → 定制 merge 吸收 → 宿主面进一步收敛；**不采纳 → 定制侧拆除该差异**
+- **闭环规则**：主分支采纳 → 本项目 merge 吸收 → 底座面进一步收敛；**不采纳 → 本项目侧拆除该差异**
   （收敛优先，不留长期分叉）。
 
 ---
@@ -120,11 +127,11 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
 ## Phase 4 常态运转
 
 - **同步节奏**：每周或每上游版本 `fetch → merge → selftest+lint → push`（现行铁律流程不变）。
-- **需求分流**：dsh 交互面/看板需求 → 本分支直接开发；宿主面需求 → Phase 3 清单回流。
+- **需求分流**：dsh 交互面/看板需求 → 本分支直接开发；底座面需求 → Phase 3 清单回流。
 - **本分支主业方向**：panel 看板视图扩展、场景图谱（scenegraphs/*.json）业务深化、
   behavior 效果回传看板化、rq-card 卡片交互迭代。
-- **定制自有包回流**：rq-card 为双面插件（宿主形态也消费），panel-core/dingtalk-bridge 若宿主侧需要，
-  按 Phase 3 清单节奏同步给 main；plugin-dsh-bridge 属宿主面，其演进需求走清单回流 main。
+- **本项目自有包回流**：rq-card 为双面插件（底座形态也消费），panel-core/dingtalk-bridge 若底座侧需要，
+  按 Phase 3 清单节奏同步给 main；plugin-dsh-bridge 属底座面，其演进需求走清单回流 main。
 - **Phase 4 首个专项（2026-09-08 交付）**：dsh 插件化充分落地——装机铁律门禁、B/C 双形态连接登录
   向导、dsh 标准对话与看板双向打通；定版设计见 [plan-dsh-plugin-first.md](plan-dsh-plugin-first.md)，
   其宿主侧增强余量并入交接清单 G 节（[handoff-f-remainder-to-main.md](handoff-f-remainder-to-main.md)）。
@@ -133,10 +140,10 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
 
 ## 风险与回退
 
-- **Phase 0**：冲突面已预演可控；备份在 RQ-DSH（859fbde），可整分支 reset 回退。
+- **Phase 0**：冲突面已预演可控；历史交付点在 RQ-DSH（859fbde）——可整分支 reset 回退到该历史提交。
 - **Phase 2**：拆（console/portal/platform-core）与建（panel-core）在同一工作窗内完成，避免中间态长存；
   迁移窗口内看板短暂双入口属预期。
-- **最大长期风险是修改纪律松懈**（定制侧顺手改宿主面文件）——护栏 = Phase 1 所有权表 +
+- **最大长期风险是修改纪律松懈**（本项目侧顺手改底座面文件）——护栏 = Phase 1 所有权表 +
   北极星 diff 检查命令入 push 前自检。
 
 ---
@@ -193,7 +200,7 @@ cordis.yml / cordis.patch.yml 属宿主面（装配清单随 main 演进）；�
 
 ### ⚠ 踩坑记录：origin/main 追踪引用摆动（AGENTS.md「已知无害怪象」的实锤）
 
-push 之后 `origin/main` 追踪引用会指向**备份仓库的 main（= 本分支自己）**，此时所有
+push 之后 `origin/main` 追踪引用会指向**本项目主仓的 main（= 本分支自己）**，此时所有
 `git diff origin/main` / `git show origin/main:*` / `git checkout origin/main --` 都是**自比较**，
 结论全部无效。本次执行中段一度据此误判「真上游已有卡片包域」，做出方向相反的收敛操作，
 随后 fetch 刷新 + 直接对 ff1a8de 哈希操作才纠正。**铁律：跨分支对拍前先 `git fetch origin main`，

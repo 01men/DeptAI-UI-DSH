@@ -2,8 +2,8 @@
 
 > 本文档是「业务交互端充分 dsh 插件化」三项要求的定版设计：装机铁律、连接与登录向导
 > （B/C 双形态）、dsh 标准对话与看板双向打通。实施完成于 `custom/dsh-rq`（M1→M2→M3 一轮交付），
-> 全部改动落在定制面（plugin-panel-core / plugin-rq-card）+ 仓库级测试与治理文档；
-> 宿主面零新增（北极星 diff 不变），宿主侧增强走交接清单 G 节（docs/handoff-f-remainder-to-main.md）。
+> 全部改动落在面板面（plugin-panel-core / plugin-rq-card）+ 仓库级测试与治理文档；
+> 底座面零新增（北极星 diff 不变），底座侧增强走交接清单 G 节（docs/handoff-f-remainder-to-main.md）。
 
 ---
 
@@ -56,10 +56,10 @@ console 鉴权中间件只拦 `/api/*`——向导必须在**持令牌之前**�
 
 - **账号密码**：向导表单 → `POST /rq/rqcard/proxy/api/auth/login`（白名单内）→ 会话按连接隔离保存 → reload。
 - **钉钉扫码**：向导按钮新标签打开 `${hubBase}${prefix}/?next=<本机面板绝对地址>#/login`（宿主登录页）。
-  定制侧消费链已就绪（2026-09-08）：next 前向兼容携带、boot 按连接形态经代理兑换宿主回跳票据
+  本项目侧消费链已就绪（2026-09-08）：next 前向兼容携带、boot 按连接形态经代理兑换宿主回跳票据
   （query/fragment 双形态，会话落连接作用域）、未支持回跳的宿主提供「我已完成扫码」回导校验诚实降级。
-  自动回跳闭环的最后一步依赖宿主侧增强（交接清单 **G1**：登录页可信跨源 next + 自助 entry_ticket），
-  main 侧采纳后定制侧零改动闭环；本机形态（B）同源直登，无此限制。
+  自动回跳闭环的最后一步依赖底座侧增强（交接清单 **G1**：登录页可信跨源 next + 自助 entry_ticket），
+  main 侧采纳后本项目侧零改动闭环；本机形态（B）同源直登，无此限制。
 
 ## 三、对话与看板双向打通（M3）
 
@@ -100,12 +100,12 @@ selftest 首段「fresh-install 装机模拟」把「全新 dsh + `dsh plugin ad
 node packages/plugin-rq-card/build.mjs   # 浏览器半（src/client/** 等）有任何改动必须先跑
 npm run selftest                          # 含 fresh-install 装机模拟段，全绿
 npm run lint:manifests                    # 新端点/工具登记 manifest
-git push                                  # 备份（origin push → RQ-DSH main）
+git push                                  # 交付（origin push → RQ-DSH main）
 ```
 
 ## 五、边界与后续
 
-- 宿主侧增强走交接清单 **G 节**（G1 登录回跳闭环 / G2 modelgw 流式化 / G3 拷贝形态 TS 装载），未采纳前定制侧按降级路径运行。
+- 底座侧增强走交接清单 **G 节**（G1 登录回跳闭环 / G2 modelgw 流式化 / G3 拷贝形态 TS 装载），未采纳前本项目侧按降级路径运行。
 - LAN 扫描为有界探测（/24 × 双端口 × 350ms 超时，上限 600 候选）；防火墙/多网卡环境以手输兜底，
   扫描失败不阻断向导。
 - 远程形态的面板 SSE 不透传（代理不持流），由前端既有 30s 轮询降级承接（realtime.js 契约不变）。
@@ -143,7 +143,7 @@ git push                                  # 备份（origin push → RQ-DSH main
 - ⚠ **已知边界（交接 G3，上游层面）**：拷贝安装把 TS 源码放进 `node_modules`，Node（≥22.6，含 24）
   **拒绝对其做类型剥离**（`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`，实测
   `--experimental-transform-types` 亦不解除）——所有 `…/src/index.ts` 形式的 loader entry 在拷贝
-  形态下不可执行。这是**全仓架构级**限制（宿主面包同样适用），非本插件化改造引入：
+  形态下不可执行。这是**全仓架构级**限制（底座面包同样适用），非本插件化改造引入：
   - 本地装机绕过：`dsh plugin --profile X add link:D:/DSH-RQ`（link: 符号链接的真实路径在
     node_modules 之外，TS 正常装载）；
   - registry/GitHub 拷贝形态的彻底解法需上游决策（G3）：dsh loader 预剥离 TS，或平台侧提供

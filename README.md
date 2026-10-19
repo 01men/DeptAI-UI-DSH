@@ -1,12 +1,18 @@
 # 元冰可 · 企业AI资源管理平台
 
-> **本仓库定位（定制轨 RQ-DSH）**：本仓库是元冰可的**定制轨发布仓**（分支 `custom/dsh-rq`），唯一交付物为
+> **本仓库定位：行业部门交互面板项目（`01men/RQ-DSH`，本项目主仓）**——面向不同行业的**部门交互面板项目**：
+> 把企业级 AI 能力以「部门交互面板」形态交付到各行业一线。本项目与上游 `01men/ybkkasi`（元冰可治理底座）
+> **是两个不同的项目**——本项目是**调用方**，通过既有契约调用底座的**资产与权限**（六类受管资产
+> MCP/Skill/Agent/AI 应用/模型路由/NAS ＋ IAM/OIDC SSO/RBAC/场景级授权），**不是它的备份仓库**，
+> 也不重复实现治理底座。唯一交付物为
 > **「01门」——AI 代理与人类的协作前台**：cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/RQ-DSH`
-> / npm `@ybkk/gate-01`），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接宿主后全量数据
-> 经本机代理接入（浏览器零跨域），登录在宿主侧完成。定制轨范围：一线面板/看板（plugin-panel-core）、
-> 执行卡（plugin-rq-card）、钉钉桥（plugin-dingtalk-bridge）、scenegraphs 业务数据。宿主平台主仓库见
-> [01men/ybkkasi](https://github.com/01men/ybkkasi)（本分支经 merge 吸收上游 main，下文为宿主平台说明）。
+> / npm `@ybkk/gate-01`），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接底座后全量数据
+> 经本机代理接入（浏览器零跨域），登录在底座侧完成。本项目范围：部门面板/看板（plugin-panel-core）、
+> 执行卡（plugin-rq-card）、钉钉桥（plugin-dingtalk-bridge）、14 行业图谱包（scenegraphs 业务数据）
+> 与行业主题引擎。治理底座主仓库见
+> [01men/ybkkasi](https://github.com/01men/ybkkasi)（本项目经 merge 吸收上游 main，下文为底座平台说明）。
 > **产权归属**：本项目（含「01门」与元冰可治理底座）产权归 **杭州元冰可科技有限公司** 所有。
+> 定位决策记录：[docs/positioning-rq-dsh-panel-project-20261019.md](docs/positioning-rq-dsh-panel-project-20261019.md)。
 > 产品定版：[docs/plan-gate01.md](docs/plan-gate01.md)。产品介绍单页：[产品.html](产品.html)——首屏 slogan「AI 会做事，管得住才算数」；版式借鉴 agent-git.com 的排版骨架与留白节奏，配色为**科技深蓝主色（#1554e8）+ 微信绿语义色（#07c160）**：蓝承担权威与主 CTA，绿只用于「通过 / 安全 / 验证 / 复制成功 / 微信联系」；CFO 财务卡保留独立暖金，避免与主色抢位。内容仍为治理层定位：两张装机卡（终端命令 + Agent 提示词，各带一键复制）/ 四通道安装 / 市场数据带 / CIO·CTO·CFO 三决策者 / 前台×底座架构图（六类资产 + 四支柱）/ 四场景 tabs / 交付与定价 / 三阶段路线 / FAQ / 联系。交互动效（光标聚光灯卡片、hero 视差与渐变标题、架构图连线流动、数字滚动、阅读进度条、按钮扫光、导航下划线、FAQ 淡入、可收起微信入口）**全部为增强层**：默认 CSS 不生效，JS 完整跑通才加 `.fx-on` 打开；`prefers-reduced-motion` 整体关闭。**单文件自包含**：零外部 CSS/JS/字体依赖，内网与私有化环境可离线打开。测试环境 `http://mdzx.fun:8801/product.html`（及 `/%E4%BA%A7%E5%93%81.html`、`/产品.html`）。
 > 现状（2026-09-12）：**行业 AI 工作台（IAW）v1.0** 已落地——五空间信息架构、14 行业图谱包
 > （packages/platform-core/scenegraphs/）与 14 行业主题引擎、未激活行业只读演示预览；钉钉设备流登录
@@ -609,4 +615,4 @@ PV 同日累加与 UV/DAU 取最大、成本穿透恒等、技能热力矩阵、
 
 ---
 
-> 最近更新：2026-09-22 · NAS 下载链接签名化——HMAC 签名分享链接（档位 1h/24h 默认/7d/30d/永久）+ 取流三关（签名→吊销→权限复核）+ 独立长期密钥可吊销清单；控制台「分享链接档位」设置区（永久开关/有效期上限/签发资格/密钥轮换）。此前：2026-09-18 · NAS 文件所有权跟踪接入数据权限——上传登记/重命名改写/删除移除（含子树前缀）。产品能力口径以 [docs/release-notes-2026-09-09-m0.md](docs/release-notes-2026-09-09-m0.md) 为准。
+> 最近更新：2026-10-19 · **项目定位澄清**：本项目（`01men/RQ-DSH`）是**面向不同行业的部门交互面板项目**，与上游 `01men/ybkkasi`（治理底座）是两个不同的项目——本项目是调用方，调用底座的资产与权限，不是它的备份仓库（决策记录：[docs/positioning-rq-dsh-panel-project-20261019.md](docs/positioning-rq-dsh-panel-project-20261019.md)）。此前：2026-09-22 · NAS 下载链接签名化——HMAC 签名分享链接（档位 1h/24h 默认/7d/30d/永久）+ 取流三关（签名→吊销→权限复核）+ 独立长期密钥可吊销清单；控制台「分享链接档位」设置区（永久开关/有效期上限/签发资格/密钥轮换）。产品能力口径以 [docs/release-notes-2026-09-09-m0.md](docs/release-notes-2026-09-09-m0.md) 为准。

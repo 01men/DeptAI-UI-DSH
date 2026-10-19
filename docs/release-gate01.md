@@ -44,7 +44,7 @@ npm publish --access public --registry=https://registry.npmjs.org/
 npm view @ybkk/gate-01 version
 # 5. 真机冒烟（四通道之 npm 通道闭环）
 dsh plugin add --profile <全新profile> @ybkk/gate-01
-# 6. 发布记录回填本手册 + 推送备份
+# 6. 发布记录回填本手册 + 推送交付
 ```
 
 ## 自动化发布（2026-09-11 定版）
@@ -56,7 +56,7 @@ git 护栏（custom/dsh-rq + 干净树）→ npmjs 登录校验（失效自动�
 → 版本决策（树版本 > npm latest 直接复用；相等自动 patch；patch/minor/major/--version 可覆盖）
 → build:dist + 浏览器半重建 → lint:manifests + selftest → npm pack 校验
 → npm publish（官方源，--access public）→ npm view 验证 → 发布记录回填
-→ 提交 + 推送备份（铁律 3）
+→ 提交 + 推送交付（铁律 3）
 ```
 
 演练：`npm run release -- --dry-run --skip-tests`。发布中断重跑即续（版本决策幂等；
@@ -69,4 +69,4 @@ publish 失败自动回滚版本落盘）。真机冒烟仍需人工执行（§�
 - **profile bundles**：`pnpm remove` 会把 bundles 列表里的 `@ybkk/gate-01` 一并移除，
   重装后需确认 profile `package.json` 的 `dsh.profile.bundles` 含 `@ybkk/gate-01`。
 - **版本节奏**：每次发布 = bump 版本号 → `npm run build:dist` + 浏览器半重建 → selftest 全绿 →
-  pack → publish → 推送备份（安装产物 dist/** 提交入库，发布包与仓库一致）。
+  pack → publish → 推送交付（安装产物 dist/** 提交入库，发布包与仓库一致）。

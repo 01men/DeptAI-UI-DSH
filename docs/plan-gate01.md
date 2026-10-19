@@ -7,12 +7,12 @@
 > （defineTool 内联为 src/tool.ts；panel-core 在 gate-01 包内跨包相对导入成立，无需内联），
 > 真机 ERR_MODULE_NOT_FOUND 实证；② Phase 3 files 清单修正——原稿漏列 packages/plugin-dsh-bridge，
 > 真机装机暴露后补齐，并加 bundledDependencies 打包 rq-card（file: 依赖在 npm/tgz 通道不可移植）；
-> ③ plugin-dsh-bridge inject 8→3 键（宿主面受控漂移，F 清单 J 节）——4-entry 形态下
+> ③ plugin-dsh-bridge inject 8→3 键（底座面受控漂移，F 清单 J 节）——4-entry 形态下
 > entryTickets/oidc/iam/authn/audit 无提供者即永久挂起，运行期五处软访问改 ctx.reflect/softRead；
 > ④ 演示首启直达看板：demoAuth 装态探测（只读 API 匿名可达）→ 直接进看板 + 横幅引导，
 > seedPanel(ctx, autoDemo) 自动播种演示内容 + DEMO_ORG_ID 演示组织兜底。
-> 产品定义：本分支（custom/dsh-rq）收缩为唯一交付物——**01门**：AI 代理与人类的协作前台。
-> 关联：`docs/plan-dsh-plugin-first.md`（前序定版）、`docs/handoff-f-remainder-to-main.md`（G3/F 清单）、`AGENTS.md`（同步铁律）。
+> 产品定义：本项目（01men/RQ-DSH，分支 custom/dsh-rq）唯一交付物——**01门**：AI 代理与人类的协作前台。
+> 关联：`docs/plan-dsh-plugin-first.md`（前序定版）、`docs/handoff-f-remainder-to-main.md`（G3/F 清单）、`AGENTS.md`（同步铁律）、`docs/positioning-rq-dsh-panel-project-20261019.md`（项目定位决策）。
 
 ---
 
@@ -21,28 +21,28 @@
 1. **一键安装**：cordis 插件形态装进 dsh，四通道可用——`dsh plugin add github:01men/RQ-DSH`、`dsh plugin add @ybkk/gate-01`（npm）、`link:`、`file:`。安装→启动→打开 `http://127.0.0.1:<端口>/gate01/panel/` **直接见到演示看板**（内置 scenegraphs 演示数据），向导常驻引导连接宿主。
 2. **连接宿主**：本机（localhost 预填 + 端口探测）/ 远端地址统一为「连接宿主」流程；连接后面板/看板/卡片数据全量指向宿主（经本机代理，浏览器零跨域），登录在宿主侧完成。
 3. **插拔**：`dsh plugin remove` 卸载干净；重装即恢复。
-4. **G3 自解（限 01门产物）**：预构建 `dist/*.js` 提交入库，安装形态不再依赖 node_modules 内 TS 装载。宿主面包的 G3 仍在交接清单挂起，与本产物无关。
+4. **G3 自解（限 01门产物）**：预构建 `dist/*.js` 提交入库，安装形态不再依赖 node_modules 内 TS 装载。底座面包的 G3 仍在交接清单挂起，与本产物无关。
 
 ### 产物构成（根包 `@ybkk/gate-01`）
 
 | entry | 来源包 | 角色 | 改造 |
 |---|---|---|---|
-| ops-platform-core | packages/platform-core（宿主面，**原样随附**） | httpServer/opsStorage/platformBus/tools/scenegraphs 服务基座 | 不改代码，仅改装配 config（externalBase:/gate01） |
-| ops-dsh-bridge | packages/plugin-dsh-bridge（宿主面，**原样随附**） | `/gate01` 前缀挂进 dsh webServer | 不改代码，mountPath:/gate01 |
-| ops-panel-core | packages/plugin-panel-core（定制面） | 面板 REST + SPA 托管 + 演示数据 | inject 瘦身 + 鉴权配置标志化（demoAuth）+ 演示端点 |
-| rq-card | packages/plugin-rq-card（定制面） | dsh 会话注入 + /gate01/rqcard/* 向导/代理 | 去 iam/authn + 删本机初始化 + 品牌 |
+| ops-platform-core | packages/platform-core（底座面，**原样随附**） | httpServer/opsStorage/platformBus/tools/scenegraphs 服务基座 | 不改代码，仅改装配 config（externalBase:/gate01） |
+| ops-dsh-bridge | packages/plugin-dsh-bridge（底座面，**原样随附**） | `/gate01` 前缀挂进 dsh webServer | 不改代码，mountPath:/gate01 |
+| ops-panel-core | packages/plugin-panel-core（面板面） | 面板 REST + SPA 托管 + 演示数据 | inject 瘦身 + 鉴权配置标志化（demoAuth）+ 演示端点 |
+| rq-card | packages/plugin-rq-card（面板面） | dsh 会话注入 + /gate01/rqcard/* 向导/代理 | 去 iam/authn + 删本机初始化 + 品牌 |
 | （不随附） | plugin-dingtalk-bridge | 宿主侧胶水（需 iam/audit），留仓库与全量开发形态 | 移出安装产物 |
 
-**不改清单**（避免撞宿主面/回归矩阵）：
-- 内部 API 命名空间 `/api/panel/*`、`/rqcard/*`——`/api/panel/stream` 在 plugin-console 的 PUBLIC_PATHS 白名单（宿主面文件，禁改）；
+**不改清单**（避免撞底座面/回归矩阵）：
+- 内部 API 命名空间 `/api/panel/*`、`/rqcard/*`——`/api/panel/stream` 在 plugin-console 的 PUBLIC_PATHS 白名单（底座面文件，禁改）；
 - 插件内部服务名（panel/cardpacks）、entry id、RBAC 权限点位、manifest 端点名；
-- console 等宿主面包任何文件；README.md（宿主面，产品声明写 AGENTS.md/PROJECT.md/docs）。
+- console 等底座面包任何文件；README.md（底座面，产品声明写 AGENTS.md/PROJECT.md/docs）。
 
 ---
 
 ## 二、现状架构分析（探索结论 2026-09-10；当日架构审查复核：论断抽查 12 处回源全部命中，本节按审查意见修正 2 处）
 
-### 2.1 定制面对宿主面的耦合点
+### 2.1 面板面对底座面的耦合点
 
 **编译期（相对路径源码 import）**——值导入全集（审查修正：原稿「ACTIVITY_LABELS 唯一根因」不准确）：
 - panel-core → platform-core：`PlatformEvents`（index.ts:22、service.ts:24）、`newId`（index.ts:23、service.ts:27、seed/seed.ts:14）、`ACTIVITY_LABELS`（service.ts:26，引自 scenegraph.ts）；类型导入（HttpExchange/Collection/SceneActivity 等）可剥离；
@@ -52,7 +52,7 @@
 - 结论（审查修正）：4 个值绑定均为叶子级纯值（事件名常量 + 小工具函数），**全集内联/复制即可整体拆除编译约束**（可选清理，见 Phase 2.5）。platform-core 的随附理由本就不在编译期——真正的约束是**运行期服务基座**：它是 httpServer/opsStorage/platformBus 的装配源、scenegraphs 服务（ScenegraphService，scenegraph.ts:122）与演示数据源的唯一提供者。patch 配置决策以此为准，不依赖编译耦合。安装形态仍需保持 `packages/*` 兄弟目录布局（安装形态整包落在 node_modules/<根包> 下，相对路径天然成立）。
 
 **运行期服务键（cordis inject，加载期硬依赖，缺一即永久挂起）**——panel-core/src/index.ts:35 注释与 cordis.yml 文件头「服务链全部 pending」记录双重佐证：
-- panel-core 14 键（`src/index.ts:30-34`）：httpServer/opsStorage/platformBus/tools（platform-core 或 dsh 原生）+ iam/authn/audit/usage/modelGateway/resourceCore/scenegraphs/behavior/mcpRegistry/skillHub（宿主面包）。usage/behavior/mcpRegistry 已有 try/catch 请求级降级（`index.ts:344-359`），但 **inject 是装载级，降级不减少装载要求**；且审查实证降级覆盖面远小于访问面：**同一 board 处理器内 :368-372 裸访问 ctx.resourceCore/ctx.skillHub/ctx.mcpRegistry（无保护）、:330 裸访问 ctx.iam、changeLog（:90）的 ctx.audit.record 被全部写端点调用**——瘦身必须全量清扫，漏一个点即运行期 500。
+- panel-core 14 键（`src/index.ts:30-34`）：httpServer/opsStorage/platformBus/tools（platform-core 或 dsh 原生）+ iam/authn/audit/usage/modelGateway/resourceCore/scenegraphs/behavior/mcpRegistry/skillHub（底座面包）。usage/behavior/mcpRegistry 已有 try/catch 请求级降级（`index.ts:344-359`），但 **inject 是装载级，降级不减少装载要求**；且审查实证降级覆盖面远小于访问面：**同一 board 处理器内 :368-372 裸访问 ctx.resourceCore/ctx.skillHub/ctx.mcpRegistry（无保护）、:330 裸访问 ctx.iam、changeLog（:90）的 ctx.audit.record 被全部写端点调用**——瘦身必须全量清扫，漏一个点即运行期 500。
 - rq-card 5 键（`src/index.ts:83`）：httpServer/tools/opsStorage + **authn/iam（仅 localInitAdmin 用）**——审查复核：hostlink.ts 全文 370 行，authn/iam 共 6 处访问全部位于 :318-353 本机初始化段，属实。
 - dingtalk-bridge 6 键：含硬依赖 panel 服务键 + iam/audit。
 
@@ -66,9 +66,9 @@
 - TS 语法面：全 packages/*/src **纯可剥离**（enum/namespace/参数属性/装饰器零命中）；相对导入带显式 `.ts` 扩展；无 tsconfig；import.meta 共 7 处全部用于资产目录解析（Node ESM 无碍）。
 - 构建工具链：唯一构建器是 rq-card 浏览器半 `build.mjs`（esbuild，cjs/browser/es2024 + purityGate）；esbuild 探测链已含仓内 node_modules 回退（`build.mjs:88-104`，:95 仓内候选）；仓内 devDependencies 无 esbuild/typescript。`lib/client.js` 随 git 入库（有意为之）。**审查增补**：esbuild transform 为单文件转译，**不做模块解析、不改写说明符**——dist 形态的路径改写必须是独立的一等构建步骤（Phase 1.2）；`export * from './*.ts'` 形态普遍存在（platform-core/src/index.ts:19-30 共 12 条、rq-card index.ts:32/34、panel-core index.ts:26），与 import 同为**改写项而非核查项**；运行时动态相对导入在 4 随附包零命中（grep 命中的 `import('…')` 均为类型位写法，转译时剥离）。
 - selftest 装机段（`tests/selftest.mjs:595-782`）：entry 逐个解析导入（:600-627，**对 dist/*.js 形态天然兼容**——纯前缀剥离+existsSync+真实 import）；三链一致（:629-646，硬编码 ≥20）；build-id 指纹（:648-654）；files 覆盖（:656-675，六项清单断言）；浏览器半 vm 真执行（:677-777）；plugin.yaml↔manifest 成对（:778-781，≥15）。
-- dsh 侧 bundle 语义（`D:\DSH\deepseek-harness\packages\boot\app-boot` 实证）：任意已装依赖声明 `dsh.bundle.patch` 即自动并入 profile bundle 层栈；多层 patch 展平按序应用，insert 累加、id 定向整替 config——本计划不依赖多包叠装（01门自足），但该语义保证与宿主轨产物互不干扰（分 profile/分进程使用）。
+- dsh 侧 bundle 语义（`D:\DSH\deepseek-harness\packages\boot\app-boot` 实证）：任意已装依赖声明 `dsh.bundle.patch` 即自动并入 profile bundle 层栈；多层 patch 展平按序应用，insert 累加、id 定向整替 config——本计划不依赖多包叠装（01门自足），但该语义保证与底座轨产物互不干扰（分 profile/分进程使用）。
 
-### 2.3 连接向导现状（定制包自持，零依赖宿主面）
+### 2.3 连接向导现状（本项目包自持，零依赖底座面）
 
 - `/rqcard/*` 端点全在 plugin-rq-card（`src/index.ts` + `hostlink.ts`）：link/local/remote/reset/scan + proxy 中间件 + `rq_host_status` 工具；免登依据=console 只拦 `/api/*`；CSRF 防线 `x-rqcard-call`。
 - 连接配置：`<dataDir>/rq-host-link.json`（0600，`hostlink.ts:121,357-369`，mode none|local|remote）；远端会话令牌全在浏览器 localStorage（`api.js:31-53`，按 hubBase 隔离），服务端不存令牌。
@@ -104,7 +104,7 @@
 
 1. **改名清扫**：
    - 根包 `dsh-enterprise-ops` → `@ybkk/gate-01`（package.json name/repository）；
-   - 定制包 scope `@dsh-ops/*` → `@ybkk/*`（3 个 workspace 包名 + 根 dependencies + `src/boot-all.ts` 对应 3 行 import——与上游漂移，登记 F 清单）；
+   - 本项目包 scope `@dsh-ops/*` → `@ybkk/*`（3 个 workspace 包名 + 根 dependencies + `src/boot-all.ts` 对应 3 行 import——与上游漂移，登记 F 清单）；
    - 挂载前缀 `/rq` → `/gate01`：cordis.yml/patch 的 `externalBase`、`mountPath`、`wire.ts` 常量（CONSOLE_BASE/PANEL_URL/LINK_ENDPOINT/FEEDBACK_ENDPOINT）、SPA BASE 推导；
    - localStorage 键**全部 `heng_ops_*`** → `gate01_*`（`api.js` token/refresh/user、`app.js:577` heng_ops_landing——审查补漏，heng_ops 共 17 处命中）；`panel_hub_history` 同步；
    - 数据文件 `rq-host-link.json` → `gate01-host-link.json`（`hostlink.ts`；不做旧文件迁移，重连一次即可）；
@@ -128,7 +128,7 @@
 2. **鉴权自适应＝配置标志 fail-closed（审查修正：替代运行时探测）**：panel-core 新增 config 标志 `demoAuth`（**缺省 false＝严格**）；演示放行仅限 `demoAuth:true` 且 method ∈ {GET, HEAD, OPTIONS}，写动词在演示态返回干净 403/401；principal 兜底守卫——auth 开启但 principal 缺失时返回干净 401，不得 TypeError（:57-62）。全量形态 RBAC 矩阵 selftest 断言必须保持绿。
 3. **rq-card 瘦身**：inject 去 authn/iam（`src/index.ts:83`）；删除 localInitAdmin/localFirstRun/`/rqcard/local-init*` 全链路（`hostlink.ts:293-353`、`src/index.ts:157-171`）及向导对应 UI（`wizard.js:93-129`）；连接流程统一为：地址输入（127.0.0.1 预填 + 7300/3080 探测 + 既有 /24 扫描）→ probe → 登录；探测到本机数据面（全量开发形态）时显示「本机控制台登录」链接。
 4. `plugin.yaml` depends 同步修正（现与 inject 漂移：缺 authn/resource-core/behavior）。
-5. **（可选）platform-core 值导入全集内联**（审查增补）：PlatformEvents/newId/ACTIVITY_LABELS/defineTool 四绑定复制进定制包（纯叶子值），彻底拆除编译期耦合，为「demo 不依赖 scenegraphs 时 platform-core 整体退出产物」留路；副本与上游的漂移登记 F 清单，merge 后 diff 核对。**不执行不影响后续 Phase。**
+5. **（可选）platform-core 值导入全集内联**（审查增补）：PlatformEvents/newId/ACTIVITY_LABELS/defineTool 四绑定复制进本项目包（纯叶子值），彻底拆除编译期耦合，为「demo 不依赖 scenegraphs 时 platform-core 整体退出产物」留路；副本与上游的漂移登记 F 清单，merge 后 diff 核对。**不执行不影响后续 Phase。**
 6. selftest 新增：「4 键形态（config 模拟）下 board 端点不 500」断言（审查增补）。
 
 **门禁**：22 entry 全量形态 selftest 全绿（含 RBAC 矩阵 + 新断言）。
@@ -154,7 +154,7 @@
 3. **「01门」品牌清扫**（全部运行时面已定位）：
    - rq-card：`src/client/locales.ts`（settings.nav/view.workbench/overlay.unlocked 等 + en 版）、`src/client/index.ts:190/302/382` 三处硬编码角标、`build.mjs:181/212/222` 三处 banner（**改后必须重建 `lib/client.js`**）、`src/index.ts:58/70/196` 工具描述与兜底文案；
    - panel SPA：`public/index.html:6` 页签、`wizard.js:62/197`、`app.js:172/187/380/554`、服务端 senderName（`src/index.ts:516`）；
-   - 宿主面 console 的品牌（登录页等）**不动**（形态 B 登录页属宿主控制台）。
+   - 底座面 console 的品牌（登录页等）**不动**（形态 B 登录页属底座控制台）。
 4. **验收断言进门禁（审查增补）**：演示态 `POST/PUT/DELETE /api/panel/*` 全部干净 403/401（无 500）；演示态 SSE `?token=` 自校验失败、前端 30s 轮询生效。
 
 **门禁**：selftest 全绿（含 RBAC 矩阵）；全新 profile 纯 01门装态直出演示看板；连远端宿主后全量数据回归（代理/登录/30s 轮询/角标消失/演示横幅消失——宿主侧 demoAuth 未声明、authn 在场，同路由自动恢复严格鉴权）。
@@ -165,13 +165,13 @@
 2. **npm 发布**：private:false、exports/files 核对、`npm publish --dry-run`；实际发布需 @01men org 的 npm 账号（用户执行或提供凭证）。
 3. 全量开发形态回归：`--patch cordis.yml` 源码形态全栈（22 entry）启动、面板 RBAC、dingtalk-bridge 事件链——确认瘦身未伤全量形态。
 
-**门禁**：铁律 6/7——全量回归全绿才推送备份。
+**门禁**：铁律 6/7——全量回归全绿才推送交付。
 
 ### Phase 6 治理与文档
 
-1. **AGENTS.md**：双轨表声明本分支产品=01门；所有权表调整（cordis.patch.yml/根 package.json 归 01门演进，宿主面包与 README 维持锚点纪律）；装机铁律与同步节奏已含 build:dist（Phase 1.4 落地）。
+1. **AGENTS.md**：双轨表声明本分支产品=01门；所有权表调整（cordis.patch.yml/根 package.json 归 01门演进，底座面包与 README 维持锚点纪律）；装机铁律与同步节奏已含 build:dist（Phase 1.4 落地）。
 2. **PROJECT.md**：产品口径更新（01门定义）。
-3. **docs/handoff-f-remainder-to-main.md** 登记：patch 收缩与 dist 指向、boot-all 3 行 import 改名、G3 对 01门 自解（宿主面包仍挂起）、**platform-core 值导入内联副本的漂移归属（若执行 Phase 2.5）**。
+3. **docs/handoff-f-remainder-to-main.md** 登记：patch 收缩与 dist 指向、boot-all 3 行 import 改名、G3 对 01门 自解（底座面包仍挂起）、**platform-core 值导入内联副本的漂移归属（若执行 Phase 2.5）**。
 4. 本文档转为定版（去「修订稿」状态）。
 
 ---
@@ -190,7 +190,7 @@
 | rq-card exports['.'] 改 dist 影响源码开发流 | 两形态统一包名 + build:dist 入开发仪式；**禁用文件路径 entry**（spike §4.2 负判永久缓存，cordis.yml:80-84） |
 | 值导入内联副本与上游漂移（若执行 Phase 2.5） | F 清单登记归属；上游 merge 后 diff 核对 |
 | `/api/panel/*` 命名空间不可改（console 白名单） | 已列不改项；品牌化落在挂载前缀与 UI 层 |
-| 与上游锚点的收敛检查漂移扩大 | 全部漂移登记 F 清单，宿主面目录零改动（收敛检查对宿主面仍趋空） |
+| 与上游锚点的收敛检查漂移扩大 | 全部漂移登记 F 清单，底座面目录零改动（收敛检查对底座面仍趋空） |
 
 ## 六、工作量分布（供排期参考）
 

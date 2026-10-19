@@ -4,7 +4,7 @@
  *
  * 机制仿 packages/plugin-rq-card/build-id.mjs（浏览器半 build-id）：对「随附包 src 树 +
  * 构建脚本自身」做 sha256 指纹，写入各包 dist/.build-id；tests/selftest.mjs 装机段重算比对，
- * 「改了随附包 src 忘跑 npm run build:dist」会在推送备份前被拦下（与浏览器半同规格）。
+ * 「改了随附包 src 忘跑 npm run build:dist」会在推送交付前被拦下（与浏览器半同规格）。
  *
  * 指纹输入（双端一致，改这里 = 同时改 build-dist.mjs 的转译清单语义）：
  *   - packages/<pkg>/src/**（按扩展名 .ts/.tsx 转译；plugin-rq-card 排除 src/client/**
@@ -20,7 +20,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
-/** 6 随附包（plan-gate01 §一 产物构成 + 2026-09-11 可用性补环）：宿主面基座 4 + 定制面 2。 */
+/** 6 随附包（plan-gate01 §一 产物构成 + 2026-09-11 可用性补环）：底座面基座 4 + 面板面 2。 */
 export const DIST_PACKAGES = [
   'platform-core',
   'plugin-iam',

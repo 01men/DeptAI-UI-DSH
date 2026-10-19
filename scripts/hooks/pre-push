@@ -1,25 +1,25 @@
 #!/bin/sh
 # pre-push 钩子：仓库同步铁律 2/4 的硬拦截（版本化于 scripts/hooks/pre-push）。
 # 安装：cp scripts/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
-# 规则：任何指向 ybkkasi（上游主仓库）的推送一律拒绝——定制代码绝不回流主分支。
-#       合法推送目标只有备份仓库 01men/RQ-DSH。
+# 规则：任何指向 ybkkasi（上游治理底座）的推送一律拒绝——本项目代码绝不回流底座主线。
+#       合法推送目标只有本项目主仓 01men/RQ-DSH。
 
 remote_url="$2"
 
 case "$remote_url" in
   *ybkkasi*)
     echo "" >&2
-    echo "⛔ 已拦截：检测到向上游主仓库（ybkkasi）的推送。" >&2
+    echo "⛔ 已拦截：检测到向上游治理底座（ybkkasi）的推送。" >&2
     echo "" >&2
     echo "   这是本项目的最高禁令（见 AGENTS.md 仓库同步铁律 2/4）：" >&2
-    echo "   定制代码回流主分支 = 主分支污染。" >&2
+    echo "   本项目代码回流底座主线 = 主线污染。" >&2
     echo "" >&2
-    echo "   正确做法：推送备份走 origin（push 已指向 01men/RQ-DSH），直接 git push。" >&2
+    echo "   正确做法：推送交付走 origin（push 已指向 01men/RQ-DSH），直接 git push。" >&2
     echo "   同步上游用 git fetch origin main（只进不出）。" >&2
     echo "" >&2
     exit 1
     ;;
 esac
 
-# 允许备份仓库及其他远程
+# 允许本项目主仓及其他远程
 exit 0
