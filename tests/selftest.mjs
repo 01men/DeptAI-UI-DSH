@@ -721,6 +721,14 @@ try {
       pathExists('packages/plugin-panel-core/public/index.html')
       && pathExists('packages/plugin-panel-core/public/js/boot.js')
       && pathExists('packages/plugin-panel-core/public/js/app.js'))
+    check('制造工具箱资产在场（mfg 空间前端半 + 选题清单数据 + 执行/门禁内核；2026-10-19 并入）',
+      pathExists('packages/plugin-panel-core/public/js/mfg.js')
+      && pathExists('packages/plugin-panel-core/public/css/mfg.css')
+      && pathExists('packages/plugin-panel-core/src/mfg/roadmap.json')
+      && pathExists('packages/plugin-panel-core/src/mfg/engine.ts')
+      && pathExists('packages/plugin-panel-core/src/mfg/quality.ts'))
+    check('index.html 装载制造工具箱样式表（漏挂 = 空间样式全丢但功能照跑，静默降级）',
+      readFileSync('packages/plugin-panel-core/public/index.html', 'utf8').includes('./css/mfg.css'))
     check('卡片包数据在场（cardpacks/*.json ≥1）',
       readdirSync('packages/plugin-panel-core/cardpacks').filter((file) => file.endsWith('.json')).length >= 1)
     check('行业场景图谱在场（platform-core/scenegraphs/*.json ≥1）',
@@ -6711,6 +6719,238 @@ try {
     check('3-1：TF 列表按场景+状态过滤（视图字段 progress/slaBreached 随行）',
       flowList.ok && flowList.data.flows.some((item) => item.id === flowId && Number.isFinite(item.progress) && item.slaBreached === false),
       JSON.stringify(flowList.data?.flows?.length))
+  }
+
+  // ================================================================ 制造工具箱（2026-10-19 并入「制造业 AI 工具集」）
+  // 并入铁律：源项目的金标断言语义零改写（融合只换承载面，不换业务口径）——
+  // 本节逐项重放源项目 tests/engine.test.ts 与 tests/quality.test.ts 的金标与拒绝面。
+  section('制造工具箱（plugin-panel-core/mfg：13 计算内核 / Skill 放行制 / 100 项选题）')
+  {
+    // 引擎与目录直接导入（纯函数面：不经 HTTP，与源项目单测同口径）
+    const mfgEngine = await import('../packages/plugin-panel-core/src/mfg/engine.ts')
+    const mfgCatalog = await import('../packages/plugin-panel-core/src/mfg/catalog.ts')
+    const mfgQuality = await import('../packages/plugin-panel-core/src/mfg/quality.ts')
+    const mfgSkills = await import('../packages/plugin-panel-core/src/mfg/skills.ts')
+    const mfgRoadmap = await import('../packages/plugin-panel-core/src/mfg/roadmap.ts')
+    const mfgEvaluate = await import('../packages/plugin-panel-core/src/mfg/evaluate.ts')
+    const metric = (result, label) => result.blocks.flatMap((block) => block.type === 'metrics' ? block.items : []).find((item) => item.label === label)?.value
+    const defaults = (id) => Object.fromEntries(mfgCatalog.tools.find((tool) => tool.id === id).fields.map((field) => [field.key, field.default]))
+    const rejects = async (promise) => { try { await promise; return false } catch { return true } }
+
+    check('并入：工具目录 16 项（13 计算内核 + 3 AI 工具）与 7 分类',
+      mfgCatalog.tools.length === 16 && mfgCatalog.tools.filter((tool) => tool.mode === 'calculation').length === 13
+      && mfgCatalog.tools.filter((tool) => tool.mode === 'model').length === 3 && mfgCatalog.categories.length === 7,
+      JSON.stringify({ total: mfgCatalog.tools.length, categories: mfgCatalog.categories.length }))
+
+    // -- 金标（源项目 tests/engine.test.ts 逐条重放）--------------------------------
+    check('OEE 金标：735 × 0.5 / 480 = 76.5625% → 76.56',
+      metric(await mfgEngine.execute('oee', defaults('oee')), '设备综合效率') === 76.56)
+    check('OEE 跨字段约束与零运行时间全拒（running=0/481、good>total、cycle 超限、total 非整数）',
+      (await rejects(mfgEngine.execute('oee', { ...defaults('oee'), running: 0 })))
+      && (await rejects(mfgEngine.execute('oee', { ...defaults('oee'), running: 481 })))
+      && (await rejects(mfgEngine.execute('oee', { ...defaults('oee'), good: 800 })))
+      && (await rejects(mfgEngine.execute('oee', { ...defaults('oee'), cycle: 10 })))
+      && (await rejects(mfgEngine.execute('oee', { ...defaults('oee'), total: 1.5 }))))
+    const cpk = await mfgEngine.execute('cpk', defaults('cpk'))
+    check('Cpk 偏移金标（Cp=1.667 / Cpk=1.5）与越界均值保留负值（-6.667）',
+      metric(cpk, '过程能力 Cp') === 1.667 && metric(cpk, '过程能力 Cpk') === 1.5
+      && metric(await mfgEngine.execute('cpk', { ...defaults('cpk'), mean: 11 }), '过程能力 Cpk') === -6.667
+      && (await rejects(mfgEngine.execute('cpk', { ...defaults('cpk'), sigma: 0 })))
+      && (await rejects(mfgEngine.execute('cpk', { ...defaults('cpk'), lsl: 20 }))))
+    check('节拍 / EOQ / 重量 / RPN / ROI 独立金标（31.5 / -100 / 774.6 / 13.565 / 271.296 / 192 / 3 / 无法回收）',
+      metric(await mfgEngine.execute('takt', defaults('takt')), '目标节拍') === 31.5
+      && metric(await mfgEngine.execute('takt', defaults('takt')), '产能余缺') === -100
+      && metric(await mfgEngine.execute('eoq', defaults('eoq')), '理论经济订货量') === 774.6
+      && metric(await mfgEngine.execute('material', defaults('material')), '单件理论重量') === 13.565
+      && metric(await mfgEngine.execute('material', defaults('material')), '总理论重量') === 271.296
+      && metric(await mfgEngine.execute('fmea', defaults('fmea')), '风险优先数 RPN') === 192
+      && metric(await mfgEngine.execute('roi', defaults('roi')), '静态回收期') === 3
+      && metric(await mfgEngine.execute('roi', { ...defaults('roi'), saving: 0 }), '静态回收期') === '无法回收')
+    const pareto = await mfgEngine.execute('pareto', { data: '刮伤,2\n色差,1\n刮伤,3' })
+    check('帕累托：同名项聚合（6 次 / 2 类）、累计占比末行 100%、拒绝空白与非法计数',
+      metric(pareto, '缺陷总数') === 6 && metric(pareto, '缺陷类别') === 2
+      && JSON.stringify(pareto.blocks.find((block) => block.type === 'table').rows.at(-1)) === JSON.stringify(['色差', 1, '16.67%', '100%'])
+      && (await rejects(mfgEngine.execute('pareto', { data: '刮伤,' })))
+      && (await rejects(mfgEngine.execute('pareto', { data: '刮伤,-1' })))
+      && (await rejects(mfgEngine.execute('pareto', { data: '刮伤,NaN' })))
+      && (await rejects(mfgEngine.execute('pareto', { data: '刮伤,0' })))
+      && (await rejects(mfgEngine.execute('pareto', { data: '刮伤,1.2' }))))
+    const bom = await mfgEngine.execute('bom-diff', { before: 'code,quantity\nA,0\nB,2', after: 'code,quantity\nA,0\nC,1' })
+    check('BOM 核对：区分「不存在」与零用量、拒绝重复键',
+      metric(bom, '差异物料') === 2
+      && JSON.stringify(bom.blocks.find((block) => block.type === 'table').rows) === JSON.stringify([['B', 2, '不存在', '删除'], ['C', '不存在', 1, '新增']])
+      && (await rejects(mfgEngine.execute('bom-diff', { ...defaults('bom-diff'), before: 'code,quantity\nA,1\nA,2' }))))
+    check('齐套检查用物料种数（不将不同单位数量相加）：缺料 2 种 / 满足率 33.33%',
+      metric(await mfgEngine.execute('shortage', defaults('shortage')), '缺料种数') === 2
+      && metric(await mfgEngine.execute('shortage', defaults('shortage')), '物料项满足率') === 33.33)
+    {
+      const date = new Date('2026-10-19T00:00:00Z')
+      const rows = [0, 1, 30, 31, 60, 61, 90, 91].map((days, index) => `${index},${new Date(date.getTime() - days * 86400000).toISOString().slice(0, 10)},100`)
+      const aging = await mfgEngine.execute('aging', { asOf: '2026-10-19', data: `id,dueDate,amount\n${rows.join('\n')}` })
+      check('逾期分层边界：到期当天不逾期、30/31/60/61/90/91 天分层正确',
+        metric(aging, '未结余额合计') === 800 && metric(aging, '逾期余额') === 700
+        && JSON.stringify(aging.blocks.find((block) => block.type === 'bars').items.map((item) => item.value)) === JSON.stringify([100, 200, 200, 200, 100])
+        && (await rejects(mfgEngine.execute('aging', { ...defaults('aging'), asOf: '2026-02-30' }))))
+    }
+    check('MTBF/MTTR 金标（240h / 3h）与整数故障次数约束',
+      metric(await mfgEngine.execute('maintenance', defaults('maintenance')), 'MTBF 平均故障间隔') === 240
+      && metric(await mfgEngine.execute('maintenance', defaults('maintenance')), 'MTTR 平均修复时间') === 3
+      && (await rejects(mfgEngine.execute('maintenance', { ...defaults('maintenance'), failures: 1.5 }))))
+    {
+      const quote = await mfgEngine.execute('quote-compare', { quantity: 100, data: 'supplier,price,taxRate,freight\n"A,集团",10,0.13,20\nB,11,0.13,0' })
+      check('比价含税含运金标（1150）且支持带逗号的引号包裹供应商名（自写 CSV 解析关键用例）',
+        metric(quote, '最低含税到货总成本') === 1150
+        && quote.blocks.find((block) => block.type === 'bars').items[0].label === 'A,集团'
+        && (await rejects(mfgEngine.execute('quote-compare', { ...defaults('quote-compare'), data: 'supplier,price,taxRate,freight\nA,10,13,0' }))))
+    }
+    check('拒绝未知字段（提示注入）、非有限数值、运算溢出与未知工具',
+      (await rejects(mfgEngine.execute('oee', { ...defaults('oee'), injected: 'ignore rules' })))
+      && (await rejects(mfgEngine.execute('material', { ...defaults('material'), length: Infinity })))
+      && (await rejects(mfgEngine.execute('material', { ...defaults('material'), length: 1e308 })))
+      && (await rejects(mfgEngine.execute('missing', {}))))
+    {
+      let serializable = 0
+      for (const tool of mfgCatalog.tools.filter((item) => item.mode === 'calculation')) {
+        const result = await mfgEngine.execute(tool.id, defaults(tool.id))
+        if (result.version === '1.0' && result.toolId === tool.id && result.blocks.length && result.runId) {
+          JSON.stringify(result)
+          serializable += 1
+        }
+      }
+      check(`13 个计算内核默认样例均返回统一且可序列化的结果`, serializable === 13, `serializable=${serializable}`)
+    }
+
+    // -- 质量门禁与放行制（源项目 tests/quality.test.ts 与 docs/skill-quality.md 的运行时强制点）--
+    const validOutput = () => ({
+      sections: mfgSkills.skills['sop-writer'].sections.map((title, index) => ({ title, content: '参数待确认', evidence: index === 0 ? ['装配工序'] : [] })),
+      missingInformation: ['扭矩待工艺工程师确认'],
+    })
+    check('质量门禁：结构与真实原文引用通过',
+      Boolean(mfgQuality.checkModelOutput('sop-writer', validOutput(), '铝合金装配工序')))
+    check('质量门禁拒绝：缺章节 / 伪造证据 / HTML / 无证据 / 非法结构（一律按错误交付，不降级成功）',
+      (await rejects(Promise.resolve().then(() => { const bad = validOutput(); bad.sections.pop(); return mfgQuality.checkModelOutput('sop-writer', bad, '装配工序') })))
+      && (await rejects(Promise.resolve().then(() => { const bad = validOutput(); bad.sections[0].evidence = ['扭矩 20Nm']; return mfgQuality.checkModelOutput('sop-writer', bad, '装配工序') })))
+      && (await rejects(Promise.resolve().then(() => { const bad = validOutput(); bad.sections[0].content = '<script>alert(1)</script>'; return mfgQuality.checkModelOutput('sop-writer', bad, '装配工序') })))
+      && (await rejects(Promise.resolve().then(() => { const bad = validOutput(); bad.sections.forEach((section) => { section.evidence = [] }); return mfgQuality.checkModelOutput('sop-writer', bad, '装配工序') })))
+      && (await rejects(Promise.resolve().then(() => mfgQuality.checkModelOutput('sop-writer', 'anything', '装配工序')))))
+    check('Skill 指纹稳定（64 hex）且未放行 Skill 的 releaseReady=false（fail-closed 默认）',
+      mfgQuality.skillHash('sop-writer').length === 64
+      && mfgQuality.releaseReady(new mfgQuality.MemoryReleaseStore(), 'sop-writer', { model: 'stub:model' }).ready === false)
+    {
+      // 放行门禁：mock 报告不足以放行；真实通过报告 + 审核人签署才放行，且模型指纹变化即失效
+      const store = new mfgQuality.MemoryReleaseStore()
+      const identity = { model: 'stub:model', endpoint: 'stub://local' }
+      const liveReport = { skillId: 'sop-writer', skillHash: mfgQuality.skillHash('sop-writer'), modelHash: mfgQuality.modelIdentityHash(identity), model: identity.model, protocol: 'platform-gateway', status: 'passed', live: true, repetitions: 3, cases: [], startedAt: new Date().toISOString(), finishedAt: new Date().toISOString() }
+      check('放行门禁：mock 报告（live=false）不足以放行',
+        await rejects(Promise.resolve().then(() => mfgQuality.buildRelease({ ...liveReport, live: false }, 'x', '审查员', 'technical'))))
+      check('放行门禁：未通过 / 重复不足 / 审核人为空 均拒绝',
+        (await rejects(Promise.resolve().then(() => mfgQuality.buildRelease({ ...liveReport, status: 'failed' }, 'x', '审查员', 'technical'))))
+        && (await rejects(Promise.resolve().then(() => mfgQuality.buildRelease({ ...liveReport, repetitions: 1 }, 'x', '审查员', 'technical'))))
+        && (await rejects(Promise.resolve().then(() => mfgQuality.buildRelease(liveReport, 'x', '', 'technical')))))
+      const release = mfgQuality.buildRelease(liveReport, JSON.stringify(liveReport), '领域工程师', 'domain')
+      store.put(release)
+      check('放行门禁：真实报告 + 审核人签署后放行；模型指纹变化即失效（Skill 改动同理）',
+        mfgQuality.releaseReady(store, 'sop-writer', identity).ready === true
+        && mfgQuality.releaseReady(store, 'sop-writer', { model: 'stub:other' }).ready === false)
+      const tampered = { ...release, skillHash: 'deadbeef' }
+      store.put(tampered)
+      check('放行门禁：Skill 指纹被篡改 → 拒绝放行', mfgQuality.releaseReady(store, 'sop-writer', identity).ready === false)
+      const expired = { ...release, expiresAt: new Date(Date.now() - 1000).toISOString() }
+      store.put(expired)
+      check('放行门禁：放行记录过期 → 拒绝放行', mfgQuality.releaseReady(store, 'sop-writer', identity).ready === false)
+    }
+    check('AI 工具未接模型网关时诚实 503（不发假结果、不静默降级）',
+      await rejects(mfgEngine.execute('sop', defaults('sop'))))
+    check('评估断言面在场（四类样例 × 3 重复 = 36 次真实调用计划；断言器版本 1.2.0）',
+      mfgEvaluate.assertionVersion === '1.2.0'
+      && mfgEvaluate.evaluationPlan(3).reduce((sum, item) => sum + item.calls, 0) === 36)
+
+    // -- 100 项选题清单（源项目「来源可追溯」断言的机器可读面）--------------------------
+    {
+      const roadmap = mfgRoadmap.loadRoadmap()
+      check('选题清单 100 项、编号/标题唯一、逐条有来源与验收标准',
+        roadmap.tools.length === 100
+        && new Set(roadmap.tools.map((item) => item.id)).size === 100
+        && new Set(roadmap.tools.map((item) => item.title)).size === 100
+        && roadmap.tools.every((item) => item.sources.length > 0 && Boolean(item.acceptance)))
+      check('选题状态计数与实现映射自洽（13 已实现 / 3 待验收 / 84 规划；实现项均指向真实工具）',
+        roadmap.tools.filter((item) => item.status === 'implemented-calculation').length === 13
+        && roadmap.tools.filter((item) => item.status === 'model-validation-pending').length === 3
+        && roadmap.tools.filter((item) => item.status === 'planned').length === 84
+        && roadmap.tools.filter((item) => item.implementation).every((item) => Boolean(mfgCatalog.findTool(item.implementation))))
+    }
+
+    // -- HTTP 面（真实服务：目录/清单读 + 执行写 + 演示态只读边界 + RBAC 越权）------------
+    const mfgCatalogRes = await api('GET', '/api/panel/mfg/catalog', { token: admin })
+    check('REST：GET /api/panel/mfg/catalog 目录面（工具 + 分类 + Skill 放行态 + 模型就绪态）',
+      mfgCatalogRes.ok && mfgCatalogRes.data.tools.length === 16 && Array.isArray(mfgCatalogRes.data.skills) && mfgCatalogRes.data.skills.length === 3,
+      JSON.stringify(mfgCatalogRes.error))
+    const mfgRoadmapRes = await api('GET', '/api/panel/mfg/roadmap', { token: admin })
+    check('REST：GET /api/panel/mfg/roadmap 选题面（100 项 + 10 分组 + 状态标签）',
+      mfgRoadmapRes.ok && mfgRoadmapRes.data.tools.length === 100 && mfgRoadmapRes.data.groups.length === 10,
+      JSON.stringify(mfgRoadmapRes.error))
+    const mfgRun = await api('POST', '/api/panel/mfg/tools/oee/run', { token: admin, body: defaults('oee') })
+    check('REST：POST tools/:id/run 经服务面执行（与引擎同口径 76.56）',
+      mfgRun.ok && metric(mfgRun.data, '设备综合效率') === 76.56, JSON.stringify(mfgRun.error))
+    const mfgRunBad = await api('POST', '/api/panel/mfg/tools/oee/run', { token: admin, body: { ...defaults('oee'), injected: 'x' } })
+    check('REST：未知字段经 HTTP 同样被拒（400，不静默忽略）',
+      !mfgRunBad.ok && mfgRunBad.status === 400, JSON.stringify({ status: mfgRunBad.status, error: mfgRunBad.error }))
+    const mfgExport = await api('POST', '/api/panel/mfg/tools/oee/export', { token: admin, body: { result: mfgRun.data, format: 'md' } })
+    check('REST：导出面产出 Markdown（文件名带工具 id 与时间戳）',
+      mfgExport.ok && mfgExport.data.content.startsWith('# 设备综合效率 OEE') && /^oee-/.test(mfgExport.data.filename),
+      JSON.stringify(mfgExport.error))
+    const mfgReleases = await api('GET', '/api/panel/mfg/releases', { token: admin })
+    // 形态无关断言：identity 随平台模型网关在场与否而变（全量形态有 modelgw、01门装态无）——
+    // 断言「形状与判定自洽」而非某种环境取值：
+    //   无网关 ⇒ identity=null 且每条记录 valid=false（不能声称已放行）；
+    //   有网关 ⇒ identity 含 model 字段，valid 与 releaseReady 同源。
+    check('REST：放行记录面可读，且 identity 与各条 valid 自洽（无网关时不得声称已放行）',
+      mfgReleases.ok && Array.isArray(mfgReleases.data.releases)
+      && (mfgReleases.data.identity === null
+        ? mfgReleases.data.releases.every((item) => item.valid === false)
+        : typeof mfgReleases.data.identity?.model === 'string')
+      && mfgReleases.data.releases.every((item) => typeof item.valid === 'boolean'),
+      JSON.stringify({ identity: mfgReleases.data?.identity, releases: mfgReleases.data?.releases?.length }))
+    const mfgPlan = await api('GET', '/api/panel/mfg/evaluation-plan', { token: admin })
+    check('REST：评估计划面（36 次调用计划 + 四类样例，不发起调用）',
+      mfgPlan.ok && mfgPlan.data.plan.reduce((sum, item) => sum + item.calls, 0) === 36, JSON.stringify(mfgPlan.error))
+    // 评估面：模型网关在场与否决定成败，但**任一形态都不得产出 mock 通过记录**——
+    //   无网关 ⇒ 503 明确拒绝；有网关 ⇒ 真实出站（自测环境模型不可达 ⇒ 失败报告 live=true 且 status=failed，
+    //   仍不足以放行）。两种结果都不产生放行，这才是要守的不变量。
+    const mfgEvaluateAttempt = await api('POST', '/api/panel/mfg/evaluate', { token: admin, body: { skills: ['sop-writer'], repetitions: 1 } })
+    check('REST：评估面在无模型网关时 503 拒绝；有网关时只产出 live 报告（mock 永不构成验收）',
+      mfgEvaluateAttempt.status === 503
+      || (mfgEvaluateAttempt.ok && mfgEvaluateAttempt.data.reports.length > 0
+        && mfgEvaluateAttempt.data.reports.every((report) => report.live === true && typeof report.status === 'string')
+        && /不构成放行/.test(mfgEvaluateAttempt.data.note ?? '')),
+      JSON.stringify({ status: mfgEvaluateAttempt.status, reports: mfgEvaluateAttempt.data?.reports?.length, error: mfgEvaluateAttempt.error }))
+    const mfgMemberRun = await api('POST', '/api/panel/mfg/tools/oee/run', { token: iawMemberToken, body: defaults('oee') })
+    check('REST：member 可执行计算工具（panel.write 在基线角色内）', mfgMemberRun.ok, JSON.stringify(mfgMemberRun.error))
+    const mfgMemberEvaluate = await api('POST', '/api/panel/mfg/evaluate', { token: iawMemberToken, body: {} })
+    check('REST：member 调评估面被拒 403（放行治理动作需 panel.config.write）',
+      !mfgMemberEvaluate.ok && mfgMemberEvaluate.status === 403, String(mfgMemberEvaluate.status))
+    const mfgMemberRelease = await api('POST', '/api/panel/mfg/releases', { token: iawMemberToken, body: { report: {}, reviewer: 'x' } })
+    check('REST：member 签署放行被拒 403（RBAC 硬边界）',
+      !mfgMemberRelease.ok && mfgMemberRelease.status === 403, String(mfgMemberRelease.status))
+
+    // -- 工具族（panel_mfg_* 经共享 tools 键：dsh 下即原生 ToolRuntime）------------------
+    const mfgToolList = await api('POST', '/api/tools/execute', { token: admin, body: { name: 'panel_mfg_tools_list', args: {} } })
+    check('工具族：panel_mfg_tools_list 列出 16 项（含放行态字段）',
+      mfgToolList.ok && mfgToolList.data.isError === false && mfgToolList.data.value.length === 16 && typeof mfgToolList.data.value[0].released === 'boolean',
+      JSON.stringify(mfgToolList.data?.error))
+    const mfgToolRun = await api('POST', '/api/tools/execute', { token: admin, body: { name: 'panel_mfg_tool_run', args: { tool_id: 'cpk', input: defaults('cpk') } } })
+    check('工具族：panel_mfg_tool_run 执行内核（Cpk=1.5，与网页面同引擎）',
+      mfgToolRun.ok && mfgToolRun.data.isError === false && metric(mfgToolRun.data.value, '过程能力 Cpk') === 1.5, JSON.stringify(mfgToolRun.data?.error))
+    const mfgToolRunBad = await api('POST', '/api/tools/execute', { token: admin, body: { name: 'panel_mfg_tool_run', args: { tool_id: 'cpk', input: { ...defaults('cpk'), bogus: 1 } } } })
+    check('工具族：未知字段同样被拒（工具面与网页面共用同一校验，不因入口而异）', mfgToolRunBad.data?.isError === true, JSON.stringify(mfgToolRunBad.data).slice(0, 200))
+    const mfgToolRoadmap = await api('POST', '/api/tools/execute', { token: admin, body: { name: 'panel_mfg_roadmap', args: { status: 'implemented-calculation' } } })
+    check('工具族：panel_mfg_roadmap 可按状态筛选（13 已实现 / 100 总数）',
+      mfgToolRoadmap.ok && mfgToolRoadmap.data.isError === false && mfgToolRoadmap.data.value.matched === 13 && mfgToolRoadmap.data.value.total === 100,
+      JSON.stringify(mfgToolRoadmap.data?.error))
+    // 工具面权限点经 routeMatrix 只覆盖 HTTP；工具权限点由 tools 注册面声明，
+    // 这里以「member 能执行计算工具但不能放行」的越权断言证其边界（本段前文已断言）。
+    check('工具族：三个 panel_mfg_* 已注册且具名可达（未注册会回落「未知工具」isError）',
+      mfgToolList.data?.isError === false && mfgToolRun.data?.isError === false && mfgToolRoadmap.data?.isError === false)
   }
 
   // ================================================================ QA-20260912 修复批次回归（A-03 / A-04 / A-08 / B-04）

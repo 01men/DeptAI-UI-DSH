@@ -14,6 +14,8 @@
  */
 import { api, session, setBase as apiSetBase, ApiError } from './api.js'
 import { setBase as depsSetBase, ui as uiDep, realtime as realtimeDep } from './deps.js'
+// 制造工具箱空间（自「制造业 AI 工具集」并入，2026-10-19）：视图 + 导航清单 + 抽屉清理
+import { MFG_NAV, mfgNavBadges, renderMfgView, closeMfgDrawer, showMfgSettings } from './mfg.js'
 
 // ---------------------------------------------------------------------------
 // 小工具
@@ -519,6 +521,9 @@ const SPACE_META = {
   flow: { label: '执行', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/><path d="M6.5 10v4.5a2 2 0 002 2H14"/></svg>' },
   cap: { label: '能力', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>' },
   data: { label: '数据', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>' },
+  // 制造工具箱空间（2026-10-19 并入「制造业 AI 工具集」）：工具广场 / 场景图谱 / 收藏 / 记录。
+  // 交互框架沿用本工作台（视图路由 + api.js 出口 + ui.js 组件），视觉语言取自并入源项目。
+  mfg: { label: '制造', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 20h18"/><path d="M5 20V9l5 3V9l5 3V5l4 3v12"/><path d="M9 20v-4h4v4"/></svg>' },
 }
 
 function navDef() {
@@ -559,6 +564,11 @@ function navDef() {
       ['members', '成员', '☰', ''],
       ['notice', '通知中心', '✦', unread ? String(unread) : ''],
     ],
+    // 制造工具箱空间：视图与徽标由 mfg.js 提供（模块级状态，随空间重入保持）
+    mfg: MFG_NAV.map(([key, label, glyph, badge]) => [
+      key, label, glyph,
+      key === 'graph' ? (mfgNavBadges().graph ?? badge) : (mfgNavBadges()[key] ?? badge),
+    ]),
   }
 }
 
@@ -600,6 +610,7 @@ function renderShell() {
       <div class="iaw-flowbar" id="iawFlowbar"></div>
       <div class="iaw-statusbar" id="iawStatusbar"></div>
       <div class="iaw-toasts" id="iawToasts"></div>
+      <div id="mfgDrawer"></div>
     </div>`
   $id('demoOpenWizard')?.addEventListener('click', async () => {
     const wizard = await import('./wizard.js')
@@ -644,7 +655,7 @@ function renderNav() {
   if (!group) return
   const defs = navDef()
   if (!defs[state.space].some((n) => n[0] === state.nav)) state.nav = defs[state.space][0][0]
-  const label = { collab: '协作空间', map: '图谱空间', flow: '执行空间', cap: '能力空间', data: '数据空间' }[state.space]
+  const label = { collab: '协作空间', map: '图谱空间', flow: '执行空间', cap: '能力空间', data: '数据空间', mfg: '制造工具箱空间' }[state.space]
   group.innerHTML = `<div class="iaw-nav-title">${label} · ${esc(state.industry?.name ?? '未激活')}</div>` +
     defs[state.space].map((n) => `
       <button class="iaw-nav-item ${state.nav === n[0] ? 'on' : ''}" data-nav="${n[0]}">
@@ -671,6 +682,7 @@ function renderSideFoot() {
     ${state.overview?.org ? `<div>组织：<b>${esc(state.overview.org.name)}</b></div>` : ''}
     <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
       ${session.can('panel.config.write') ? '<a href="javascript:void 0" id="iawCfgLink">面板配置</a>' : ''}
+      ${state.space === 'mfg' ? '<a href="javascript:void 0" id="iawMfgCfgLink">工具箱设置</a>' : ''}
       ${consoleJumpLink()}
     </div>`
   // 显式跨工作台切换：记住去向（控制台启动分诊尊重该偏好，不再把人拽回面板）
@@ -680,6 +692,7 @@ function renderSideFoot() {
     })
   })
   $id('iawCfgLink')?.addEventListener('click', () => void showConfig())
+  $id('iawMfgCfgLink')?.addEventListener('click', () => showMfgSettings(showModal))
 }
 
 /**
@@ -1089,6 +1102,18 @@ function renderView() {
   const main = $id('iawMain')
   if (!main) return
   const pack = state.scenegraph?.pack
+  // 制造工具箱空间：独立渲染通道（自带数据装载与事件接线；异步不阻塞其余视图）
+  if (state.space === 'mfg') {
+    void renderMfgView(state.nav)
+    $id('iawApp')?.classList.toggle('rail-off', true)
+    renderFlowbar()
+    renderStatus()
+    renderNav()
+    renderTopRight()
+    renderCtx()
+    return
+  }
+  closeMfgDrawer()
   const views = {
     compass: () => viewCompass(pack),
     thread: () => viewThread(pack),

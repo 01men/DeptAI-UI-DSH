@@ -24,6 +24,15 @@ endpoints:
   - GET /api/panel/ddws/status（panel.read；installed/bound/auth 形状）· POST /api/panel/ddws/install · POST /api/panel/ddws/test · POST /api/panel/ddws/pull（panel.config.write）
   - PUT/DELETE /api/panel/ddws/bind（panel.config.write；绑定/解绑钉钉群）
   - POST /api/panel/:dept/agent-stream（panel.read；SSE 流式对话降级通道）
+  # —— 制造工具箱（2026-10-19 并入「制造业 AI 工具集」，docs/plan-mfg-toolkit-fusion-20261019.md）——
+  # 13 个确定性计算内核 + 3 个 AI 工具（Skill 放行制）+ 100 项选题清单；模型面经平台网关，面板零密钥。
+  - GET /api/panel/mfg/catalog（panel.read；工具目录 + 分类 + Skill 放行状态 + 模型就绪态）
+  - GET /api/panel/mfg/roadmap（panel.read；100 项选题清单：来源追溯/验收标准/交付边界/状态）
+  - POST /api/panel/mfg/tools/:id/run（panel.write；统一执行入口：strict 字段校验 + 溢出拦截 + 质量门禁）
+  - GET /api/panel/mfg/tools/:id/template（panel.read；输入模板字段）· POST /api/panel/mfg/tools/:id/export（panel.read；JSON/Markdown 导出）
+  - GET /api/panel/mfg/releases（panel.read；Skill 放行记录与有效性判定）· GET /api/panel/mfg/evaluation-plan（panel.read；真实评估计划与四类样例，不发起调用）
+  - POST /api/panel/mfg/evaluate（panel.config.write；执行真实模型评估产出 live 报告——报告不构成放行）
+  - POST /api/panel/mfg/releases（panel.config.write；审核人签署放行）· DELETE /api/panel/mfg/releases/:skillId（panel.config.write；撤回放行）
 tools:
   - panel_agents_list
   - panel_msg_send
@@ -34,6 +43,9 @@ tools:
   - panel_agent_invoke
   - panel_board_digest
   - panel_skill_invoke
+  - panel_mfg_tools_list
+  - panel_mfg_tool_run
+  - panel_mfg_roadmap
 services:
   - key: panel
     access: ctx.panel

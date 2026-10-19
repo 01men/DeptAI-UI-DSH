@@ -10,6 +10,7 @@ import { CardpackService as CardpackService2, CARD_PLATFORMS as CARD_PLATFORMS2,
 import { seedPanel, DEMO_ORG_ID } from "./seed/seed.js";
 import { resolvePanelModelGateway } from "./llm-bridge.js";
 import { DwsCli } from "./dws.js";
+import { applyMfgModule } from "./mfg/module.js";
 const name = "panel-core";
 const inject = [
   "httpServer",
@@ -1282,6 +1283,7 @@ ${initialPassword}
       };
     }
   });
+  applyMfgModule(ctx, { guarded, changeLog, renderJson });
 }
 export {
   CARD_PLATFORMS2 as CARD_PLATFORMS,

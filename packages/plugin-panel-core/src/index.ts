@@ -27,6 +27,7 @@ export { CardpackService, CARD_PLATFORMS, filterCards } from './cardpacks.ts'
 import { seedPanel, DEMO_ORG_ID } from './seed/seed.ts'
 import { resolvePanelModelGateway } from './llm-bridge.ts'
 import { DwsCli } from './dws.ts'
+import { applyMfgModule } from './mfg/module.ts'
 
 export const name = 'panel-core'
 // plan-gate01 Phase 2 瘦身：硬依赖只保留数据面基座 5 键（platform-core / dsh 原生提供）。
@@ -1473,6 +1474,13 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
       }
     },
   })
+
+  // -- 制造工具箱（自「制造业 AI 工具集」并入，2026-10-19） --------------------------
+  // 13 个确定性计算内核 + 3 个 AI 工具（Skill 放行制）+ 100 项选题清单。
+  // 路由：/api/panel/mfg/*（读 panel.read / 执行 panel.write / 放行 panel.config.write）；
+  // 工具：panel_mfg_*（共享 tools 键 → dsh 下即原生 ToolRuntime）。
+  // 模型面经平台网关（modelgw / dsh llm 桥），面板零密钥；无网关时 AI 工具诚实 503。
+  applyMfgModule(ctx, { guarded, changeLog, renderJson })
 }
 
 declare module '@deepseek-ai/cordis' {

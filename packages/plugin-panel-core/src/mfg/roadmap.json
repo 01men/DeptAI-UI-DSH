@@ -1,0 +1,3570 @@
+{
+  "version": "0.1",
+  "sourceWorkbook": "PMO_2026 AI原生组织建设场景清单.xlsx",
+  "sourceSheet": "19_AI原生组织建设_场景清单",
+  "sourceRows": 295,
+  "sourceStatusCounts": {
+    "不需要做": 49,
+    "需要做，但未开始": 5,
+    "进行中": 9,
+    "未开始": 195,
+    "已完成": 32,
+    "迭代中": 5
+  },
+  "pdfSource": "场景化、图谱化推进重点行业数字化转型的参考指引（2025版）.pdf",
+  "pdfPages": 62,
+  "frameworkPages": [
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "industryPages": [
+    37,
+    38,
+    39
+  ],
+  "tools": [
+    {
+      "id": "RQ-001",
+      "title": "设备综合效率 OEE",
+      "group": "生产制造",
+      "priority": "P0",
+      "kernel": "metrics",
+      "renderer": "指标与损失图",
+      "inputContract": "数值参数与单位",
+      "workflow": "公式计算、单位校验、边界检查",
+      "acceptance": "手算金标误差符合约定；零值与单位混用拒绝",
+      "status": "implemented-calculation",
+      "implementation": "oee",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 194,
+          "department": "生产技术部",
+          "originalScenario": "10. 工时测算与产线效率分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-002",
+      "title": "节拍与产能测算",
+      "group": "生产制造",
+      "priority": "P0",
+      "kernel": "metrics",
+      "renderer": "节拍对比",
+      "inputContract": "数值参数与单位",
+      "workflow": "公式计算、单位校验、边界检查",
+      "acceptance": "手算金标误差符合约定；零值与单位混用拒绝",
+      "status": "implemented-calculation",
+      "implementation": "takt",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 194,
+          "department": "生产技术部",
+          "originalScenario": "10. 工时测算与产线效率分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-003",
+      "title": "班组生产日报",
+      "group": "生产制造",
+      "priority": "P0",
+      "kernel": "document",
+      "renderer": "日报与数据表",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 167,
+          "department": "生产部",
+          "originalScenario": "2. 班组生产日报自动生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-004",
+      "title": "标准作业指导书",
+      "group": "生产制造",
+      "priority": "P0",
+      "kernel": "document",
+      "renderer": "步骤与检验点",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "model-validation-pending",
+      "implementation": "sop",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 170,
+          "department": "生产部",
+          "originalScenario": "5. 装配 / 金工 / 电机工序作业指导助手",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 191,
+          "department": "生产技术部",
+          "originalScenario": "7. 工艺参数查询与作业指导",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-005",
+      "title": "生产计划排程辅助",
+      "group": "生产制造",
+      "priority": "P1",
+      "kernel": "schedule",
+      "renderer": "可编辑甘特图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 175,
+          "department": "生管部",
+          "originalScenario": "1. 生产计划排程辅助",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-006",
+      "title": "生产停线事件整理",
+      "group": "生产制造",
+      "priority": "P1",
+      "kernel": "issues",
+      "renderer": "事件时间线",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 169,
+          "department": "生产部",
+          "originalScenario": "4. 生产异常与停线问题闭环",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-007",
+      "title": "5S 巡检问题整理",
+      "group": "生产制造",
+      "priority": "P1",
+      "kernel": "issues",
+      "renderer": "位置问题清单",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 173,
+          "department": "生产部",
+          "originalScenario": "8. 5S 与安全隐患巡检整改",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-008",
+      "title": "计件工资核算检查",
+      "group": "生产制造",
+      "priority": "P2",
+      "kernel": "reconcile",
+      "renderer": "明细与差异",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 174,
+          "department": "生产部",
+          "originalScenario": "9. 生产计件 / 薪资数据核算",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-009",
+      "title": "工时与线平衡分析",
+      "group": "生产制造",
+      "priority": "P2",
+      "kernel": "metrics",
+      "renderer": "工序节拍图",
+      "inputContract": "数值参数与单位",
+      "workflow": "公式计算、单位校验、边界检查",
+      "acceptance": "手算金标误差符合约定；零值与单位混用拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 194,
+          "department": "生产技术部",
+          "originalScenario": "10. 工时测算与产线效率分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-010",
+      "title": "自动化投资回收测算",
+      "group": "生产制造",
+      "priority": "P2",
+      "kernel": "metrics",
+      "renderer": "收益与回收期",
+      "inputContract": "数值参数与单位",
+      "workflow": "公式计算、单位校验、边界检查",
+      "acceptance": "手算金标误差符合约定；零值与单位混用拒绝",
+      "status": "implemented-calculation",
+      "implementation": "roi",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 193,
+          "department": "生产技术部",
+          "originalScenario": "9. PE / IE 改善项目管理",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-011",
+      "title": "过程能力 Cp / Cpk",
+      "group": "质量工程",
+      "priority": "P0",
+      "kernel": "statistics",
+      "renderer": "指标与分布",
+      "inputContract": "统计数据与分析口径",
+      "workflow": "确定性统计、样本检查、模型解读",
+      "acceptance": "数值与统计金标一致；前提和缺失数据明确",
+      "status": "implemented-calculation",
+      "implementation": "cpk",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 265,
+          "department": "测试实验室",
+          "originalScenario": "3. 实验数据自动分析",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-012",
+      "title": "缺陷帕累托分析",
+      "group": "质量工程",
+      "priority": "P0",
+      "kernel": "statistics",
+      "renderer": "频次与累计贡献",
+      "inputContract": "统计数据与分析口径",
+      "workflow": "确定性统计、样本检查、模型解读",
+      "acceptance": "数值与统计金标一致；前提和缺失数据明确",
+      "status": "implemented-calculation",
+      "implementation": "pareto",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 201,
+          "department": "品管部",
+          "originalScenario": "4. 整机检验记录与不良分类",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-013",
+      "title": "传统 FMEA 风险优先数",
+      "group": "质量工程",
+      "priority": "P0",
+      "kernel": "risk",
+      "renderer": "风险优先数",
+      "inputContract": "已知问题、评分准则与证据",
+      "workflow": "风险结构化、规则评分、依据检查",
+      "acceptance": "评分遵循提供的规则；无依据不生成确定结论",
+      "status": "implemented-calculation",
+      "implementation": "fmea",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 285,
+          "department": "品保部",
+          "originalScenario": "3. DFMEA / PFMEA 辅助生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-014",
+      "title": "异常根因假设与验证",
+      "group": "质量工程",
+      "priority": "P0",
+      "kernel": "root-cause",
+      "renderer": "因果路径与验证表",
+      "inputContract": "事件、事实、观测数据与约束",
+      "workflow": "事实与假设分离、因果假设、验证计划",
+      "acceptance": "原因均标为假设；每项有验证方法；不虚构观察",
+      "status": "model-validation-pending",
+      "implementation": "root-cause",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 192,
+          "department": "生产技术部",
+          "originalScenario": "8. 制程异常分析与改善闭环",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 270,
+          "department": "测试实验室",
+          "originalScenario": "8. 测试问题归因分析",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 289,
+          "department": "品保部",
+          "originalScenario": "7. 客户质量问题归因分析",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-015",
+      "title": "8D 报告草案",
+      "group": "质量工程",
+      "priority": "P1",
+      "kernel": "document",
+      "renderer": "8D 分段报告",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 278,
+          "department": "SQE管理部",
+          "originalScenario": "6. 8D 报告生成与审核",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 290,
+          "department": "品保部",
+          "originalScenario": "8. 8D 报告生成与整改追踪",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-016",
+      "title": "OQC 出货报告草案",
+      "group": "质量工程",
+      "priority": "P1",
+      "kernel": "document",
+      "renderer": "检验记录与报告",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 202,
+          "department": "品管部",
+          "originalScenario": "5. OQC 出货验货报告生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-017",
+      "title": "样品检验记录整理",
+      "group": "质量工程",
+      "priority": "P1",
+      "kernel": "extract",
+      "renderer": "检验数据表",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 274,
+          "department": "SQE管理部",
+          "originalScenario": "2. 样品检测记录与判定",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 275,
+          "department": "SQE管理部",
+          "originalScenario": "3. 样品检测报告自动生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-018",
+      "title": "检验标准编制草案",
+      "group": "质量工程",
+      "priority": "P2",
+      "kernel": "document",
+      "renderer": "条款与待确认参数",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 280,
+          "department": "SQE管理部",
+          "originalScenario": "8. 检验标准编制助手",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-019",
+      "title": "质量月报与改善复盘",
+      "group": "质量工程",
+      "priority": "P2",
+      "kernel": "document",
+      "renderer": "指标与行动项",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 292,
+          "department": "品保部",
+          "originalScenario": "10. 质量月报与改善复盘生成",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-020",
+      "title": "重复质量问题聚类",
+      "group": "质量工程",
+      "priority": "P2",
+      "kernel": "cluster",
+      "renderer": "问题簇与关联图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 206,
+          "department": "品管部",
+          "originalScenario": "9. 重复质量问题预警",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 282,
+          "department": "SQE管理部",
+          "originalScenario": "10. 重复来料异常预警",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-021",
+      "title": "设备点检清单草案",
+      "group": "设备运维",
+      "priority": "P0",
+      "kernel": "checklist",
+      "renderer": "检查表",
+      "inputContract": "对象资料与显式检查标准",
+      "workflow": "规则加载、逐项比对、缺失项归类",
+      "acceptance": "金标缺项零漏检；未提供标准时不声称合格",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 171,
+          "department": "生产部",
+          "originalScenario": "6. 设备点检与保养",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 186,
+          "department": "生产技术部",
+          "originalScenario": "2. 设备点检与保养提醒",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-022",
+      "title": "设备保养计划整理",
+      "group": "设备运维",
+      "priority": "P0",
+      "kernel": "schedule",
+      "renderer": "日历与保养表",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 186,
+          "department": "生产技术部",
+          "originalScenario": "2. 设备点检与保养提醒",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-023",
+      "title": "维修工单结构化",
+      "group": "设备运维",
+      "priority": "P0",
+      "kernel": "extract",
+      "renderer": "工单卡片",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 187,
+          "department": "生产技术部",
+          "originalScenario": "3. 设备故障报修与维修工单管理",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-024",
+      "title": "故障排查路径草案",
+      "group": "设备运维",
+      "priority": "P0",
+      "kernel": "root-cause",
+      "renderer": "排查步骤",
+      "inputContract": "事件、事实、观测数据与约束",
+      "workflow": "事实与假设分离、因果假设、验证计划",
+      "acceptance": "原因均标为假设；每项有验证方法；不虚构观察",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 188,
+          "department": "生产技术部",
+          "originalScenario": "4. 设备故障知识库",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-025",
+      "title": "备件需求汇总",
+      "group": "设备运维",
+      "priority": "P1",
+      "kernel": "aggregate",
+      "renderer": "物料需求表",
+      "inputContract": "数据表、统计维度、时间与单位",
+      "workflow": "数据清洗、分组聚合、证据化解读",
+      "acceptance": "合计与独立金标一致；不重复计数；口径公开",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 187,
+          "department": "生产技术部",
+          "originalScenario": "3. 设备故障报修与维修工单管理",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-026",
+      "title": "设备台账完整性检查",
+      "group": "设备运维",
+      "priority": "P1",
+      "kernel": "checklist",
+      "renderer": "缺失字段表",
+      "inputContract": "对象资料与显式检查标准",
+      "workflow": "规则加载、逐项比对、缺失项归类",
+      "acceptance": "金标缺项零漏检；未提供标准时不声称合格",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 185,
+          "department": "生产技术部",
+          "originalScenario": "1. 设备管理台账",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-027",
+      "title": "模具寿命阈值检查",
+      "group": "设备运维",
+      "priority": "P1",
+      "kernel": "rules",
+      "renderer": "剩余寿命示意",
+      "inputContract": "业务数据及用户确认规则",
+      "workflow": "规则引擎、异常定位、解释生成",
+      "acceptance": "规则边界样本全通过；无规则时不做自动裁决",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 195,
+          "department": "生产技术部",
+          "originalScenario": "11. 模具使用寿命监测",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 196,
+          "department": "生产技术部",
+          "originalScenario": "12. 模具管理台账",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-028",
+      "title": "模具保养修模记录整理",
+      "group": "设备运维",
+      "priority": "P2",
+      "kernel": "extract",
+      "renderer": "维护时间线",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 197,
+          "department": "生产技术部",
+          "originalScenario": "13. 模具保养及修模记录",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-029",
+      "title": "工装夹具寿命检查",
+      "group": "设备运维",
+      "priority": "P2",
+      "kernel": "rules",
+      "renderer": "寿命与异常表",
+      "inputContract": "业务数据及用户确认规则",
+      "workflow": "规则引擎、异常定位、解释生成",
+      "acceptance": "规则边界样本全通过；无规则时不做自动裁决",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 190,
+          "department": "生产技术部",
+          "originalScenario": "6. 工装夹具台账与寿命管理",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-030",
+      "title": "MTBF / MTTR 测算",
+      "group": "设备运维",
+      "priority": "P2",
+      "kernel": "metrics",
+      "renderer": "可靠性指标",
+      "inputContract": "数值参数与单位",
+      "workflow": "公式计算、单位校验、边界检查",
+      "acceptance": "手算金标误差符合约定；零值与单位混用拒绝",
+      "status": "implemented-calculation",
+      "implementation": "maintenance",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 187,
+          "department": "生产技术部",
+          "originalScenario": "3. 设备故障报修与维修工单管理",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-031",
+      "title": "产品需求转设计任务",
+      "group": "研发设计",
+      "priority": "P0",
+      "kernel": "task-breakdown",
+      "renderer": "需求任务映射",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 221,
+          "department": "研究院",
+          "originalScenario": "13. 产品需求转设计任务",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 246,
+          "department": "研发二部,研发三部,研发四部,研发五部,研发一部",
+          "originalScenario": "1. 产品需求转设计任务",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-032",
+      "title": "DFMEA / PFMEA 草案",
+      "group": "研发设计",
+      "priority": "P0",
+      "kernel": "risk",
+      "renderer": "失效模式表",
+      "inputContract": "已知问题、评分准则与证据",
+      "workflow": "风险结构化、规则评分、依据检查",
+      "acceptance": "评分遵循提供的规则；无依据不生成确定结论",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 285,
+          "department": "品保部",
+          "originalScenario": "3. DFMEA / PFMEA 辅助生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-033",
+      "title": "设计评审检查清单",
+      "group": "研发设计",
+      "priority": "P0",
+      "kernel": "checklist",
+      "renderer": "评审检查表",
+      "inputContract": "对象资料与显式检查标准",
+      "workflow": "规则加载、逐项比对、缺失项归类",
+      "acceptance": "金标缺项零漏检；未提供标准时不声称合格",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 225,
+          "department": "研究院",
+          "originalScenario": "17. 设计评审问题清单管理",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 250,
+          "department": "研发二部,研发三部,研发四部,研发五部,研发一部",
+          "originalScenario": "5. 设计评审问题清单管理",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-034",
+      "title": "BOM 版本差异核对",
+      "group": "研发设计",
+      "priority": "P0",
+      "kernel": "reconcile",
+      "renderer": "差异表",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "implemented-calculation",
+      "implementation": "bom-diff",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 237,
+          "department": "产品管理部",
+          "originalScenario": "4. BOM 信息查询与异常检查",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 223,
+          "department": "研究院",
+          "originalScenario": "15. 图纸与 BOM 一致性检查",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 248,
+          "department": "研发二部,研发三部,研发四部,研发五部,研发一部",
+          "originalScenario": "3. 图纸与 BOM 一致性检查",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-035",
+      "title": "物料编码规则校验",
+      "group": "研发设计",
+      "priority": "P1",
+      "kernel": "rules",
+      "renderer": "规则命中与错误表",
+      "inputContract": "业务数据及用户确认规则",
+      "workflow": "规则引擎、异常定位、解释生成",
+      "acceptance": "规则边界样本全通过；无规则时不做自动裁决",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 235,
+          "department": "产品管理部",
+          "originalScenario": "2. ERP 编码规则校验",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-036",
+      "title": "技术变更影响分析",
+      "group": "研发设计",
+      "priority": "P1",
+      "kernel": "impact",
+      "renderer": "依赖关系图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 227,
+          "department": "研究院",
+          "originalScenario": "19. 技术变更影响分析",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 252,
+          "department": "研发二部,研发三部,研发四部,研发五部,研发一部",
+          "originalScenario": "7. 技术变更影响分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-037",
+      "title": "零部件复用候选整理",
+      "group": "研发设计",
+      "priority": "P1",
+      "kernel": "similarity",
+      "renderer": "候选部件对比",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 228,
+          "department": "研究院",
+          "originalScenario": "20. 零部件通用化与复用推荐",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 253,
+          "department": "研发二部,研发三部,研发四部,研发五部,研发一部",
+          "originalScenario": "8. 零部件通用化与复用推荐",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-038",
+      "title": "开模试模问题整理",
+      "group": "研发设计",
+      "priority": "P2",
+      "kernel": "issues",
+      "renderer": "问题与验证表",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 229,
+          "department": "研究院",
+          "originalScenario": "21. 开模 / 试模问题跟踪",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 254,
+          "department": "研发二部,研发三部,研发四部,研发五部,研发一部",
+          "originalScenario": "9. 开模 / 试模问题跟踪",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-039",
+      "title": "材料用量与重量",
+      "group": "研发设计",
+      "priority": "P2",
+      "kernel": "geometry",
+      "renderer": "Three.js 毛坯预览",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "implemented-calculation",
+      "implementation": "material",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 222,
+          "department": "研究院",
+          "originalScenario": "14. 结构设计方案知识库",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-040",
+      "title": "产品资料完整性检查",
+      "group": "研发设计",
+      "priority": "P2",
+      "kernel": "checklist",
+      "renderer": "缺件清单",
+      "inputContract": "对象资料与显式检查标准",
+      "workflow": "规则加载、逐项比对、缺失项归类",
+      "acceptance": "金标缺项零漏检；未提供标准时不声称合格",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 243,
+          "department": "产品管理部",
+          "originalScenario": "10. 产品资料完整性检查",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 37,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-041",
+      "title": "采购询价需求草案",
+      "group": "供应链采购",
+      "priority": "P0",
+      "kernel": "document",
+      "renderer": "询价需求清单",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "model-validation-pending",
+      "implementation": "rfq",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 160,
+          "department": "采购部",
+          "originalScenario": "5. 采购价格比价分析",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 163,
+          "department": "采购部",
+          "originalScenario": "8. 供应商报价单智能比对",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-042",
+      "title": "供应商报价同口径比较",
+      "group": "供应链采购",
+      "priority": "P0",
+      "kernel": "compare",
+      "renderer": "成本对比",
+      "inputContract": "同规格对象与比较维度",
+      "workflow": "口径标准化、比较矩阵、证据核对",
+      "acceptance": "不同币种、规格、税口径不可默认为可比",
+      "status": "implemented-calculation",
+      "implementation": "quote-compare",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 160,
+          "department": "采购部",
+          "originalScenario": "5. 采购价格比价分析",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 163,
+          "department": "采购部",
+          "originalScenario": "8. 供应商报价单智能比对",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-043",
+      "title": "供应商绩效评分",
+      "group": "供应链采购",
+      "priority": "P0",
+      "kernel": "weighted-score",
+      "renderer": "分项评分与雷达图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 165,
+          "department": "采购部",
+          "originalScenario": "10. 供应商绩效评分",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 279,
+          "department": "SQE管理部",
+          "originalScenario": "7. 供应商质量评分看板",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-044",
+      "title": "采购交期风险检查",
+      "group": "供应链采购",
+      "priority": "P0",
+      "kernel": "deadline",
+      "renderer": "到货时间线",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 158,
+          "department": "采购部",
+          "originalScenario": "3. 采购订单进度跟踪",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 159,
+          "department": "采购部",
+          "originalScenario": "4. 物料交期预警",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-045",
+      "title": "物料价格趋势分析",
+      "group": "供应链采购",
+      "priority": "P1",
+      "kernel": "statistics",
+      "renderer": "价格时序",
+      "inputContract": "统计数据与分析口径",
+      "workflow": "确定性统计、样本检查、模型解读",
+      "acceptance": "数值与统计金标一致；前提和缺失数据明确",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 161,
+          "department": "采购部",
+          "originalScenario": "6. 物料价格趋势分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-046",
+      "title": "物料齐套与缺料检查",
+      "group": "供应链采购",
+      "priority": "P1",
+      "kernel": "reconcile",
+      "renderer": "齐套与缺料表",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "implemented-calculation",
+      "implementation": "shortage",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 168,
+          "department": "生产部",
+          "originalScenario": "3. 领料齐套检查与缺料预警",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 177,
+          "department": "生管部",
+          "originalScenario": "3. 物料齐套检查",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 178,
+          "department": "生管部",
+          "originalScenario": "4. 缺料预警与跟催",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-047",
+      "title": "库存周转分析",
+      "group": "供应链采购",
+      "priority": "P1",
+      "kernel": "metrics",
+      "renderer": "周转分布",
+      "inputContract": "数值参数与单位",
+      "workflow": "公式计算、单位校验、边界检查",
+      "acceptance": "手算金标误差符合约定；零值与单位混用拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 184,
+          "department": "生管部",
+          "originalScenario": "10. 呆滞料与库存周转分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-048",
+      "title": "经济订货量 EOQ",
+      "group": "供应链采购",
+      "priority": "P2",
+      "kernel": "inventory",
+      "renderer": "订货与持有成本",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "implemented-calculation",
+      "implementation": "eoq",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 184,
+          "department": "生管部",
+          "originalScenario": "10. 呆滞料与库存周转分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-049",
+      "title": "账实库存差异核对",
+      "group": "供应链采购",
+      "priority": "P2",
+      "kernel": "reconcile",
+      "renderer": "库存差异表",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 180,
+          "department": "生管部",
+          "originalScenario": "6. 账实一致性核对",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-050",
+      "title": "呆滞料识别与处置建议",
+      "group": "供应链采购",
+      "priority": "P2",
+      "kernel": "rules",
+      "renderer": "库龄矩阵",
+      "inputContract": "业务数据及用户确认规则",
+      "workflow": "规则引擎、异常定位、解释生成",
+      "acceptance": "规则边界样本全通过；无规则时不做自动裁决",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 179,
+          "department": "生管部",
+          "originalScenario": "5. 仓库库存异常预警",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 184,
+          "department": "生管部",
+          "originalScenario": "10. 呆滞料与库存周转分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-051",
+      "title": "应收应付逾期分层",
+      "group": "经营财务",
+      "priority": "P0",
+      "kernel": "aging",
+      "renderer": "逾期分布与明细",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "implemented-calculation",
+      "implementation": "aging",
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 40,
+          "department": "财务部",
+          "originalScenario": "4. 应付账款账龄分析",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 41,
+          "department": "财务部",
+          "originalScenario": "5. 应收账款账龄分析与催收提醒",
+          "originalStatus": "进行中"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-052",
+      "title": "供应商付款对账",
+      "group": "经营财务",
+      "priority": "P0",
+      "kernel": "reconcile",
+      "renderer": "对账差异表",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 38,
+          "department": "财务部",
+          "originalScenario": "2. 供应商付款对账",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-053",
+      "title": "项目费用与预算偏差",
+      "group": "经营财务",
+      "priority": "P0",
+      "kernel": "variance",
+      "renderer": "预算瀑布图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 43,
+          "department": "财务部",
+          "originalScenario": "7. 项目费用归集与预算偏差分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-054",
+      "title": "产品成本差异分析",
+      "group": "经营财务",
+      "priority": "P0",
+      "kernel": "variance",
+      "renderer": "成本构成",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 42,
+          "department": "财务部",
+          "originalScenario": "6. 成本核算异常分析",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 48,
+          "department": "财务部",
+          "originalScenario": "12. 成本分析智能体",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 259,
+          "department": "电动工具产品中心",
+          "originalScenario": "3. 成本计划智能体\n负责产品成本评估：\n产品成本分析\n目标成本制定\n物料成本分析\n成本优化建议\n产品价格策略辅助",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-055",
+      "title": "月度收入成本核对",
+      "group": "经营财务",
+      "priority": "P1",
+      "kernel": "reconcile",
+      "renderer": "收入成本核对表",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 52,
+          "department": "财务部",
+          "originalScenario": "16. 月度收入成本表编制与核对 AI 自动化",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-056",
+      "title": "进销项记录核对",
+      "group": "经营财务",
+      "priority": "P1",
+      "kernel": "reconcile",
+      "renderer": "勾稽差异明细",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 55,
+          "department": "财务部",
+          "originalScenario": "19. 进&销项核对",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-057",
+      "title": "财务月报草案",
+      "group": "经营财务",
+      "priority": "P1",
+      "kernel": "document",
+      "renderer": "月报与口径说明",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 46,
+          "department": "财务部",
+          "originalScenario": "10. 财务数据问答与月度报表生成",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 47,
+          "department": "财务部",
+          "originalScenario": "11. 财务分析智能体",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-058",
+      "title": "经营 KPI 图谱整理",
+      "group": "经营财务",
+      "priority": "P2",
+      "kernel": "graph",
+      "renderer": "指标依赖图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 13,
+          "department": "总经办",
+          "originalScenario": "9. 公司运营KPI图谱智能体",
+          "originalStatus": "进行中"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-059",
+      "title": "库存资金占用分析",
+      "group": "经营财务",
+      "priority": "P2",
+      "kernel": "aggregate",
+      "renderer": "资金占用分布",
+      "inputContract": "数据表、统计维度、时间与单位",
+      "workflow": "数据清洗、分组聚合、证据化解读",
+      "acceptance": "合计与独立金标一致；不重复计数；口径公开",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 51,
+          "department": "财务部",
+          "originalScenario": "15. 库存分析智能体",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-060",
+      "title": "产品目标成本拆解",
+      "group": "经营财务",
+      "priority": "P2",
+      "kernel": "task-breakdown",
+      "renderer": "目标成本树",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 259,
+          "department": "电动工具产品中心",
+          "originalScenario": "3. 成本计划智能体\n负责产品成本评估：\n产品成本分析\n目标成本制定\n物料成本分析\n成本优化建议\n产品价格策略辅助",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-061",
+      "title": "竞品参数与价格带对比",
+      "group": "营销外贸",
+      "priority": "P0",
+      "kernel": "compare",
+      "renderer": "对比矩阵",
+      "inputContract": "同规格对象与比较维度",
+      "workflow": "口径标准化、比较矩阵、证据核对",
+      "acceptance": "不同币种、规格、税口径不可默认为可比",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 95,
+          "department": "市场部",
+          "originalScenario": "1. 竞品分析",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 116,
+          "department": "国际销售部",
+          "originalScenario": "12. 产品调研和产品线差异专家",
+          "originalStatus": "已完成"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 257,
+          "department": "电动工具产品中心",
+          "originalScenario": "1. 市场分析智能体\n负责产品前期市场研究：\n行业趋势分析\n市场机会分析\n用户需求分析\n用户痛点分析\n竞品产品分析\n竞品价格带分析\n品类机会分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-062",
+      "title": "客户询盘结构化",
+      "group": "营销外贸",
+      "priority": "P0",
+      "kernel": "extract",
+      "renderer": "询盘需求卡",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 104,
+          "department": "国际销售部",
+          "originalScenario": "2. 询盘信息自动整理",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-063",
+      "title": "销售报价草案",
+      "group": "营销外贸",
+      "priority": "P0",
+      "kernel": "document",
+      "renderer": "报价明细",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 105,
+          "department": "国际销售部",
+          "originalScenario": "3. 外贸报价自动生成",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 115,
+          "department": "国际销售部",
+          "originalScenario": "11. 报价单自动生成",
+          "originalStatus": "已完成"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 123,
+          "department": "国际销售部",
+          "originalScenario": "19. 智能报价机器人",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-064",
+      "title": "PI / PO 关键信息核对",
+      "group": "营销外贸",
+      "priority": "P0",
+      "kernel": "reconcile",
+      "renderer": "条款差异表",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 110,
+          "department": "国际销售部",
+          "originalScenario": "6. PI / PO 关键信息识别",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-065",
+      "title": "外贸单证一致性校验",
+      "group": "营销外贸",
+      "priority": "P1",
+      "kernel": "reconcile",
+      "renderer": "单证字段比对",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 111,
+          "department": "国际销售部",
+          "originalScenario": "7. 外贸单证自动生成与校验",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-066",
+      "title": "包装与唛头校验",
+      "group": "营销外贸",
+      "priority": "P1",
+      "kernel": "rules",
+      "renderer": "标签检查清单",
+      "inputContract": "业务数据及用户确认规则",
+      "workflow": "规则引擎、异常定位、解释生成",
+      "acceptance": "规则边界样本全通过；无规则时不做自动裁决",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 112,
+          "department": "国际销售部",
+          "originalScenario": "8. 包装资料与唛头信息校验",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-067",
+      "title": "客诉分类与处置草案",
+      "group": "营销外贸",
+      "priority": "P1",
+      "kernel": "issues",
+      "renderer": "客诉原因与行动",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 114,
+          "department": "国际销售部",
+          "originalScenario": "10. 客诉问题整理与售后闭环跟踪",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 131,
+          "department": "国内销售部",
+          "originalScenario": "7. 售后问题分类与处理跟踪",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 132,
+          "department": "国内销售部",
+          "originalScenario": "8. 客户投诉记录与闭环管理",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-068",
+      "title": "销售运营数据分析",
+      "group": "营销外贸",
+      "priority": "P2",
+      "kernel": "aggregate",
+      "renderer": "区域与产品图表",
+      "inputContract": "数据表、统计维度、时间与单位",
+      "workflow": "数据清洗、分组聚合、证据化解读",
+      "acceptance": "合计与独立金标一致；不重复计数；口径公开",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 133,
+          "department": "国内销售部",
+          "originalScenario": "9. 销售运营数据分析",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 134,
+          "department": "国内销售部",
+          "originalScenario": "10. 区域客户与产品销售看板",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-069",
+      "title": "产品卖点与差异化整理",
+      "group": "营销外贸",
+      "priority": "P2",
+      "kernel": "document",
+      "renderer": "卖点证据卡",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 101,
+          "department": "市场部",
+          "originalScenario": "7. 产品卖点与差异化提炼（产品发布会由产品经理发布然后入库，如何衔接）",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 258,
+          "department": "电动工具产品中心",
+          "originalScenario": "2. 产品规划智能体\n负责产品定义和方案设计：\n产品定位分析\n产品需求整理\n产品功能规划\n新品功能定义辅助\n产品卖点与差异化提炼\n产品需求文档生成\n产品项目立项资料生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-070",
+      "title": "行业研报证据摘要",
+      "group": "营销外贸",
+      "priority": "P2",
+      "kernel": "summarize",
+      "renderer": "观点与引用表",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 119,
+          "department": "国际销售部",
+          "originalScenario": "15. 市场洞察模块-行业研报解读专家",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 38,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-071",
+      "title": "岗位说明书草案",
+      "group": "人事行政",
+      "priority": "P0",
+      "kernel": "document",
+      "renderer": "岗位职责文档",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 19,
+          "department": "人力资源部",
+          "originalScenario": "5. 岗位说明书生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-072",
+      "title": "简历事实抽取",
+      "group": "人事行政",
+      "priority": "P0",
+      "kernel": "extract",
+      "renderer": "原文事实与出处",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 16,
+          "department": "人力资源部",
+          "originalScenario": "2. 招聘简历筛选",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-073",
+      "title": "岗位要求证据映射",
+      "group": "人事行政",
+      "priority": "P0",
+      "kernel": "compare",
+      "renderer": "要求与履历证据表",
+      "inputContract": "同规格对象与比较维度",
+      "workflow": "口径标准化、比较矩阵、证据核对",
+      "acceptance": "不同币种、规格、税口径不可默认为可比",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 17,
+          "department": "人力资源部",
+          "originalScenario": "3. 人岗匹配分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-074",
+      "title": "考勤异常检查",
+      "group": "人事行政",
+      "priority": "P0",
+      "kernel": "rules",
+      "renderer": "异常明细",
+      "inputContract": "业务数据及用户确认规则",
+      "workflow": "规则引擎、异常定位、解释生成",
+      "acceptance": "规则边界样本全通过；无规则时不做自动裁决",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 15,
+          "department": "人力资源部",
+          "originalScenario": "1. 考勤异常识别",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 27,
+          "department": "人力资源部",
+          "originalScenario": "13. 考勤自动汇总收集",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-075",
+      "title": "入职资料完整性检查",
+      "group": "人事行政",
+      "priority": "P1",
+      "kernel": "checklist",
+      "renderer": "缺失资料表",
+      "inputContract": "对象资料与显式检查标准",
+      "workflow": "规则加载、逐项比对、缺失项归类",
+      "acceptance": "金标缺项零漏检；未提供标准时不声称合格",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 21,
+          "department": "人力资源部",
+          "originalScenario": "7. 入职资料完整性检查",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-076",
+      "title": "培训记录分析",
+      "group": "人事行政",
+      "priority": "P1",
+      "kernel": "aggregate",
+      "renderer": "培训覆盖与完成率",
+      "inputContract": "数据表、统计维度、时间与单位",
+      "workflow": "数据清洗、分组聚合、证据化解读",
+      "acceptance": "合计与独立金标一致；不重复计数；口径公开",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 18,
+          "department": "人力资源部",
+          "originalScenario": "4. 培训记录分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-077",
+      "title": "绩效材料整理",
+      "group": "人事行政",
+      "priority": "P1",
+      "kernel": "summarize",
+      "renderer": "证据材料摘要",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 22,
+          "department": "人力资源部",
+          "originalScenario": "8. 绩效材料自动汇总",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-078",
+      "title": "奖惩通告草案",
+      "group": "人事行政",
+      "priority": "P2",
+      "kernel": "document",
+      "renderer": "通告草案",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 23,
+          "department": "人力资源部",
+          "originalScenario": "9. 奖惩通告自动生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-079",
+      "title": "固定资产盘点差异",
+      "group": "人事行政",
+      "priority": "P2",
+      "kernel": "reconcile",
+      "renderer": "资产差异表",
+      "inputContract": "两组同口径数据及关联键",
+      "workflow": "字段标准化、唯一键检查、差异计算",
+      "acceptance": "金标差异零漏检；重复键、币种、单位异常明确拒绝",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 79,
+          "department": "行政部",
+          "originalScenario": "1. 固定资产台账",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 80,
+          "department": "行政部",
+          "originalScenario": "2. 资产盘点辅助",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-080",
+      "title": "招聘流程数据统计",
+      "group": "人事行政",
+      "priority": "P2",
+      "kernel": "aggregate",
+      "renderer": "漏斗与周期指标",
+      "inputContract": "数据表、统计维度、时间与单位",
+      "workflow": "数据清洗、分组聚合、证据化解读",
+      "acceptance": "合计与独立金标一致；不重复计数；口径公开",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 25,
+          "department": "人力资源部",
+          "originalScenario": "11. 招聘数据统计分析",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-081",
+      "title": "项目 WBS 计划草案",
+      "group": "项目协作",
+      "priority": "P0",
+      "kernel": "task-breakdown",
+      "renderer": "任务树与甘特图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 66,
+          "department": "项目管理部",
+          "originalScenario": "1. 项目计划自动生成",
+          "originalStatus": "迭代中"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 258,
+          "department": "电动工具产品中心",
+          "originalScenario": "2. 产品规划智能体\n负责产品定义和方案设计：\n产品定位分析\n产品需求整理\n产品功能规划\n新品功能定义辅助\n产品卖点与差异化提炼\n产品需求文档生成\n产品项目立项资料生成",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 260,
+          "department": "电动工具产品中心",
+          "originalScenario": "4. 项目管理智能体\n负责产品开发过程推进：\n产品项目进度跟踪\n跨部门任务协同提醒\n新品上市节点计划\n产品项目风险预警\n产品项目复盘报告生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-082",
+      "title": "里程碑进度差异检查",
+      "group": "项目协作",
+      "priority": "P0",
+      "kernel": "deadline",
+      "renderer": "计划实际甘特图",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 67,
+          "department": "项目管理部",
+          "originalScenario": "2. 项目里程碑进度追踪",
+          "originalStatus": "迭代中"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 146,
+          "department": "营销项目部",
+          "originalScenario": "2. 营销项目进度跟踪",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-083",
+      "title": "项目风险登记",
+      "group": "项目协作",
+      "priority": "P0",
+      "kernel": "risk",
+      "renderer": "风险矩阵",
+      "inputContract": "已知问题、评分准则与证据",
+      "workflow": "风险结构化、规则评分、依据检查",
+      "acceptance": "评分遵循提供的规则；无依据不生成确定结论",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 68,
+          "department": "项目管理部",
+          "originalScenario": "3. 项目风险预警",
+          "originalStatus": "迭代中"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 151,
+          "department": "营销项目部",
+          "originalScenario": "7. 项目风险与延期预警",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-084",
+      "title": "会议纪要整理",
+      "group": "项目协作",
+      "priority": "P0",
+      "kernel": "summarize",
+      "renderer": "纪要与原文位置",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 6,
+          "department": "总经办",
+          "originalScenario": "2. 会议纪要自动生成",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 71,
+          "department": "项目管理部",
+          "originalScenario": "6. 项目会议纪要生成",
+          "originalStatus": "迭代中"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 150,
+          "department": "营销项目部",
+          "originalScenario": "6. 项目会议纪要生成",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-085",
+      "title": "会议行动项提取",
+      "group": "项目协作",
+      "priority": "P1",
+      "kernel": "extract",
+      "renderer": "责任与期限清单",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 7,
+          "department": "总经办",
+          "originalScenario": "3. 会议决议事项闭环跟踪",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 147,
+          "department": "营销项目部",
+          "originalScenario": "3. 项目任务分解与责任人提醒",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-086",
+      "title": "项目周报月报草案",
+      "group": "项目协作",
+      "priority": "P1",
+      "kernel": "document",
+      "renderer": "进展与阻塞表",
+      "inputContract": "业务事实、模板与必填信息",
+      "workflow": "事实抽取、Skill 模板填充、结构与事实核对",
+      "acceptance": "必需章节齐全；数值可追溯；缺失信息不编造",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 74,
+          "department": "项目管理部",
+          "originalScenario": "9. 项目周报、月报自动生成",
+          "originalStatus": "迭代中"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-087",
+      "title": "项目复盘草案",
+      "group": "项目协作",
+      "priority": "P1",
+      "kernel": "root-cause",
+      "renderer": "事实与改进项",
+      "inputContract": "事件、事实、观测数据与约束",
+      "workflow": "事实与假设分离、因果假设、验证计划",
+      "acceptance": "原因均标为假设；每项有验证方法；不虚构观察",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 75,
+          "department": "项目管理部",
+          "originalScenario": "10. 项目复盘报告生成",
+          "originalStatus": "需要做，但未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 153,
+          "department": "营销项目部",
+          "originalScenario": "9. 营销项目复盘报告生成",
+          "originalStatus": "需要做，但未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 260,
+          "department": "电动工具产品中心",
+          "originalScenario": "4. 项目管理智能体\n负责产品开发过程推进：\n产品项目进度跟踪\n跨部门任务协同提醒\n新品上市节点计划\n产品项目风险预警\n产品项目复盘报告生成",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-088",
+      "title": "项目问题清单检查",
+      "group": "项目协作",
+      "priority": "P2",
+      "kernel": "checklist",
+      "renderer": "问题状态清单",
+      "inputContract": "对象资料与显式检查标准",
+      "workflow": "规则加载、逐项比对、缺失项归类",
+      "acceptance": "金标缺项零漏检；未提供标准时不声称合格",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 72,
+          "department": "项目管理部",
+          "originalScenario": "7. 项目问题清单管理",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 154,
+          "department": "营销项目部",
+          "originalScenario": "10. 客户需求与项目问题清单管理",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-089",
+      "title": "跨部门事项跟进草案",
+      "group": "项目协作",
+      "priority": "P2",
+      "kernel": "issues",
+      "renderer": "依赖与跟进建议",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 9,
+          "department": "总经办",
+          "originalScenario": "5. 跨部门事项跟进提醒",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 70,
+          "department": "项目管理部",
+          "originalScenario": "5. 跨部门事项跟进",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 148,
+          "department": "营销项目部",
+          "originalScenario": "4. 跨部门事项跟进",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-090",
+      "title": "项目资料归档索引",
+      "group": "项目协作",
+      "priority": "P2",
+      "kernel": "extract",
+      "renderer": "文档索引树",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 73,
+          "department": "项目管理部",
+          "originalScenario": "8. 项目资料自动归档",
+          "originalStatus": "不需要做"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 152,
+          "department": "营销项目部",
+          "originalScenario": "8. 项目资料归档",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-091",
+      "title": "PDF 文本与表格抽取",
+      "group": "知识与数字化",
+      "priority": "P0",
+      "kernel": "parse",
+      "renderer": "原文与抽取对照",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 31,
+          "department": "流程革新部",
+          "originalScenario": "2.  API 文档资料库 ",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 119,
+          "department": "国际销售部",
+          "originalScenario": "15. 市场洞察模块-行业研报解读专家",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-092",
+      "title": "扫描件 OCR 与置信度复核",
+      "group": "知识与数字化",
+      "priority": "P0",
+      "kernel": "ocr",
+      "renderer": "图文对照",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 39,
+          "department": "财务部",
+          "originalScenario": "3. 发票识别与三单匹配",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 198,
+          "department": "品管部",
+          "originalScenario": "1. 来料检验记录识别与判定",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-093",
+      "title": "CSV / Excel 清洗与字段映射",
+      "group": "知识与数字化",
+      "priority": "P0",
+      "kernel": "normalize",
+      "renderer": "映射预览与校验",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 205,
+          "department": "品管部",
+          "originalScenario": "8. ERP 质量数据录入校验",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-094",
+      "title": "文档版本差异比较",
+      "group": "知识与数字化",
+      "priority": "P0",
+      "kernel": "diff",
+      "renderer": "段落差异",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 240,
+          "department": "产品管理部",
+          "originalScenario": "7. 技术资料归档与版本管理",
+          "originalStatus": "不需要做"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-095",
+      "title": "考核材料脱敏",
+      "group": "知识与数字化",
+      "priority": "P1",
+      "kernel": "redact",
+      "renderer": "脱敏预览与命中清单",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 78,
+          "department": "项目管理部",
+          "originalScenario": "13. 月度考核结果脱敏skill",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    },
+    {
+      "id": "RQ-096",
+      "title": "工艺知识问答（用户提供资料）",
+      "group": "知识与数字化",
+      "priority": "P1",
+      "kernel": "grounded-qa",
+      "renderer": "回答与引用片段",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 191,
+          "department": "生产技术部",
+          "originalScenario": "7. 工艺参数查询与作业指导",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-097",
+      "title": "质量标准问答（用户提供资料）",
+      "group": "知识与数字化",
+      "priority": "P1",
+      "kernel": "grounded-qa",
+      "renderer": "条款与引用片段",
+      "inputContract": "业务输入、范围与约束",
+      "workflow": "统一输入校验、专业方法、结构化结果、质量门禁",
+      "acceptance": "正常、缺失、边界、矛盾与注入样例通过；业务专家复核",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 204,
+          "department": "品管部",
+          "originalScenario": "7. 检验标准知识库与判定助手",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 281,
+          "department": "SQE管理部",
+          "originalScenario": "9. 物料检验标准知识库",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 291,
+          "department": "品保部",
+          "originalScenario": "9. 质量标准与检验规范知识库",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-098",
+      "title": "API 文档结构化索引",
+      "group": "知识与数字化",
+      "priority": "P2",
+      "kernel": "extract",
+      "renderer": "接口树与字段表",
+      "inputContract": "原始文本或结构化导出",
+      "workflow": "解析、事实抽取、来源定位、Schema 校验",
+      "acceptance": "关键字段准确且能定位原文；无证据字段保持缺失",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 31,
+          "department": "流程革新部",
+          "originalScenario": "2.  API 文档资料库 ",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-099",
+      "title": "研发技术路线对比",
+      "group": "知识与数字化",
+      "priority": "P2",
+      "kernel": "compare",
+      "renderer": "技术方案矩阵",
+      "inputContract": "同规格对象与比较维度",
+      "workflow": "口径标准化、比较矩阵、证据核对",
+      "acceptance": "不同币种、规格、税口径不可默认为可比",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 231,
+          "department": "研究院",
+          "originalScenario": "23. 技术路线对比分析",
+          "originalStatus": "未开始"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 232,
+          "department": "研究院",
+          "originalScenario": "24. 新技术可行性评估",
+          "originalStatus": "未开始"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": ""
+    },
+    {
+      "id": "RQ-100",
+      "title": "AI 算力费用分析",
+      "group": "知识与数字化",
+      "priority": "P2",
+      "kernel": "aggregate",
+      "renderer": "成本与用量趋势",
+      "inputContract": "数据表、统计维度、时间与单位",
+      "workflow": "数据清洗、分组聚合、证据化解读",
+      "acceptance": "合计与独立金标一致；不重复计数；口径公开",
+      "status": "planned",
+      "implementation": null,
+      "sources": [
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 294,
+          "department": "数字化部门",
+          "originalScenario": "1. 阿里云AI算力费用统计",
+          "originalStatus": "已完成"
+        },
+        {
+          "kind": "workbook",
+          "sheet": "19_AI原生组织建设_场景清单",
+          "row": 295,
+          "department": "数字化部门",
+          "originalScenario": "2. AI算力成本治理与优化（FinOps数字员工）",
+          "originalStatus": "已完成"
+        }
+      ],
+      "pdfReferences": [
+        {
+          "page": 39,
+          "relation": "相关行业场景框架；具体工具边界为本项目设计，不代表原文列出本工具"
+        }
+      ],
+      "deliveryBoundary": "按用户提供的数据进行单次分析、草案或检查；连接企业实时数据和持续提醒需另外配置连接器及租户权限",
+      "caveat": "原场景已由现有系统承担，仅复用数据及输出，不重建系统"
+    }
+  ]
+}

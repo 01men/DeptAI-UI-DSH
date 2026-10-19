@@ -4,8 +4,8 @@
 # 随之收敛——iam/authn/audit/usage/modelgw/mcp/skillhub 转为运行期软依赖（缺席时端点级
 # 诚实降级，见 docs/gate01-degradation-ledger.md），不再是装载级硬依赖。
 id: dsh-plugin-panel-core
-version: 1.4.0
-label: 行业 AI 工作台面板（一图四清单 · 五空间）
+version: 1.5.0
+label: 行业 AI 工作台面板（一图四清单 · 五空间 + 制造工具箱）
 depends: ['dsh-plugin-platform-core']
 provides:
   services:
