@@ -6,14 +6,14 @@ Yuanbingke (ybkkasi) is a self-hosted enterprise AI resource management platform
 
 ## 本仓库定位（行业部门交互面板项目 · 01门）
 
-> 本仓库（01men/RQ-DSH）是**面向不同行业的部门交互面板项目**（本项目主仓），唯一交付物为**「01门」——AI 代理与人类的协作前台**。本项目与上游 `01men/ybkkasi`（元冰可治理底座）**是两个不同的项目**：本项目是**调用方**，通过既有契约调用底座的**资产与权限**（六类受管资产 + IAM/OIDC SSO/RBAC/场景级授权），**不是它的备份仓库**，也不重复实现治理底座。cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/RQ-DSH` / npm `@ybkk/gate-01`（已发布 1.2.1） / `link:` / `file:` 四通道），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接底座后全量数据经本机代理接入（浏览器零跨域），登录在底座侧完成；`dsh plugin remove` 卸载干净、重装即恢复；安装产物为预构建 dist（零 TS 装载/零生命周期脚本）。治理底座主仓库见 [01men/ybkkasi](https://github.com/01men/ybkkasi)。
+> 本仓库（01men/DeptAI-UI-DSH）是**面向不同行业的部门交互面板项目**（本项目主仓），唯一交付物为**「01门」——AI 代理与人类的协作前台**。本项目与上游 `01men/ybkkasi`（元冰可治理底座）**是两个不同的项目**：本项目是**调用方**，通过既有契约调用底座的**资产与权限**（六类受管资产 + IAM/OIDC SSO/RBAC/场景级授权），**不是它的备份仓库**，也不重复实现治理底座。cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/DeptAI-UI-DSH` / npm `@ybkk/gate-01`（已发布 1.2.1） / `link:` / `file:` 四通道），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接底座后全量数据经本机代理接入（浏览器零跨域），登录在底座侧完成；`dsh plugin remove` 卸载干净、重装即恢复；安装产物为预构建 dist（零 TS 装载/零生命周期脚本）。治理底座主仓库见 [01men/ybkkasi](https://github.com/01men/ybkkasi)。
 
 - 本项目范围：部门面板/看板（plugin-panel-core）、会话执行卡（plugin-rq-card）、钉钉桥（plugin-dingtalk-bridge）、scenegraphs 业务数据；dsh 部署装配
 - 行业 AI 工作台（IAW）v1.0：五空间信息架构、**14 行业图谱包**（packages/platform-core/scenegraphs/——工程机械/机器人/家电/制糖/白酒/美妆日化/新能源汽车/石化/锂电池/印制板 PCB/智能移动终端/民爆/医疗装备/钢铁）与 14 行业主题引擎；未激活行业可只读预览预置图谱与演示数据
 - 钉钉设备流登录：面板代发起授权，未登录/未绑定自动弹出激活指令
 - npm 发布通道：scripts/release.mjs 一键发布（登录自愈/版本决策/构建回归/发布验证/记录回填/推送交付）
 - 产品定版：[docs/plan-gate01.md](docs/plan-gate01.md) ｜ 降级台账：[docs/gate01-degradation-ledger.md](docs/gate01-degradation-ledger.md) ｜ 定位决策：[docs/positioning-rq-dsh-panel-project-20261019.md](docs/positioning-rq-dsh-panel-project-20261019.md)
-- 产品介绍单页：[产品.html](https://github.com/01men/RQ-DSH/blob/main/产品.html)，测试环境已上线 [http://mdzx.fun:8801/product.html](http://mdzx.fun:8801/product.html)——首屏 slogan「AI 会做事，管得住才算数」；单文件自包含（零外部 CSS/JS/字体依赖，内网与私有化环境离线可开）；科技深蓝 #1554e8 + 微信绿 #07c160 配色；内容：四通道安装 / CIO·CTO·CFO 三决策者视角 / 前台×底座架构图（六类资产+四支柱）/ 资产实况（三列资产卡+链路徽标）/ 四场景 / 交付与定价 / FAQ / 联系（电话与微信）；动效全部为渐进增强层（prefers-reduced-motion 整体关闭）
+- 产品介绍单页：[产品.html](https://github.com/01men/DeptAI-UI-DSH/blob/main/产品.html)，测试环境已上线 [http://mdzx.fun:8801/product.html](http://mdzx.fun:8801/product.html)——首屏 slogan「AI 会做事，管得住才算数」；单文件自包含（零外部 CSS/JS/字体依赖，内网与私有化环境离线可开）；科技深蓝 #1554e8 + 微信绿 #07c160 配色；内容：四通道安装 / CIO·CTO·CFO 三决策者视角 / 前台×底座架构图（六类资产+四支柱）/ 资产实况（三列资产卡+链路徽标）/ 四场景 / 交付与定价 / FAQ / 联系（电话与微信）；动效全部为渐进增强层（prefers-reduced-motion 整体关闭）
 - 联系与咨询：见产品页联系区块——电话 [182-9193-7101](tel:182-9193-7101) 与微信名片
 - 双轨协作：底座面需求在主分支（ybkkasi）进行，本项目经 merge 吸收上游；本项目→上游仅允许交接清单文档受控回流（独立项目，见根目录 AGENTS.md）
 
@@ -66,4 +66,4 @@ Yuanbingke (ybkkasi) is a self-hosted enterprise AI resource management platform
 - 生产部署默认基线初始化（零演示数据）；演示数据仅 `DEMO_SEED=1` 显式注入，请勿在生产启用
 - 全部文件操作经 MCP 文件网关并按真实用户身份（X-On-Behalf-User）留痕；测试内 stub 均为进程内真实 HTTP 服务，不降级为 mock
 
-（更新日期：2026-10-19）
+（更新日期：2026-10-27）

@@ -1,4 +1,4 @@
-# cordis.patch.yml —— dsh.bundle 安装补丁（dsh plugin add github:01men/RQ-DSH / @ybkk/gate-01）。
+# cordis.patch.yml —— dsh.bundle 安装补丁（dsh plugin add github:01men/DeptAI-UI-DSH / @ybkk/gate-01）。
 #
 # plan-gate01 Phase 3（2026-09-10）产物收缩：本补丁从 22×src（TS 直载）收缩为 4×dist
 # （预构建纯 JS，提交入库，安装形态零 TS 装载、零生命周期脚本、零构建依赖——G3 自解）。

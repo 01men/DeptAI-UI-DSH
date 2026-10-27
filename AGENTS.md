@@ -9,7 +9,7 @@
 
 ## 这个仓库是什么（独立项目 + 双轨协作）
 
-`D:\DSH-RQ` 是 `01men/RQ-DSH` 项目的工作区——**面向不同行业的部门交互面板项目**：
+`D:\DSH-RQ` 是 `01men/DeptAI-UI-DSH` 项目的工作区——**面向不同行业的部门交互面板项目**：
 把企业级 AI 能力以「部门交互面板」形态交付到各行业一线，交付物为**「01门」——AI 代理与人类的协作前台**。
 本项目与上游 `01men/ybkkasi`（元冰可 · 企业AI资源管理平台）**是两个不同的项目**——
 本项目是**调用方**：通过既有契约调用底座的**资产与权限**（六类受管资产 MCP/Skill/Agent/AI 应用/模型路由/NAS
@@ -40,7 +40,7 @@
    本项目的改动需要回流上游时，**唯一通道是「交接清单文档」**：写 `docs/handoff-*-to-main.md`
    （模板：`docs/handoff-host-features-to-main.md`），由主分支侧 cherry-pick/重放落地。
    直接把本项目代码推回上游 main = 主分支污染，仍是本项目最严重的事故。
-3. **`01men/RQ-DSH` 是本项目主仓（交付仓）**：`custom/dsh-rq` 的全部提交（含合并提交）
+3. **`01men/DeptAI-UI-DSH` 是本项目主仓（交付仓）**：`custom/dsh-rq` 的全部提交（含合并提交）
    都要推送到它的 `main`。**推送即交付，交付未推送 = 未交付。**
 4. **合并方向唯一**：同步永远是 `上游 main → custom/dsh-rq`（merge 进本分支）。
    绝不存在整分支反向合并；本项目→上游只允许铁律 2 的受控回流通道。
@@ -102,19 +102,24 @@ npm install                                # 依赖/包名若有变化先同步�
 npm run build:dist                         # 上游 merge 碰随附包 src 即令 dist 过期——重建预构建产物
 node packages/plugin-rq-card/build.mjs     # 上游 merge 碰浏览器半 src/wire.ts 同理——重建 lib/client.js
 npm run selftest && npm run lint:manifests # 全量回归，必须全绿
-git push                                   # 交付（origin push 指向 RQ-DSH，自动推到其 main）
+git push                                   # 交付（origin push 指向 DeptAI-UI-DSH，自动推到其 main）
 ```
 
 ## 远程配置（已固化，不要改动）
 
 ```
 origin  fetch → https://github.com/01men/ybkkasi.git   # 上游底座，只进不出
-origin  push  → https://github.com/01men/RQ-DSH.git      # 本项目主仓，push 即交付到其 main
+origin  push  → https://github.com/01men/DeptAI-UI-DSH.git      # 本项目主仓，push 即交付到其 main
 ```
 
+- 2026-10-27：主仓 GitHub 仓库由 `01men/RQ-DSH` 更名为 `01men/DeptAI-UI-DSH`（GitHub 侧改名，
+  旧地址自动重定向）；remote URL 与治理/运维面文档（AGENTS.md、PROJECT.md、README.md、llms.txt、
+  package.json repository、cordis.patch.yml、skills/dsh-ops-admin、pre-push 钩子文案）已全面对齐新名。
+  `docs/` 下历史决策档案保留旧名，属正常档案，不改写。
+
 - 默认 `git push` 经 `remote.origin.push = refs/heads/custom/dsh-rq:refs/heads/main`
-  自动把本分支推到 RQ-DSH 的 main——不要改这个 refspec。
-- 已知无害怪象：`origin/main` 追踪引用在「push 后=RQ-DSH 的 main」与「fetch 后=上游 main」
+  自动把本分支推到 DeptAI-UI-DSH 的 main——不要改这个 refspec。
+- 已知无害怪象：`origin/main` 追踪引用在「push 后=DeptAI-UI-DSH 的 main」与「fetch 后=上游 main」
   之间摇摆（fetch/push 分离的副作用）。判断同步状态永远以 `git ls-remote` 两仓库实测为准。
 - 本地已装 `.git/hooks/pre-push` 钩子（脚本版本化在 `scripts/hooks/pre-push`）：
   任何指向 ybkkasi 的推送会被**直接拦截**。换机器/重克隆后需重装：

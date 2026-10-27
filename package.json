@@ -19,7 +19,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/01men/RQ-DSH.git"
+    "url": "https://github.com/01men/DeptAI-UI-DSH.git"
   },
   "files": [
     "cordis.patch.yml",

@@ -2,7 +2,7 @@
 
 > 前置状态（2026-09-10 已就绪）：安装产物为预构建 dist（G3 自解）、零生命周期脚本、
 > rq-card 经 bundledDependencies 随包自包含（file: 依赖在 npm/tgz 通道不可移植，真机实证）。
-> github 通道（`dsh plugin add github:01men/RQ-DSH`）不依赖 npm，已随仓库推送天然可用。
+> github 通道（`dsh plugin add github:01men/DeptAI-UI-DSH`）不依赖 npm，已随仓库推送天然可用。
 
 ## 发布记录
 

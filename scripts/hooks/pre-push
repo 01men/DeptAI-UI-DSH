@@ -2,7 +2,7 @@
 # pre-push 钩子：仓库同步铁律 2/4 的硬拦截（版本化于 scripts/hooks/pre-push）。
 # 安装：cp scripts/hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
 # 规则：任何指向 ybkkasi（上游治理底座）的推送一律拒绝——本项目代码绝不回流底座主线。
-#       合法推送目标只有本项目主仓 01men/RQ-DSH。
+#       合法推送目标只有本项目主仓 01men/DeptAI-UI-DSH。
 
 remote_url="$2"
 
@@ -14,7 +14,7 @@ case "$remote_url" in
     echo "   这是本项目的最高禁令（见 AGENTS.md 仓库同步铁律 2/4）：" >&2
     echo "   本项目代码回流底座主线 = 主线污染。" >&2
     echo "" >&2
-    echo "   正确做法：推送交付走 origin（push 已指向 01men/RQ-DSH），直接 git push。" >&2
+    echo "   正确做法：推送交付走 origin（push 已指向 01men/DeptAI-UI-DSH），直接 git push。" >&2
     echo "   同步上游用 git fetch origin main（只进不出）。" >&2
     echo "" >&2
     exit 1

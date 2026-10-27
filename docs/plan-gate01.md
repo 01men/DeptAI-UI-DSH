@@ -11,14 +11,14 @@
 > entryTickets/oidc/iam/authn/audit 无提供者即永久挂起，运行期五处软访问改 ctx.reflect/softRead；
 > ④ 演示首启直达看板：demoAuth 装态探测（只读 API 匿名可达）→ 直接进看板 + 横幅引导，
 > seedPanel(ctx, autoDemo) 自动播种演示内容 + DEMO_ORG_ID 演示组织兜底。
-> 产品定义：本项目（01men/RQ-DSH，分支 custom/dsh-rq）唯一交付物——**01门**：AI 代理与人类的协作前台。
+> 产品定义：本项目（01men/DeptAI-UI-DSH，分支 custom/dsh-rq）唯一交付物——**01门**：AI 代理与人类的协作前台。
 > 关联：`docs/plan-dsh-plugin-first.md`（前序定版）、`docs/handoff-f-remainder-to-main.md`（G3/F 清单）、`AGENTS.md`（同步铁律）、`docs/positioning-rq-dsh-panel-project-20261019.md`（项目定位决策）。
 
 ---
 
 ## 一、目标形态（定版）
 
-1. **一键安装**：cordis 插件形态装进 dsh，四通道可用——`dsh plugin add github:01men/RQ-DSH`、`dsh plugin add @ybkk/gate-01`（npm）、`link:`、`file:`。安装→启动→打开 `http://127.0.0.1:<端口>/gate01/panel/` **直接见到演示看板**（内置 scenegraphs 演示数据），向导常驻引导连接宿主。
+1. **一键安装**：cordis 插件形态装进 dsh，四通道可用——`dsh plugin add github:01men/DeptAI-UI-DSH`、`dsh plugin add @ybkk/gate-01`（npm）、`link:`、`file:`。安装→启动→打开 `http://127.0.0.1:<端口>/gate01/panel/` **直接见到演示看板**（内置 scenegraphs 演示数据），向导常驻引导连接宿主。
 2. **连接宿主**：本机（localhost 预填 + 端口探测）/ 远端地址统一为「连接宿主」流程；连接后面板/看板/卡片数据全量指向宿主（经本机代理，浏览器零跨域），登录在宿主侧完成。
 3. **插拔**：`dsh plugin remove` 卸载干净；重装即恢复。
 4. **G3 自解（限 01门产物）**：预构建 `dist/*.js` 提交入库，安装形态不再依赖 node_modules 内 TS 装载。底座面包的 G3 仍在交接清单挂起，与本产物无关。
@@ -83,7 +83,7 @@
 |---|---|---|
 | 1 | 本机宿主语义 | **彻底移除本机初始化**（形态 B 设口令全链路删除）；本地/远端统一「连接宿主」，本机=localhost 连接目标（预填+探测） |
 | 2 | 无宿主首启体验 | **内置演示看板**：未连接时本地只读渲染 scenegraphs（qb01/gcjx）+ seed 演示内容，向导常驻；连接后切真实数据 |
-| 3 | 发行通道 | **双通道**：预构建 dist 提交进 RQ-DSH main（github: 直装）+ npm 发布。包名 @01men scope（根包 `@ybkk/gate-01`；若要裸名 `01men` 实施前一句话可调） |
+| 3 | 发行通道 | **双通道**：预构建 dist 提交进 DeptAI-UI-DSH main（github: 直装）+ npm 发布。包名 @01men scope（根包 `@ybkk/gate-01`；若要裸名 `01men` 实施前一句话可调） |
 | 4 | 命名深度 | **技术标识一并改**：根包名、@dsh-ops→@01men scope、挂载 `/rq`→`/gate01`、localStorage 键、数据文件名（范围见「不改清单」） |
 
 ---
@@ -161,7 +161,7 @@
 
 ### Phase 5 真机验收 + 双通道发布
 
-1. **冒烟矩阵**：全新 profile × {`github:01men/RQ-DSH`、npm `@ybkk/gate-01`、`link:`、`file:`}——安装→启动→演示看板→连接宿主→真实看板→`dsh plugin remove` 插拔→重装。
+1. **冒烟矩阵**：全新 profile × {`github:01men/DeptAI-UI-DSH`、npm `@ybkk/gate-01`、`link:`、`file:`}——安装→启动→演示看板→连接宿主→真实看板→`dsh plugin remove` 插拔→重装。
 2. **npm 发布**：private:false、exports/files 核对、`npm publish --dry-run`；实际发布需 @01men org 的 npm 账号（用户执行或提供凭证）。
 3. 全量开发形态回归：`--patch cordis.yml` 源码形态全栈（22 entry）启动、面板 RBAC、dingtalk-bridge 事件链——确认瘦身未伤全量形态。
 

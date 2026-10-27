@@ -1,11 +1,11 @@
 # 元冰可 · 企业AI资源管理平台
 
-> **本仓库定位：行业部门交互面板项目（`01men/RQ-DSH`，本项目主仓）**——面向不同行业的**部门交互面板项目**：
+> **本仓库定位：行业部门交互面板项目（`01men/DeptAI-UI-DSH`，本项目主仓）**——面向不同行业的**部门交互面板项目**：
 > 把企业级 AI 能力以「部门交互面板」形态交付到各行业一线。本项目与上游 `01men/ybkkasi`（元冰可治理底座）
 > **是两个不同的项目**——本项目是**调用方**，通过既有契约调用底座的**资产与权限**（六类受管资产
 > MCP/Skill/Agent/AI 应用/模型路由/NAS ＋ IAM/OIDC SSO/RBAC/场景级授权），**不是它的备份仓库**，
 > 也不重复实现治理底座。唯一交付物为
-> **「01门」——AI 代理与人类的协作前台**：cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/RQ-DSH`
+> **「01门」——AI 代理与人类的协作前台**：cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/DeptAI-UI-DSH`
 > / npm `@ybkk/gate-01`），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接底座后全量数据
 > 经本机代理接入（浏览器零跨域），登录在底座侧完成。本项目范围：部门面板/看板（plugin-panel-core）、
 > 执行卡（plugin-rq-card）、钉钉桥（plugin-dingtalk-bridge）、14 行业图谱包（scenegraphs 业务数据）
@@ -615,4 +615,4 @@ PV 同日累加与 UV/DAU 取最大、成本穿透恒等、技能热力矩阵、
 
 ---
 
-> 最近更新：2026-10-19 · **项目定位澄清**：本项目（`01men/RQ-DSH`）是**面向不同行业的部门交互面板项目**，与上游 `01men/ybkkasi`（治理底座）是两个不同的项目——本项目是调用方，调用底座的资产与权限，不是它的备份仓库（决策记录：[docs/positioning-rq-dsh-panel-project-20261019.md](docs/positioning-rq-dsh-panel-project-20261019.md)）。此前：2026-09-22 · NAS 下载链接签名化——HMAC 签名分享链接（档位 1h/24h 默认/7d/30d/永久）+ 取流三关（签名→吊销→权限复核）+ 独立长期密钥可吊销清单；控制台「分享链接档位」设置区（永久开关/有效期上限/签发资格/密钥轮换）。产品能力口径以 [docs/release-notes-2026-09-09-m0.md](docs/release-notes-2026-09-09-m0.md) 为准。
+> 最近更新：2026-10-27 · **主仓更名**：GitHub 仓库 `01men/RQ-DSH` 更名为 `01men/DeptAI-UI-DSH`（旧地址自动重定向），remote URL、`dsh plugin add github:` 安装通道引用与治理/运维文档已全面对齐新名。此前：2026-10-19 · **项目定位澄清**：本项目（`01men/DeptAI-UI-DSH`）是**面向不同行业的部门交互面板项目**，与上游 `01men/ybkkasi`（治理底座）是两个不同的项目——本项目是调用方，调用底座的资产与权限，不是它的备份仓库（决策记录：[docs/positioning-rq-dsh-panel-project-20261019.md](docs/positioning-rq-dsh-panel-project-20261019.md)）。此前：2026-09-22 · NAS 下载链接签名化——HMAC 签名分享链接（档位 1h/24h 默认/7d/30d/永久）+ 取流三关（签名→吊销→权限复核）+ 独立长期密钥可吊销清单；控制台「分享链接档位」设置区（永久开关/有效期上限/签发资格/密钥轮换）。产品能力口径以 [docs/release-notes-2026-09-09-m0.md](docs/release-notes-2026-09-09-m0.md) 为准。

@@ -1,16 +1,16 @@
-# DSH-RQ 项目说明（01men/RQ-DSH）
+# DSH-RQ 项目说明（01men/DeptAI-UI-DSH）
 
-1. **本项目 = `01men/RQ-DSH`（工作区 `D:\DSH-RQ`，开发分支 `custom/dsh-rq`）**：面向不同行业的
+1. **本项目 = `01men/DeptAI-UI-DSH`（工作区 `D:\DSH-RQ`，开发分支 `custom/dsh-rq`）**：面向不同行业的
    **部门交互面板项目**——把企业级 AI 能力以「部门交互面板」形态交付到各行业一线。
 2. **与上游 `01men/ybkkasi` 是两个不同的项目**：本项目是**调用方**，通过既有契约调用底座的
    **资产与权限**（六类受管资产 + IAM/OIDC SSO/RBAC/场景级授权）；**不是它的备份仓库**，
    也不重复实现治理底座。定位决策见 `docs/positioning-rq-dsh-panel-project-20261019.md`。
-3. 本项目主仓（交付仓）：`01men/RQ-DSH`——推送即交付。
+3. 本项目主仓（交付仓）：`01men/DeptAI-UI-DSH`——推送即交付。
 
 ## 产品定义：本项目唯一交付物 = 「01门」（2026-09-10 定版）
 
 **01门——AI 代理与人类的协作前台**，也是本项目「部门交互面板」主张的交付载体。本分支（custom/dsh-rq）收缩为唯一产品：
-cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/RQ-DSH` / npm `@ybkk/gate-01` /
+cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/DeptAI-UI-DSH` / npm `@ybkk/gate-01` /
 `link:` / `file:` 四通道），安装→启动→打开 `http://127.0.0.1:<端口>/gate01/panel/` 直接见到
 内置演示看板；连接底座后全量数据经本机代理接入（浏览器零跨域），登录在底座侧完成；
 `dsh plugin remove` 卸载干净、重装即恢复。安装产物为预构建 dist（零 TS 装载/零生命周期脚本）。
@@ -40,7 +40,7 @@ cordis 可选依赖语义定稿：`docs/spike-cordis-optional-inject.md`。
 
 **新会话/新开发者第一步：读完根目录 [AGENTS.md](AGENTS.md)。**
 铁律摘要（全文以 AGENTS.md 为准）：本仓库唯一开发分支 `custom/dsh-rq`；对上游只 fetch 不 push
-（整分支回流 main = 最严重事故，pre-push 钩子已硬拦截；受控回流走交接清单）；RQ-DSH 是本项目主仓
+（整分支回流 main = 最严重事故，pre-push 钩子已硬拦截；受控回流走交接清单）；DeptAI-UI-DSH 是本项目主仓
 （推送即交付，交付未推送 = 未交付）；合并方向唯一（上游 main → 本分支），冲突底座面以主分支为准、
 面板面必须保留；合并后 selftest 全绿才能推送交付；推送前跑北极星 diff 收敛检查（见 AGENTS.md）。
 
@@ -49,22 +49,22 @@ cordis 可选依赖语义定稿：`docs/spike-cordis-optional-inject.md`。
 | 项 | 值 |
 |---|---|
 | 工作区 | `D:\DSH-RQ`（即本仓库检出根目录） |
-| 本项目主仓（交付仓） | `https://github.com/01men/RQ-DSH.git`（remote `origin` push，仅 `main` 一个分支） |
+| 本项目主仓（交付仓） | `https://github.com/01men/DeptAI-UI-DSH.git`（remote `origin` push，仅 `main` 一个分支） |
 | 上游底座（fetch/pull，只进不出） | `https://github.com/01men/ybkkasi.git`（remote `origin` fetch） |
 | 开发分支 | `custom/dsh-rq`（基于 `main` 创建，只在本分支开发，不合并回上游 `main`） |
 
 远程配置方式（push 地址与 fetch 地址分离 + 默认推送目标映射到本项目主仓 main）：
 
 ```bash
-git remote set-url --push origin https://github.com/01men/RQ-DSH.git
+git remote set-url --push origin https://github.com/01men/DeptAI-UI-DSH.git
 git config remote.origin.push refs/heads/custom/dsh-rq:refs/heads/main
 ```
 
 日常操作约定：
 
 - 同步上游：`git pull origin main`（仅用于拉取上游更新，本项目改动始终留在 `custom/dsh-rq`）
-- 交付推送：直接 `git push`（自动把本地 `custom/dsh-rq` 推到 01men/RQ-DSH 的 `main`）
-- RQ-DSH 原有主分支已于 2026-09-02 删除，其 `main` 即本项目 `custom/dsh-rq` 的交付线
+- 交付推送：直接 `git push`（自动把本地 `custom/dsh-rq` 推到 01men/DeptAI-UI-DSH 的 `main`）
+- DeptAI-UI-DSH 原有主分支已于 2026-09-02 删除，其 `main` 即本项目 `custom/dsh-rq` 的交付线
 
 ## 网络说明
 
