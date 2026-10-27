@@ -1,0 +1,6 @@
+# 行尾治理（2026-10-27）：packages/ 树固定 LF 检出。
+# 构建工具（esbuild/rollup）落盘一律 LF；Windows 开发机 core.autocrlf=true 的
+# CRLF smudge 会与之打架，造成构建产物假 M（git status 挂 52 个 M 的根源）。
+# text=auto：二进制资产（public/ 图片字体等）由 git 自动识别、不做转换；
+# 文本文件统一 LF 进 blob、LF 落盘，与云端提交产物形态一致，重建即幂等。
+packages/** text=auto eol=lf
