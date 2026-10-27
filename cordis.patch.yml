@@ -13,8 +13,10 @@
 #     向上还有 $DSH_HOME/profiles/node_modules 扁平回退层），无需感知安装位置，开箱可解析。
 #   - ⚠ 不要写 ./packages/... 相对路径——loader 以 profile 目录（而非本包根）为基准解析；
 #     该写法曾导致全部 entry ERR_MODULE_NOT_FOUND、整棵插件树加载失败。
-#   - rq-card 必须写包名（client-modules 走 require.resolve('<条目>/package.json') 解析包元数据，
-#     文件路径会被负判为「非 client 包」且永久缓存，spike §4.2）。
+#   - rq-card 写根包名 @ybkk/gate-01（issue #1 修复，2026-10-27）：client-modules 对裸包名
+#     require.resolve('<名>/package.json') 解析包元数据——根包在一切安装形态下必然顶层在位；
+#     旧写法（裸包名 @ybkk/plugin-rq-card + 根包 file: 依赖）在 git/registry 安装形态下
+#     依赖不落顶层、无法解析（嵌套 bundled 拷贝从 profile 根永远不可达）。
 #
 # 行为要点：
 #   - provideToolRuntime=false：复用 dsh 原生 ToolRuntime（服务键 tools），
@@ -54,7 +56,11 @@
       name: '@ybkk/gate-01/packages/plugin-dsh-bridge/dist/index.js'
       config:
         mountPath: /gate01
-    # 会话侧注入插件：四态执行卡 + 👍/👎 反馈条 + 连接向导（dsh.client 双面插件）。
+    # 会话侧注入插件：四态执行卡 + 👍/👎 反馈条 + 原生面板页（dsh.client 双面插件）。
     # 浏览器半无需现场构建（lib/client.js 随包入库）；连接宿主向导经 /gate01/rqcard/*。
+    # name 写根包名 @ybkk/gate-01（issue #1 修复，2026-10-27）：client-modules 对裸包名
+    # require.resolve('<名>/package.json') 读根包 dsh.client 元数据——裸包名 @ybkk/plugin-rq-card
+    # 依赖 file: 依赖顶层物化，git/registry 安装形态不可达（嵌套 bundled 拷贝从 profile 根
+    # 永远解析不到 → 1 entry did not activate）；根包名在一切安装形态下必然顶层在位。
     - id: rq-card
-      name: '@ybkk/plugin-rq-card'
+      name: '@ybkk/gate-01'

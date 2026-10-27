@@ -627,7 +627,7 @@ try {
     const { existsSync: pathExists } = await import('node:fs')
     const patchYaml = platformCore.parseYaml(readFileSync('cordis.patch.yml', 'utf8'))
     const patchEntries = Array.isArray(patchYaml?.[0]?.insert) ? patchYaml[0].insert : []
-    check('cordis.patch.yml 装配 6 entry（01门 产物：5×dist 前缀 + 1×rq-card 包名；2026-09-11 补 iam/authn）',
+    check('cordis.patch.yml 装配 6 entry（01门 产物：5×dist 前缀 + 1×rq-card 根包名 @ybkk/gate-01；issue #1 修复后）',
       patchEntries.length === 6, `entries=${patchEntries.length}`)
 
     // -- 1. 逐 entry 解析到本地模块并导入（抓缺文件/坏导出——装机包里最致命的静默事故）--
@@ -635,7 +635,14 @@ try {
     for (const entry of patchEntries) {
       const name = String(entry?.name ?? '')
       let localPath = null
-      if (name.startsWith('@ybkk/gate-01/')) {
+      if (name === '@ybkk/gate-01') {
+        // rq-card 条目 = 根包名（issue #1 修复，2026-10-27）：client-modules 对裸包名
+        // require.resolve('<名>/package.json') 读根包 dsh.client 元数据；本仓等价物 =
+        // 根 exports['.'] → index.js（re-export rq-card 宿主半 dist）。
+        const rootPkg = JSON.parse(readFileSync('package.json', 'utf8'))
+        const dot = typeof rootPkg.exports?.['.'] === 'string' ? rootPkg.exports['.'] : null
+        if (dot !== null) localPath = dot.replace(/^\.\//, '')
+      } else if (name.startsWith('@ybkk/gate-01/')) {
         // 形如 @ybkk/gate-01/packages/<dir>/dist/index.js（相对本仓根；dist 预构建产物随包入库）
         localPath = name.slice('@ybkk/gate-01/'.length)
       } else if (name.startsWith('@ybkk/')) {
@@ -656,10 +663,12 @@ try {
     // -- 2. 三链一致（plan-gate01 Phase 3 收缩后规则；2026-09-16 吸收上游 flow-core 后 21/23）：patch(6) id 集 ⊆ cordis.yml(23)；
     //        boot-all ↔ cordis.yml 服务面双射维持不变（防「加了包漏登记」）--
     const entryDir = (name) => {
+      if (name === '@ybkk/gate-01') return 'plugin-rq-card' // rq-card 条目 = 根包名（issue #1 修复）
       if (name.startsWith('@ybkk/gate-01/packages/')) return name.slice('@ybkk/gate-01/packages/'.length).split('/')[0]
       if (name.startsWith('@ybkk/')) return name.slice('@ybkk/'.length)
       const embedded = name.indexOf('/packages/') // cordis.yml 源码形态：<PROJECT_ROOT>/packages/<dir>/src/index.ts
       if (embedded >= 0) return name.slice(embedded + '/packages/'.length).split('/')[0]
+      if (name.endsWith('/index.js')) return 'plugin-rq-card' // cordis.yml dev 形态：<PROJECT_ROOT>/index.js（根出口 = rq-card 宿主半）
       return null
     }
     const patchDirs = patchEntries.map((entry) => entryDir(String(entry?.name ?? ''))).filter(Boolean)
@@ -705,16 +714,19 @@ try {
     // -- 4. 装机 files 覆盖：运行期资产必须落在根 package.json files 根之下 --
     const rootPkg = JSON.parse(readFileSync('package.json', 'utf8'))
     // plan-gate01 Phase 3 精确清单：安装产物=01门 4 entry 所需的最小闭包（源码开发形态根 src/cordis.yml 不随包）
-    const expectedFiles = ['cordis.patch.yml', 'packages/platform-core', 'packages/plugin-iam', 'packages/plugin-authn', 'packages/plugin-dsh-bridge', 'packages/plugin-panel-core', 'packages/plugin-rq-card', 'README.md', 'LICENSE'].sort()
+    const expectedFiles = ['cordis.patch.yml', 'index.js', 'packages/platform-core', 'packages/plugin-iam', 'packages/plugin-authn', 'packages/plugin-dsh-bridge', 'packages/plugin-panel-core', 'packages/plugin-rq-card', 'README.md', 'LICENSE'].sort()
     const actualFiles = [...(rootPkg.files ?? [])].sort()
     check('根 package.json files 精确覆盖 01门 装机闭包（多列/少列都红）',
       JSON.stringify(expectedFiles) === JSON.stringify(actualFiles),
       `expected=${JSON.stringify(expectedFiles)} actual=${JSON.stringify(actualFiles)}`)
     check('dsh.bundle.patch 契约指向 cordis.patch.yml 且存在',
       rootPkg.dsh?.bundle?.patch === './cordis.patch.yml' && pathExists('cordis.patch.yml'))
-    check('rq-card 包名安装形态可解析（根包声明 file: 依赖 → profile node_modules 就位，真机 rq-smoke 实证）',
-      typeof rootPkg.dependencies?.['@ybkk/plugin-rq-card'] === 'string',
-      `dependencies=${JSON.stringify(rootPkg.dependencies ?? {})}`)
+    check('rq-card client 半经根包 exports 装机（issue #1 修复：git/registry/本地三形态同通道——'
+      + '根包声明 dsh.client web + exports["./client"]，裸包名 file: 依赖已废弃）',
+      rootPkg.dsh?.client?.platform === 'web'
+      && rootPkg.exports?.['./client'] === './packages/plugin-rq-card/lib/client.js'
+      && rootPkg.dependencies?.['@ybkk/plugin-rq-card'] === undefined,
+      `dsh.client=${JSON.stringify(rootPkg.dsh?.client ?? {})} exports['./client']=${String(rootPkg.exports?.['./client'])}`)
     check('dsh.compatibility 声明在场（dsh 版本区间 + profiles）',
       typeof rootPkg.dsh?.compatibility?.dsh === 'string' && Array.isArray(rootPkg.dsh?.compatibility?.profiles))
     check('面板 SPA 静态资源在场（index.html / boot.js / app.js）',
@@ -810,18 +822,24 @@ try {
         host.declare('settings.section', 'list')
         host.declare('conversation.view', 'list')
         host.declare('shell.overlay', 'list')
+        host.declare('main', 'keyed')
+        host.declare('sidebar.panellist', 'list')
         const byName = {}
         for (const entry of host.registered) byName[entry.name] = (byName[entry.name] ?? 0) + 1
         const toolviewKeys = new Set(host.registered.filter((e) => e.name === 'tool.call.toolview').map((e) => e.key))
-        check('rq-card 真执行：五槽声明落地后全部注册（执行卡键位 ≥60 且不重复 + 反馈条 + 设置分区 + 工作台 + 角标）',
+        const mainEntry = host.registered.find((e) => e.name === 'main')
+        const panelEntry = host.registered.find((e) => e.name === 'sidebar.panellist')
+        check('rq-card 真执行：七槽声明落地后全部注册（执行卡键位 ≥60 且不重复 + 反馈条 + 设置分区 + 工作台 + 角标 + 原生面板页 + 侧栏入口）',
           (byName['tool.call.toolview'] ?? 0) >= 60 && toolviewKeys.size === byName['tool.call.toolview']
           && byName['conversation.chat.assistant-actions'] === 1
           && byName['settings.section'] === 1
           && byName['conversation.view'] === 1
-          && (byName['shell.overlay'] ?? 0) >= 1,
+          && (byName['shell.overlay'] ?? 0) >= 1
+          && byName['main'] === 1 && mainEntry?.key === 'rq-gate01'
+          && byName['sidebar.panellist'] === 1 && panelEntry?.id === 'rq-gate01',
           JSON.stringify(byName))
-        check('rq-card 真执行：诊断台账记录五槽注入落地（复测可定性）',
-          ['tool.call.toolview', 'conversation.chat.assistant-actions', 'settings.section', 'conversation.view', 'shell.overlay']
+        check('rq-card 真执行：诊断台账记录七槽注入落地（复测可定性）',
+          ['tool.call.toolview', 'conversation.chat.assistant-actions', 'settings.section', 'conversation.view', 'shell.overlay', 'main', 'sidebar.panellist']
             .every((key) => diag.attempts.some((a) => a.stage === `inject-materialized:${key}`)),
           JSON.stringify(diag.attempts.map((a) => a.stage)))
       }
@@ -6404,8 +6422,10 @@ try {
         appJsContract.includes('rqcard/proxy`') && appJsContract.includes("headers['x-rqcard-call'] = '1'"),
         'app.js connectStream 缺少远端代理映射')
       const cardClientSource = readFileSync('packages/plugin-rq-card/src/client/index.ts', 'utf8')
-      check('注入面契约：settings.section + conversation.view + 未连接角标',
-        cardClientSource.includes('SLOT_SETTINGS') && cardClientSource.includes('SLOT_VIEW') && cardClientSource.includes('UNLINKED_BADGE_ID'))
+      check('注入面契约：settings.section + conversation.view + 未连接角标 + 原生面板页（main/panellist 同 id 配对）',
+        cardClientSource.includes('SLOT_SETTINGS') && cardClientSource.includes('SLOT_VIEW') && cardClientSource.includes('UNLINKED_BADGE_ID')
+        && cardClientSource.includes('SLOT_MAIN') && cardClientSource.includes('SLOT_PANELLIST')
+        && cardClientSource.includes('key: PANEL_ID') && cardClientSource.includes('id: PANEL_ID'))
     }
 
     await new Promise((resolve) => sim.close(resolve))

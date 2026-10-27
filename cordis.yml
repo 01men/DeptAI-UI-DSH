@@ -80,10 +80,13 @@
       name: '<PROJECT_ROOT>/packages/plugin-dsh-bridge/src/index.ts'
       config:
         mountPath: /gate01
-    # 会话侧注入插件（WP-06）：四态执行卡 + 👍/👎 反馈条（dsh.client 双面插件）。
-    # name 必须写包名而非源码路径：client-modules 用 require.resolve('<条目>/package.json')
-    # 解析包元数据，文件路径会被负判为「非 client 包」且永久缓存（spike §4.2）。
+    # 会话侧注入插件（WP-06）：四态执行卡 + 👍/👎 反馈条 + 原生面板页（dsh.client 双面插件）。
+    # name 指向根包出口 index.js（issue #1 修复，2026-10-27）：client-modules 的包元数据
+    # 取「解析文件向上最近的 package.json」——根 index.js 落在根包 @ybkk/gate-01 的
+    # dsh.client 声明上，与安装形态（cordis.patch.yml 写根包名）同一解析终点、
+    # 浏览器半装载 id 同为 @ybkk/gate-01。旧写法（裸包名 @ybkk/plugin-rq-card）在
+    # git/registry 安装形态不可解析，已废弃。
     # 启动前必须先构建浏览器半（激活期缺 bundle 会响亮抛错、宿主启动失败，spike §4.4）：
     #   node packages/plugin-rq-card/build.mjs   →  packages/plugin-rq-card/lib/client.js
     - id: rq-card
-      name: '@ybkk/plugin-rq-card'
+      name: '<PROJECT_ROOT>/index.js'

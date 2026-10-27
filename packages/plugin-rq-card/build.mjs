@@ -3,9 +3,9 @@
  * build.mjs —— 产出浏览器半 bundle lib/client.js（WP-06 交付物 4）。
  *
  * 【为什么必须构建（spike §4.4 构建门禁）】client-modules 对声明的 client 包
- * 伺服 /plugins/@ybkk/plugin-rq-card/client.js；产物缺失时宿主激活期响亮抛错
- * （MissingClientBundleError → ClientPackageCompositionError），`dsh web` 直接
- * 启动失败。因此启动前必须先跑本脚本。
+ * 伺服 /plugins/<包名>/client.js（issue #1 修复后包名=根包 @ybkk/gate-01）；产物缺失时
+ * 宿主激活期响亮抛错（MissingClientBundleError → ClientPackageCompositionError），
+ * `dsh web` 直接启动失败。因此启动前必须先跑本脚本。
  *
  * 【构建策略】等价复刻 dsh 检出的 tsdown.client.ts 预设
  * （packages/client/tsdown.client.ts，只读参照）：esbuild 单文件 CJS bundle，
@@ -40,7 +40,11 @@ import { fileURLToPath } from 'node:url'
 import { BUILD_ID_HEADER, computeClientBuildId } from './build-id.mjs'
 
 const PKG_ROOT = fileURLToPath(new URL('.', import.meta.url))
-const PLUGIN_ID = '@ybkk/plugin-rq-card'
+// 浏览器半装载 id = 宿主 boot 图行 id = client-modules 解析出的 packageName。
+// issue #1 修复（2026-10-27）后两个装配形态（cordis.patch.yml 根包名 / cordis.yml 根
+// index.js 路径）都落在根包 @ybkk/gate-01 的元数据上——装载 id 必须与之一致，
+// 否则 bundle 自注册的 id 与图行 id 不匹配，工厂永远不被物化。
+const PLUGIN_ID = '@ybkk/gate-01'
 
 /** 平台模块表（镜像 dsh packages/client/web/src/platform.ts，升级 dsh 时同步）。 */
 const PLATFORM_MODULES = [
@@ -163,7 +167,7 @@ async function main() {
       js: [
         `/* ${BUILD_ID_HEADER}: ${computeClientBuildId(PKG_ROOT)} */`,
         '(function () {',
-        '  var PLUGIN_ID = "@ybkk/plugin-rq-card";',
+        '  var PLUGIN_ID = "@ybkk/gate-01";',
         '  var DIAG = window.__RQ_CARD_DIAG__ = window.__RQ_CARD_DIAG__ || { installed: false, attempts: [] };',
         '  var note = function (stage, error) {',
         '    var entry = { at: new Date().toISOString(), stage: stage };',
@@ -243,7 +247,7 @@ async function main() {
   }
   const size = statSync(outfile).size
   console.log(`[rq-card/build] OK → packages/plugin-rq-card/lib/client.js（${(size / 1024).toFixed(1)} KiB）`)
-  console.log('[rq-card/build] 提示：dsh web 启动会伺服 /plugins/@ybkk/plugin-rq-card/client.js；lib/ 建议纳入版本管理（激活期缺产物=宿主启动失败）。')
+  console.log('[rq-card/build] 提示：dsh web 启动会伺服 /plugins/@ybkk/gate-01/client.js（根包名，issue #1 修复后）；lib/ 建议纳入版本管理（激活期缺产物=宿主启动失败）。')
 }
 
 main().catch((error) => {

@@ -14,9 +14,12 @@
  *
  *     node packages/plugin-rq-card/build.mjs     # 产出 lib/client.js（含 build-id 指纹）
  *
- * cordis.yml / cordis.patch.yml 的 loader 条目 name 必须是包名
- * '@ybkk/plugin-rq-card'（client-modules 用 require.resolve 解析包元数据，
- * 源码文件路径会被负判为「非 client 包」且永久缓存，spike §4.2）。
+ * cordis 装配条目的 name（issue #1 修复，2026-10-27）：安装形态（cordis.patch.yml）
+ * 写根包名 '@ybkk/gate-01'，源码开发形态（cordis.yml）写根出口路径
+ * '<PROJECT_ROOT>/index.js'——两条链的包元数据都落在根包 dsh.client 声明上
+ * （client-modules 取「解析文件向上最近的 package.json」），浏览器半装载 id 同为
+ * '@ybkk/gate-01'。旧写法（裸包名 '@ybkk/plugin-rq-card'）依赖 file: 依赖顶层物化，
+ * git/registry 安装形态不可达，已废弃。
  *
  * 【markdown 兜底契约（spike §5 降级预案第 5 条，宿主工具侧义务）】
  * 01门工具的 tool/result 文本内容必须始终携带纯 markdown 摘要 + /gate01 控制台链接：

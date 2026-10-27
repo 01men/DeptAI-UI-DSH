@@ -47,6 +47,9 @@ export const SLOT_OVERLAY = 'shell.overlay' as const
 export const SLOT_SETTINGS = 'settings.section' as const
 /** M3：会话视图 Tab 环（ui-trajectory 同款挂载位）——「01门工作台」整页内嵌面板。 */
 export const SLOT_VIEW = 'conversation.view' as const
+/** M4：原生全局面板——侧栏入口（list）+ 中央主面板（keyed），同 id 配对（2026-10-27）。 */
+export const SLOT_MAIN = 'main' as const
+export const SLOT_PANELLIST = 'sidebar.panellist' as const
 
 /** 宿主连接状态端点（同源根绝对：/gate01 挂载之下的免登向导命名空间）。 */
 export const LINK_ENDPOINT = `${CONSOLE_BASE}/rqcard/link` as const
@@ -54,6 +57,16 @@ export const LINK_ENDPOINT = `${CONSOLE_BASE}/rqcard/link` as const
 /** 01门面板入口（同源；?embed=1 = 被 dsh 视图 Tab 内嵌形态，面板侧据此做嵌套防护）。 */
 export const PANEL_URL = `${CONSOLE_BASE}/panel/` as const
 export const PANEL_EMBED_URL = `${PANEL_URL}?embed=1` as const
+
+/**
+ * 原生面板页 id（M4）：sidebar.panellist 条目 id 与 main 槽 key 必须同值——宿主据此
+ * 在点击侧栏行时切换中央主面板。取 'rq-gate01'，避开保留键 conversation 与官方
+ * 面板（plugins / schedule）。
+ */
+export const PANEL_ID = 'rq-gate01' as const
+
+/** 侧栏行位次：官方入口 插件=0、定时任务=10，插件页从 20 起（规范约定 ≥20）。 */
+export const PANEL_SIDEBAR_ORDER = 20 as const
 
 /** 向导端点调用头（服务端 CSRF 防线，hostlink.ts 文件头第 1 条）。 */
 export const RQCARD_CALL_HEADER = 'x-rqcard-call' as const

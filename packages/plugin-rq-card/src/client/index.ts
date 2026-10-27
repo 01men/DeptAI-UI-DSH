@@ -11,7 +11,9 @@
  *   ④ 会话视图 Tab「01门工作台」（M3）：`conversation.view` list 条目
  *      （id 'rq-workbench'，ui-trajectory 同款挂载位）——整页内嵌 /rq/panel/；
  *   ⑤ 未连接宿主角标（M3「主动连接」）：宿主连接为 none 时 `shell.overlay`
- *      挂可点击提醒，点击打开面板（未连接且未登录时面板首屏即连接向导）。
+ *      挂可点击提醒，点击 selectPanel 到原生面板页（未连接且未登录时面板首屏即连接向导）；
+ *   ⑥ 原生全局面板（M4，2026-10-27）：`sidebar.panellist` 侧栏入口行 + `main` keyed
+ *      中央面板（同 id 配对，宿主原生页面模型）——整页左右分栏行业工作台，插件管理页同款。
  *
  * 【降级预案（spike §5 的 1-4 条，本 apply 逐条落实）】
  *   1. 声明依赖全部走 ctx.slots.inject：目标槽未声明时回调挂起、属主包声明提交即同步
@@ -45,13 +47,16 @@ import { ExecutionCard } from './ExecutionCard.tsx'
 import { RqFeedback } from './RqFeedback.tsx'
 import { RqSettings } from './RqSettings.tsx'
 import { RqWorkbench } from './RqWorkbench.tsx'
+import { GatePanelPage } from './GatePanelPage.tsx'
+import { GatePanelIcon } from './GateIcon.tsx'
 import { fetchHostLink } from './hostStatus.ts'
 import type { RqFeedbackInjected, RqToolviewInjected } from './slots.ts'
 import { en, zh } from './locales.ts'
 import { ensureStyles } from './styles.ts'
 import {
-  DEGRADED_BADGE_ID, FEEDBACK_ENTRY_ID, PANEL_URL, SLOT_ASSISTANT_ACTIONS, SLOT_OVERLAY,
-  SLOT_SETTINGS, SLOT_TOOLVIEW, SLOT_VIEW, TOOLVIEW_ENTRY_PREFIX, UNLINKED_BADGE_ID,
+  DEGRADED_BADGE_ID, FEEDBACK_ENTRY_ID, PANEL_ID, PANEL_SIDEBAR_ORDER, PANEL_URL, SLOT_ASSISTANT_ACTIONS,
+  SLOT_MAIN, SLOT_OVERLAY, SLOT_PANELLIST, SLOT_SETTINGS, SLOT_TOOLVIEW, SLOT_VIEW,
+  TOOLVIEW_ENTRY_PREFIX, UNLINKED_BADGE_ID,
 } from '../wire.ts'
 
 export type { ExecutionState, ExecutionStateInput, BlockedReason } from './state.ts'
@@ -61,8 +66,8 @@ export { deriveExecutionState } from './state.ts'
 /** 词典命名空间（locales.ts 的 LocaleNamespaceMap 座位名）。 */
 const NS = 'rq-card'
 
-/** 插件 id（与 package.json name、boot 图行 id 一致）。 */
-const PLUGIN_ID = '@ybkk/plugin-rq-card'
+/** 插件 id（浏览器半装载 id = 宿主 boot 图行 id；issue #1 修复后 = 根包名 @ybkk/gate-01）。 */
+const PLUGIN_ID = '@ybkk/gate-01'
 
 /**
  * 01门工具名名录（各插件包 tools.ts 的登记清单，截至 WP-06）。
@@ -176,8 +181,8 @@ function probeSpec(ctx: ClientContext, slot: string): { kind?: string } | undefi
   }
 }
 
-/** 必需服务：slot 注册表 + 词典。 */
-export const inject = ['slots', 'locale']
+/** 必需服务：slot 注册表 + 词典 + 面板导航（M4 原生面板页 selectPanel）。 */
+export const inject = ['slots', 'locale', 'layout']
 
 /** 降级角标的 DOM 直挂兜底（不依赖 slots；QA BUG-G-01/T-14：失效必须有用户可见信号）。 */
 function mountDegradedDomBadge(): void {
@@ -362,7 +367,48 @@ export function apply(ctx: ClientContext): void {
     if (probeSpec(ctx, SLOT_VIEW) === undefined) diagNote('inject-pending:' + SLOT_VIEW)
   })
 
-  // ── ⑥ 未连接角标（M3「主动连接」）：宿主连接为 none 时在全局浮层提醒，点击进向导 ──
+  // ── ⑥ 原生全局面板（M4，2026-10-27）：侧栏入口 + 中央主面板，同 id 配对 ──
+  // DSH 原生页面模型（插件管理页同款）：sidebar.panellist list 条目渲染侧栏行，
+  // main keyed 槽的 key = 同一 PANEL_ID——宿主点击侧栏行即整页切换中央面板；
+  // 程序化跳转走 ctx.layout.selectPanel(PANEL_ID)，不自己造路由、不监听侧栏点击。
+  safely('main-panel', () => {
+    ctx.slots.inject(SLOT_MAIN, () => injectBody('main-panel', () => {
+      const spec = probeSpec(ctx, SLOT_MAIN)
+      if (spec?.kind !== 'keyed') {
+        markDegraded(`${SLOT_MAIN} spec missing or not keyed`, spec)
+        diagNote('inject-kind-mismatch:' + SLOT_MAIN)
+        return undefined
+      }
+      diagNote('inject-materialized:' + SLOT_MAIN)
+      return ctx.slots.register({
+        name: SLOT_MAIN,
+        key: PANEL_ID,
+        locale: NS,
+      }, GatePanelPage)
+    }))
+    if (probeSpec(ctx, SLOT_MAIN) === undefined) diagNote('inject-pending:' + SLOT_MAIN)
+  })
+  safely('sidebar-panel-entry', () => {
+    ctx.slots.inject(SLOT_PANELLIST, () => injectBody('sidebar-panel-entry', () => {
+      const spec = probeSpec(ctx, SLOT_PANELLIST)
+      if (spec?.kind !== 'list') {
+        markDegraded(`${SLOT_PANELLIST} spec missing or not list`, spec)
+        diagNote('inject-kind-mismatch:' + SLOT_PANELLIST)
+        return undefined
+      }
+      diagNote('inject-materialized:' + SLOT_PANELLIST)
+      return ctx.slots.register({
+        name: SLOT_PANELLIST,
+        id: PANEL_ID,
+        order: PANEL_SIDEBAR_ORDER,
+        ...(t ? { label: () => t('panel') } : {}),
+        locale: NS,
+      }, GatePanelIcon)
+    }))
+    if (probeSpec(ctx, SLOT_PANELLIST) === undefined) diagNote('inject-pending:' + SLOT_PANELLIST)
+  })
+
+  // ── ⑦ 未连接角标（M3「主动连接」）：宿主连接为 none 时在全局浮层提醒，点击进向导 ──
   safely('unlinked-badge', () => {
     ctx.slots.inject(SLOT_OVERLAY, () => injectBody('unlinked-badge', () => {
       const spec = probeSpec(ctx, SLOT_OVERLAY)
@@ -378,7 +424,18 @@ export function apply(ctx: ClientContext): void {
           return createElement('button', {
             type: 'button',
             className: 'rq-unlinked',
-            onClick: () => { try { window.open(PANEL_URL, '_blank', 'noopener') } catch { /* 静默 */ } },
+            // 首选整页切换到本插件面板（未连接时面板首屏即连接向导）；
+            // main 键位未注册（老宿主）时回落新开浏览器页。
+            onClick: () => {
+              try {
+                const layout = (ctx as { layout?: { selectPanel?: (id: string) => void } }).layout
+                if (typeof layout?.selectPanel === 'function') {
+                  layout.selectPanel(PANEL_ID)
+                  return
+                }
+              } catch { /* 键位缺席/服务不可用：回落 window.open */ }
+              try { window.open(PANEL_URL, '_blank', 'noopener') } catch { /* 静默 */ }
+            },
           }, '01门：未连接宿主，点击打开向导')
         })
       })
@@ -387,7 +444,7 @@ export function apply(ctx: ClientContext): void {
   })
 
   // 【冒烟自证（spike 风险 R8 的首个联调里程碑）】boot 后可在控制台确认：
-  //   window.__DSH_BOOT__ 含 { id: '@ybkk/plugin-rq-card', ... } 图行，
+  //   window.__DSH_BOOT__ 含 { id: '@ybkk/gate-01', ... } 图行，
   //   且本日志出现——两件事齐了，说明「空插件上链」成立。
   console.info('[rq-card] client plugin applied:', PLUGIN_ID)
 }

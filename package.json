@@ -11,18 +11,13 @@
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {
-    "@ybkk/plugin-rq-card": "file:packages/plugin-rq-card"
-  },
-  "bundledDependencies": [
-    "@ybkk/plugin-rq-card"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/01men/DeptAI-UI-DSH.git"
   },
   "files": [
     "cordis.patch.yml",
+    "index.js",
     "packages/platform-core",
     "packages/plugin-iam",
     "packages/plugin-authn",
@@ -32,9 +27,27 @@
     "README.md",
     "LICENSE"
   ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./packages/plugin-rq-card/lib/client.js",
+    "./package.json": "./package.json",
+    "./packages/*": "./packages/*"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
     },
     "compatibility": {
       "dsh": ">=0.1.0-rc.7 <0.2.0",
