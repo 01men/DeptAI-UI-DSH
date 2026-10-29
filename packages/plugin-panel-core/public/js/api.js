@@ -153,6 +153,12 @@ async function request(method, path, body, opts = {}, retried = false) {
   }
   if (!response.ok || payload?.ok === false) {
     const err = payload?.error ?? {}
+    // 远端模式面板路由 404 = 宿主版本缺少该面板契约（docs/handoff-panel-remote-contract-to-main.md
+    // H-1）：广播给壳层做诚实降级横幅（「宿主缺少 X」），错误对象照常抛出、视图内既有错误处理
+    // 不变（issue #2，2026-10-29）。local 形态路由同进程必然在位，不广播。
+    if (remoteProxy && response.status === 404 && path.startsWith('/api/panel/')) {
+      try { window.dispatchEvent(new CustomEvent('panel:host-missing-route', { detail: { path } })) } catch { /* Node 自测环境无 window */ }
+    }
     throw new ApiError(err.code ?? `HTTP_${response.status}`, err.message ?? `请求失败（${response.status}）`, response.status)
   }
   return payload?.data

@@ -3076,3 +3076,38 @@ async function showConfig() {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// 远端宿主能力缺口 · 诚实降级横幅（issue #2，2026-10-29）：remote 形态下面板路由在宿主侧
+// 404（hub 版本缺该面板契约，见 docs/handoff-panel-remote-contract-to-main.md H-1）时，
+// 顶部横幅如实列出缺失项与去向，不让用户面对无解释的 404 toast。local 形态不触发
+// （api.js 仅在 remoteProxy 分支广播）；ApiError 照常抛出，视图内既有错误处理不变。
+// typeof window 守卫：selftest 会在 Node 环境 import 本模块（无 window）。
+// ---------------------------------------------------------------------------
+const hostGapPaths = new Set()
+
+function renderHostGapBanner() {
+  document.getElementById('iawHostGapBanner')?.remove()
+  if (!hostGapPaths.size || typeof document === 'undefined') return
+  const items = [...hostGapPaths]
+  const banner = document.createElement('div')
+  banner.id = 'iawHostGapBanner'
+  banner.style.cssText = 'position:sticky;top:0;z-index:70;display:flex;gap:10px;align-items:baseline;padding:9px 14px;'
+    + 'background:rgba(245,158,11,.14);border-bottom:1px solid var(--accent-amber,#f59e0b);font-size:12px;line-height:1.5'
+  banner.innerHTML = `<span>⚠️</span><div style="flex:1;min-width:0">当前连接的宿主缺少 <b>${items.length}</b> 条面板路由`
+    + '（能力契约正在跨仓回流：docs/handoff-panel-remote-contract-to-main.md H-1，升级宿主后自动恢复）：'
+    + `<span style="word-break:break-all;font-family:monospace">${items.slice(0, 6).map(esc).join('、')}${items.length > 6 ? ' 等' : ''}</span></div>`
+    + '<button id="iawHostGapDismiss" style="flex:none;cursor:pointer;border:1px solid var(--accent-amber,#f59e0b);'
+    + 'background:transparent;border-radius:6px;padding:2px 10px;font-size:12px">知道了</button>'
+  document.body.prepend(banner)
+  banner.querySelector('#iawHostGapDismiss').onclick = () => { hostGapPaths.clear(); banner.remove() }
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('panel:host-missing-route', (event) => {
+    const path = String(event.detail?.path ?? '')
+    if (!path || hostGapPaths.has(path)) return
+    hostGapPaths.add(path)
+    renderHostGapBanner()
+  })
+}
