@@ -55,7 +55,7 @@ function apply(ctx, config = {}) {
     if (!wizardGuard(exchange)) return;
     const input = json(exchange);
     try {
-      exchange.ok(await link.setRemote(String(input.hubBase ?? ""), input.label));
+      exchange.ok(await link.setRemote(String(input.hubBase ?? ""), input.label, { timeoutMs: input.timeoutMs }));
     } catch (error) {
       fail(exchange, "LINK_REMOTE_FAILED", error);
     }
@@ -75,7 +75,8 @@ function apply(ctx, config = {}) {
   });
   http.use(async (exchange) => {
     if (!exchange.path.startsWith("/rqcard/proxy")) return;
-    if (!wizardGuard(exchange)) return;
+    const sseProxy = exchange.method === "GET" && exchange.path === "/rqcard/proxy/api/panel/stream";
+    if (!sseProxy && !wizardGuard(exchange)) return;
     await link.proxy(exchange);
   });
   ctx.tools.register(defineTool({

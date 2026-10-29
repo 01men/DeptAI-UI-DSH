@@ -136,9 +136,9 @@ export function apply(ctx: Context, config: RqCardConfig = {}) {
 
   http.register('POST', '/rqcard/link/remote', async (exchange) => {
     if (!wizardGuard(exchange)) return
-    const input = json<{ hubBase?: string; label?: string }>(exchange)
+    const input = json<{ hubBase?: string; label?: string; timeoutMs?: number }>(exchange)
     try {
-      exchange.ok(await link.setRemote(String(input.hubBase ?? ''), input.label))
+      exchange.ok(await link.setRemote(String(input.hubBase ?? ''), input.label, { timeoutMs: input.timeoutMs }))
     } catch (error) {
       fail(exchange, 'LINK_REMOTE_FAILED', error)
     }
@@ -162,7 +162,11 @@ export function apply(ctx: Context, config: RqCardConfig = {}) {
   // -- 远端数据代理：通配路径走中间件拦截（路由表按段精确匹配表达不了任意深度） --
   http.use(async (exchange) => {
     if (!exchange.path.startsWith('/rqcard/proxy')) return
-    if (!wizardGuard(exchange)) return // 已写 403 响应
+    // SSE 透传豁免向导头（issue #6，2026-10-29）：EventSource 带不了自定义头；该 GET 只读，
+    // 凭据走一次性 ticket（消费即焚）/自校验 token，响应无 CORS 头、跨站页读不到流内容，
+    // 豁免不扩大 CSRF 面。其余 /rqcard/proxy/* 仍强制 x-rqcard-call。
+    const sseProxy = exchange.method === 'GET' && exchange.path === '/rqcard/proxy/api/panel/stream'
+    if (!sseProxy && !wizardGuard(exchange)) return // 已写 403 响应
     await link.proxy(exchange)
   })
 

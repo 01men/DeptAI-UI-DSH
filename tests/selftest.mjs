@@ -6113,8 +6113,8 @@ try {
         linkNone.status === 200 && linkNone.body?.data?.mode === 'none',
         JSON.stringify(linkNone.body))
 
-      // -- stub 远端宿主 ×2：A=dsh 挂载形态（/rq 前缀），B=独立宿主形态（无前缀） --
-      const hubSeen = { authz: '', logins: 0, panelCalls: 0, tickets: 0, panelAuthz: '', panelHeader: '', polls: 0, pollAuthz: '', pollHeader: '' }
+      // -- stub 远端宿主 ×3：A=dsh 挂载形态（/rq 前缀），B=独立宿主形态（无前缀），C=慢网独立宿主（健康响应延迟 2s） --
+      const hubSeen = { authz: '', logins: 0, panelCalls: 0, tickets: 0, panelAuthz: '', panelHeader: '', polls: 0, pollAuthz: '', pollHeader: '', streams: 0 }
       const hubStubA = createServer(async (req, res) => {
         const url = req.url ?? ''
         const json = (status, payload) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(payload)) }
@@ -6130,6 +6130,14 @@ try {
           return json(200, { ok: true, data: { token: 'stub-g1-session', refreshToken: 'stub-g1-refresh', expiresAt: '2026-09-08T00:00:00Z', user: { id: 'u-g1', username: 'g1user', displayName: 'G1回跳用户', orgId: 'org1', roleIds: [], roles: ['业务'], permissions: ['panel.read', '*'] } } })
         }
         if (url === '/rq/api/auth/me') return json(200, { ok: true, data: { id: 'u-g1', displayName: 'G1回跳用户', permissions: ['*'] } })
+        // issue #6：SSE 流式透传的宿主侧——两帧事件后关闭（代理透传测试读尽即判定）
+        if (req.method === 'GET' && url.split('?')[0] === '/rq/api/panel/stream') {
+          hubSeen.streams += 1
+          res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' })
+          res.write('data: {"hello":"stub-stream-event"}\n\n')
+          setTimeout(() => { try { res.write('data: {"hello":"stub-stream-event-2"}\n\n'); res.end() } catch { /* 客户端已断开 */ } }, 200)
+          return
+        }
         if (url.startsWith('/rq/api/panel/')) {
           hubSeen.panelCalls += 1
           hubSeen.panelAuthz = String(req.headers.authorization ?? '')
@@ -6173,10 +6181,21 @@ try {
         }
         res.writeHead(404).end('{}')
       })
+      const hubStubC = createServer((req, res) => {
+        // 慢网独立宿主（issue #5）：健康响应延迟 2s——快档 1.4s 判超时，放宽档 6s 命中；
+        // 其余路径立即 404（真实独立宿主对未匹配路径的行为）
+        if (req.method === 'GET' && req.url === '/api/health') {
+          setTimeout(() => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ ok: true, data: { version: '7.7.7-hubC-slow' } })) }, 2000)
+          return
+        }
+        res.writeHead(404, { 'content-type': 'application/json' }).end('{}')
+      })
       await new Promise((resolve) => hubStubA.listen(0, '127.0.0.1', resolve))
       await new Promise((resolve) => hubStubB.listen(0, '127.0.0.1', resolve))
+      await new Promise((resolve) => hubStubC.listen(0, '127.0.0.1', resolve))
       const hubA = `http://127.0.0.1:${hubStubA.address().port}`
       const hubB = `http://127.0.0.1:${hubStubB.address().port}`
+      const hubC = `http://127.0.0.1:${hubStubC.address().port}`
       try {
         const scanRes = await wfetchSim('POST', '/gate01/rqcard/link/scan', { body: { candidates: [hubA, hubB, 'http://127.0.0.1:1'] } })
         check('hostlink：扫描发现两类宿主（挂载前缀自动判定 /rq 与 空串）',
@@ -6190,6 +6209,17 @@ try {
           JSON.stringify(linkRemote.body))
         const linkRemoteBad = await wfetchSim('POST', '/gate01/rqcard/link/remote', { body: { hubBase: 'http://127.0.0.1:1' } })
         check('hostlink：不可达宿主被拒（400，不落盘）', linkRemoteBad.status === 400 && /不可达/.test(String(linkRemoteBad.body?.error?.message ?? '')), JSON.stringify({ status: linkRemoteBad.status, body: linkRemoteBad.body }))
+        // -- issue #5（2026-10-29）：公网/慢网宿主快档（1.4s/前缀）全超时后以放宽档（6s/前缀）复探再判死；
+        //    timeoutMs 显式覆盖时单级判定，不二次等待 --
+        const linkSlow = await wfetchSim('POST', '/gate01/rqcard/link/remote', { body: { hubBase: hubC } })
+        check('hostlink：慢网宿主快档超时后放宽复探成功（issue #5，不再误判不可达）',
+          linkSlow.status === 200 && linkSlow.body?.data?.probe?.version === '7.7.7-hubC-slow' && linkSlow.body.data.config.hubMountPrefix === '',
+          JSON.stringify(linkSlow.body))
+        const linkSlowOverride = await wfetchSim('POST', '/gate01/rqcard/link/remote', { body: { hubBase: hubC, timeoutMs: 800 } })
+        check('hostlink：timeoutMs 覆盖单级判定（覆盖窗内无健康响应即拒）',
+          linkSlowOverride.status === 400 && /不可达/.test(String(linkSlowOverride.body?.error?.message ?? '')),
+          JSON.stringify({ status: linkSlowOverride.status, body: linkSlowOverride.body }))
+        await wfetchSim('POST', '/gate01/rqcard/link/remote', { body: { hubBase: hubA } }) // 还原宿主 A 供后续断言
 
         // -- 远端代理：白名单转发 + Authorization 透传 + 白名单外 403 --
         const proxyLogin = await wfetchSim('POST', '/gate01/rqcard/proxy/api/auth/login', {
@@ -6204,8 +6234,15 @@ try {
           proxyPanel.status === 200 && proxyPanel.body?.data?.stub === 'panel' && hubSeen.panelCalls === 1, JSON.stringify(proxyPanel.body))
         const proxyDenied = await wfetchSim('GET', '/gate01/rqcard/proxy/api/iam/users')
         check('hostlink：代理白名单外 403（PROXY_PATH_DENIED）', proxyDenied.status === 403 && proxyDenied.body?.error?.code === 'PROXY_PATH_DENIED')
-        const proxyStream = await wfetchSim('GET', '/gate01/rqcard/proxy/api/panel/stream')
-        check('hostlink：SSE 不透传（前端走既有 30s 轮询降级）', proxyStream.status === 403 && proxyStream.body?.error?.code === 'PROXY_PATH_DENIED')
+        // -- issue #6（2026-10-29）：SSE 改为流式透传——该 GET 豁免 x-rqcard-call（EventSource
+        //    带不了自定义头），content-type 原样、事件数据逐块到达，不再 403（故此处故意不带向导头）--
+        const proxyStream = await fetch(`${simOrigin}/gate01/rqcard/proxy/api/panel/stream?dept=rd&ticket=stub-stream-ticket`)
+        const proxyStreamCt = String(proxyStream.headers.get('content-type') ?? '')
+        const proxyStreamText = await proxyStream.text()
+        check('hostlink：SSE 流式透传（豁免向导头，text/event-stream + 事件数据原样到达）',
+          proxyStream.status === 200 && proxyStreamCt.includes('text/event-stream')
+          && proxyStreamText.includes('stub-stream-event') && hubSeen.streams === 1,
+          JSON.stringify({ status: proxyStream.status, ct: proxyStreamCt, text: proxyStreamText.slice(0, 120), streams: hubSeen.streams }))
 
         // -- Bug1 回归：SPA HTML 兜底不得误判为健康宿主（/rq 前缀被独立宿主的 HTML 200 骗走）--
         const linkFormA = await wfetchSim('POST', '/gate01/rqcard/link/remote', { body: { hubBase: hubB } })
@@ -6386,6 +6423,7 @@ try {
       } finally {
         await new Promise((resolve) => hubStubA.close(resolve))
         await new Promise((resolve) => hubStubB.close(resolve))
+        await new Promise((resolve) => hubStubC.close(resolve))
       }
 
       // -- 工具 rq_host_status（Agent 可答连接状态；此时已 reset → none）--

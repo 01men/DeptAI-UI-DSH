@@ -564,12 +564,12 @@ function navDef() {
     ],
     cap: [
       ['mchannels', '模型渠道', '◈', state.models.length ? String(state.models.length) : ''],
-      ['tools', '工具软件', '⚙', toolCount ? String(toolCount) : ''],
-      ['kmodels', '知识模型', '☣', modelCount ? String(modelCount) : ''],
-      ['talent', '人才技能', '❋', talentCount ? String(talentCount) : ''],
+      ['tools', '工具软件', '⚙', toolCount ? String(toolCount) : '', '行业场景要素 · 图谱四清单口径（非平台资产台账）'],
+      ['kmodels', '知识模型', '☣', modelCount ? String(modelCount) : '', '行业场景要素 · 图谱四清单口径（非平台资产台账）'],
+      ['talent', '人才技能', '❋', talentCount ? String(talentCount) : '', '行业场景要素 · 图谱四清单口径（非平台资产台账）'],
     ],
     data: [
-      ['elements', '数据要素', '❖', dataCount ? String(dataCount) : ''],
+      ['elements', '数据要素', '❖', dataCount ? String(dataCount) : '', '行业场景要素 · 图谱四清单口径（非平台资产台账）'],
     ],
     collab: [
       ['rooms', '协作频道', '#', (state.overview?.channels ?? []).length ? String((state.overview?.channels ?? []).length) : ''],
@@ -671,7 +671,7 @@ function renderNav() {
   const label = { collab: '协作空间', map: '图谱空间', flow: '执行空间', cap: '能力空间', data: '数据空间', mfg: '制造工具箱空间' }[state.space]
   group.innerHTML = `<div class="iaw-nav-title">${label} · ${esc(state.industry?.name ?? '未激活')}</div>` +
     defs[state.space].map((n) => `
-      <button class="iaw-nav-item ${state.nav === n[0] ? 'on' : ''}" data-nav="${n[0]}">
+      <button class="iaw-nav-item ${state.nav === n[0] ? 'on' : ''}" data-nav="${n[0]}"${n[4] ? ` title="${esc(n[4])}"` : ''}>
         <span class="iaw-nav-ic">${n[2]}</span><span>${n[1]}</span>${n[3] ? `<span class="cnt">${n[3]}</span>` : ''}
       </button>`).join('')
   group.querySelectorAll('.iaw-nav-item').forEach((el) => {
@@ -1614,7 +1614,7 @@ function viewCapList(pack, kind) {
   const titles = { tools: ['工具软件清单', '感知检测工具 / 中间件 / SaaS 化工业软件', 'iaw-pill-tool'], models: ['知识模型清单', '信息模型 / 机理模型 / 规则模型 / 智能模型', 'iaw-pill-model'], talent: ['人才技能清单', '技术研发 / 应用实施 / 业务管理 / 运维服务', 'iaw-pill-skill'] }
   const [title, sub, pill] = titles[kind]
   const items = pack ? capAggregate(pack, kind) : []
-  let h = `<div class="iaw-view"><div class="iaw-page-head"><div><h1>${title}</h1><p>${esc(state.industry?.name ?? '')} · ${sub} · 来自场景图谱四清单</p></div></div>`
+  let h = `<div class="iaw-view"><div class="iaw-page-head"><div><h1>${title}</h1><p>${esc(state.industry?.name ?? '')} · ${sub} · 行业场景要素 · 图谱四清单口径（非平台资产台账）</p></div></div>`
   if (!pack) return h + '<div class="iaw-empty">行业图谱未装载，四清单不可用。</div></div>'
   if (kind === 'talent' && state.skills.length > 0) {
     h += '<div class="iaw-sect-title">可直调技能（skillhub 已上架）<span class="line"></span></div><div class="iaw-grid-4">'
@@ -1638,7 +1638,7 @@ function viewCapList(pack, kind) {
 // ---------------------------------------------------------------------------
 
 function viewElements(pack) {
-  let h = `<div class="iaw-view"><div class="iaw-page-head"><div><h1>数据要素</h1><p>每个结论都必须可回溯 · 无数据时诚实显示缺口</p></div></div>`
+  let h = `<div class="iaw-view"><div class="iaw-page-head"><div><h1>数据要素</h1><p>行业场景要素 · 图谱四清单口径（非平台资产台账） · 每个结论都必须可回溯 · 无数据时诚实显示缺口</p></div></div>`
   if (!pack) return h + '<div class="iaw-empty">行业图谱未装载，数据要素清单不可用。</div></div>'
   const scenes = packScenes(pack)
   const items = capAggregate(pack, 'data')

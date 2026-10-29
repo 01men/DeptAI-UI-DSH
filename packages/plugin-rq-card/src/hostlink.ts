@@ -16,8 +16,12 @@
  *   1. 向导头：所有 /rqcard/* 请求必须带 `x-rqcard-call: 1`。自定义头跨站发不出
  *      （会触发 CORS 预检，而非 /api 路径不放行预检）——挡住恶意网页对
  *      127.0.0.1 向导端点的 drive-by CSRF（改宿主指向钓鱼服务器截获登录凭据）。
+ *      唯一豁免：GET /rqcard/proxy/api/panel/stream（issue #6，2026-10-29）——EventSource
+ *      带不了自定义头，SSE 凭据走一次性 ticket（消费即焚）/自校验 token；该端点只读、
+ *      响应无 CORS 头，跨站页连上了也读不到流内容，CSRF 面不扩大。
  *   2. 代理白名单：/rqcard/proxy/* 只转发 auth 族 + /api/panel/* + /api/health，
- *      白名单外 403；SSE（/api/panel/stream）不透传（前端走既有 30s 轮询降级）。
+ *      白名单外 403；SSE（/api/panel/stream）流式透传（不缓冲、长连接不套 30s 整体超时），
+ *      前端 30s 轮询仅作断线降级保留（issue #6 前「显式拒绝 SSE」已移除）。
  *   3. 代理只透传 Authorization 头（不带 Cookie）、redirect: 'manual'（令牌不随 302 外泄）。
  *
  * 【配置落盘】<dataDir>/gate01-host-link.json（0600，参照 connect-client.json 惯例）。
@@ -25,6 +29,7 @@
 import { readFileSync, writeFileSync, chmodSync } from 'node:fs'
 import { join } from 'node:path'
 import { networkInterfaces } from 'node:os'
+import { Readable } from 'node:stream'
 import type { Context } from '@deepseek-ai/cordis'
 import type { HttpExchange } from '../../platform-core/src/index.ts'
 
@@ -69,8 +74,10 @@ const PROXY_ALLOW_EXACT = new Set([
 /** 代理白名单：前缀族（auth SSO 全族 + 面板 REST 全族）。 */
 const PROXY_ALLOW_PREFIXES = ['/api/auth/sso', '/api/panel/']
 
-/** 代理显式拒绝（白名单前缀内但不适合转发的路径）。 */
-const PROXY_DENY_EXACT = new Set(['/api/panel/stream'])
+/** 代理显式拒绝（白名单前缀内但不适合转发的路径）。
+ * issue #6（2026-10-29）：/api/panel/stream 移出拒绝表——改为流式透传（见 proxy()），
+ * 远端模式 2 秒可见性不再依赖 30s 轮询兜底；拒绝机制保留给后续确需屏蔽的路径。 */
+const PROXY_DENY_EXACT = new Set<string>([])
 
 /** 判定路径是否在代理白名单内。 */
 export function proxyPathAllowed(path: string): boolean {
@@ -81,10 +88,15 @@ export function proxyPathAllowed(path: string): boolean {
 
 /** LAN 扫描的默认候选端口（独立宿主 7300 / dsh web 3080）。 */
 const DEFAULT_SCAN_PORTS = [7300, 3080]
-/** 单探针超时（毫秒）——局域网内 350ms 足够判定，慢网靠手输兜底。 */
+/** 单探针快档超时（毫秒）——局域网内 1.4s（350ms 基数 ×4）足够判定。 */
 const PROBE_TIMEOUT_MS = 350
-/** 代理转发超时（毫秒）。 */
+/** 探针放宽档超时（毫秒）——公网/跨网宿主 TLS+往返常超快档上限（issue #5），快探全超时后以该档复探一轮。 */
+const PROBE_TIMEOUT_SLOW_MS = 6000
+/** 代理转发超时（毫秒）；SSE 流式在响应头到达后解除（长连接生命周期交给客户端断开）。 */
 const PROXY_TIMEOUT_MS = 30_000
+/** setRemote timeoutMs 覆盖的合法区间（毫秒）。 */
+const PROBE_TIMEOUT_OVERRIDE_MIN_MS = 500
+const PROBE_TIMEOUT_OVERRIDE_MAX_MS = 30_000
 /** 扫描候选总量上限（多网卡 /24 × 端口下的有界保证）。 */
 const SCAN_CANDIDATE_LIMIT = 600
 
@@ -142,12 +154,25 @@ export class HostLinkService {
     return this.config
   }
 
-  /** 连接远端宿主（形态 C）：先探测（自动判定挂载前缀），可达才落盘。 */
-  async setRemote(hubBaseInput: string, label?: string): Promise<{ config: HostLinkConfig; probe: HubProbe }> {
+  /**
+   * 连接远端宿主（形态 C）：先探测（自动判定挂载前缀），可达才落盘。
+   *
+   * 【两级探测（issue #5，2026-10-29）】默认先快档（1.4s/前缀，局域网体验不变），
+   * 全部超时再以放宽档（6s/前缀）复探一轮——公网/跨网宿主 TLS+往返常超快档上限，
+   * 单级快探会把可达宿主误判为不可达。`timeoutMs` 显式覆盖（向导可传，钳制在
+   * 0.5s–30s）时只跑单级：调用方自己决定了判定窗，不再二次等待。
+   */
+  async setRemote(hubBaseInput: string, label?: string, opts: { timeoutMs?: number } = {}): Promise<{ config: HostLinkConfig; probe: HubProbe }> {
     const hubBase = normalizeHubBase(hubBaseInput)
-    const probe = await this.probeHub(hubBase)
+    const override = typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs)
+      ? Math.min(PROBE_TIMEOUT_OVERRIDE_MAX_MS, Math.max(PROBE_TIMEOUT_OVERRIDE_MIN_MS, Math.round(opts.timeoutMs)))
+      : null
+    let probe = await this.probeHub(hubBase, override ?? PROBE_TIMEOUT_MS * 4)
+    if (!probe.reachable && override === null) {
+      probe = await this.probeHub(hubBase, PROBE_TIMEOUT_SLOW_MS)
+    }
     if (!probe.reachable) {
-      throw new Error(`宿主不可达：${hubBase}（健康检查无响应，请确认地址/端口/防火墙）`)
+      throw new Error(`宿主不可达：${hubBase}（健康检查无响应，请确认地址/端口/防火墙；跨网宿主网络慢时已放宽到 6s/前缀复探过一轮，仍不通多半是地址或网络不通）`)
     }
     this.config = {
       mode: 'remote',
@@ -177,12 +202,15 @@ export class HostLinkService {
    * 【严格判据（Bug1 修复）】独立宿主对 `/gate01/api/health` 这类未匹配路径会以 SPA 兜底返回
    * 200 HTML——只看 HTTP 200 会把挂载前缀误判成挂载形态（登录跳错地址、代理打错路径）。
    * 必须解析出健康 JSON 信封（ok===true）才算命中，HTML/非 JSON 一律视为该前缀不可用。
+   *
+   * `timeoutMs` 可覆盖单前缀判定窗（默认快档 1.4s；局域网扫描 scan() 固定走默认档，
+   * 不吃放宽档——600 候选 × 慢超时会拖死扫描）。
    */
-  async probeHub(hubBase: string): Promise<HubProbe> {
+  async probeHub(hubBase: string, timeoutMs: number = PROBE_TIMEOUT_MS * 4): Promise<HubProbe> {
     for (const mountPrefix of ['/gate01', '/rq', '']) {
       const url = `${hubBase}${mountPrefix}/api/health`
       try {
-        const response = await fetch(url, { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS * 4), headers: { accept: 'application/json' } })
+        const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), headers: { accept: 'application/json' } })
         if (!response.ok) continue
         const contentType = String(response.headers.get('content-type') ?? '')
         if (!contentType.includes('json')) continue
@@ -247,7 +275,8 @@ export class HostLinkService {
     const query = exchange.query.toString()
     // 远端登录入口（钉钉扫码页）按宿主真实挂载前缀构造——前缀判定由 probeHub 严格判据保证
     const target = `${this.config.hubBase}${this.config.hubMountPrefix ?? ''}${path}${query ? `?${query}` : ''}`
-    const headers: Record<string, string> = { accept: 'application/json' }
+    const streamPath = path === '/api/panel/stream'
+    const headers: Record<string, string> = { accept: streamPath ? 'text/event-stream' : 'application/json' }
     const authorization = exchange.headers.authorization
     if (authorization !== undefined) headers.authorization = String(authorization)
     let bodyText: string | undefined
@@ -255,6 +284,10 @@ export class HostLinkService {
       bodyText = typeof exchange.body === 'string' ? exchange.body : JSON.stringify(exchange.body)
       headers['content-type'] = 'application/json'
     }
+    const controller = new AbortController()
+    // 30s 护栏：非流式覆盖整个往返；流式（SSE）只护「拿到响应头之前」——响应头到达即解除，
+    // 长连接生命周期交给客户端断开驱动（issue #6 前 SSE 被整体超时误杀，是当初显式拒绝的根因）。
+    const guard = setTimeout(() => controller.abort(), PROXY_TIMEOUT_MS)
     let response: Response
     try {
       response = await fetch(target, {
@@ -262,13 +295,37 @@ export class HostLinkService {
         headers,
         body: bodyText,
         redirect: 'manual',
-        signal: AbortSignal.timeout(PROXY_TIMEOUT_MS),
+        signal: controller.signal,
       })
     } catch (error) {
+      clearTimeout(guard)
       const message = error instanceof Error ? error.message : String(error)
       exchange.fail(502, 'HUB_UNREACHABLE', `远端宿主不可达：${message}`)
       return
     }
+    // -- SSE 流式透传（issue #6）：不缓冲、不整读，逐块管道回浏览器；远端模式由此满足
+    //    「已落库状态变化 2 秒内可见」，30s 轮询仅作断线降级。仅对 ok + text/event-stream
+    //    生效：非 2xx（401 票据失效等）与 SPA HTML 兜底照走下方缓冲路径，前端拿 JSON/显式
+    //    报错后自动降级轮询。
+    if (streamPath && response.ok && String(response.headers.get('content-type') ?? '').includes('text/event-stream')) {
+      const streamHeaders: Record<string, string> = {
+        'content-type': String(response.headers.get('content-type') ?? 'text/event-stream'),
+      }
+      const cacheControl = response.headers.get('cache-control')
+      if (cacheControl) streamHeaders['cache-control'] = cacheControl
+      exchange.res.writeHead(response.status, streamHeaders)
+      const upstream = Readable.fromWeb(response.body as unknown as import('node:stream/web').ReadableStream)
+      const finish = () => {
+        clearTimeout(guard)
+        if (!exchange.res.writableEnded) exchange.res.end()
+      }
+      upstream.on('data', (chunk) => { if (!exchange.res.writableEnded) exchange.res.write(chunk) })
+      upstream.on('end', finish)
+      upstream.on('error', finish)
+      exchange.res.on('close', () => { upstream.destroy(); finish() })
+      return
+    }
+    clearTimeout(guard)
     // 宿主数据面只会回 JSON；拿到 HTML 说明地址/挂载前缀不对（SPA 兜底）——透传只会让
     // 前端把整页 HTML 当接口数据渲染，显式报错比静默错乱好（Bug1 的第二道防线）。
     const responseContentType = String(response.headers.get('content-type') ?? '')
