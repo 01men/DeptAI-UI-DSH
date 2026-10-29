@@ -170,11 +170,34 @@ function richToast(title, body, type) {
   setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320) }, 5200)
 }
 
+/**
+ * 模态骨架幂等创建（2026-10-29 修复）。
+ *
+ * 骨架原只在 init() 里插入，而**未登录路径**（renderLoginGuide）不经过 init()——
+ * 此时点「本页登录」→ showModal() → $id('mask') 为 null → TypeError，
+ * 页面被全局错误处理器接管成「加载出现异常，请刷新重试」，登录入口直接不可用。
+ * 现改为：showModal 前置 ensureModalSkeleton()，init() 亦复用同一函数（不重复插入）。
+ */
+function ensureModalSkeleton() {
+  if ($id('mask')) return
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-mask" id="mask">
+      <div class="modal">
+        <div class="modal-h"><span class="t" id="modalTitle"></span><span class="x" id="modalX">✕</span></div>
+        <div class="modal-b" id="modalBody"></div>
+      </div>
+    </div>`)
+  $id('modalX').onclick = hideModal
+  $id('mask').addEventListener('click', (event) => {
+    if (event.target.id === 'mask') hideModal()
+  })
+}
+
 function showModal(title, bodyHtml) {
-  const mask = $id('mask')
+  ensureModalSkeleton()
   $id('modalTitle').textContent = title
   $id('modalBody').innerHTML = bodyHtml
-  mask.classList.add('show')
+  $id('mask').classList.add('show')
 }
 
 function hideModal() {
@@ -291,17 +314,7 @@ function showLoginModal() {
 }
 
 async function init() {
-  document.body.insertAdjacentHTML('beforeend', `
-    <div class="modal-mask" id="mask">
-      <div class="modal">
-        <div class="modal-h"><span class="t" id="modalTitle"></span><span class="x" id="modalX">✕</span></div>
-        <div class="modal-b" id="modalBody"></div>
-      </div>
-    </div>`)
-  $id('modalX').onclick = hideModal
-  $id('mask').addEventListener('click', (event) => {
-    if (event.target.id === 'mask') hideModal()
-  })
+  ensureModalSkeleton()
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') { closeDrawer(); $id('iawIndMenu')?.classList.remove('open') }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {

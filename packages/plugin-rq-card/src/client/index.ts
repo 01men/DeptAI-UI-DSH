@@ -337,6 +337,18 @@ export function apply(ctx: ClientContext): void {
         ...(t ? { label: () => t('settings.nav') } : {}),
         locale: NS,
         inject: (): object => ({
+          // M5：工作台已整页内嵌在 dsh 主界面，设置分区按钮直接切换原生面板；
+          // 宿主未注册该面板键位（老宿主）时返回 false，由组件回落独立窗口打开。
+          select: (): boolean => {
+            try {
+              const layout = (ctx as { layout?: { selectPanel?: (id: string) => void } }).layout
+              if (typeof layout?.selectPanel !== 'function') return false
+              layout.selectPanel(PANEL_ID)
+              return true
+            } catch {
+              return false
+            }
+          },
           open: (url: string) => { try { window.open(url, '_blank', 'noopener') } catch { /* 拦截弹窗时静默 */ } },
           refresh: () => fetchHostLink(),
         }),

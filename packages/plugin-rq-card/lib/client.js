@@ -1,4 +1,4 @@
-/* rq-card-build-id: 6e9432af336ace3e */
+/* rq-card-build-id: 4fbe2260cd32b36b */
 (function () {
   var PLUGIN_ID = "@ybkk/gate-01";
   var DIAG = window.__RQ_CARD_DIAG__ = window.__RQ_CARD_DIAG__ || { installed: false, attempts: [] };
@@ -352,7 +352,7 @@ function RqFeedback(props) {
 // src/client/RqSettings.tsx
 var import_react2 = require("react");
 var import_jsx_runtime3 = require("react/jsx-runtime");
-function RqSettings({ open, refresh, t }) {
+function RqSettings({ select, open, refresh, t }) {
   const [link, setLink] = (0, import_react2.useState)(void 0);
   const reload = (0, import_react2.useCallback)(async () => {
     setLink(await refresh());
@@ -363,6 +363,10 @@ function RqSettings({ open, refresh, t }) {
   const mode = link?.mode;
   const modeText = mode === "remote" ? t("settings.mode.remote") : mode === "local" ? t("settings.mode.local") : mode === "none" ? t("settings.mode.none") : "\u2026";
   const probeText = link?.mode === "remote" ? link.probe?.reachable === true ? t("settings.probe.ok") : t("settings.probe.fail") : null;
+  const gotoWorkbench = (0, import_react2.useCallback)(() => {
+    if (select()) return;
+    open(PANEL_URL);
+  }, [select, open]);
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "rq-set", children: [
     /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "rq-set-row", children: [
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: `rq-set-mode rq-set-mode-${mode ?? "unknown"}`, children: modeText }),
@@ -373,7 +377,7 @@ function RqSettings({ open, refresh, t }) {
       /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn", onClick: () => void reload(), children: t("settings.refresh") })
     ] }),
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "rq-set-hint", children: t("settings.hint") }),
-    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "rq-set-row", children: mode === "none" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn rq-set-primary", onClick: () => open(PANEL_URL), children: t("settings.open.wizard") }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn rq-set-primary", onClick: () => open(PANEL_URL), children: t("settings.open.panel") }) })
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "rq-set-row", children: mode === "none" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn rq-set-primary", onClick: gotoWorkbench, children: t("settings.open.wizard") }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn rq-set-primary", onClick: gotoWorkbench, children: t("settings.open.panel") }) })
   ] });
 }
 
@@ -405,6 +409,140 @@ function RqWorkbench({ t }) {
 
 // src/client/GatePanelPage.tsx
 var import_react3 = require("react");
+var import_jsx_runtime5 = require("react/jsx-runtime");
+var PANEL_TITLE_MARK = "01\u95E8";
+var LOAD_TIMEOUT_MS = 25e3;
+var CSS = `
+.rgp-root{height:100%;min-width:0;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}
+.rgp-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 16px;height:40px;box-sizing:border-box;
+  border-bottom:.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base)}
+.rgp-bar-title{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;line-height:20px;
+  font-weight:500;color:var(--dsw-alias-label-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rgp-bar-sub{font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rgp-bar-actions{display:flex;align-items:center;gap:8px;flex:none}
+.rgp-btn{height:28px;padding:0 10px;border-radius:var(--dsw-radius-md);font-size:13px;cursor:pointer;
+  border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-2);
+  color:var(--dsw-alias-label-primary);transition:background-color .14s ease-out;
+  display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap}
+.rgp-btn:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.rgp-btn:active{transform:translateY(1px)}
+.rgp-btn:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid
+  var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
+.rgp-frame-wrap{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-base)}
+.rgp-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:var(--dsw-alias-bg-base)}
+.rgp-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;padding:24px;text-align:center;background:var(--dsw-alias-bg-base)}
+.rgp-overlay-title{font-size:15px;line-height:22px;font-weight:500;margin:0;
+  color:var(--dsw-alias-label-primary)}
+.rgp-overlay-desc{font-size:13px;line-height:20px;margin:0;max-width:420px;
+  color:var(--dsw-alias-label-secondary)}
+.rgp-overlay-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
+.rgp-spinner{width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--dsw-alias-border-l3);border-top-color:var(--dsw-alias-state-business-primary);
+  animation:rgp-spin .8s linear infinite}
+@keyframes rgp-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rgp-spinner{animation:none}}
+`;
+function GatePanelPage({ t }) {
+  const [phase, setPhase] = (0, import_react3.useState)("loading");
+  const [nonce, setNonce] = (0, import_react3.useState)(0);
+  const frameRef = (0, import_react3.useRef)(null);
+  const reload = (0, import_react3.useCallback)(() => {
+    setPhase("loading");
+    setNonce((value) => value + 1);
+  }, []);
+  const onFrameLoad = (0, import_react3.useCallback)(() => {
+    let ok = false;
+    try {
+      const doc = frameRef.current?.contentDocument;
+      const title = doc?.title ?? "";
+      ok = title.includes(PANEL_TITLE_MARK);
+    } catch {
+      ok = false;
+    }
+    setPhase(ok ? "ready" : "failed");
+  }, []);
+  (0, import_react3.useEffect)(() => {
+    const timer = setTimeout(() => {
+      setPhase((current) => current === "loading" ? "failed" : current);
+    }, LOAD_TIMEOUT_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [nonce]);
+  const frameSrc = nonce === 0 ? PANEL_EMBED_URL : `${PANEL_EMBED_URL}&_r=${String(nonce)}`;
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-root", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("style", { children: CSS }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("header", { className: "rgp-bar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-bar-title", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t("page.title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "rgp-bar-sub", children: t("page.embed.note") })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-bar-actions", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "rgp-btn", onClick: reload, children: t("page.reload") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("a", { className: "rgp-btn", href: PANEL_URL, target: "_blank", rel: "noreferrer", children: t("page.open.external") })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-frame-wrap", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "iframe",
+        {
+          ref: frameRef,
+          className: "rgp-frame",
+          src: frameSrc,
+          title: t("page.title"),
+          referrerPolicy: "same-origin",
+          allow: "popups",
+          onLoad: onFrameLoad
+        }
+      ),
+      phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-overlay", role: "status", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "rgp-spinner", "aria-hidden": "true" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-title", children: t("page.loading") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-desc", children: t("page.loading.hint") })
+      ] }) : null,
+      phase === "failed" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-overlay", role: "alert", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-title", children: t("page.failed.title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-desc", children: t("page.failed.hint") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-overlay-actions", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "rgp-btn", onClick: reload, children: t("state.retry") }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("a", { className: "rgp-btn", href: PANEL_URL, target: "_blank", rel: "noreferrer", children: t("page.open.external") })
+        ] })
+      ] }) : null
+    ] })
+  ] });
+}
+
+// src/client/GateIcon.tsx
+var import_jsx_runtime6 = require("react/jsx-runtime");
+var strokeProps = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.5,
+  strokeLinecap: "round",
+  strokeLinejoin: "round"
+};
+function GatePanelIcon({ size, active }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+    "svg",
+    {
+      width: size,
+      height: size,
+      viewBox: "0 0 20 20",
+      "aria-hidden": "true",
+      ...strokeProps,
+      opacity: active ? 1 : 0.9,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M14.5 17.5h-9a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h9" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M10 2.5v15" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "12.4", cy: "10", r: "0.9", fill: "currentColor", stroke: "none" })
+      ]
+    }
+  );
+}
 
 // src/client/hostStatus.ts
 async function fetchHostLink() {
@@ -416,550 +554,6 @@ async function fetchHostLink() {
   } catch {
     return null;
   }
-}
-
-// src/client/GateIcon.tsx
-var import_jsx_runtime5 = require("react/jsx-runtime");
-var strokeProps = {
-  fill: "none",
-  stroke: "currentColor",
-  strokeWidth: 1.5,
-  strokeLinecap: "round",
-  strokeLinejoin: "round"
-};
-function GatePanelIcon({ size, active }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
-    "svg",
-    {
-      width: size,
-      height: size,
-      viewBox: "0 0 20 20",
-      "aria-hidden": "true",
-      ...strokeProps,
-      opacity: active ? 1 : 0.9,
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M14.5 17.5h-9a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h9" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M10 2.5v15" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("circle", { cx: "12.4", cy: "10", r: "0.9", fill: "currentColor", stroke: "none" })
-      ]
-    }
-  );
-}
-function GateNavIcon({ kind }) {
-  const common = { width: 16, height: 16, viewBox: "0 0 20 20", "aria-hidden": true, ...strokeProps };
-  switch (kind) {
-    case "overview":
-      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { ...common, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: "3", y: "3", width: "6", height: "6", rx: "1.2" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: "11", y: "3", width: "6", height: "6", rx: "1.2" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: "3", y: "11", width: "6", height: "6", rx: "1.2" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("rect", { x: "11", y: "11", width: "6", height: "6", rx: "1.2" })
-      ] });
-    case "industries":
-      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { ...common, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M10 3l7 3.5-7 3.5-7-3.5L10 3z" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 10.5l7 3.5 7-3.5" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 14.5L10 18l7-3.5" })
-      ] });
-    case "board":
-      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { ...common, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3.5 17h13" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M6 17v-6" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M10 17V6" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M14 17v-8.5" })
-      ] });
-    case "mfg":
-      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { ...common, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 17V8.5l4.5 3V8.5l4.5 3V6.5L16.5 4v13H3z" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M6.5 13.5h.01M10 13.5h.01M13.5 13.5h.01", strokeWidth: 2 })
-      ] });
-    case "host":
-      return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("svg", { ...common, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M7.5 12.5l5-5" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M9.5 5.5l1.6-1.6a2.8 2.8 0 0 1 4 4L13.5 9.5" }),
-        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M10.5 14.5l-1.6 1.6a2.8 2.8 0 0 1-4-4L6.5 10.5" })
-      ] });
-  }
-}
-
-// src/client/GatePanelPage.tsx
-var import_jsx_runtime6 = require("react/jsx-runtime");
-async function fetchPanelData(path) {
-  const response = await fetch(`${CONSOLE_BASE}${path}`);
-  const payload = await response.json().catch(() => null);
-  if (!response.ok || payload?.ok !== true) {
-    throw new Error(payload?.error?.message ?? `HTTP ${response.status}`);
-  }
-  return payload.data;
-}
-function usePanelResource(loader, deps) {
-  const [data, setData] = (0, import_react3.useState)(null);
-  const [error, setError] = (0, import_react3.useState)(null);
-  const [loading, setLoading] = (0, import_react3.useState)(true);
-  const [tick, setTick] = (0, import_react3.useState)(0);
-  (0, import_react3.useEffect)(() => {
-    let alive = true;
-    setLoading(true);
-    setError(null);
-    loader().then(
-      (next) => {
-        if (alive) {
-          setData(next);
-          setLoading(false);
-        }
-      },
-      (cause) => {
-        if (alive) {
-          setError(cause instanceof Error ? cause.message : String(cause));
-          setLoading(false);
-        }
-      }
-    );
-    return () => {
-      alive = false;
-    };
-  }, [tick, ...deps]);
-  const reload = (0, import_react3.useCallback)(() => setTick((n) => n + 1), []);
-  return { data, error, loading, reload };
-}
-var CSS = `
-.rgp-root{height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column;
-  gap:32px;padding:0 clamp(24px,4vw,48px) 48px;color:var(--dsw-alias-label-primary)}
-.rgp-root>*{width:100%;max-width:960px;margin:0 auto}
-.rgp-head{padding-top:28px;padding-top:calc(28px + var(--dsh-frame-top-clearance,0px));
-  display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
-.rgp-title{font-size:20px;line-height:28px;font-weight:500;margin:0}
-.rgp-subtitle{font-size:13px;line-height:20px;color:var(--dsw-alias-label-secondary);margin:4px 0 0}
-.rgp-head-actions{display:flex;gap:16px;align-items:center}
-.rgp-btn{height:32px;padding:0 12px;border-radius:var(--dsw-radius-md);font-size:13px;cursor:pointer;
-  border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-2);
-  color:var(--dsw-alias-label-primary);transition:background-color .14s ease-out}
-.rgp-btn:hover{background:var(--dsw-alias-interactive-bg-hover)}
-.rgp-btn:active{transform:translateY(1px)}
-.rgp-btn-primary{background:var(--dsw-alias-state-business-primary);
-  color:var(--dsw-alias-label-primary-foreground);border-color:transparent}
-.rgp-chip{font-size:12px;line-height:18px;padding:3px 10px;border-radius:999px;white-space:nowrap;
-  background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary)}
-.rgp-chip-ok{color:var(--dsw-alias-state-success-primary)}
-.rgp-chip-warn{color:var(--dsw-alias-state-warn-primary)}
-.rgp-chip-off{color:var(--dsw-alias-state-error-primary)}
-.rgp-body{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;align-items:start}
-.rgp-nav{position:sticky;top:28px;display:flex;flex-direction:column;gap:2px}
-.rgp-nav-group{font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);
-  padding:8px 10px 4px;margin:0}
-.rgp-nav-item{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:none;
-  border-radius:var(--dsw-radius-md);background:transparent;cursor:pointer;text-align:left;
-  font-size:14px;line-height:20px;color:var(--dsw-alias-label-secondary);width:100%;
-  transition:background-color .14s ease-out}
-.rgp-nav-item:hover{background:var(--dsw-alias-interactive-bg-hover)}
-.rgp-nav-item[aria-selected="true"]{color:var(--dsw-alias-label-primary);font-weight:500;
-  background:var(--dsw-alias-bg-layer-3)}
-.rgp-content{min-width:0;display:flex;flex-direction:column;gap:24px}
-.rgp-section{margin:0}
-.rgp-section-title{font-size:14px;line-height:20px;font-weight:500;margin:0 0 8px;
-  color:var(--dsw-alias-label-primary)}
-.rgp-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-.rgp-row{display:flex;align-items:center;gap:14px;padding:8px;min-height:56px;
-  border-radius:var(--dsw-radius-xl);transition:background-color .14s ease-out}
-.rgp-row:hover{background:var(--dsw-alias-interactive-bg-hover)}
-.rgp-row + .rgp-row{border-top:.5px solid var(--dsw-alias-border-l2)}
-.rgp-row-icon{width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-lg);
-  background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);
-  font-size:16px;font-weight:500}
-.rgp-row-main{min-width:0;flex:1}
-.rgp-row-title{font-size:14px;line-height:20px;font-weight:500;margin:0;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rgp-row-desc{font-size:13px;line-height:18px;color:var(--dsw-alias-label-tertiary);margin:2px 0 0;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rgp-row-side{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.rgp-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.rgp-stat{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);
-  padding:14px 16px;background:var(--dsw-alias-bg-layer-2)}
-.rgp-stat-label{font-size:13px;line-height:18px;color:var(--dsw-alias-label-tertiary);margin:0}
-.rgp-stat-value{font-size:22px;line-height:30px;font-weight:500;margin:4px 0 0;
-  color:var(--dsw-alias-label-primary)}
-.rgp-stat-note{font-size:12px;line-height:16px;color:var(--dsw-alias-label-tertiary);margin:2px 0 0}
-.rgp-error{font-size:13px;line-height:20px;color:var(--dsw-alias-state-error-primary);margin:0;
-  display:flex;gap:12px;align-items:center}
-.rgp-empty{font-size:13px;line-height:20px;color:var(--dsw-alias-label-tertiary);margin:0}
-.rgp-skel{height:12px;border-radius:6px;background:var(--dsw-alias-bg-skeleton,var(--dsw-alias-bg-layer-3));
-  animation:rgp-breathe 1.4s ease-in-out infinite}
-.rgp-skel-row{display:flex;flex-direction:column;gap:8px;padding:8px 0}
-.rgp-seg{display:flex;gap:4px;flex-wrap:wrap}
-.rgp-seg-item{height:28px;padding:0 10px;border-radius:var(--dsw-radius-md);font-size:13px;cursor:pointer;
-  border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-2);
-  color:var(--dsw-alias-label-secondary)}
-.rgp-seg-item[aria-pressed="true"]{background:var(--dsw-alias-bg-layer-3);
-  color:var(--dsw-alias-label-primary);font-weight:500}
-.rgp-kv{display:flex;gap:8px;font-size:13px;line-height:20px;margin:0;flex-wrap:wrap}
-.rgp-kv dt{color:var(--dsw-alias-label-tertiary)}
-.rgp-kv dd{margin:0;color:var(--dsw-alias-label-primary)}
-.rgp-hint{font-size:13px;line-height:20px;color:var(--dsw-alias-label-tertiary);margin:0}
-.rgp-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.rgp-btn:focus-visible,.rgp-nav-item:focus-visible,.rgp-seg-item:focus-visible{
-  outline:var(--dsw-focus-ring-width,2px) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));
-  outline-offset:1px}
-@media (max-width:1080px){
-  .rgp-body{grid-template-columns:minmax(0,1fr)}
-  .rgp-nav{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
-  .rgp-nav-group{display:none}
-  .rgp-nav-item{width:auto;flex-shrink:0}
-}
-@keyframes rgp-breathe{0%,100%{opacity:.55}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){
-  .rgp-skel{animation:none;opacity:.7}
-  .rgp-btn,.rgp-nav-item,.rgp-row{transition:none}
-}
-`;
-function openPanel() {
-  try {
-    window.open(PANEL_URL, "_blank", "noopener");
-  } catch {
-  }
-}
-function ResourceView({ res, render, empty, t }) {
-  if (res.loading) {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-skel-row", role: "status", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-skel", style: { width: "62%" } }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-skel", style: { width: "88%" } }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-skel", style: { width: "44%" } }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-hint", children: t("state.loading") })
-    ] });
-  }
-  if (res.error !== null) {
-    return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("p", { className: "rgp-error", role: "alert", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("span", { children: [
-        t("state.error"),
-        "\uFF1A",
-        res.error
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "rgp-btn", onClick: res.reload, children: t("state.retry") })
-    ] });
-  }
-  if (empty) return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-empty", children: t("state.empty") });
-  return res.data === null ? null : render(res.data);
-}
-function OverviewPage({ t }) {
-  const industries = usePanelResource(
-    async () => (await fetchPanelData("/api/panel/industries")).industries ?? [],
-    []
-  );
-  const board = usePanelResource(() => fetchPanelData("/api/panel/board"), []);
-  const mfg = usePanelResource(async () => {
-    const response = await fetch(`${CONSOLE_BASE}/api/panel/mfg/catalog`);
-    if (response.status === 404) return null;
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || payload?.ok !== true) throw new Error(payload?.error?.message ?? `HTTP ${response.status}`);
-    return payload.data;
-  }, []);
-  const host = usePanelResource(() => fetchHostLink(), []);
-  const industryList = industries.data ?? [];
-  const cards = board.data?.cards ?? [];
-  const tools = mfg.data?.tools ?? [];
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stats", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("overview.stat.registered") }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: industries.loading ? "\u2026" : String(industryList.length) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-note", children: `${t("overview.stat.active")} ${String(industryList.filter((item) => item.state === "active").length)}` })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("overview.stat.cards") }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: board.loading ? "\u2026" : String(cards.length) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-note", children: `${t("overview.stat.platforms")} ${String(board.data?.availablePlatforms?.length ?? 0)}` })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("overview.stat.tools") }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: mfg.loading ? "\u2026" : mfg.data === null ? "\u2014" : String(tools.length) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-note", children: `${t("overview.stat.model")} ${mfg.data === null ? "\u2014" : mfg.data.modelReady ? t("overview.stat.on") : t("overview.stat.off")}` })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("overview.host.title") }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: host.loading ? "\u2026" : host.data?.mode === "remote" ? t("settings.mode.remote") : host.data?.mode === "local" ? t("settings.mode.local") : t("settings.mode.none") })
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("ul", { className: "rgp-list", children: ["industries", "board", "mfg", "host"].map((key) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("li", { className: "rgp-row", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-row-icon", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(GateNavIcon, { kind: key }) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-row-main", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-title", children: t(`overview.${key}.title`) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-desc", children: t(`overview.${key}.desc`) })
-      ] })
-    ] }, key)) }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-actions", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "rgp-btn rgp-btn-primary", onClick: openPanel, children: t("overview.open.panel") }) })
-  ] });
-}
-function IndustriesPage({ t }) {
-  const res = usePanelResource(
-    async () => (await fetchPanelData("/api/panel/industries")).industries ?? [],
-    []
-  );
-  const list = res.data ?? [];
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-    ResourceView,
-    {
-      res,
-      empty: list.length === 0,
-      t,
-      render: (data) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("ul", { className: "rgp-list", children: data.map((item) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("li", { className: "rgp-row", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-row-icon", "aria-hidden": "true", children: item.name.slice(0, 1) }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-row-main", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-title", children: item.name }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-desc", children: item.sub ?? item.code })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-row-side", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: `rgp-chip ${item.state === "active" ? "rgp-chip-ok" : item.state === "pending" ? "rgp-chip-warn" : ""}`, children: t(`industries.state.${item.state}`) }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-chip", children: item.graphLoaded ? t("industries.graph.loaded") : t("industries.graph.missing") })
-        ] })
-      ] }, item.code)) })
-    }
-  );
-}
-function BoardPage({ t }) {
-  const [platform, setPlatform] = (0, import_react3.useState)(null);
-  const res = usePanelResource(
-    () => fetchPanelData(`/api/panel/board${platform === null ? "" : `?platform=${encodeURIComponent(platform)}`}`),
-    [platform]
-  );
-  const assets = res.data?.assets ?? {};
-  const funnel = res.data?.funnel ?? {};
-  const cards = res.data?.cards ?? [];
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-    ResourceView,
-    {
-      res,
-      empty: cards.length === 0,
-      t,
-      render: (view) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-        (view.availablePlatforms?.length ?? 0) > 1 ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-seg", role: "group", "aria-label": t("board.platform"), children: (view.availablePlatforms ?? []).map((code) => /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-          "button",
-          {
-            type: "button",
-            className: "rgp-seg-item",
-            "aria-pressed": code === view.platform,
-            onClick: () => {
-              setPlatform(code);
-            },
-            children: code
-          },
-          code
-        )) }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "rgp-section", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { className: "rgp-section-title", children: t("board.assets.title") }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stats", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.assets.apps") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(assets.appsOnline ?? 0) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.assets.agents") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(assets.agentsOnline ?? 0) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.assets.skills") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(assets.skillsPublished ?? 0) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.assets.mcp") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(assets.mcpServing ?? 0) })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "rgp-section", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { className: "rgp-section-title", children: t("board.funnel.title") }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stats", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.funnel.exposed") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(funnel.exposed ?? 0) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.funnel.clicked") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(funnel.clicked ?? 0) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.funnel.invoked") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(funnel.invoked ?? 0) })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("board.funnel.completed") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(funnel.completed ?? 0) })
-            ] })
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "rgp-section", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { className: "rgp-section-title", children: `${t("board.cards.title")}\uFF08${String(cards.length)}\uFF09` }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("ul", { className: "rgp-list", children: cards.slice(0, 12).map((card) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("li", { className: "rgp-row", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-row-icon", "aria-hidden": "true", children: card.title.slice(0, 1) }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-row-main", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-title", children: card.title }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-desc", children: card.description ?? "" })
-            ] }),
-            card.badge ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-row-side", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-chip", children: card.badge }) }) : null
-          ] }, card.id)) })
-        ] })
-      ] })
-    }
-  );
-}
-function MfgPage({ t }) {
-  const res = usePanelResource(async () => {
-    const response = await fetch(`${CONSOLE_BASE}/api/panel/mfg/catalog`);
-    if (response.status === 404) throw new Error("HTTP 404");
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || payload?.ok !== true) throw new Error(payload?.error?.message ?? `HTTP ${response.status}`);
-    return payload.data;
-  }, []);
-  const tools = res.data?.tools ?? [];
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
-    ResourceView,
-    {
-      res,
-      empty: tools.length === 0,
-      t,
-      render: (data) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stats", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("mfg.status.title") }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: String(tools.length) }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-note", children: data.status ?? "" })
-          ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-stat", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-label", children: t("overview.stat.model") }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-value", children: data.modelReady ? t("mfg.model.ready") : t("mfg.model.missing") }),
-            data.model ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-stat-note", children: data.model }) : null
-          ] })
-        ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "rgp-section", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { className: "rgp-section-title", children: t("mfg.tools.title") }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("ul", { className: "rgp-list", children: tools.map((tool) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("li", { className: "rgp-row", children: [
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-row-icon", "aria-hidden": "true", children: tool.title.slice(0, 1) }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-row-main", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-title", children: tool.title }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-row-desc", children: [tool.category, tool.subtitle].filter(Boolean).join(" \xB7 ") })
-            ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-row-side", children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-chip", children: tool.mode === "calculation" ? t("mfg.tool.calculation") : t("mfg.tool.ai") }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: `rgp-chip ${tool.released ? "rgp-chip-ok" : "rgp-chip-warn"}`, children: tool.released ? t("mfg.tool.released") : t("mfg.tool.unreleased") })
-            ] })
-          ] }, tool.id)) })
-        ] })
-      ] })
-    }
-  );
-}
-function HostPage({ t }) {
-  const [link, setLink] = (0, import_react3.useState)(null);
-  const [loading, setLoading] = (0, import_react3.useState)(true);
-  const reload = (0, import_react3.useCallback)(async () => {
-    setLoading(true);
-    setLink(await fetchHostLink());
-    setLoading(false);
-  }, []);
-  (0, import_react3.useEffect)(() => {
-    void reload();
-  }, [reload]);
-  const mode = link?.mode;
-  const probe = link?.probe?.reachable === true ? t("host.probe.ok") : link?.probe?.reachable === false ? t("host.probe.fail") : null;
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    loading ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-skel-row", role: "status", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-skel", style: { width: "52%" } }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: "rgp-hint", children: t("state.loading") })
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("section", { className: "rgp-section", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h3", { className: "rgp-section-title", children: t("nav.host") }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("dl", { className: "rgp-kv", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("dt", { children: t("host.mode.title") }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("dd", { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { className: `rgp-chip ${mode === "none" ? "rgp-chip-off" : "rgp-chip-ok"}`, children: mode === "remote" ? t("settings.mode.remote") : mode === "local" ? t("settings.mode.local") : t("settings.mode.none") }) }),
-        mode === "remote" && link?.hubBase ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("dt", { children: t("host.hub.title") }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("dd", { children: String(link.hubBase) })
-        ] }) : null,
-        probe !== null ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("dt", { children: t("host.probe.title") }),
-          /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("dd", { children: probe })
-        ] }) : null
-      ] })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-hint", children: t("host.hint") }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-actions", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "rgp-btn", onClick: () => {
-        void reload();
-      }, children: t("host.refresh") }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "rgp-btn rgp-btn-primary", onClick: openPanel, children: mode === "none" ? t("host.open.wizard") : t("page.open.external") })
-    ] })
-  ] });
-}
-var NAV_GROUPS = [
-  { titleKey: "nav.group.workbench", items: ["overview", "industries", "board", "mfg"] },
-  { titleKey: "nav.group.host", items: ["host"] }
-];
-var NAV_KEYS = NAV_GROUPS.flatMap((group) => group.items);
-function GatePanelPage({ t }) {
-  const [tab, setTab] = (0, import_react3.useState)("overview");
-  const rootRef = (0, import_react3.useRef)(null);
-  const savedScroll = (0, import_react3.useRef)(0);
-  const itemRefs = (0, import_react3.useRef)(/* @__PURE__ */ new Map());
-  (0, import_react3.useLayoutEffect)(() => {
-    const root = rootRef.current;
-    if (root !== null) root.scrollTop = savedScroll.current;
-  }, [tab]);
-  const selectTab = (0, import_react3.useCallback)((next) => {
-    const root = rootRef.current;
-    if (root !== null) savedScroll.current = root.scrollTop;
-    setTab(next);
-  }, []);
-  const onNavKeyDown = (0, import_react3.useCallback)((event) => {
-    const index = NAV_KEYS.indexOf(tab);
-    let next = -1;
-    if (event.key === "ArrowDown") next = (index + 1) % NAV_KEYS.length;
-    else if (event.key === "ArrowUp") next = (index - 1 + NAV_KEYS.length) % NAV_KEYS.length;
-    else if (event.key === "Home") next = 0;
-    else if (event.key === "End") next = NAV_KEYS.length - 1;
-    if (next < 0) return;
-    event.preventDefault();
-    const nextKey = NAV_KEYS[next];
-    selectTab(nextKey);
-    itemRefs.current.get(nextKey)?.focus();
-  }, [tab, selectTab]);
-  const registerItem = (0, import_react3.useCallback)((key, node) => {
-    if (node === null) itemRefs.current.delete(key);
-    else itemRefs.current.set(key, node);
-  }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-root", ref: rootRef, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("style", { children: CSS }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("header", { className: "rgp-head", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("h1", { className: "rgp-title", children: t("page.title") }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-subtitle", children: t("page.intro") })
-      ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("div", { className: "rgp-head-actions", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("button", { type: "button", className: "rgp-btn", onClick: openPanel, children: t("page.open.external") }) })
-    ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { className: "rgp-body", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("nav", { className: "rgp-nav", role: "tablist", "aria-label": t("nav.aria"), onKeyDown: onNavKeyDown, children: NAV_GROUPS.map((group) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)("div", { role: "presentation", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("p", { className: "rgp-nav-group", children: t(group.titleKey) }),
-        group.items.map((key) => /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
-          "button",
-          {
-            type: "button",
-            role: "tab",
-            "aria-selected": tab === key,
-            className: "rgp-nav-item",
-            ref: (node) => {
-              registerItem(key, node);
-            },
-            onClick: () => {
-              selectTab(key);
-            },
-            children: [
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(GateNavIcon, { kind: key }),
-              /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", { children: t(`nav.${key}`) })
-            ]
-          },
-          key
-        ))
-      ] }, group.titleKey)) }),
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("section", { className: "rgp-content", role: "tabpanel", "aria-label": t("content.aria"), children: tab === "overview" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(OverviewPage, { t }) : tab === "industries" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(IndustriesPage, { t }) : tab === "board" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(BoardPage, { t }) : tab === "mfg" ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(MfgPage, { t }) : /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(HostPage, { t }) })
-    ] })
-  ] });
 }
 
 // src/client/locales.ts
@@ -1010,80 +604,27 @@ var zh = {
   "settings.refresh": "\u5237\u65B0\u72B6\u6001",
   "settings.open.wizard": "\u6253\u5F00\u8FDE\u63A5\u5411\u5BFC",
   "settings.open.panel": "\u6253\u5F00\u884C\u4E1A AI \u5DE5\u4F5C\u53F0",
-  "settings.hint": "\u8FDE\u63A5\u5BBF\u4E3B\uFF08\u9009\u62E9 IP\uFF09\u5E76\u5728\u9762\u677F\u5B8C\u6210\u9489\u9489/\u8D26\u53F7\u767B\u5F55\uFF1B\u9762\u677F\u5730\u5740 /gate01/panel/\u3002",
+  "settings.hint": "\u8FDE\u63A5\u5BBF\u4E3B\uFF08\u9009\u62E9 IP\uFF09\u5E76\u5728\u5DE5\u4F5C\u53F0\u5B8C\u6210\u9489\u9489/\u8D26\u53F7\u767B\u5F55\uFF1B\u5DE5\u4F5C\u53F0\u5DF2\u5185\u5D4C\u4E8E dsh \u4E3B\u754C\u9762\u3002",
   // ── 会话视图 Tab「01门工作台」（M3）──
   "view.workbench": "\u884C\u4E1A AI \u5DE5\u4F5C\u53F0",
   "view.open.external": "\u5728\u6D4F\u89C8\u5668\u6253\u5F00",
   // ── 未连接角标（M3，shell.overlay）──
   "overlay.unlinked": "01\u95E8\uFF1A\u672A\u8FDE\u63A5\u5BBF\u4E3B\uFF0C\u70B9\u51FB\u6253\u5F00\u5411\u5BFC",
-  // ── 原生面板页（M4：侧栏入口 + main 整页，2026-10-27）──
+  // ── 原生面板页（M5：侧栏入口 + main 整页内嵌完整工作台，2026-10-29）──
   "panel": "01\u95E8",
   "page.title": "01\u95E8 \xB7 \u884C\u4E1A AI \u5DE5\u4F5C\u53F0",
   "page.intro": "AI \u4EE3\u7406\u4E0E\u4EBA\u7C7B\u7684\u534F\u4F5C\u524D\u53F0\u2014\u2014\u884C\u4E1A\u7A7A\u95F4\u3001\u6218\u7565\u770B\u677F\u4E0E\u5236\u9020\u5DE5\u5177\u7BB1\u3002",
   "page.open.external": "\u5728\u6D4F\u89C8\u5668\u6253\u5F00",
-  "nav.aria": "\u9762\u677F\u5BFC\u822A",
-  "content.aria": "\u9762\u677F\u5185\u5BB9",
-  "nav.group.workbench": "\u5DE5\u4F5C\u53F0",
-  "nav.group.host": "\u5BBF\u4E3B",
-  "nav.overview": "\u6982\u89C8",
-  "nav.industries": "\u884C\u4E1A\u7A7A\u95F4",
-  "nav.board": "\u6218\u7565\u770B\u677F",
-  "nav.mfg": "\u5236\u9020\u5DE5\u5177\u7BB1",
-  "nav.host": "\u5BBF\u4E3B\u8FDE\u63A5",
+  "page.embed.note": "\u5DF2\u5185\u5D4C\u4E8E dsh \u4E3B\u754C\u9762",
+  "page.reload": "\u91CD\u65B0\u52A0\u8F7D",
+  "page.loading": "\u6B63\u5728\u52A0\u8F7D\u884C\u4E1A AI \u5DE5\u4F5C\u53F0\u2026",
+  "page.loading.hint": "\u9996\u6B21\u8FDB\u5165\u9700\u5B8C\u6210\u5DE5\u4F5C\u53F0\u521D\u59CB\u5316\uFF0C\u901A\u5E38\u6570\u79D2\u5185\u5B8C\u6210\u3002",
+  "page.failed.title": "\u5DE5\u4F5C\u53F0\u52A0\u8F7D\u5931\u8D25",
+  "page.failed.hint": "\u5185\u5D4C\u89C6\u56FE\u672A\u80FD\u8F7D\u5165\uFF08\u6570\u636E\u9762\u672A\u6302\u8F7D\u6216\u521D\u59CB\u5316\u5F02\u5E38\uFF09\u3002\u53EF\u91CD\u65B0\u52A0\u8F7D\uFF0C\u6216\u5728\u72EC\u7ACB\u7A97\u53E3\u6253\u5F00\u5B8C\u6574\u5DE5\u4F5C\u53F0\u3002",
   "state.loading": "\u52A0\u8F7D\u4E2D\u2026",
   "state.error": "\u52A0\u8F7D\u5931\u8D25",
   "state.retry": "\u91CD\u8BD5",
-  "state.empty": "\u6682\u65E0\u5185\u5BB9",
-  "overview.industries.title": "\u884C\u4E1A\u7A7A\u95F4",
-  "overview.industries.desc": "\u5DE5\u4FE1\u90E8\u300A\u53C2\u8003\u6307\u5F15\u300B\u91CD\u70B9\u884C\u4E1A\uFF0C\u6309\u7EC4\u7EC7\u4E09\u6001\u6FC0\u6D3B\u3002",
-  "overview.board.title": "\u6218\u7565\u770B\u677F",
-  "overview.board.desc": "\u5361\u7247\u5305\u4E0E 7 \u65E5\u805A\u5408\u89C6\u56FE\u3002",
-  "overview.mfg.title": "\u5236\u9020\u5DE5\u5177\u7BB1",
-  "overview.mfg.desc": "\u5236\u9020\u4E1A AI \u8BA1\u7B97\u5185\u6838\u4E0E AI \u5DE5\u5177\u3002",
-  "overview.host.title": "\u5BBF\u4E3B\u8FDE\u63A5",
-  "overview.host.desc": "\u672C\u673A\u5373\u5BBF\u4E3B\u6216\u8FDE\u63A5\u8FDC\u7AEF\u5143\u51B0\u53EF\u5E73\u53F0\u3002",
-  "overview.stat.registered": "\u5DF2\u767B\u8BB0\u884C\u4E1A",
-  "overview.stat.active": "\u5DF2\u6FC0\u6D3B",
-  "overview.stat.cards": "\u5DE5\u4F5C\u53F0\u5361\u7247",
-  "overview.stat.platforms": "\u5361\u7247\u5E73\u53F0",
-  "overview.stat.tools": "\u5236\u9020\u5DE5\u5177",
-  "overview.stat.model": "\u6A21\u578B\u9762",
-  "overview.stat.on": "\u5DF2\u5C31\u7EEA",
-  "overview.stat.off": "\u672A\u914D\u7F6E",
-  "overview.open.panel": "\u6253\u5F00\u5B8C\u6574\u9762\u677F",
-  "industries.state.active": "\u5DF2\u6FC0\u6D3B",
-  "industries.state.pending": "\u5BA1\u6279\u4E2D",
-  "industries.state.locked": "\u672A\u6FC0\u6D3B",
-  "industries.graph.loaded": "\u56FE\u8C31\u5DF2\u88C5\u8F7D",
-  "industries.graph.missing": "\u56FE\u8C31\u672A\u88C5\u8F7D",
-  "board.platform": "\u5E73\u53F0",
-  "board.assets.title": "\u5728\u7EBF\u8D44\u4EA7\uFF087 \u65E5\uFF09",
-  "board.assets.apps": "\u5E94\u7528",
-  "board.assets.agents": "\u667A\u80FD\u4F53",
-  "board.assets.skills": "\u6280\u80FD",
-  "board.assets.mcp": "MCP \u670D\u52A1",
-  "board.funnel.title": "\u8F6C\u5316\u6F0F\u6597\uFF087 \u65E5\uFF09",
-  "board.funnel.exposed": "\u66DD\u5149",
-  "board.funnel.clicked": "\u70B9\u51FB",
-  "board.funnel.invoked": "\u8C03\u7528",
-  "board.funnel.completed": "\u5B8C\u6210",
-  "board.cards.title": "\u5DE5\u4F5C\u53F0\u5361\u7247",
-  "mfg.model.ready": "\u6A21\u578B\u5C31\u7EEA",
-  "mfg.model.missing": "\u6A21\u578B\u672A\u914D\u7F6E",
-  "mfg.status.title": "\u9009\u578B\u8FDB\u5EA6",
-  "mfg.tools.title": "\u5DE5\u5177\u76EE\u5F55",
-  "mfg.tool.calculation": "\u8BA1\u7B97\u5185\u6838",
-  "mfg.tool.ai": "AI \u5DE5\u5177",
-  "mfg.tool.released": "\u5DF2\u4E0A\u7EBF",
-  "mfg.tool.unreleased": "\u5F85\u4E0A\u7EBF",
-  "host.mode.title": "\u8FDE\u63A5\u6A21\u5F0F",
-  "host.hub.title": "\u5BBF\u4E3B\u5730\u5740",
-  "host.probe.title": "\u5E73\u53F0\u63A2\u6D4B",
-  "host.probe.ok": "\u53EF\u8FBE",
-  "host.probe.fail": "\u4E0D\u53EF\u8FBE",
-  "host.refresh": "\u5237\u65B0\u72B6\u6001",
-  "host.open.wizard": "\u6253\u5F00\u8FDE\u63A5\u5411\u5BFC",
-  "host.hint": "\u8FDE\u63A5\u5BBF\u4E3B\u5E76\u5728\u9762\u677F\u5B8C\u6210\u767B\u5F55\u540E\uFF0C\u672C\u9875\u5373\u5C55\u793A\u771F\u5B9E\u7EC4\u7EC7\u6570\u636E\uFF1B\u672A\u8FDE\u63A5\u65F6\u4E3A\u6F14\u793A\u6001\uFF08\u53EA\u8BFB\uFF09\u3002"
+  "state.empty": "\u6682\u65E0\u5185\u5BB9"
 };
 var en = {
   "card.state.calling": "Calling",
@@ -1124,7 +665,7 @@ var en = {
   "settings.refresh": "Refresh",
   "settings.open.wizard": "Open connect wizard",
   "settings.open.panel": "Open Industry AI Workbench",
-  "settings.hint": "Link a host (pick an IP) and sign in with DingTalk/account on the panel; panel lives at /gate01/panel/.",
+  "settings.hint": "Link a host (pick an IP) and sign in with DingTalk/account on the workbench; the workbench is embedded in the dsh main view.",
   "view.workbench": "Industry AI Workbench",
   "view.open.external": "Open in browser",
   "overlay.unlinked": "Yuanbingke: host not linked \u2014 click to open the wizard",
@@ -1132,69 +673,16 @@ var en = {
   "page.title": "Gate 01 \xB7 Industry AI Workbench",
   "page.intro": "The collaboration front stage for AI agents and humans \u2014 industry spaces, strategy board and manufacturing toolbox.",
   "page.open.external": "Open in browser",
-  "nav.aria": "Panel navigation",
-  "content.aria": "Panel content",
-  "nav.group.workbench": "Workbench",
-  "nav.group.host": "Host",
-  "nav.overview": "Overview",
-  "nav.industries": "Industry spaces",
-  "nav.board": "Strategy board",
-  "nav.mfg": "Manufacturing toolbox",
-  "nav.host": "Host link",
+  "page.embed.note": "Embedded in the dsh main view",
+  "page.reload": "Reload",
+  "page.loading": "Loading the Industry AI Workbench\u2026",
+  "page.loading.hint": "First entry runs the workbench bootstrap \u2014 usually a few seconds.",
+  "page.failed.title": "Workbench failed to load",
+  "page.failed.hint": "The embedded view could not be loaded (data plane not mounted, or bootstrap failed). Reload, or open the full workbench in its own window.",
   "state.loading": "Loading\u2026",
   "state.error": "Failed to load",
   "state.retry": "Retry",
-  "state.empty": "Nothing here yet",
-  "overview.industries.title": "Industry spaces",
-  "overview.industries.desc": "Key industries from the MIIT reference guide, activated per organization.",
-  "overview.board.title": "Strategy board",
-  "overview.board.desc": "Card packs and the 7-day aggregate view.",
-  "overview.mfg.title": "Manufacturing toolbox",
-  "overview.mfg.desc": "Manufacturing AI kernels and AI tools.",
-  "overview.host.title": "Host link",
-  "overview.host.desc": "This machine as host, or a remote Yuanbingke platform.",
-  "overview.stat.registered": "Industries registered",
-  "overview.stat.active": "Activated",
-  "overview.stat.cards": "Workbench cards",
-  "overview.stat.platforms": "Card platforms",
-  "overview.stat.tools": "Manufacturing tools",
-  "overview.stat.model": "Model plane",
-  "overview.stat.on": "Ready",
-  "overview.stat.off": "Not configured",
-  "overview.open.panel": "Open full panel",
-  "industries.state.active": "Active",
-  "industries.state.pending": "Under review",
-  "industries.state.locked": "Inactive",
-  "industries.graph.loaded": "Graph loaded",
-  "industries.graph.missing": "Graph not loaded",
-  "board.platform": "Platform",
-  "board.assets.title": "Online assets (7d)",
-  "board.assets.apps": "Apps",
-  "board.assets.agents": "Agents",
-  "board.assets.skills": "Skills",
-  "board.assets.mcp": "MCP services",
-  "board.funnel.title": "Conversion funnel (7d)",
-  "board.funnel.exposed": "Exposed",
-  "board.funnel.clicked": "Clicked",
-  "board.funnel.invoked": "Invoked",
-  "board.funnel.completed": "Completed",
-  "board.cards.title": "Workbench cards",
-  "mfg.model.ready": "Model ready",
-  "mfg.model.missing": "Model not configured",
-  "mfg.status.title": "Selection progress",
-  "mfg.tools.title": "Tool catalog",
-  "mfg.tool.calculation": "Calculation kernel",
-  "mfg.tool.ai": "AI tool",
-  "mfg.tool.released": "Live",
-  "mfg.tool.unreleased": "Planned",
-  "host.mode.title": "Link mode",
-  "host.hub.title": "Host address",
-  "host.probe.title": "Platform probe",
-  "host.probe.ok": "reachable",
-  "host.probe.fail": "unreachable",
-  "host.refresh": "Refresh",
-  "host.open.wizard": "Open connect wizard",
-  "host.hint": "Link a host and sign in on the panel to see real organization data here; without a link the page runs in demo (read-only) mode."
+  "state.empty": "Nothing here yet"
 };
 
 // src/client/styles.ts
@@ -1569,6 +1057,18 @@ function apply(ctx) {
         ...t ? { label: () => t("settings.nav") } : {},
         locale: NS,
         inject: () => ({
+          // M5：工作台已整页内嵌在 dsh 主界面，设置分区按钮直接切换原生面板；
+          // 宿主未注册该面板键位（老宿主）时返回 false，由组件回落独立窗口打开。
+          select: () => {
+            try {
+              const layout = ctx.layout;
+              if (typeof layout?.selectPanel !== "function") return false;
+              layout.selectPanel(PANEL_ID);
+              return true;
+            } catch {
+              return false;
+            }
+          },
           open: (url) => {
             try {
               window.open(url, "_blank", "noopener");
