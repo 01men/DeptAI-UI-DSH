@@ -296,3 +296,14 @@ npm scope `@ybkk/*`（装配契约，改名即装机破裂，另行决策）。
 
 未采纳项由定制侧在下一个同步周期内拆除（北极星 diff 相应归零）；**I 域例外：按豁免登记处理**
 （产品身份值，拆除即错乱）。
+
+## R. 仓库介绍页三视图改版（2026-10-29）——定制轨对外口径刷新，main 不消费
+
+`README.md`（618 → 85 行）+ `llms.txt` 全量重写 + 新增 `README.en.md` 与 `assets/readme/{hero,architecture}.svg`：
+README 从「底座平台说明 + 三A~三H 迭代流水账」收缩为 01门 产品主页（定位 / 能力 / 快速开始 / 架构图 /
+工程质量门 / 文档表），历史迭代口径以 git 历史与 `docs/release-notes-*` 为准；`llms.txt` 按 llmstxt.org
+规范重写为本仓库 **Agent 视图**（事实卡 / 能力 / dsh 生态接入端点 / 文档地图 / 边界），不再以底座平台
+口径开头；三视图顶部互链（中文 / English / Agent）。三文件同属 Q 节「定制轨对外口径」不回流项
+（承接 H 节口径）；`assets/` 不在 npm files 闭包内，零代码 / 装配改动，fresh-install 不变量不受影响。
+验证：selftest 1367/1367 绿 + lint:manifests 105/105 + 场景图谱 14/14（2026-10-29 实测）；
+SVG 经浏览器在 GitHub 明暗两种底色 900px 宽下目检通过。

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" role="img" aria-label="01门架构：dsh 运行时内挂载 @ybkk/gate-01 六包，经既有契约调用元冰可治理底座">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1120"/>
+      <stop offset="1" stop-color="#0d1a33"/>
+    </linearGradient>
+    <linearGradient id="agrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1554e8"/>
+      <stop offset="1" stop-color="#4f8bff"/>
+    </linearGradient>
+    <radialGradient id="bglow" cx="0.5" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#1554e8" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#1554e8" stop-opacity="0"/>
+    </radialGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto">
+      <path d="M0 0L8 4L0 8z" fill="#4f8bff"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="700" fill="url(#abg)"/>
+
+  <!-- ══ dsh runtime (outer) ══ -->
+  <rect x="60" y="24" width="1080" height="432" rx="16" fill="#0d1a33" stroke="#3b5aa0" stroke-width="1.5" stroke-dasharray="7 6"/>
+  <text x="92" y="60" font-size="22" font-weight="700" fill="#cfe0ff">dsh 运行时 · web profile</text>
+  <text x="92" y="86" font-size="18" fill="#7e93ba">一切皆插件 · 会话对话 · Agent 执行 · 原生 ToolRuntime</text>
+  <circle cx="1092" cy="56" r="4.5" fill="#07c160"/>
+  <text x="1078" y="62" text-anchor="end" font-size="17" fill="#7e93ba">宿主在线</text>
+
+  <!-- ══ gate-01 (nested) ══ -->
+  <rect x="100" y="106" width="1000" height="330" rx="14" fill="#10203f" stroke="#1554e8" stroke-width="2"/>
+  <rect width="1200" height="700" fill="url(#bglow)" pointer-events="none"/>
+  <text x="132" y="146" font-size="22" font-weight="800" fill="#f1f5ff">01门 · @ybkk/gate-01</text>
+  <text x="132" y="172" font-size="18" fill="#8fa3c4">本仓库唯一交付物 · 预构建 dist · 装机即用</text>
+  <circle cx="1040" cy="140" r="4.5" fill="#07c160"/>
+  <text x="1026" y="146" text-anchor="end" font-size="17" fill="#8fa3c4">MIT</text>
+
+  <g font-size="18" fill="#dbe6ff">
+    <rect x="132" y="196" width="300" height="44" rx="9" fill="#0c1830" stroke="#2f5fd0" stroke-width="1.2"/>
+    <text x="282" y="224" text-anchor="middle">plugin-panel-core · 部门面板</text>
+
+    <rect x="450" y="196" width="300" height="44" rx="9" fill="#0c1830" stroke="#2f5fd0" stroke-width="1.2"/>
+    <text x="600" y="224" text-anchor="middle">plugin-rq-card · 执行卡</text>
+
+    <rect x="768" y="196" width="300" height="44" rx="9" fill="#0c1830" stroke="#2f5fd0" stroke-width="1.2"/>
+    <text x="918" y="224" text-anchor="middle">plugin-dsh-bridge · 宿主桥</text>
+
+    <rect x="132" y="254" width="300" height="44" rx="9" fill="#0c1830" stroke="#2f5fd0" stroke-width="1.2"/>
+    <text x="282" y="282" text-anchor="middle">plugin-dingtalk-bridge · 钉钉桥</text>
+
+    <rect x="450" y="254" width="300" height="44" rx="9" fill="#0c1830" stroke="#2f5fd0" stroke-width="1.2"/>
+    <text x="600" y="282" text-anchor="middle">platform-core · 基座</text>
+
+    <rect x="768" y="254" width="300" height="44" rx="9" fill="#0c1830" stroke="#2f5fd0" stroke-width="1.2"/>
+    <text x="918" y="282" text-anchor="middle">plugin-iam / authn · 身份面</text>
+  </g>
+
+  <rect x="132" y="322" width="150" height="40" rx="9" fill="url(#agrad)"/>
+  <text x="207" y="348" text-anchor="middle" font-size="19" font-weight="700" fill="#ffffff">/gate01 挂载</text>
+  <rect x="298" y="322" width="470" height="40" rx="9" fill="#081020" stroke="#24437e" stroke-width="1"/>
+  <text x="533" y="348" text-anchor="middle" font-size="17" font-family="ui-monospace,'Cascadia Code',Consolas,monospace" fill="#9db9f5">dsh plugin add github:01men/DeptAI-UI-DSH</text>
+  <text x="1068" y="348" text-anchor="end" font-size="17" fill="#6f86ad">panel: /gate01/panel/</text>
+
+  <text x="600" y="406" text-anchor="middle" font-size="18" fill="#8fa3c4">面板 · 看板 · 行业图谱 · 会话执行卡 —— 人与 Agent 共用的部门前台</text>
+
+  <!-- ══ contract arrow ══ -->
+  <path d="M600 460v36" stroke="#4f8bff" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="624" y="486" font-size="18" fill="#9fb4dd">既有契约调用 · 本机代理 · 浏览器零跨域</text>
+
+  <!-- ══ base platform ══ -->
+  <rect x="60" y="504" width="1080" height="172" rx="16" fill="#0d1a33" stroke="#2a4a9e" stroke-width="1.5"/>
+  <text x="92" y="540" font-size="22" font-weight="700" fill="#cfe0ff">元冰可治理底座 · 01men/ybkkasi</text>
+  <text x="1108" y="540" text-anchor="end" font-size="18" fill="#7e93ba">调用方立场 —— 前台不重复实现治理</text>
+
+  <g font-size="18" fill="#c3d4f5">
+    <rect x="92" y="558" width="158" height="40" rx="9" fill="#0c1830" stroke="#24437e" stroke-width="1"/>
+    <text x="171" y="584" text-anchor="middle">MCP 服务</text>
+    <rect x="266" y="558" width="158" height="40" rx="9" fill="#0c1830" stroke="#24437e" stroke-width="1"/>
+    <text x="345" y="584" text-anchor="middle">Skill</text>
+    <rect x="440" y="558" width="158" height="40" rx="9" fill="#0c1830" stroke="#24437e" stroke-width="1"/>
+    <text x="519" y="584" text-anchor="middle">Agent</text>
+    <rect x="614" y="558" width="158" height="40" rx="9" fill="#0c1830" stroke="#24437e" stroke-width="1"/>
+    <text x="693" y="584" text-anchor="middle">AI 应用</text>
+    <rect x="788" y="558" width="158" height="40" rx="9" fill="#0c1830" stroke="#24437e" stroke-width="1"/>
+    <text x="867" y="584" text-anchor="middle">模型路由</text>
+    <rect x="962" y="558" width="146" height="40" rx="9" fill="#0c1830" stroke="#24437e" stroke-width="1"/>
+    <text x="1035" y="584" text-anchor="middle">NAS</text>
+
+    <rect x="92" y="612" width="1016" height="40" rx="9" fill="#0a1526" stroke="#1d3357" stroke-width="1"/>
+    <text x="600" y="638" text-anchor="middle" fill="#9fb4dd">IAM 统一身份 · OIDC SSO · RBAC · 场景级授权 · 用量计量 · 审计</text>
+  </g>
+</svg>

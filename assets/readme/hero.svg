@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" role="img" aria-label="01门（Gate 01）——AI 代理与人类的协作前台">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1120"/>
+      <stop offset="0.55" stop-color="#0c1730"/>
+      <stop offset="1" stop-color="#0e1c3a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1554e8"/>
+      <stop offset="1" stop-color="#4f8bff"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1554e8" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#1554e8" stop-opacity="0.02"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.30" r="0.62">
+      <stop offset="0" stop-color="#1554e8" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#1554e8" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0v48" fill="none" stroke="#3b5aa0" stroke-opacity="0.10" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="440" fill="url(#bg)"/>
+  <rect width="1200" height="440" fill="url(#grid)"/>
+  <rect width="1200" height="440" fill="url(#glow)"/>
+
+  <!-- motif: 门 / the gate — agent &amp; human pass through one accountable doorway -->
+  <g>
+    <rect x="516" y="56" width="168" height="18" rx="9" fill="url(#accent)"/>
+    <rect x="528" y="74" width="18" height="118" rx="6" fill="#2a4a9e"/>
+    <rect x="654" y="74" width="18" height="118" rx="6" fill="#2a4a9e"/>
+    <rect x="546" y="74" width="108" height="118" fill="url(#beam)"/>
+    <text x="600" y="146" text-anchor="middle" font-size="38" font-weight="800" fill="#eaf1ff">01</text>
+    <circle cx="672" cy="65" r="9" fill="#07c160" opacity="0.22"/>
+    <circle cx="672" cy="65" r="4.5" fill="#07c160"/>
+  </g>
+
+  <text x="600" y="248" text-anchor="middle" font-size="66" font-weight="800" fill="#f8fafc">01门</text>
+  <text x="600" y="286" text-anchor="middle" font-size="18" letter-spacing="6" fill="#6d8fe0">GATE 01</text>
+
+  <text x="600" y="338" text-anchor="middle" font-size="31" font-weight="700" fill="#eef2ff">AI 会做事，管得住才算数</text>
+  <text x="600" y="372" text-anchor="middle" font-size="18" fill="#8fa3c4">The front-office where AI agents get work done — visibly, governably, accountably.</text>
+
+  <text x="600" y="414" text-anchor="middle" font-size="17" letter-spacing="2" fill="#5b6b85">元冰可 · YUANBINGKE</text>
+</svg>

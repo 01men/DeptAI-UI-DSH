@@ -1,69 +1,56 @@
-# 元冰可（ybkkasi）· 企业 AI 资源管理平台
+# 01门 Gate 01 — AI 代理与人类的协作前台 / Collaboration Front-Office for AI Agents & Humans
 
-> 元冰可是基于 dsh/cordis「一切皆插件」架构的企业级 AI 资源统一管理平台：把 MCP 服务、Skill、Agent、AI 应用、模型路由、NAS 文件存储六类资产纳入一套身份（IAM/OIDC SSO）、一套权限、一套用量计量、一套审计；按「团队 + 领域资产」定价（制造业客户可走私有化交付项目制），对外只呈现用量透明与内部成本穿透，不含任何金额结算语义。
+> 「01门」（Gate 01）是元冰可（Yuanbingke）的部门级协作前台：以 dsh（DeepSeek Harness）cordis 插件形态一键装机，把看板、工单、审批与行业计算装进对话与面板界面——Agent 在会话里干活，人通过面板看得见、管得住。前台通过既有契约调用治理底座 01men/ybkkasi 的六类受管资产（MCP/Skill/Agent/AI 应用/模型路由/NAS）与身份权限面（IAM/OIDC SSO/RBAC/场景级授权），不重复实现治理。
+>
+> Gate 01 is Yuanbingke's department-level front-office: a one-command dsh (DeepSeek Harness) cordis plugin that brings boards, tickets, approvals and industry calculations into the conversation + panel surface — agents work in chat, humans see and govern it in the panel. It calls the governance base `01men/ybkkasi` over existing contracts (six managed asset types + IAM/OIDC SSO/RBAC) and never re-implements governance.
+>
+> 视图 Views：[README.md（中文）](https://github.com/01men/DeptAI-UI-DSH/blob/main/README.md) · [README.en.md（English）](https://github.com/01men/DeptAI-UI-DSH/blob/main/README.en.md) · 本文件（Agent 视图，机器可读）。
 
-Yuanbingke (ybkkasi) is a self-hosted enterprise AI resource management platform: unified identity (IAM / OIDC SSO), permissions, usage metering and audit for six asset types — MCP services, skills, agents, AI apps, model routes and NAS file storage — priced by team and domain assets (private project-based delivery available for manufacturing).
+## 事实卡 Fact card
 
-## 本仓库定位（行业部门交互面板项目 · 01门）
+- 仓库 Repo：`01men/DeptAI-UI-DSH`（开发分支 `custom/dsh-rq`，push 即交付到其 main）
+- 包 Package：npm [`@ybkk/gate-01`](https://www.npmjs.com/package/@ybkk/gate-01)（当前 1.2.1 · MIT · Node ≥ 22.6）
+- 产权 Owner：杭州元冰可科技有限公司（Hangzhou Yuanbingke Technology Co., Ltd.；品牌口径「元冰可 / Yuanbingke」）
+- 安装 Install：`dsh plugin add github:01men/DeptAI-UI-DSH`（备选通道：npm 包 / `link:` / `file:`）
+- 兼容 Compatibility：dsh ≥ 0.1.0-rc.7 < 0.2.0 · web profile
+- 挂载 Mount：`/gate01`；面板 Panel：`http://127.0.0.1:<dsh 端口>/gate01/panel/`（内置演示数据，零配置可看）
+- 卸载 Uninstall：`dsh plugin remove`（卸载即净，重装即恢复）
+- 随附包 Bundled（预构建 dist，零 TS 装载、零生命周期脚本）：plugin-panel-core / plugin-rq-card / plugin-dsh-bridge / plugin-dingtalk-bridge / platform-core / plugin-iam + plugin-authn
 
-> 本仓库（01men/DeptAI-UI-DSH）是**面向不同行业的部门交互面板项目**（本项目主仓），唯一交付物为**「01门」——AI 代理与人类的协作前台**。本项目与上游 `01men/ybkkasi`（元冰可治理底座）**是两个不同的项目**：本项目是**调用方**，通过既有契约调用底座的**资产与权限**（六类受管资产 + IAM/OIDC SSO/RBAC/场景级授权），**不是它的备份仓库**，也不重复实现治理底座。cordis 插件形态一键装进 dsh（`dsh plugin add github:01men/DeptAI-UI-DSH` / npm `@ybkk/gate-01`（已发布 1.2.1） / `link:` / `file:` 四通道），打开 `http://127.0.0.1:<端口>/gate01/panel/` 即见内置演示看板；连接底座后全量数据经本机代理接入（浏览器零跨域），登录在底座侧完成；`dsh plugin remove` 卸载干净、重装即恢复；安装产物为预构建 dist（零 TS 装载/零生命周期脚本）。治理底座主仓库见 [01men/ybkkasi](https://github.com/01men/ybkkasi)。
+## 能力 Capabilities（均为已实现）
 
-- 本项目范围：部门面板/看板（plugin-panel-core）、会话执行卡（plugin-rq-card）、钉钉桥（plugin-dingtalk-bridge）、scenegraphs 业务数据；dsh 部署装配
-- 行业 AI 工作台（IAW）v1.0：五空间信息架构、**14 行业图谱包**（packages/platform-core/scenegraphs/——工程机械/机器人/家电/制糖/白酒/美妆日化/新能源汽车/石化/锂电池/印制板 PCB/智能移动终端/民爆/医疗装备/钢铁）与 14 行业主题引擎；未激活行业可只读预览预置图谱与演示数据
-- 钉钉设备流登录：面板代发起授权，未登录/未绑定自动弹出激活指令
-- npm 发布通道：scripts/release.mjs 一键发布（登录自愈/版本决策/构建回归/发布验证/记录回填/推送交付）
-- 产品定版：[docs/plan-gate01.md](docs/plan-gate01.md) ｜ 降级台账：[docs/gate01-degradation-ledger.md](docs/gate01-degradation-ledger.md) ｜ 定位决策：[docs/positioning-rq-dsh-panel-project-20261019.md](docs/positioning-rq-dsh-panel-project-20261019.md)
-- 产品介绍单页：[产品.html](https://github.com/01men/DeptAI-UI-DSH/blob/main/产品.html)，测试环境已上线 [http://mdzx.fun:8801/product.html](http://mdzx.fun:8801/product.html)——首屏 slogan「AI 会做事，管得住才算数」；单文件自包含（零外部 CSS/JS/字体依赖，内网与私有化环境离线可开）；科技深蓝 #1554e8 + 微信绿 #07c160 配色；内容：四通道安装 / CIO·CTO·CFO 三决策者视角 / 前台×底座架构图（六类资产+四支柱）/ 资产实况（三列资产卡+链路徽标）/ 四场景 / 交付与定价 / FAQ / 联系（电话与微信）；动效全部为渐进增强层（prefers-reduced-motion 整体关闭）
-- 联系与咨询：见产品页联系区块——电话 [182-9193-7101](tel:182-9193-7101) 与微信名片
-- 双轨协作：底座面需求在主分支（ybkkasi）进行，本项目经 merge 吸收上游；本项目→上游仅允许交接清单文档受控回流（独立项目，见根目录 AGENTS.md）
+- 部门空间工作台：研发 / 制造 / 销售 / 战略 / 财务等空间看板（KPI 卡 / 工单流 / 审批留痕 / SSE 实时回流）
+- 14 行业图谱包 + 14 行业主题引擎（工程机械/机器人/家电/制糖/白酒/美妆日化/新能源汽车/石化/锂电池/PCB/智能移动终端/民爆/医疗装备/钢铁）；未激活行业只读预览
+- 制造空间（space=mfg）：13 计算内核 + 3 AI 工具 + 100 项选题（OEE / Cpk / 节拍产能等）
+- 会话执行卡：四态流转，对话与看板双向打通
+- 钉钉设备流登录：面板代发起授权，未登录 / 未绑定自动弹激活指令
+- 诚实降级：底座不可达或远端宿主能力缺口时横幅如实提示，不静默失败（降级台账：docs/gate01-degradation-ledger.md）
 
-## 核心能力（均为已实现功能）
+## Agent / dsh 生态接入
 
-- 统一身份与访问管理（IAM）：多级组织树、角色/用户组、权限点矩阵、钉钉连接器定时自动同步、全员名册 API（`GET /api/iam/roster`，PII 最小化）、应用组织架构同步（`GET /api/apps/:id/org-sync`，默认凭证自助复用平台组织模块，version 零载荷轮询）
-- 统一认证与 SSO：OIDC Provider（RS256/JWKS/PKCE S256/refresh 轮转/end_session/revoke）、应用上线门禁双点、owner 自助签发、钉钉免密登录
-- MCP 部署服务：草稿→验证→灰度→全量、版本不可变、一键回滚、令牌网关（权限组/Tool 粒度/只读约束）、熔断、P95 监控
-- Skill 市场：提交→静态扫描（恶意代码/密钥泄露自动驳回）→两级审批（允许同一人依次完成 domain 与 security 两级二次审批）→版本化上架，Ed25519 契约验签，安装包可直传 NAS
-- Agent 本体与 AI 应用本体：注册颁发机器凭证、on-behalf-of 令牌链、编排拓扑一图穿透、PV/UV/DAU 指标（主动上报 + 公开访客埋点 beacon）；自治分级（A0-A3）与 A2A 点名调用端点
-- 流程编排（flow-core）：TF 编排 + 步骤状态机、模板库 + contextPack、SLA 与进度、甘特时间轴（`/api/flow/*`，`flow.*` 事件入总线与面板 SSE 扇出）
-- 数据要素域：数据集登记、四维质量分、血缘反向追溯、指标字典口径仲裁
-- 场景治理与协作：IAM 场景级授权（sceneCode，deny→allow→fail-closed）、审计证据锚点登记反查与场景维度时间线、通知中心持久化（since 增量 + 已读游标）
-- 平台工程加固：契约面 output.schema 强校验、审批执行能力令牌防冒充、事件总线持久化与重试/死信、平台自更新 pin/签名/回滚、连接器 ODD 声明块与 TOCTOU 执行侧快照校验、P95 尾延迟质量闸门与故障注入演练；入参校验收口（审批 decision/告警规则/应用指标/skill-storage 枚举）；Ed25519 签名基建平台级抽升与发布清单验签（防篡改）
-- 用量计量：schema v1 幂等管道（死信重放/消费幂等）、零价快照价格簿、三方对账、能力漂移检测、成本穿透报表（单位 DAU 成本）；事件保留策略默认 730 天（`USAGE_RETENTION_DAYS`，0=永久，附清除运维口）
-- FinOps 报告 v1（CFO 视图）：成本穿透（部门×模型交叉矩阵 + 上月环比 + Top 消耗主体）、空转检测 v1（近似口径、页面显式标注需人工复核）、「财务视图」SPA 页（#/finops）与一键 CSV 导出（Excel 友好 UTF-8 BOM）
-- 模型接入网关：OpenAI 兼容真实转发（模型未配置 endpoint 时拒绝调用，不生成假 completion），实测 input/output tokens 计量；渠道治理（分级路由 / 渠道组降级链 / 预算熔断 / TTFT 遥测诚实缺列）
-- 审计与治理：四类审计日志、告警规则引擎、越权计数告警、L4 强制审批（上线/下线/下架/吊销，单人通过即执行、结果回写）；审批深化（高风险二次确认 fail-closed、公司级终审、SLA 看板）；HTTP 全响应安全头默认开启（nosniff/SAMEORIGIN/Referrer-Policy）
-- 连接器纳管：open-connector sidecar 作 SaaS 数据面（1,000+ Provider 目录、OAuth 代理、凭证保险库），平台侧双层授权镜像与计量对账
-- NAS 资产纳管与数据权限：经 Synology 文件 MCP 网关操作（不直连 DSM 私有 API）、mcpServers JSON 一键纳管、组织位置 + 角色层级 RBAC 判定引擎（默认 deny、全程留痕）；文件所有权跟踪（上传登记/重命名改写/删除移除，数据权限判定接入所有者维度）；下载链接 HMAC 签名化（1h/24h/7d/30d/永久档位，取流三关：签名→吊销→权限复核，独立长期密钥可吊销）
-- 平台即 MCP Server：`POST /mcp`（Streamable HTTP JSON 形态），40+ 运维工具对 ZCode/Claude/Cursor 等任意 MCP 客户端开放，复用 Bearer 令牌与工具级权限点
-- 远程 dsh 接入与自更新：接入码 enroll（哈希存储/一次性/TTL/失败锁定）、运维工具远程代理；平台自更新（上游版本检查→控制台一键升级，dry-run + 审计）
+- 面板 REST：`/api/panel/*`（挂载于 `/gate01` 之下）；SSE 实时流：`/api/panel/stream`
+- 会话侧：执行卡经 `@ybkk/gate-01` 根包 dsh.client 契约注入 web 客户端（与宿主同进程，无独立端口）
+- 登录：连接底座后由底座侧完成；数据面经宿主桥本机代理接入，浏览器零跨域
+- 二次开发 / 仓内协作规范（分支铁律、同步纪律）：[AGENTS.md](https://github.com/01men/DeptAI-UI-DSH/blob/main/AGENTS.md)
 
-## 快速开始
+## 工程质量 Quality
 
-- 环境要求：Node ≥ 22.6（原生 TypeScript 运行，无需构建步骤）
-- 启动：`npm install && npm start`（默认 http://127.0.0.1:7300，首次启动执行基线初始化：内置角色 + 根组织 + 平台管理员）
-- 演示模式：`DEMO_SEED=1 npm start`（注入演示组织树/账号/MCP/Skill/Agent/应用与 28 天历史数据）
-- 质量门：`npm run selftest` 端到端自测全绿（数量以本次运行为准）+ `npm run lint:manifests` 插件清单五面 YAML 校验
-- CLI：`node cli/dshctl.mjs --output json|table`（MCP/Skill/Agent/应用/NAS/凭证/审批全树命令）
+- 端到端自测 1367/1367 全绿（2026-10-29 实测；每次交付前全量回归 + 插件清单五面校验，数量以当次运行为准）
+- fresh-install 铁律：每次交付前在全新安装的 dsh 上验证插件安装与完整体验（装机模拟含在自测内）
+- fail-closed 安全语义 + 全程审计留痕（由底座承担）
 
-## 文档
+## 文档地图 Docs map
 
-- [README](https://github.com/01men/ybkkasi#readme)：产品全景、插件架构与能力对照
-- [企业部署与接入](https://github.com/01men/ybkkasi/blob/main/docs/deploy-enterprise.md)：部署 runbook 与 dsh 运行时接入
-- [App SSO 接入指南](https://github.com/01men/ybkkasi/blob/main/docs/app-sso-integration.md)：企业 AI 应用身份纳管全流程
-- [用量报表契约（J4）](https://github.com/01men/ybkkasi/blob/main/docs/contract-j4-usage-report.md)：部门/Agent/Skill tokens 三维聚合月报与 CSV 导出
-- [连接器集成](https://github.com/01men/ybkkasi/blob/main/docs/connector-integration.md)：open-connector sidecar 部署拓扑与故障排查
-- [NAS 数据权限](https://github.com/01men/ybkkasi/blob/main/docs/nas-authz.md)：组织位置 + 角色层级 RBAC 设计与灰度
-- [M0 发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-09-m0.md)：当前商业模式口径与契约变更清单
-- [M1-1 契约冻结 v1 发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-11-optimization.md)：J1 面板技能/Agent 点名直调、J2 统一入口分诊、J3 会话直通契约与安全/数据治理加固
-- [IAW 缺口批次发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-11-iaw-batch.md)：flow-core 流程编排、数据要素域、模型渠道治理、Agent 自治与 A2A、场景级授权
-- [季度系统性测试报告](https://github.com/01men/ybkkasi/blob/main/docs/qa-report-20260912-overview.md)：安全/计量/编排/市场四组详录与全链路、早高峰并发演练结论（2026-09-12）
-- [QA 优化批次交付说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-13-qa-fixes.md)：15 项安全与正确性修复、验证结论与防复发（2026-09-13）
-- [M2 迭代发布说明](https://github.com/01men/ybkkasi/blob/main/docs/release-notes-2026-09-16-m2.md)：FinOps 报告 v1、首启体验产品化、技术债收尾与契约变更登记（2026-09-16）
+- [产品定版 plan-gate01](https://github.com/01men/DeptAI-UI-DSH/blob/main/docs/plan-gate01.md)：产品形态、装机不变量、四通道安装
+- [定位决策 positioning](https://github.com/01men/DeptAI-UI-DSH/blob/main/docs/positioning-rq-dsh-panel-project-20261019.md)：本项目与底座是两个项目的边界
+- [企业部署与接入 deploy-enterprise](https://github.com/01men/DeptAI-UI-DSH/blob/main/docs/deploy-enterprise.md)：部署 runbook
+- [产品介绍单页 产品.html](https://github.com/01men/DeptAI-UI-DSH/blob/main/产品.html)：决策者单页（在线版 http://mdzx.fun:8801/product.html）
+- [治理底座 01men/ybkkasi](https://github.com/01men/ybkkasi)：六类资产与身份权限面的提供者（另一个项目）
 
-## 边界与口径
+## 边界 Boundaries
 
-- 商业模式为按「团队 + 领域资产」定价（行业图谱包/场景包等，制造业客户可走私有化交付项目制）；平台对外只呈现用量与内部成本穿透（价格簿零价快照 charge 恒 0 + 内部采购成本参考），钱包/充值/分账等结算语义已整体下线封存
-- 生产部署默认基线初始化（零演示数据）；演示数据仅 `DEMO_SEED=1` 显式注入，请勿在生产启用
-- 全部文件操作经 MCP 文件网关并按真实用户身份（X-On-Behalf-User）留痕；测试内 stub 均为进程内真实 HTTP 服务，不降级为 mock
+- 本项目是底座的**调用方**，不是它的备份仓，不重复实现治理；底座面缺陷走交接清单文档回流（见 AGENTS.md 铁律）
+- 商业口径：按「团队 + 领域资产」定价；制造业客户可走私有化交付项目制；对外无金额结算语义
+- 反馈渠道：GitHub Issues（仓库设每日自动巡检，48 小时内分诊回应）
 
-（更新日期：2026-10-27）
+（更新 Updated：2026-10-29）
