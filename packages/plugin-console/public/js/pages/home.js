@@ -238,6 +238,7 @@ export function renderHome(app) {
           <a href="#sec-arch">架构理念</a>
           <a href="#sec-start">快速开始</a>
           <a href="#/panels">部门面板</a>
+          <a href="https://github.com/01men/ybkkasi" target="_blank" rel="noopener" id="home-footer-github">GitHub 源码 · MIT</a>
         </div>
       </div>
       <div class="home-footer-meta">
