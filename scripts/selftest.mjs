@@ -9341,6 +9341,155 @@ try {
     check('P0-1：审计哈希链对落盘记录可重算校验（逐条 prevHash 相接 + hash 一致）', p0ChainOk, `记录数=${p0Records.length}`)
   }
 
+  // ================================================================ 资产使用凭证（2026-10-31）
+  // 链路：登记 → 获取（=授权）→ 使用 → 逐次提报使用凭证 → 台账/审计经营关联。
+  // 授权闭环：skill=install 边 ∪ download 流水（机器主体按 principalId）；mcp=权限组 subjects+policies。
+  section('资产使用凭证：授权闭环 / 幂等 / 经营关联')
+  {
+    const aurAdminLogin = await api('POST', '/api/auth/login', { body: { username: 'admin', password: 'Ybk@2026' } })
+    check('凭证自测：管理员登录', aurAdminLogin.ok)
+    const aurAdmin = aurAdminLogin.data.token
+    const aurOrgId = aurAdminLogin.data.user.orgId
+
+    // —— 准备：注册两个 Agent（A1=install 路径、A2=download/mcp 路径）+ 机器登录 ——
+    const aurAgent1Res = await api('POST', '/api/agents', { token: aurAdmin, body: { name: '资产凭证自测机器人A1', attrs: { description: '资产使用凭证链路自测（install 路径）', model: 'deepseek-chat', riskLevel: 'low', avatar: '🧾' } } })
+    const aurAgent2Res = await api('POST', '/api/agents', { token: aurAdmin, body: { name: '资产凭证自测机器人A2', attrs: { description: '资产使用凭证链路自测（download/mcp 路径）', model: 'deepseek-chat', riskLevel: 'low', avatar: '🧾' } } })
+    check('凭证自测：两个 Agent 注册并下发机器凭证', aurAgent1Res.ok && aurAgent2Res.ok
+      && Boolean(aurAgent1Res.data?.credential?.clientId) && Boolean(aurAgent2Res.data?.credential?.clientId))
+    const aurAgent1 = aurAgent1Res.data.agent.id
+    const aurAgent2 = aurAgent2Res.data.agent.id
+    const aurCc1 = await api('POST', '/api/auth/client-credentials', { body: { clientId: aurAgent1Res.data.credential.clientId, clientSecret: aurAgent1Res.data.credential.clientSecret } })
+    const aurCc2 = await api('POST', '/api/auth/client-credentials', { body: { clientId: aurAgent2Res.data.credential.clientId, clientSecret: aurAgent2Res.data.credential.clientSecret } })
+    check('凭证自测：两台机器凭证换令牌（默认 scope 含 usage.write）', aurCc1.ok && aurCc2.ok && aurCc1.data.token && aurCc2.data.token)
+    const aurMach1 = aurCc1.data.token
+    const aurMach2 = aurCc2.data.token
+
+    // —— 准备：自测 Skill 提交→审批→上架 + 自测 MCP 服务纳管 ——
+    const aurSkillRes = await api('POST', '/api/skills', { token: aurAdmin, body: { name: '资产凭证自测助手', summary: '资产使用凭证链路自测专用', content: '# 资产凭证自测助手\n\n## 何时使用\n使用凭证链路自测。\n\n## 步骤\n1. 提报使用凭证', category: '研发效能', version: '1.0.0' } })
+    await api('POST', `/api/skills/${aurSkillRes.data.id}/approve`, { token: aurAdmin, body: { decision: 'approve', level: 'domain', opinion: '自测' } })
+    const aurPublish = await api('POST', `/api/skills/${aurSkillRes.data.id}/publish`, { token: aurAdmin, body: {} })
+    check('凭证自测：Skill 上架', aurSkillRes.ok && aurPublish.ok, JSON.stringify(aurSkillRes.error ?? aurPublish.error))
+    const aurSkillId = aurSkillRes.data.id
+    const aurSvcRes = await api('POST', '/api/mcp/services', { token: aurAdmin, body: { name: '资产凭证自测服务', slug: 'selftest-asset-usage', orgId: aurOrgId, description: '使用凭证链路自测（演示传输层）', transport: 'http', mode: 'hosted', exec: 'demo' } })
+    check('凭证自测：MCP 服务纳管', aurSvcRes.ok && Boolean(aurSvcRes.data?.service?.id ?? aurSvcRes.data?.id), JSON.stringify(aurSvcRes.error))
+    const aurSvcId = aurSvcRes.data?.service?.id ?? aurSvcRes.data?.id
+
+    // —— 鉴权与字段门禁 ——
+    const aurNoAuth = await fetch(`${BASE}/api/assets/usage-reports`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) })
+    check('无令牌提报被拒（401，鉴权中间件先于路由）', aurNoAuth.status === 401, String(aurNoAuth.status))
+    const aurBadType = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: { assetType: 'nas', assetRef: 'x', idempotencyKey: 'k1' } })
+    check('assetType 枚举门禁（nas 被 400 拒绝，v1 只收 skill|mcp）', aurBadType.status === 400, JSON.stringify(aurBadType.error))
+    const aurNoGrant = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: { assetType: 'skill', assetRef: String(aurSkillId), idempotencyKey: 'aur-agt1:pre-grant' } })
+    check('授权闭环：未获取先提报被拒（403 NO_GRANT）', aurNoGrant.status === 403 && aurNoGrant.error?.code === 'NO_GRANT', JSON.stringify(aurNoGrant.error))
+    const aurNotFound = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: { assetType: 'skill', assetRef: 'no-such-skill-xyz', idempotencyKey: 'aur-agt1:not-found' } })
+    check('资产存在性门禁：不存在的 Skill 被拒（404 ASSET_NOT_FOUND，防编造凭证）', aurNotFound.status === 404 && aurNotFound.error?.code === 'ASSET_NOT_FOUND', JSON.stringify(aurNotFound.error))
+    const aurStale = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: { assetType: 'skill', assetRef: String(aurSkillId), occurredAt: new Date(Date.now() - 40 * 86_400_000).toISOString(), idempotencyKey: 'aur-agt1:stale' } })
+    check('补录窗口门禁：occurredAt 超 30 天被拒（400）', aurStale.status === 400, JSON.stringify(aurStale.error))
+
+    // —— install 授权路径：管理员安装后 A1 提报成功 + 归因 ——
+    const aurInstall = await api('POST', `/api/skills/${aurSkillId}/install`, { token: aurAdmin, body: { agentId: aurAgent1 } })
+    check('凭证自测：管理员 install（获取=授权）', aurInstall.ok)
+    const aurReport1 = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: {
+      assetType: 'skill', assetRef: String(aurSkillId), assetVersion: '1.0.0', taskId: 'task-001', durationMs: 1200, tokens: 456,
+      idempotencyKey: 'aur-agt1:task-001',
+    } })
+    check('install 后提报成功（200，归因 agentId + 台账键 skill:<id> + 默认 action/outcome）',
+      aurReport1.ok && aurReport1.data.report.agentId === aurAgent1 && aurReport1.data.report.assetKey === `skill:${aurSkillId}`
+      && aurReport1.data.report.action === 'invoke' && aurReport1.data.report.outcome === 'success'
+      && aurReport1.data.report.reporterType === 'machine' && aurReport1.data.deduped === false,
+      JSON.stringify(aurReport1.error ?? aurReport1.data?.report))
+    const aurReport1Id = aurReport1.data?.report?.id
+
+    // —— 幂等：同键同内容重放安全；同键异容 409 ——
+    const aurReplay = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: {
+      assetType: 'skill', assetRef: String(aurSkillId), assetVersion: '1.0.0', taskId: 'task-001', durationMs: 1200, tokens: 456,
+      idempotencyKey: 'aur-agt1:task-001',
+    } })
+    check('幂等：同键同内容重放返回原凭证（deduped=true，不重复入账）',
+      aurReplay.ok && aurReplay.data.deduped === true && aurReplay.data.report.id === aurReport1Id, JSON.stringify(aurReplay.data))
+    const aurConflict = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: {
+      assetType: 'skill', assetRef: String(aurSkillId), taskId: 'task-002',
+      idempotencyKey: 'aur-agt1:task-001',
+    } })
+    check('幂等：同键不同内容被拒（409 IDEMPOTENCY_CONFLICT）', aurConflict.status === 409 && aurConflict.error?.code === 'IDEMPOTENCY_CONFLICT', JSON.stringify(aurConflict.error))
+
+    // —— download 授权路径：A2 自取后提报成功（自取同样构成授权记录）——
+    const aurDownload = await api('POST', `/api/skills/${aurSkillId}/download`, { token: aurMach2, body: {} })
+    check('凭证自测：A2 机器自取 skill 包', aurDownload.ok)
+    const aurReport2 = await api('POST', '/api/assets/usage-reports', { token: aurMach2, body: {
+      assetType: 'skill', assetRef: '资产凭证自测助手', idempotencyKey: 'aur-agt2:task-001',
+    } })
+    check('download 后提报成功（slug 引用归一化为 skill:<id>，按 principalId 匹配授权）',
+      aurReport2.ok && aurReport2.data.report.agentId === aurAgent2 && aurReport2.data.report.assetKey === `skill:${aurSkillId}`,
+      JSON.stringify(aurReport2.error ?? aurReport2.data?.report))
+
+    // —— MCP 授权路径：权限组 subjects+policies 口径（与数据面同源）——
+    const aurMcpDenied = await api('POST', '/api/assets/usage-reports', { token: aurMach1, body: { assetType: 'mcp', assetRef: 'selftest-asset-usage', idempotencyKey: 'aur-agt1:mcp-001' } })
+    check('MCP 授权闭环：未配权限组的 Agent 提报被拒（403 NO_GRANT）', aurMcpDenied.status === 403, JSON.stringify(aurMcpDenied.error))
+    const aurPg = await api('POST', '/api/mcp/perm-groups', { token: aurAdmin, body: {
+      name: '资产凭证自测权限组', policies: { [aurSvcId]: { allowedTools: '*', constraints: { readOnly: true } } },
+      subjects: [{ type: 'agent', id: aurAgent2 }],
+    } })
+    check('凭证自测：A2 配入 MCP 权限组（subjects 含 agent）', aurPg.ok, JSON.stringify(aurPg.error))
+    const aurMcpReport = await api('POST', '/api/assets/usage-reports', { token: aurMach2, body: {
+      assetType: 'mcp', assetRef: 'selftest-asset-usage', action: 'call', outcome: 'failure', taskId: 'task-003',
+      idempotencyKey: 'aur-agt2:mcp-001',
+    } })
+    check('MCP 授权后提报成功（failure 如实入账，assetKey=mcp:<slug>）',
+      aurMcpReport.ok && aurMcpReport.data.report.assetKey === 'mcp:selftest-asset-usage'
+      && aurMcpReport.data.report.outcome === 'failure' && aurMcpReport.data.report.action === 'call',
+      JSON.stringify(aurMcpReport.error ?? aurMcpReport.data?.report))
+
+    // —— human 代报（管理员持 usage.write 免授权校验，归因 human）——
+    const aurHuman = await api('POST', '/api/assets/usage-reports', { token: aurAdmin, body: {
+      assetType: 'skill', assetRef: String(aurSkillId), note: '运营代补', idempotencyKey: 'aur-admin:backfill-001',
+    } })
+    check('human 代报成功（reporterType=human，userId 回填）',
+      aurHuman.ok && aurHuman.data.report.reporterType === 'human' && Boolean(aurHuman.data.report.userId),
+      JSON.stringify(aurHuman.error ?? aurHuman.data?.report))
+
+    // —— 查询出口：过滤与排序 ——
+    const aurQuery = await api('GET', `/api/assets/usage-reports?assetType=skill&agentId=${encodeURIComponent(aurAgent1)}`, { token: aurAdmin })
+    check('凭证查询：assetType+agentId 过滤命中 A1 的记录',
+      aurQuery.ok && aurQuery.data.total >= 1 && aurQuery.data.items.every((row) => row.assetType === 'skill' && row.agentId === aurAgent1)
+      && aurQuery.data.items[0].id === aurReport1Id, JSON.stringify(aurQuery.data?.total))
+
+    // —— 经营关联：台账 usageReports30d + 审计逐次落账 ——
+    const aurLedger = await api('GET', '/api/fleet/ledger', { token: aurAdmin })
+    const aurLedgerSkill = aurLedger.data?.items?.find((item) => item.key === `skill:${aurSkillId}`)
+    const aurLedgerMcp = aurLedger.data?.items?.find((item) => item.key === 'mcp:selftest-asset-usage')
+    check('经营关联：台账 Skill 行 usageReports30d=3（A1+A2+human 代报；工具面提报在本断言之后）', Boolean(aurLedgerSkill) && aurLedgerSkill.usageReports30d === 3,
+      `skill 行=${JSON.stringify(aurLedgerSkill?.usageReports30d)}`)
+    check('经营关联：台账 MCP 行 usageReports30d=1', Boolean(aurLedgerMcp) && aurLedgerMcp.usageReports30d === 1,
+      `mcp 行=${JSON.stringify(aurLedgerMcp?.usageReports30d)}`)
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    const aurAudit = await api('GET', '/api/audit/logs?type=invoke&q=asset.usage.report&limit=50', { token: aurAdmin })
+    check('审计逐次落账：asset.usage.report 记录在案（含资产名与归因；工具面第 5 条在本断言之后）',
+      aurAudit.ok && aurAudit.data.total >= 4 && aurAudit.data.items.some((row) => row.resourceName === '资产凭证自测助手' && row.resourceId === `skill:${aurSkillId}`),
+      JSON.stringify(aurAudit.data?.total))
+
+    // —— 工具面（技能）：/mcp tools 含 asset_usage_report 且可端到端调用 ——
+    const aurToolsList = await rawReq('POST', '/mcp', {
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${aurMach1}` },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }),
+    })
+    const aurToolNames = (jsonBody(aurToolsList).result?.tools ?? []).map((tool) => tool.name)
+    check('技能面：机器令牌 tools/list 含 asset_usage_report（usage.write 默认 scope 可见）',
+      aurToolNames.includes('asset_usage_report'), `工具数=${aurToolNames.length}`)
+    const aurToolCall = await rawReq('POST', '/mcp', {
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${aurMach1}` },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'asset_usage_report', arguments: {
+        assetType: 'skill', assetRef: String(aurSkillId), taskId: 'task-004', idempotencyKey: 'aur-agt1:task-004',
+      } } }),
+    })
+    const aurToolPayload = jsonBody(aurToolCall).result
+    let aurToolValue = {}
+    try { aurToolValue = JSON.parse(aurToolPayload?.content?.[0]?.text ?? '{}') } catch { /* isError 分支无 JSON */ }
+    check('技能面：asset_usage_report 工具端到端提报成功（deduped=false）',
+      aurToolPayload?.isError === false && aurToolValue.deduped === false && aurToolValue.report?.agentId === aurAgent1,
+      JSON.stringify(aurToolPayload).slice(0, 240))
+  }
+
   section('凭证零进平台（红线一 · T-24 全目录扫描）')
   // SIGTERM 触发 main.ts 的 flushNow（把内存中的待写集合全部原子落盘）后退出，
   // 再扫描数据目录——保证连「尚未刷盘的最新写入」也在扫描覆盖之内。

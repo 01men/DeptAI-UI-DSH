@@ -90,11 +90,12 @@ function renderLedgerTab(content, params) {
             <th style="text-align:right">30d 调用</th>
             <th style="text-align:right">30d 消耗</th>
             <th style="text-align:right">成本参考</th>
+            <th style="text-align:right" title="近 30 天使用凭证数：Agent 使用资产后主动提报的使用事实（与平台自动计量互补）">使用凭证</th>
             <th>发布</th>
             <th style="text-align:right">趋势</th>
           </tr>
         </thead>
-        <tbody id="ledger-body"><tr><td colspan="8" class="text-4 fs-12" style="padding:28px;text-align:center">${icon('activity', 14)} 台账加载中…</td></tr></tbody>
+        <tbody id="ledger-body"><tr><td colspan="9" class="text-4 fs-12" style="padding:28px;text-align:center">${icon('activity', 14)} 台账加载中…</td></tr></tbody>
       </table>
     </div>
     <p class="fs-11 text-3" style="margin-top:8px">点击行打开右侧详情抽屉（概览 / 监控 / 权限 / 拓扑 / 审计 / 生命周期）· 列表不跳页</p>`
@@ -126,7 +127,7 @@ function renderLedgerTab(content, params) {
     const holder = $('#ledger-body')
     const rows = state.items.filter((it) => !state.type || it.type === state.type)
     if (!rows.length) {
-      holder.innerHTML = `<tr><td colspan="8">${emptyHint(`${icon('search', 16)} ${esc(rqI18n.t('无匹配资产 — 试试调整筛选或搜索词'))}`)}</td></tr>`
+      holder.innerHTML = `<tr><td colspan="9">${emptyHint(`${icon('search', 16)} ${esc(rqI18n.t('无匹配资产 — 试试调整筛选或搜索词'))}`)}</td></tr>`
       return
     }
     holder.innerHTML = rows.map((it) => `
@@ -151,6 +152,7 @@ function renderLedgerTab(content, params) {
         <td class="col-num tnum mono fs-12" style="text-align:right">${num(it.calls30d)}</td>
         <td class="col-num tnum mono fs-12" style="text-align:right">${fmtNum(it.tokens30d)}</td>
         <td class="col-num tnum mono fs-12" style="text-align:right">${fmtCents(it.cost30d)}</td>
+        <td class="col-num tnum mono fs-12" style="text-align:right" title="近 30 天使用凭证（Agent 提报的使用事实）">${num(it.usageReports30d ?? 0)}</td>
         <td>${lifecycleBadge(it.lifecycle)}</td>
         <td style="text-align:right">${Array.isArray(it.trend) && it.trend.length ? trendSmall(it.trend) : '<span class="fs-11 text-4">暂无</span>'}</td>
       </tr>`).join('')
@@ -165,14 +167,14 @@ function renderLedgerTab(content, params) {
   const load = async () => {
     const holder = $('#ledger-body')
     if (!holder) return
-    holder.innerHTML = '<tr><td colspan="8" class="text-4 fs-12" style="padding:28px;text-align:center">台账加载中…</td></tr>'
+    holder.innerHTML = '<tr><td colspan="9" class="text-4 fs-12" style="padding:28px;text-align:center">台账加载中…</td></tr>'
     try {
       const data = await api.get('/api/fleet/ledger' + api.qs({ search: state.search || undefined }))
       state.items = data.items ?? []
       renderChips()
       renderRows()
     } catch (error) {
-      holder.innerHTML = `<tr><td colspan="8">${emptyHint(`${icon('alert', 16)} ${esc(rqI18n.t('台账数据加载失败（{msg}）', { msg: error.message }))}<br><button class="btn btn-default btn-sm" id="ledger-retry" style="margin-top:10px">${esc(rqI18n.t('重试'))}</button>`)}</td></tr>`
+      holder.innerHTML = `<tr><td colspan="9">${emptyHint(`${icon('alert', 16)} ${esc(rqI18n.t('台账数据加载失败（{msg}）', { msg: error.message }))}<br><button class="btn btn-default btn-sm" id="ledger-retry" style="margin-top:10px">${esc(rqI18n.t('重试'))}</button>`)}</td></tr>`
       const retry = $('#ledger-retry')
       if (retry) retry.onclick = () => void load()
     }

@@ -15,11 +15,14 @@
  *   - key     ：与 usage 计量 resource 完全一致（mcp:<slug> / model:<slug> / app:<slug> /
  *              skill:<id> / nas:<id> / agent:<id>）——前端可直接拿 key 与用量报表 topAssets 对账。
  *   - calls30d/tokens30d/cost30d：usage.usageReport(近 30 天) 按资源聚合（cost=内部成本参考分）。
+ *   - usageReports30d：资产使用凭证数（近 30 天，Agent 自主提报的使用事实，usage:assetReports
+ *     按 assetKey 聚合）——与计量口径互补：计量=平台自动（计费管道），凭证=使用方自证（经营证据）。
  *   - trend[14]：usage.callsTrend(近 14 天) 按资源×日的调用数序列（无数据全 0）。
  *   - dau     ：app/agent 取运营提报（appRegistry/agentRegistry usage 集合最近一日 dau），无提报省略。
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { t } from '../../../platform-i18n/src/index.ts'
+import { AssetUsageError, prepareAssetUsageReport, type AssetUsageCheckCtx, type AssetUsageReportInput } from '../../../plugin-usage/src/asset-reports.ts'
 import type { ConsoleRouteDeps } from './deps.ts'
 
 /** 台账统一条目（规格 5.2 六类统一 schema）。 */
@@ -37,6 +40,8 @@ export interface FleetLedgerItem {
   calls30d: number
   tokens30d: number
   cost30d: number
+  /** 资产使用凭证数（近 30 天，Agent 自主提报的使用事实；与计量口径互补，2026-10-31）。 */
+  usageReports30d: number
   dau?: number
   trend: number[]
   version?: string
@@ -45,7 +50,7 @@ export interface FleetLedgerItem {
 }
 
 export function registerFleetRoutes(ctx: Context, deps: ConsoleRouteDeps): void {
-  const { guarded } = deps
+  const { guarded, body, changeLog, caller } = deps
 
   guarded('GET', '/api/fleet/ledger', 'usage.read', (exchange) => {
     const typeFilter = exchange.query.get('type') ?? ''
@@ -56,6 +61,7 @@ export function registerFleetRoutes(ctx: Context, deps: ConsoleRouteDeps): void 
     const from30 = new Date(now.getTime() - 30 * 86_400_000).toISOString()
     const from14 = new Date(now.getTime() - 14 * 86_400_000).toISOString()
     const byResource = new Map(ctx.usage.usageReport(from30).byResource.map((row) => [row.resource, row]))
+    const usageReportsByAsset = ctx.usage.assetUsageReportCounts(from30)
     const axis14: string[] = []
     for (let i = 13; i >= 0; i--) axis14.push(new Date(now.getTime() - i * 86_400_000).toISOString().slice(0, 10))
     const trendOfDay = new Map<string, Map<string, number>>()
@@ -71,6 +77,7 @@ export function registerFleetRoutes(ctx: Context, deps: ConsoleRouteDeps): void 
         calls30d: row?.calls ?? 0,
         tokens30d: row?.tokens ?? 0,
         cost30d: row?.cost_cents ?? 0,
+        usageReports30d: usageReportsByAsset.get(resource) ?? 0,
         trend: axis14.map((day) => perDay?.get(day) ?? 0),
       }
     }
@@ -254,5 +261,38 @@ export function registerFleetRoutes(ctx: Context, deps: ConsoleRouteDeps): void 
       trendAxis: axis14,
       items: filtered,
     }
+  })
+
+  // -- 资产使用凭证（2026-10-31）：Agent 使用 skill/MCP 后主动提报的使用事实 ----------------
+  // 提报授权闭环与字段口径见 plugin-usage asset-reports.ts（REST 与 MCP 工具 asset_usage_report
+  // 共用编排）；权限复用 usage.write（Agent 注册默认 scope 已含，存量免换证），查询 usage.read。
+  guarded('POST', '/api/assets/usage-reports', 'usage.write', (exchange) => {
+    const input = body<AssetUsageReportInput>(exchange)
+    try {
+      const prepared = prepareAssetUsageReport(ctx as unknown as AssetUsageCheckCtx, input, caller(exchange))
+      const { report, deduped } = ctx.usage.submitAssetUsageReport(prepared)
+      if (!deduped) changeLog(exchange, 'asset.usage.report', report.assetType, report.assetKey, report.assetName,
+        `action=${report.action} outcome=${report.outcome} occurredAt=${report.occurredAt}${report.taskId ? ` taskId=${report.taskId}` : ''}`)
+      return { report, deduped }
+    } catch (error) {
+      if (error instanceof AssetUsageError) {
+        exchange.fail(error.status, error.code, error.message)
+        return
+      }
+      throw error
+    }
+  })
+
+  guarded('GET', '/api/assets/usage-reports', 'usage.read', (exchange) => {
+    const query = exchange.query
+    const rows = ctx.usage.assetUsageReports({
+      ...(query.get('assetType') ? { assetType: query.get('assetType')! } : {}),
+      ...(query.get('assetKey') ? { assetKey: query.get('assetKey')! } : {}),
+      ...(query.get('agentId') ? { agentId: query.get('agentId')! } : {}),
+      ...(query.get('from') ? { from: query.get('from')! } : {}),
+      ...(query.get('to') ? { to: query.get('to')! } : {}),
+      ...(query.get('limit') ? { limit: Number(query.get('limit')) } : {}),
+    })
+    return { total: rows.length, items: rows }
   })
 }

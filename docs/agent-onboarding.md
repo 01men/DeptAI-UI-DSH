@@ -5,6 +5,8 @@
 > 凭证支持轮换；机器身份访问 Agent 台账记审计 agent.verify）。加固清单见 `docs/internal/dev-plan-access-hardening.md`。
 > 2026-08-30 NAS 数据权限上线：新增 4.5 节（文件网关接入、X-On-Behalf-User 身份红线、
 > 越权/分享审批/降级语义），需文件能力的 Agent 必读。设计全文见 `docs/nas-authz.md`。
+> 2026-10-31 资产使用凭证上线：新增 4.7 节（获取资产=授权 → 使用 → 逐次提报使用凭证，
+> 提报记录进资产台账与审计，构成资产经营侧的使用证据），使用 skill/MCP 的 Agent 必读。
 > 本文档随服务发布，可直接访问 `http://<平台地址>/docs/agent-onboarding.md`。
 
 【任务】接入宿主平台 http://192.168.0.7:7300，完成 Agent 注册、机器身份打通与计量对齐。
@@ -143,6 +145,45 @@
      也可直连（可调用面同样以权限组为准），但长期令牌不得写进客户端配置出域；
      可调用范围由管理员配置的 MCP 权限组决定，需要新工具授权时向我（管理员）申请。
 
+4.7 资产获取与使用凭证提报（使用平台 skill / MCP 后必做，2026-10-31 起）：
+   完整链路：登记（步骤1）→ 获取资产（=授权）→ 使用 → 逐次提报使用凭证。使用凭证是资产经营侧的
+   重要证据（资产台账「使用凭证」列、审计 asset.usage.report 逐次留痕），与步骤 4 的计量事件口径
+   互补、互不替代：计量=平台自动统计（计费管道），凭证=使用方自证（使用事实）。
+   - 获取（授权前提，无获取记录的提报会被拒）：
+     · skill：管理员 install 绑定（POST /api/skills/<skill-id>/install  body {"agentId":"<agt_...>"}），
+       或本 Agent 凭机器令牌自取（POST /api/skills/<skill-id>/download 登记 + GET /api/skills/<skill-id>/package
+       拿 skill.zip——自取同样构成授权记录）；
+     · MCP：管理员把本 Agent 配进 MCP 权限组（subjects 含本 Agent 且 policies 覆盖目标服务），
+       调用走 4.6 服务级数据面。
+   - 提报（每次使用后；机器令牌即可，无需额外权限点——注册默认 scope 已含 usage.write）：
+     POST /api/assets/usage-reports
+     body {
+       "assetType": "skill",                  // 必填：skill | mcp
+       "assetRef": "<skill 的 id/slug 或 mcp 的 slug>",  // 必填
+       "assetVersion": "1.2.0",               // 可选：使用时的资产版本
+       "action": "invoke",                    // 可选：默认 invoke（execute/call/read 等，小写下划线 ≤32 字符）
+       "occurredAt": "2026-10-31T08:00:00Z",  // 可选：缺省当前；仅允许补录近 30 天，不接受未来时间
+       "outcome": "success",                  // 可选：success | failure（失败也如实报，默认 success）
+       "durationMs": 1234,                    // 可选：非负整数
+       "tokens": 456,                         // 可选：非负整数（如适用）
+       "taskId": "<业务单号/任务ID>",          // 可选：建议携带，经营侧按任务归因
+       "note": "一句话说明",                   // 可选：≤500 字
+       "idempotencyKey": "<agent标识>:<业务单号>"  // 必填：全局唯一；同键同内容重放安全（返回原凭证 deduped=true），
+                                                  // 同键不同内容 409 拒绝
+     }
+     → 200 {report, deduped}；凭证实时进资产台账（GET /api/fleet/ledger 对应资产行 usageReports30d）
+       与审计（GET /api/audit/logs 查 asset.usage.report）。
+   - 错误语义（按码处置，不要变形重试）：
+     · 403 NO_GRANT：本 Agent 尚未获取该资产——先走上面的获取链路，获取成功后原样重发；
+     · 404 ASSET_NOT_FOUND：资产不存在或未上架——向我确认资产登记状态，不要编造 assetRef；
+     · 409 IDEMPOTENCY_CONFLICT：幂等键已被不同内容占用——换业务单号重报，不要改内容撞同键；
+     · 400 字段非法：按错误信息修正（assetType 枚举、occurredAt ISO8601 且在 30 天补录窗内）。
+   - 工具面等价：经平台 MCP 工具面接入的 Agent 可直接调 asset_usage_report 工具（参数同上），
+     不必手拼 REST。
+   - 口径边界：经平台数据面（4.6）的 MCP 调用平台已逐次计量+审计（等价凭证），无需逐次重复提报，
+     可按任务/会话粒度汇总提报（taskId 关联）；skill.zip 下载到本地执行平台无感知，必须逐次提报。
+     步骤 4 的计量义务不因提报凭证而免除或替代。
+
 5. 权限自检与护栏：接入完成后先试跑一次换牌（步骤2）和一次 usage record（步骤4）。
    403 = 缺权限点（响应体会指明缺哪个），向我报告，不要换账号或重试硬闯；
    403 本身不触发锁定，触发锁定的是登录/换牌类连续失败（按用户名或 clientId 计，5 次/15 分钟窗口起）。
@@ -151,7 +192,8 @@
 
 【完成后回报】Agent id（agt_ 前缀）、clientId、首次运营数据提报（metrics-report）与 entryUrl 提报的
 状态码与关键证据（响应片段 + 控制台「Agent 本体 → 监控」页运营数据、审计页 agent.metrics.report 记录）、
-控制台查看路径（http://192.168.0.7:7300/ →「Agent 本体」页）。
+本次接入中使用过的平台资产的首条使用凭证提报证据（POST /api/assets/usage-reports 200 响应片段，
+未使用资产则注明「未使用」）、控制台查看路径（http://192.168.0.7:7300/ →「Agent 本体」页）。
 
 ---
 

@@ -43,6 +43,8 @@ export const PlatformEvents = {
   McpSecretAccess: 'mcp.secret.access',
   // 应用外部凭证托管（issue #19）：取值留痕（payload 仅 appId/key/result，绝不带值）
   AppSecretAccess: 'app.secret.access',
+  // 资产使用凭证（2026-10-31）：Agent 使用 skill/MCP 后主动提报的使用事实（逐次审计订阅落账）
+  UsageAssetReported: 'usage.asset.reported',
   // 连接器纳管（open-connector 融合；前缀已在本文件预留清单）
   ConnectorOddExit: 'connector.odd_exit',
   ConnectorPolicyMirrorFailed: 'connector.policy_mirror_failed',

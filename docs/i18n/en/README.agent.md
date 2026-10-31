@@ -43,6 +43,7 @@ Under a dsh mount, prefix all paths above with `/rq`. A standalone instance defa
 
 - Every capability invocation produces a usage event, written idempotently (redelivery causes zero duplicate side effects).
 - Meter keys must be registered in the price book (for example `mcp:*` uses `tokens`, `model:*` uses `output_tokens`); a mismatch is explicitly rejected, and **there is no silent zero-rate fallback**.
+- **Asset usage credentials** (since 2026-10-31): after using a platform skill/MCP, agents should proactively report the usage fact to `POST /api/assets/usage-reports` (idempotency key required; the machine principal must have acquired the asset first — reporting without acquisition is rejected with 403). Credentials feed the asset ledger and audit trail as usage evidence on the asset-operations side; they complement metering events and do not replace them. Fields and error semantics: `docs/agent-onboarding.md` §4.7 (Chinese).
 - The platform exposes no monetary settlement semantics. Externally it offers transparent usage metering plus an internal cost reference — no wallets, no top-ups, no revenue splits.
 - When pricing data is unavailable, this is stated explicitly as `cost_status=not_priced`. **Unknown does not mean zero cost.**
 

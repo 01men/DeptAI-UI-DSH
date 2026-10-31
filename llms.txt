@@ -17,6 +17,7 @@
 - 独立实例默认地址为 `http://127.0.0.1:7300`；`GET /api/health` 可检查健康状态。
 - `GET /api/openapi.json` 提供当前实例的 REST 描述；受保护接口需要获授权的凭据。
 - `POST /mcp` 是平台运维工具的 MCP 接口，工具发现结果受调用方权限约束。`POST /mcp/services/:slug` 是面向具体 MCP 服务的另一接口。
+- 使用平台 skill/MCP 后，Agent 应向 `POST /api/assets/usage-reports` 提报使用凭证（幂等键防重；须先获取资产，未获取先报 403）；字段与错误语义见 `docs/agent-onboarding.md` §4.7。
 - dsh 挂载配置使用 `/rq` 前缀；具体地址、能力及授权以目标实例为准。工具和接口数量可能随版本及调用方权限变化。
 
 ## 操作边界

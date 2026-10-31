@@ -36,8 +36,9 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
-import { newId, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { newId, PlatformEvents, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
 import { t } from '../../platform-i18n/src/index.ts'
+import { AssetUsageError, reportFingerprint, type AssetUsageReportRecord } from './asset-reports.ts'
 import * as usageTools from './tools.ts'
 
 // ---------------------------------------------------------------------------
@@ -1204,6 +1205,63 @@ export class UsageService extends Service {
 
   deadLetters(): Collection<DeadLetterRecord> {
     return this.ctx.opsStorage.collection<DeadLetterRecord>('usage:deadLetters')
+  }
+
+  // -- 资产使用凭证（2026-10-31）---------------------------------------------
+  // 与 usage_events 计费管道的关系见 asset-reports.ts 头注：凭证是使用事实（skill 本地执行等
+  // 平台无感知的使用由 Agent 主动提报），不进价格簿/成本口径；授权闭环校验在 prepareAssetUsageReport
+  // （REST 路由与 MCP 工具共用编排，本服务只管存储/幂等/查询/聚合）。
+
+  /** 凭证流水集合（幂等键引擎级唯一，防并发重复入账）。 */
+  assetReports(): Collection<AssetUsageReportRecord> {
+    const collection = this.ctx.opsStorage.collection<AssetUsageReportRecord>('usage:assetReports')
+    collection.uniqueOn('idempotencyKey', (record) => record.idempotencyKey)
+    return collection
+  }
+
+  /** 落库（幂等）：同键同内容返回原凭证 deduped=true；同键异容 409；仅首次落库发总线事件（审计逐次留痕不因重放膨胀）。 */
+  submitAssetUsageReport(prepared: Omit<AssetUsageReportRecord, 'id' | 'createdAt' | 'updatedAt'>): { report: AssetUsageReportRecord; deduped: boolean } {
+    const existing = this.assetReports().findOne((item) => item.idempotencyKey === prepared.idempotencyKey)
+    if (existing) {
+      if (reportFingerprint(existing) !== reportFingerprint(prepared)) {
+        throw new AssetUsageError(409, 'IDEMPOTENCY_CONFLICT', t('幂等键冲突：{key} 已被不同内容的凭证占用（同键必须同内容，换业务单号）', { key: prepared.idempotencyKey }))
+      }
+      return { report: existing, deduped: true }
+    }
+    const report = this.assetReports().insert({ id: newId('aur'), ...prepared })
+    this.ctx.platformBus.emit(PlatformEvents.UsageAssetReported, {
+      actorType: report.reporterType,
+      actor: report.agentId ?? report.userId ?? report.reporterPrincipalId,
+      actorName: report.reporterName,
+      type: report.assetType,
+      id: report.assetKey,
+      name: report.assetName,
+      reason: `action=${report.action} outcome=${report.outcome} occurredAt=${report.occurredAt}${report.taskId ? ` taskId=${report.taskId}` : ''}${report.note ? ` note=${report.note}` : ''}`,
+    })
+    return { report, deduped: false }
+  }
+
+  /** 凭证查询（经营对账/审计出口）：assetType/assetKey/agentId/from/to 过滤，occurredAt 倒序。 */
+  assetUsageReports(filters: { assetType?: string; assetKey?: string; agentId?: string; from?: string; to?: string; limit?: number } = {}): AssetUsageReportRecord[] {
+    let rows = this.assetReports().all()
+    if (filters.assetType) rows = rows.filter((row) => row.assetType === filters.assetType)
+    if (filters.assetKey) rows = rows.filter((row) => row.assetKey === filters.assetKey)
+    if (filters.agentId) rows = rows.filter((row) => row.agentId === filters.agentId)
+    if (filters.from) rows = rows.filter((row) => row.occurredAt >= filters.from!)
+    if (filters.to) rows = rows.filter((row) => row.occurredAt <= filters.to!)
+    rows.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+    const limit = Math.min(Math.max(filters.limit ?? 100, 1), 500)
+    return rows.slice(0, limit)
+  }
+
+  /** 按 assetKey 聚合凭证数（台账 usageReports30d 口径：occurredAt ≥ fromISO）。 */
+  assetUsageReportCounts(fromISO: string): Map<string, number> {
+    const counts = new Map<string, number>()
+    for (const row of this.assetReports().all()) {
+      if (row.occurredAt < fromISO) continue
+      counts.set(row.assetKey, (counts.get(row.assetKey) ?? 0) + 1)
+    }
+    return counts
   }
 
   // -- 内部 -----------------------------------------------------------------

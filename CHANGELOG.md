@@ -3,6 +3,35 @@
 本文件记录对外可感知的版本节点。过程性批次明细（QA 报告、交接单、批次计划）见
 `docs/internal/`（不构成对外契约）；早期完整发布说明见 `docs/internal/release-notes-*.md`。
 
+## [Unreleased] · 资产使用凭证：Agent 获取授权 → 主动提报 → 台账经营关联全链路（2026-10-31）
+
+此前 skill.zip 下载到 Agent 本地执行后平台完全无感知（只有下载流水，无使用记录）；现有
+metrics-report 是 DAU 运营口径，不是资产粒度的使用凭证——「Agent 登记后获取 skill/MCP 资产、
+使用后主动提报使用记录、记录进资产经营」的链路断在最后两环。本次打通全链路：
+
+- **授权闭环（不新建授权原语）**：提报校验建立在既有获取记录上——skill 取 install 依赖边
+  ∪ download 流水（机器主体按 principalId 匹配，自取同样构成授权）；MCP 与数据面同口径
+  （权限组 subjects 含该 Agent 且 policies 覆盖目标服务）。未获取先提报 403 NO_GRANT。
+- **提报服务**：`POST /api/assets/usage-reports`（复用 `usage.write` 权限点——Agent 注册默认
+  scope 已含，存量免换证）；凭证流水独立集合 `usage:assetReports`（引擎级幂等键唯一），
+  字段：assetType/assetRef/assetKey（与台账同键）/assetVersion/action/occurredAt/outcome/
+  durationMs/tokens/taskId/note/idempotencyKey；同键同内容重放返回原凭证（deduped）、同键
+  异容 409、不存在资产 404（防编造）、补录窗 30 天。human 持 usage.write 可代报（归因 human）。
+- **逐次审计**：每次提报 emit `usage.asset.reported`，plugin-audit 订阅落 `asset.usage.report`
+  （对齐 app.secret.access 先例）；与计量事件口径互补互不替代（计量=平台自动、计费管道；
+  凭证=使用方自证、经营证据）。
+- **经营关联**：`GET /api/fleet/ledger` 六类台账行新增 `usageReports30d`（近 30 天凭证数），
+  控制台资产台账新增「使用凭证」列；`GET /api/assets/usage-reports` 凭证流水查询/对账出口
+  （REST 面 +2 路由，495）。
+- **技能面（+1 工具，97）**：`asset_usage_report` MCP 工具——Agent 经平台工具面直接提报，
+  无需手拼 REST（工具片段 inject 补 skillHub/mcpRegistry/resourceCore，服务级注入不动的防环）。
+- **文档（Agent 的记忆）**：`docs/agent-onboarding.md` 新增 §4.7「资产获取与使用凭证提报」
+  （链路总览/获取=授权/字段表/幂等与错误语义/数据面调用免逐次提报的口径边界）；
+  README.agent.md（中英）、llms.txt 同步最小事实；skill/MCP 使用后回报要求纳入接入验收。
+- **自测**：新增 26 条断言（401/枚举门禁/未授权 403/404/补录窗/install 与 download 双授权
+  路径/MCP 权限组路径/human 代报/幂等重放与异容/查询过滤/台账关联/审计落账/工具面端到端），
+  落地页断言数 1767 → 1793。
+
 ## [Unreleased] · 应用外部凭证托管：数字员工可存取的长期第三方凭据平台落点（2026-10-31，#19）
 
 GitHub issue #19（enhancement）实测反馈：数字员工/接入应用要调用「用长期固定凭据鉴权的外部

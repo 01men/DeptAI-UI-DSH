@@ -277,6 +277,8 @@ export class AuditService extends Service {
     ctx.platformBus.on(PlatformEvents.McpSecretAccess, auditOf('change', 'mcp.credential.access'))
     // 应用外部凭证托管（issue #19）：取值逐次留痕（payload 仅 appId/key/result 元数据，零明文）
     ctx.platformBus.on(PlatformEvents.AppSecretAccess, auditOf('change', 'app.credential.access'))
+    // 资产使用凭证（2026-10-31）：Agent 提报使用事实逐次留痕（使用凭证=资产经营侧的重要证据）
+    ctx.platformBus.on(PlatformEvents.UsageAssetReported, auditOf('invoke', 'asset.usage.report'))
     ctx.platformBus.on(PlatformEvents.McpUnhealthy, (payload) => {
       const p = payload as { serviceId: string; name: string; consecutiveFails: number }
       this.record({

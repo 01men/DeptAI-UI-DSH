@@ -8,6 +8,7 @@ tools:
   - usage_reconcile
   - usage_replay
   - usage_deadletter_retry
+  - asset_usage_report
 services:
   - key: usage
     access: ctx.usage
