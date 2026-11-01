@@ -1379,3 +1379,15 @@ textarea.form-control { height: auto; min-height: 88px; padding: 9px 12px; resiz
 }
 .demo-banner strong { font-weight: 600; }
 .demo-banner svg { flex: none; }
+/* 01门面板入口（2026-11-01）：横幅右侧跳转链接，继承横幅警示色系、悬停提亮 */
+.demo-banner-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  color: var(--warn-strong);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.demo-banner-link:hover { text-decoration: underline; }
+.demo-banner-link svg { flex: none; }

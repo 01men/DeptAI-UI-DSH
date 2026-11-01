@@ -256,6 +256,18 @@ function renderShell(page, params, builder) {
 
   // 首页与控制台互相切换时恢复语言选择器，不留下悬浮的重复控件。
   rqI18n.mountSwitcher()
+  // 01门入口（2026-11-01）：演示横幅内补「打开工作台」——01门是 dsh 侧装态（/gate01/panel/），
+  // 底座不感知；探针存在才渲染（gate01-entry.js），任何部署形态都不出死链。探测失败静默不露。
+  if (session.isDemo) {
+    void import('./gate01-entry.js')
+      .then(({ probeGate01Panel }) => probeGate01Panel())
+      .then((url) => {
+        if (!url) return
+        $('#demo-banner')?.insertAdjacentHTML('beforeend',
+          `<a class="demo-banner-link" href="${esc(url)}" target="_blank" rel="noopener">${esc(rqI18n.t('打开 01门 · 部门工作台'))}${icon('arrowUp', 13)}</a>`)
+      })
+      .catch(() => { /* 探测失败按未挂载处理 */ })
+  }
   // 侧边导航
   const nav = $('#nav')
   // 高亮判定：同路径下「带查询」的项优先（如 #/a2a 与 #/a2a?tab=uhp 共存时只亮一个）

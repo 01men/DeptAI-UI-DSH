@@ -6232,6 +6232,10 @@ try {
   const nextRedirectTest = spawn(process.execPath, ['packages/plugin-console/public/js/next-redirect.test.mjs'], { stdio: 'pipe' })
   await new Promise((resolve) => nextRedirectTest.on('close', resolve))
   check('登录回跳共享面随包单测全绿（node --test）', nextRedirectTest.exitCode === 0, `exit=${nextRedirectTest.exitCode}`)
+  // 01门入口探针随包单测（2026-11-01：挂载判定/前缀推导/不出死链判定面，gate01-entry.test.mjs）
+  const gate01EntryTest = spawn(process.execPath, ['packages/plugin-console/public/js/gate01-entry.test.mjs'], { stdio: 'pipe' })
+  await new Promise((resolve) => gate01EntryTest.on('close', resolve))
+  check('01门入口探针随包单测全绿（node --test）', gate01EntryTest.exitCode === 0, `exit=${gate01EntryTest.exitCode}`)
   // 契约↔实现双向一致性（OPT-P0-01，2026-09-12）：引擎构造性红/绿测试 + 真仓零红闸门
   const contractLintTest = spawn(process.execPath, ['scripts/contract-lint.test.mjs'], { stdio: 'pipe' })
   await new Promise((resolve) => contractLintTest.on('close', resolve))

@@ -152,7 +152,7 @@ footer .links{display:flex;gap:20px;justify-content:center;margin-bottom:14px;fl
     <div class="m"><b>94</b><span>permission points</span></div>
     <div class="m"><b>495</b><span>REST routes</span></div>
     <div class="m"><b>97</b><span>MCP tools</span></div>
-    <div class="m"><b>1793</b><span>assertions green</span></div>
+    <div class="m"><b>1794</b><span>assertions green</span></div>
     <div class="m"><b>0</b><span>added dependencies</span></div>
   </div>
 </div></header>
@@ -276,7 +276,7 @@ npm run selftest              <span class="c"># 1793 assertions</span></pre>
   </div>
   <details><summary>Is this another "AI governance" wrapper on top of an LLM gateway?</summary><p>No — and the distinction matters. LLM gateways sit in the request path. YBK sits in the inventory layer: it knows what assets exist, what they cost, who owns them and what their blast radius is when you change them. Many teams run both.</p></details>
   <details><summary>How is this different from a trace viewer like LangSmith or Helicone?</summary><p>They answer "what happened in this request". YBK answers "which department, agent and skill is responsible for this spend, and who approved running it". Trace data is an input to that question, not the answer.</p></details>
-  <details><summary>Who maintains it?</summary><p>One person. That is a real limitation and worth stating plainly. The mitigations are architectural rather than promissory: MIT source you can read today, self-hosting so nothing breaks if I disappear, and 1793 assertions in CI so regressions surface immediately.</p></details>
+  <details><summary>Who maintains it?</summary><p>One person. That is a real limitation and worth stating plainly. The mitigations are architectural rather than promissory: MIT source you can read today, self-hosting so nothing breaks if I disappear, and 1794 assertions in CI so regressions surface immediately.</p></details>
   <details><summary>Does it support multi-tenant / SaaS deployment?</summary><p>The architecture supports org-level isolation and there is a five-platform theme system, but the hosted SaaS path is not the product today. The product is the self-hosted instance you run inside your own network.</p></details>
   <details><summary>Is the demo I can click the real product?</summary><p>It is the real product running against seeded data in read-only mode. Write operations return 405 by design. To try writes, self-host it.</p></details>
   <details><summary>What about credential hosting and rotation?</summary><p>Long-lived third-party credentials (API keys, internal service tokens) now have a platform home: registered values are AES-256-GCM encrypted at rest, retrieval requires a dedicated permission point (app.credential.fetch) with per-access audit, and rotation is a same-key overwrite (old value invalid immediately). Short-lived workload identity (SPIFFE-style) for agent runtimes remains on the roadmap; agent platform identities today use rotatable machine credentials.</p></details>

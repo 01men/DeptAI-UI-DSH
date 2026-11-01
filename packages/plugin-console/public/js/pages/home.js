@@ -215,7 +215,7 @@ export function renderHome(app) {
             <span>业务同学从钉钉或门户一键进入部门面板：打开即工作台，资源共享从第一天开始。</span>
           </div>
         </div>
-        <div class="home-cta-actions home-reveal">
+        <div class="home-cta-actions home-reveal" id="home-cta-actions">
           <a class="home-btn home-btn-green" href="#/login">${loginLabel}</a>
           <a class="home-btn home-btn-light" href="#/panels">进入部门面板</a>
         </div>
@@ -253,6 +253,18 @@ export function renderHome(app) {
   mountTree($('#home-tree'))
   mountCounters(app)
   mountReveal(app)
+  // 01门入口（2026-11-01）：dsh 侧装态（/gate01/panel/），底座不感知——探测存在才渲染
+  // （gate01-entry.js），纯底座部署不露、无死链。
+  void import('../gate01-entry.js')
+    .then(({ probeGate01Panel }) => probeGate01Panel())
+    .then((url) => {
+      if (!url) return
+      $('#home-cta-actions')?.insertAdjacentHTML('beforeend',
+        `<a class="home-btn home-btn-light" href="${url}" target="_blank" rel="noopener">01门 · 部门工作台</a>`)
+      $('.home-footer-links')?.insertAdjacentHTML('beforeend',
+        `<a href="${url}" target="_blank" rel="noopener">01门工作台</a>`)
+    })
+    .catch(() => { /* 探测失败按未挂载处理 */ })
 }
 
 /* ---------- 顶部导航：滚动态玻璃效果 + 移动端汉堡下拉（≤880px） ---------- */
