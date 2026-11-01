@@ -39,8 +39,8 @@ const FEATURES = [
 const STATS = [
   { n: 9, unit: '大', lab: '业务域即插即用' },
   { n: 5, unit: '类', lab: 'AI 资源统一纳管' },
-  { n: 24, unit: '个', lab: '平台插件并行运转' },
-  { n: 1201, unit: '条', lab: '自检断言每次启动全绿' },
+  { n: 29, unit: '个', lab: '平台插件并行运转' },
+  { n: 1795, unit: '条', lab: '自检断言每次启动全绿' },
 ]
 
 export function renderHome(app) {
@@ -113,7 +113,7 @@ export function renderHome(app) {
       <div class="home-sec-head home-reveal">
         <div class="home-sec-kicker">架构理念</div>
         <h2>一切皆插件，治理与生俱来</h2>
-        <p>平台自身由 24 个插件组成：业务域即插即用、按需生长；资源从注册那一刻起就进入身份、权限与审计的治理轨道。</p>
+        <p>平台自身由 29 个插件组成：业务域即插即用、按需生长；资源从注册那一刻起就进入身份、权限与审计的治理轨道。</p>
       </div>
       <div class="home-arch home-reveal">
         <div class="home-points">
