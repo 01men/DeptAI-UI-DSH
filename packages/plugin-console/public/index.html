@@ -26,7 +26,7 @@
       <div style="text-align:center;color:#0a5f87;max-width:520px;padding:0 24px">
         <img src="/ybk-mark.png" alt="元冰可" style="width:46px;height:46px;margin:0 auto 14px;border-radius:12px;display:block">
         <div style="font-size:15px;font-weight:600;letter-spacing:.02em" id="ybkBootTitle">正在加载控制台…</div>
-        <div style="margin-top:10px;font-size:13px;line-height:1.7;color:#4a6572" id="ybkBootStats">正在装载 29 个插件包 · 93 个权限点 · 488 个 REST 路由 · 96 个 MCP 工具<br>
+        <div style="margin-top:10px;font-size:13px;line-height:1.7;color:#4a6572" id="ybkBootStats">正在装载 29 个插件包 · 94 个权限点 · 495 个 REST 路由 · 97 个 MCP 工具<br>
           正在连接当前配置的运行实例</div>
         <div style="margin-top:16px;height:3px;width:180px;margin-left:auto;margin-right:auto;border-radius:2px;background:#dce6ea;overflow:hidden">
           <div style="width:40%;height:100%;border-radius:2px;background:#0a5f87;animation:ybkBootSlide 1.4s ease-in-out infinite"></div>
@@ -53,9 +53,9 @@
       var nav = (navigator.language || 'zh-CN').toLowerCase()
       var loc = pick === 'auto' || !pick ? (nav.indexOf('zh') === 0 ? 'zh' : nav.indexOf('ja') === 0 ? 'ja' : 'en') : pick.toLowerCase()
       var T = {
-        zh: ['正在加载控制台…', '正在装载 29 个插件包 · 93 个权限点 · 488 个 REST 路由 · 96 个 MCP 工具<br>正在连接当前配置的运行实例'],
-        en: ['Loading console…', 'Loading 29 plugin packages · 93 permission points · 488 REST routes · 96 MCP tools<br>Connecting to your configured instance'],
-        ja: ['コンソールを読み込み中…', '29 プラグイン・93 権限ポイント・488 REST ルート・96 MCP ツールを読み込み中<br>設定された実行環境に接続しています']
+        zh: ['正在加载控制台…', '正在装载 29 个插件包 · 94 个权限点 · 495 个 REST 路由 · 97 个 MCP 工具<br>正在连接当前配置的运行实例'],
+        en: ['Loading console…', 'Loading 29 plugin packages · 94 permission points · 495 REST routes · 97 MCP tools<br>Connecting to your configured instance'],
+        ja: ['コンソールを読み込み中…', '29 プラグイン・94 権限ポイント・495 REST ルート・97 MCP ツールを読み込み中<br>設定された実行環境に接続しています']
       }
       var t = T[loc] || T.zh
       var title = document.getElementById('ybkBootTitle')
