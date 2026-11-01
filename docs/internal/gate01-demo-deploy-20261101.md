@@ -33,14 +33,34 @@ Cloudflare（ybkk-demo 隧道 · config-demo.yml 本地管理 ingress，路径�
 
 | 链路 | 验证点 | 结果 |
 | --- | --- | --- |
-| **跳转登陆** | 控制台演示横幅「打开 01门 · 部门工作台」→ `/gate01/panel/`；面板识别远端形态 → 向导连接底座 → `POST /rqcard/proxy/api/auth/login`（admin/Ybk@2026，演示种子账号）→ 以「沈亦澜」身份进工作台 | ✅ 真浏览器全流程走通 |
+| **跳转登陆** | 控制台演示横幅「打开 01门 · 部门工作台」→ `gate01-go.html` 免密中转页（自动签票兑换）→ 直达 `/gate01/panel/` 工作台，以「沈亦澜」身份呈现；**客户全程零输入**（当日下午批次，见 2.1） | ✅ 真浏览器全流程走通 |
 | **绑定关系** | `GET /gate01/rqcard/link` = remote（向导 setRemote 两级探测后落盘）；向导「已连接服务器」；`/dsh-bridge/status` 公开绑定面在位；钉钉面 `/api/panel/ddws/status` 诚实回显未装 dws CLI + 四步绑定引导 | ✅ |
 | **数据链路** | 经代理 8/8 端点 200：depts(5) / industries(14) / board / rd/tasks(2) / rd/channels(3) / rd/skills(6) / models(4) / mfg/catalog——全部为演示种子数据 | ✅ |
 | **交互响应** | 空间切换（协作→执行「事务流工作台」）、消息流（Agent 卡片/工单/钉钉同步标记）、技能直调框、通知中心、SSE 实时流（`retry` 握手 + 页内 EventSource 保持 open；健康徽标「实时通道正常」） | ✅（SSE 见 3.3 降级说明） |
 
-控制台侧改动（本批提交）：`gate01-entry.js` 同源探针（存在才渲染，任何部署形态不出死链）+
-演示横幅入口 + 营销首页 CTA/footer 入口 + `gate01-entry.test.mjs` 随包单测（3/3）+
-selftest 注册；落地页断言数 1793→1794（防漂移闸同步）。`npm run selftest` 1794/1794 全绿。
+### 2.1 一键免密入场（当日下午追加批次）
+
+客户直达 `/gate01/panel/` 会落「连接向导」要求输账号密码——演示环境不该把这一步暴露给客户。
+追加实现（全在底座仓，生产实例零影响）：
+
+- **`POST /api/panel/auth/demo-entry`**（公开白名单 + 处理器内 `isDemoMode` 否决，非演示实例恒 404）：
+  服务端登录种子演示账号（口令与 `seed.ts DEMO_SEED_PASSWORD` 同源常量，本就公开于仓库）→
+  签发 ≤120s 一次性**自助票**（refType=self，与既有票据用途隔离语义一致）→ 入审计
+  （`demo.entry.ticket.issue`）。
+- **`public/gate01-go.html` 免密中转页**：签票与 01门装态探测**并行**，票到手即
+  `location.replace('/gate01/panel/#entry_ticket=…')`，面板 boot 经既有代理兑换链建立会话；
+  未部署 01门 → 指去底座内置 `/panel/`；非演示实例 → 诚实提示 + 手动登录通道。
+- **入口改指向中转页**：演示横幅与首页 01门入口由探针返回 `${MOUNT}/gate01-go.html`。
+- 浏览器实测（公网，边缘抖动窗口内）：中转页 → 自动兑换 → 完整工作台（头像「沈」/
+  「实时通道正常」/ 协作频道·数字同事·成员全量）~15s 内完成，客户零输入。
+- selftest：非演示实例 404 断言 + 公开白名单锁定 + 随包单测 3 项；总量 1795/1795。
+
+### 2.2 教训（写给人看）
+
+中转页初版把流程写在 `type="module"` 顶层并用了 `return` 早退——**模块顶层 return 是
+SyntaxError，整段脚本静默不执行**（页面永远停在初始文案）。已改为 async 函数包裹，并加
+`window.__gate01EntryBooted` 启动标记 + error/unhandledrejection 捕获（页面自证可诊断）。
+排障时「页面内手动 fetch 全通但页面不动」就是这类病：脚本根本没跑，不是网络问题。
 
 ## 三、已知边界与运维口径（诚实记录）
 
@@ -48,24 +68,29 @@ selftest 注册；落地页断言数 1793→1794（防漂移闸同步）。`npm 
    Cloudflare 边缘——实测当日边缘抖动（全部子域 7-12s/间歇 502，与本部署无关），公网 hubBase
    会让每次面板调用双跳边缘、随边缘健康波动；回环后数据面恒稳。代价：面板侧栏「宿主控制台 ↗」
    链接与向导「钉钉扫码登录」按钮指向 `127.0.0.1:7302`，**仅本机用户可点通**，公网访客失准
-   （后续可向 DeptAI-UI-DSH 上游提 `hubProxyBase` 分离：浏览器面用公网域名、代理面用回环）。
+   （已向上游提 DeptAI-UI-DSH#9：`hubProxyBase` 分离浏览器面/代理面）。
 2. **演示底座写闸（设计内，非缺陷）**：演示实例 2026-10-31 安全审查 P0-03 起，非 GET/HEAD
    一律 405 对登录态一视同仁（演示口令公开在仓库，不得因登录获得可写实例）。因此 01门面板在
    演示底座上：读 + SSE 全通；写类交互（任务流转/钉钉绑定/发消息）405，面板横幅如实提示。
    SSE 未断的原因：面板前端 ticket 签发被 405 后自动回落 `?token=` GET 通道（建流免签票）。
 3. **SSE 边缘抖动降级**：面板建流 10s open 超时后一次性降级 30s 轮询（不自动重升）。公网边缘
    慢窗口内首次建流可能落到轮询——刷新页面即恢复 SSE；轮询期间数据照常刷新，面板如实标注。
-4. **升级口径**：7778 与 7777 同一上游、独立 profile——升级互不影响。演示侧升级：
+4. **CF 边缘对 demo.ybkkasi.com 的 .html 有缓存**（实测会绕过 origin 的 no-cache，且疑似忽略
+   query）：静态页更新后公网可能仍见旧版。gate01 中转页因此定名 `gate01-go.html`——**后续改动
+   该页请换新文件名**（旧名等缓存过期自然失效；正式入口都走探针动态地址，不受影响）。
+5. **升级口径**：7778 与 7777 同一上游、独立 profile——升级互不影响。演示侧升级：
    `cd ~/.dsh/profiles/demo && pnpm add github:01men/DeptAI-UI-DSH#<sha> &&
    launchctl kickstart -k gui/$(id -u)/com.ybkk.gate01-demo`，核验
    `curl 127.0.0.1:7778/gate01/panel/` 200 + `/gate01/rqcard/link` remote。
-5. **回滚**：`launchctl bootout gui/$(id -u)/com.ybkk.gate01-demo` +
+6. **回滚**：`launchctl bootout gui/$(id -u)/com.ybkk.gate01-demo` +
    `config-demo.yml` 删去两条路径规则再 `kickstart -k com.cloudflare.tunnel-demo` 即净；
    卸载不留任何底座侧状态（host-link 与数据目录均在 gate01-demo 工作目录内，整目录可删）。
 
 ## 四、复验速查
 
 ```bash
+# 一键免密入场（演示态）：签票 → 应返回 etk_ 票据（非演示实例 404）
+curl -s -X POST http://127.0.0.1:7302/api/panel/auth/demo-entry -H 'content-type: application/json' -d '{}'
 # 绑定与面板
 curl -s http://127.0.0.1:7778/gate01/rqcard/link -H 'x-rqcard-call: 1'
 # 代理登陆（演示种子账号）
@@ -74,5 +99,6 @@ curl -s -X POST http://127.0.0.1:7778/gate01/rqcard/proxy/api/panel/auth/login \
   -d '{"username":"admin","password":"Ybk@2026"}'
 # 公网分流（边缘健康时均应 200）
 curl -s -o /dev/null -w '%{http_code}\n' https://demo.ybkkasi.com/gate01/panel/
+curl -s -o /dev/null -w '%{http_code}\n' https://demo.ybkkasi.com/gate01-go.html
 curl -s -o /dev/null -w '%{http_code}\n' https://demo.ybkkasi.com/dsh-bridge/status
 ```

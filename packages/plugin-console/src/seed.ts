@@ -13,6 +13,11 @@ import { newId } from '../../platform-core/src/index.ts'
 import { SYSTEM_ACTOR } from '../../plugin-iam/src/index.ts'
 import { recordBootstrap } from './routes/platform.ts'
 
+/** 演示种子账号统一口令（仅限演示环境；本仓库公开，语义上就是「无需保密的演示口令」）。 */
+export const DEMO_SEED_PASSWORD = 'Ybk@2026'
+/** 演示一键入场默认账号（种子超管，见 seedDemo mkUser('admin', …)）。 */
+export const DEMO_ENTRY_USERNAME = 'admin'
+
 export async function seedAll(ctx: Context): Promise<void> {
   if (ctx.iam.orgs().count() === 0) {
     if (process.env.DEMO_SEED === '1') {
@@ -113,7 +118,7 @@ async function seedDemo(ctx: Context): Promise<void> {
   const roleAuditor = ctx.iam.roles().findOne((role) => role.code === 'auditor')!
 
   const mkUser = (username: string, displayName: string, orgId: string, title: string, roleIds: string[]) => {
-    const { user } = ctx.iam.createUser({ username, displayName, orgId, title, roleIds, password: 'Ybk@2026' }, SYSTEM_ACTOR)
+    const { user } = ctx.iam.createUser({ username, displayName, orgId, title, roleIds, password: DEMO_SEED_PASSWORD }, SYSTEM_ACTOR)
     ctx.iam.users().update(user.id, { status: 'active' })
     return ctx.iam.users().get(user.id)!
   }
@@ -130,7 +135,7 @@ async function seedDemo(ctx: Context): Promise<void> {
   mkUser('suyq', '苏砚秋', beDept.id, '后端工程师', [roleDev.id])
   mkUser('heqw', '何青梧', feDept.id, '前端工程师', [roleDev.id])
   mkUser('yqz', '叶栖迟', prodDept.id, '运营专员', [])
-  const { user: pendingUser } = ctx.iam.createUser({ username: 'newcomer', displayName: '周明澜', orgId: feDept.id, title: '前端工程师（试用期）', password: 'Ybk@2026' }, SYSTEM_ACTOR)
+  const { user: pendingUser } = ctx.iam.createUser({ username: 'newcomer', displayName: '周明澜', orgId: feDept.id, title: '前端工程师（试用期）', password: DEMO_SEED_PASSWORD }, SYSTEM_ACTOR)
   void pendingUser
 
   // -- 用户组 --------------------------------------------------------------

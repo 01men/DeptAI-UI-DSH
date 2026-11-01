@@ -8,6 +8,8 @@ import type { ConsoleRouteDeps } from './deps.ts'
 import { PlatformEvents } from '../../../platform-core/src/index.ts'
 import type { HttpExchange } from '../../../platform-core/src/index.ts'
 import { t } from '../../../platform-i18n/src/index.ts'
+import { isDemoMode } from '../demo-mode.ts'
+import { DEMO_ENTRY_USERNAME, DEMO_SEED_PASSWORD } from '../seed.ts'
 import type { ConsoleRouteDeps as _D } from './deps.ts'
 
 export interface EntryTicketRouteDeps extends _D {
@@ -169,6 +171,37 @@ export function registerEntryTicketRoutes(ctx: Context, deps: EntryTicketRouteDe
     changeLog(exchange, 'self.entry.ticket.issue', 'user', info.userId, info.name, t('自助入场票据（跨源自举回跳，{ttl}s，一次性）', { ttl: issued.ttlSeconds }))
     return issued
   })
+
+  /**
+   * 演示态一键入场（DEMO_MODE=1 专用公开端点，2026-11-01）：服务端登录种子演示账号 +
+   * 签发一次性自助票——演示访客从控制台入口经 gate01.html 中转页免密直达 01门面板
+   * （/gate01/panel/#entry_ticket= 兑换会话），不再向客户暴露「输入账号密码」一步。
+   * 安全口径：能换到的只有演示种子身份的 ≤120s 一次性票，而该身份口令本就公开于仓库
+   * （seed.ts DEMO_SEED_PASSWORD）——不新增任何生产鉴权面；非演示实例恒 404。
+   */
+  http.register('POST', '/api/panel/auth/demo-entry', (exchange) => {
+    if (!isDemoMode()) {
+      exchange.fail(404, 'NOT_FOUND', t('路由不存在：POST /api/panel/auth/demo-entry'))
+      return
+    }
+    try {
+      const result = ctx.authn.login(DEMO_ENTRY_USERNAME, DEMO_SEED_PASSWORD)
+      const user = ctx.iam.users().get(result.userId)
+      if (!user || user.status !== 'active') throw new Error(t('演示账号状态异常（缺失或未激活）'))
+      const issued = ctx.entryTickets.issue(
+        { refType: 'self', refId: user.id, userId: user.id, userName: user.displayName },
+        { maxTtlSeconds: 120 },
+      )
+      ctx.audit.record({
+        type: 'auth', actorType: 'human', actorId: user.id, actorName: user.displayName,
+        action: 'demo.entry.ticket.issue', resourceType: 'user', resourceId: user.id,
+        resourceName: user.username, result: 'ok', detail: t('演示态一键入场票据（{ttl}s，一次性）', { ttl: issued.ttlSeconds }),
+      })
+      exchange.ok({ ticket: issued.ticket, expiresInSeconds: issued.ttlSeconds, panel: '/gate01/panel/' })
+    } catch (error) {
+      exchange.fail(503, 'DEMO_ENTRY_FAILED', error instanceof Error ? error.message : String(error))
+    }
+  }, { access: 'public', selfValidated: true })
 
   // -- 应用访客埋点 beacon（公开端点：浏览器 PV/UV 上报，免机器鉴权） ----------------
   // 指标口径补全：应用页面在加载/路由切换时上报一次即可。GET 返回 1x1 GIF（<img>/fetch(no-cors) 均可跨域），

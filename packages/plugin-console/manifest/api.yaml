@@ -5,7 +5,7 @@ endpoints:
   - POST /api/tools/execute（工具桥：与 dsh ToolRuntime 同一契约）
   - GET/POST/DELETE /mcp（平台即 MCP Server：Streamable HTTP，initialize/tools/list/tools/call，Bearer 鉴权 + 工具级权限点；GET=SSE 流、DELETE=会话终结） · GET /docs（控制台文档页） · GET /locales/:locale（UI 全球化词典合并端点，2026-10-16：platform-i18n 服务端文案 + 控制台/面板 SPA 词典三层合并，公开静态文案无鉴权面）
   - GET /api/health（存活探针） · GET /api/tools/schemas（console.read；工具 schema 目录） · GET /api/platform/route-matrix（路由矩阵自检） · GET /api/openapi.json（authenticated；OpenAPI 3.0.3 接口面文档：由 declaredRoutes 路由台账运行时投影，原始文档不包信封，含 x-auth/x-permission 鉴权声明，供 Agent/第三方客户端发现接口面，2026-10-27）
-  - GET /api/platform/bootstrap（公开；首启状态：仅回 initialPasswordPending 布尔，登录页部署提示用） · GET /api/platform/bootstrap/detail（authenticated；首启状态全量：mode/orgName/seededAt/口令文件路径） · GET /api/platform/demo（公开；DEMO_MODE=1 演示态标记：仅回 {demo,principalId,name,readonlyPermissions}，供前端显示只读横幅；非演示态回 {demo:false}，不含业务数据）
+  - GET /api/platform/bootstrap（公开；首启状态：仅回 initialPasswordPending 布尔，登录页部署提示用） · GET /api/platform/bootstrap/detail（authenticated；首启状态全量：mode/orgName/seededAt/口令文件路径） · GET /api/platform/demo（公开；DEMO_MODE=1 演示态标记：仅回 {demo,principalId,name,readonlyPermissions}，供前端显示只读横幅；非演示态回 {demo:false}，不含业务数据） · POST /api/panel/auth/demo-entry（公开；DEMO_MODE=1 专用：种子演示账号 ≤120s 一次性自助票，gate01-go.html 免密中转直达 01门面板，非演示实例 404，2026-11-01）
   - GET /api/finops/overview?month=YYYY-MM&window=分钟（usage.read；M2 CFO 视图：成本穿透 org×model+环比 + 空转检测一次取全）
   - GET /api/finops/idle?month=YYYY-MM&window=分钟（usage.read；空转检测独立查询，近似口径「无后续动作调用」）
   - GET /api/finops/report/monthly?month=YYYY-MM[&format=csv]（usage.read；CFO 成本报表，CSV 为 Excel 友好 BOM）

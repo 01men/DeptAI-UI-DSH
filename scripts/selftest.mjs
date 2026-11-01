@@ -1415,7 +1415,7 @@ try {
     check(`矩阵：${denied.length} 个越权探针 100% 被拒 403（端点清单变动即红）`,
       denied.length >= 50 && leaked.length === 0,
       leaked.length ? `泄漏端点：${leaked.slice(0, 5).join('；')}` : `denied=${denied.length} rejected=${rejectedCount}`)
-    const expectedPublic = ['/api/auth/login', '/api/auth/refresh', '/api/health', '/api/authn/entry-tickets/redeem', '/api/auth/entry-ticket-session']
+    const expectedPublic = ['/api/auth/login', '/api/auth/refresh', '/api/health', '/api/authn/entry-tickets/redeem', '/api/auth/entry-ticket-session', '/api/panel/auth/demo-entry']
     check('矩阵：公开白名单零意外扩张（变动须经评审后同步本清单）',
       expectedPublic.every((path) => matrix.data.public.includes(path)),
       JSON.stringify(matrix.data.public))
@@ -3748,6 +3748,10 @@ try {
     check('免登：重放票据被拒（一次性消费防重放）', sessionReplay.status === 400, String(sessionReplay.status))
     const sessionForged = await api('POST', '/api/auth/entry-ticket-session', { body: { ticket: 'etk_forged_0000000000000000000000000000000000000000' } })
     check('免登：伪造票据被拒', sessionForged.status === 400)
+    // 演示态一键入场（2026-11-01）：签票端点仅 DEMO_MODE=1 存在——本自测实例非演示态，
+    // 必须 404（生产实例不新增任何可换身份的公开面；演示侧行为由演示环境浏览器实测）
+    const demoEntry = await api('POST', '/api/panel/auth/demo-entry', { body: {} })
+    check('免登：演示一键入场端点非演示实例恒 404（DEMO_MODE 门控）', demoEntry.status === 404, String(demoEntry.status))
     await new Promise((resolve) => setTimeout(resolve, 300))
     const serverLog = serverLogChunks.join('')
     check('免登：票据本体零进服务端日志（stdout/stderr 全量扫描）', Boolean(agentTicket.data.ticket) && !serverLog.includes(agentTicket.data.ticket) && !serverLog.includes(selfTicket.data.ticket), '票据本体出现在服务端日志')

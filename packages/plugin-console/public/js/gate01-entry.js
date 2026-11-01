@@ -15,7 +15,8 @@ function mountOf(baseURI) {
 
 /**
  * 可注入探针（baseURI / fetch 可替换，Node 零 DOM 直测；与 next-redirect.js 同风格）。
- * 返回面板地址（相对同源，如 '/gate01/panel/'）或 null。
+ * 挂载时返回**演示免密中转页**地址（相对同源，如 '/gate01-go.html'——自动签票兑换直达工作台，
+ * 不再让客户手输账号密码，2026-11-01）；null = 未挂载。
  */
 export async function probeGate01PanelWith({ baseURI = document.baseURI, fetchImpl = fetch } = {}) {
   const mount = mountOf(baseURI)
@@ -27,7 +28,7 @@ export async function probeGate01PanelWith({ baseURI = document.baseURI, fetchIm
     if (!response.ok || !contentType.includes('json')) return null
     const payload = await response.json().catch(() => null)
     if (payload?.ok !== true || typeof payload.data?.mode !== 'string') return null
-    return `${mount}/gate01/panel/`
+    return `${mount}/gate01-go.html`
   } catch {
     return null
   }

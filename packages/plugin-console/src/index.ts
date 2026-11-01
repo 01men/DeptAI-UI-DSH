@@ -85,6 +85,10 @@ export const PUBLIC_PATHS = new Set([
   // main 侧 panel 自持登录面路由尚未合入——先行登记（无路由时请求照常 404），合入后即闭环。
   '/api/panel/auth/login',
   '/api/panel/auth/refresh',
+  // 演示态一键入场（DEMO_MODE=1 专用，2026-11-01）：种子演示账号的 ≤120s 一次性自助票，
+  // 供 gate01.html 中转页免密直达 01门面板；处理器内部 isDemoMode 否决，非演示实例恒 404。
+  // 口令语义 = 仓库公开的演示种子口令（seed.ts），不新增任何生产鉴权面。
+  '/api/panel/auth/demo-entry',
   // 首启 bootstrap 提示（M2）：登录页「初始口令待接管」横幅数据源；只回一个布尔（见 routes/platform.ts 泄露评估）
   '/api/platform/bootstrap',
   // 演示态标记（DEMO_MODE=1，公开只回一个布尔 + 访客名）：前端据此显示「演示模式·只读」横幅

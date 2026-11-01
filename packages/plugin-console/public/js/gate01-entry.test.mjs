@@ -44,8 +44,8 @@ const spaHtml = {
 test('挂载判定：ok JSON（remote）→ 返回面板地址；本地形态（local）同样露入口', async () => {
   const fetchImpl = fakeFetch([okJson('remote'), okJson('local')])
   const root = 'https://demo.example/'
-  assert.equal(await probeGate01PanelWith({ baseURI: root, fetchImpl }), '/gate01/panel/')
-  assert.equal(await probeGate01PanelWith({ baseURI: root, fetchImpl }), '/gate01/panel/')
+  assert.equal(await probeGate01PanelWith({ baseURI: root, fetchImpl }), '/gate01-go.html')
+  assert.equal(await probeGate01PanelWith({ baseURI: root, fetchImpl }), '/gate01-go.html')
   assert.equal(fetchImpl.calls[0].url, '/gate01/rqcard/link')
   assert.equal(fetchImpl.calls[0].init.headers['x-rqcard-call'], '1')
 })
@@ -53,7 +53,7 @@ test('挂载判定：ok JSON（remote）→ 返回面板地址；本地形态（
 test('前缀推导：dsh 全量挂载形态 /rq/ → /rq/gate01/panel/', async () => {
   const fetchImpl = fakeFetch([okJson('remote')])
   const mounted = 'https://host.example/rq/'
-  assert.equal(await probeGate01PanelWith({ baseURI: mounted, fetchImpl }), '/rq/gate01/panel/')
+  assert.equal(await probeGate01PanelWith({ baseURI: mounted, fetchImpl }), '/rq/gate01-go.html')
   assert.equal(fetchImpl.calls[0].url, '/rq/gate01/rqcard/link')
 })
 
