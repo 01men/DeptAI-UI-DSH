@@ -323,3 +323,4 @@ selftest 1999/1999 全绿）。涉底座面、建议 main 评估采纳的条目�
 | S-6 | UXQA_R1 面板五缺陷修复（005/002/001/003/004） | ◑ 面板域专项 | 详见 `uxqa-results/修复回执_UXQA_R1.md`；002 乐观锁（expectedLane → 409 VERSION_CONFLICT）与 005 断连 refresh 自愈若 main 收编面板前端，建议随面板域专项一并评估 |
 
 未采纳项按既有口径处理（S-4 豁免登记）；S-1/S-2 为安全/可用性缺陷，请 main 优先落地。
+| S-7 | console pages/apps.js 接入文档链接 ybkk-AIOS→ybkkasi | ◑ 建议采纳（文案） | 合并解冲突时的更名对齐（2026-10-27 上游仓改名批量）；main 侧同名旧链接 2 处失效，同改即闭环 |

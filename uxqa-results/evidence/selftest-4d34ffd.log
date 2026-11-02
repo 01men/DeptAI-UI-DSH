@@ -1,0 +1,25 @@
+  [32m✔ ddws gate：panel 命名空间登录成功（iam+authn 基线种子链）[0m
+  [32m✔ ddws status：形状完整（installed/bound/auth.authenticated 布尔 + mode）[0m
+  [32m✔ ddws login：三态互斥且形状合法（已登录幂等 / 发起带激活指令 / 未装带指引）[0m
+  [32m✔ ddws login 轮询：active/authenticated 布尔形状[0m
+  [32m✔ ddws login 取消：幂等可取消[0m
+  [32m✔ ddws 面：无凭证 → 401 fail-closed[0m
+
+[36m━━ 凭证零进平台（红线一 · T-24 全目录扫描） ━━[0m
+[storage] 集合 authn:tokens 落盘失败 Error: ENOENT: no such file or directory, rename 'D:\元冰可产品\dsh-RQ-uxqa-bench\data-selftest\gate01-ddws-7397\authn~tokens.json.5452-1793599537135-11.tmp' -> 'D:\元冰可产品\dsh-RQ-uxqa-bench\data-selftest\gate01-ddws-7397\authn~tokens.json'
+    at async rename (node:internal/fs/promises:782:10)
+    at async Proxy.doFlush (file:///D:/%E5%85%83%E5%86%B0%E5%8F%AF%E4%BA%A7%E5%93%81/dsh-RQ-uxqa-bench/packages/platform-core/src/storage.ts:336:11) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'rename',
+  path: 'D:\\元冰可产品\\dsh-RQ-uxqa-bench\\data-selftest\\gate01-ddws-7397\\authn~tokens.json.5452-1793599537135-11.tmp',
+  dest: 'D:\\元冰可产品\\dsh-RQ-uxqa-bench\\data-selftest\\gate01-ddws-7397\\authn~tokens.json'
+}
+  [32m✔ T-24 数据目录 178 个文件全部扫描[0m
+  [32m✔ T-24 凭证原文零命中（API Key / OAuth client secret / 每个一次性 oct_ 值）[0m
+
+[90m» 停止测试实例…[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [1m自测结果：1367/1367 通过[0m
+  [32m全部通过 ✔[0m
