@@ -21,6 +21,18 @@ const esc = (text) => String(text ?? '')
 
 const HISTORY_KEY = 'panel_hub_history'
 
+/** 宿主回跳能否跨站带回本机会话：与 plugin-console/landing.js 的 sanitizeCrossOriginNext
+ *  同口径（回环 / 私网才过白名单）。公网域名必然被防 open-redirect 白名单丢弃，
+ *  此时扫码只能把用户送到宿主页，回不来。 */
+function canCrossOriginReturn() {
+  const host = location.hostname.toLowerCase()
+  const isLoopback = host === 'localhost' || host === '::1' || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)
+  const isPrivate = /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)
+    || /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)
+    || /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host)
+  return isLoopback || isPrivate
+}
+
 /** 向导端点请求：统一带向导头；非 2xx 抛错（error.message 透出）。
  *  超时与网络错误给中文可行动文案（QA BUG-U-03/U-04 同规）。 */
 async function wfetch(base, method, wpath, body) {
@@ -246,11 +258,11 @@ async function renderRemoteCard(root, base) {
 /** 远端连接成功后的登录步骤：账号密码（代理全闭环）+ 钉钉扫码（宿主页完成，G1 回跳前向兼容）。 */
 function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
   const hubPanelBase = `${hubBase}${hubMountPrefix}`
-  // G1 前向兼容（交接清单 handoff-f-remainder G1-a）：把本机面板绝对地址作为 next 带给宿主登录页——
-  // 宿主已采纳回跳增强时，扫码/登录完成即按 next 自动回到本机 dsh 并携带一次性 entry_ticket
-  // （boot.js 兑换建立会话）；未采纳的宿主按防 open redirect 白名单忽略跨源 next（落宿主默认页），
-  // 行为与从前一致、无害。
+  // 把本机面板绝对地址作为 next 带给宿主登录页：宿主按 next 回跳并携带一次性 entry_ticket
+  // （boot.js 兑换建立会话）。但宿主只对回环/私网 origin 签票（landing.js sanitizeCrossOriginNext），
+  // 公网域名会被白名单丢弃 → 不签票 → 回不来。所以扫码只在回跳可达时提供，否则如实禁用。
   const localPanelUrl = `${location.origin}${base}/panel/`
+  const qrReturnable = canCrossOriginReturn()
   body.innerHTML = `
     <div class="wz-ok">✅ 已连接服务器 <b>${esc(hubBase)}</b>${version ? `（v${esc(version)}）` : ''}</div>
     <div class="wz-form">
@@ -258,25 +270,33 @@ function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
       <input type="password" id="wzLoginPass" placeholder="密码" autocomplete="current-password">
       <button class="btn primary" id="wzLoginGo">登录</button>
     </div>
-    <button class="btn wz-dd" id="wzLoginDd">💬 用钉钉扫码登录</button>
-    <p class="wz-hint">没有账号？请联系管理员开通。账号登录成功后自动进入本工作台；钉钉扫码会打开登录页，完成后自动回到本页，若未自动返回请点下方「我已完成扫码」。</p>
-    <button class="btn wz-back" id="wzLoginCheck">我已完成扫码——校验本机会话</button>
+    ${qrReturnable
+      ? `<button class="btn wz-dd" id="wzLoginDd">💬 用钉钉扫码登录</button>`
+      : `<button class="btn wz-dd" id="wzLoginDd" disabled title="当前面板域名不在宿主回跳白名单内（只放行 localhost / 127.x / 10.x / 192.168.x / 172.16-31.x），扫码后无法带回本机会话">💬 用钉钉扫码登录（当前域名不支持）</button>`}
+    <p class="wz-hint">${qrReturnable
+      ? '没有账号？请联系管理员开通。账号登录成功后自动进入本工作台；钉钉扫码会打开登录页，完成后自动回到本页，若未自动返回请点下方「我已完成扫码」。'
+      : '没有账号？请联系管理员开通。当前面板用的是公网域名，宿主登录页只能对 localhost / 内网地址回跳，扫码登录后无法带回本机会话——请用上方账号密码登录（同一宿主账号，经本机代理）。'}</p>
+    ${qrReturnable ? `<button class="btn wz-back" id="wzLoginCheck">我已完成扫码——校验本机会话</button>` : ''}
     <button class="btn wz-back" id="wzLoginBack">← 重新选择服务器</button>
     <div id="wzLoginErr" class="wz-err"></div>`
-  body.querySelector('#wzLoginDd').onclick = () => {
-    window.open(`${hubPanelBase}/?next=${encodeURIComponent(localPanelUrl)}#/login`, '_blank', 'noopener')
+  const qrButton = body.querySelector('#wzLoginDd')
+  if (qrButton && qrReturnable) {
+    qrButton.onclick = () => {
+      window.open(`${hubPanelBase}/?next=${encodeURIComponent(localPanelUrl)}#/login`, '_blank', 'noopener')
+    }
   }
   // 回导校验（G1 未采纳期的诚实降级）：本机面板与宿主跨源，浏览器同源隔离使宿主页扫码会话
   // 无法直接带回——这里只校验「本机是否已持有该连接的有效会话」：有效即进工作台；无效则如实
   // 说明并导向账号密码登录，不假装能取回宿主侧会话。
-  body.querySelector('#wzLoginCheck').onclick = async () => {
+  const checkButton = body.querySelector('#wzLoginCheck')
+  if (checkButton) checkButton.onclick = async () => {
     const errBox = body.querySelector('#wzLoginErr')
     errBox.textContent = ''
     // 作用域与代理对齐当前连接：me 走代理白名单（api.js 自带 401 刷新重试与向导头）
     setConnectionScope(hubBase)
     setRemoteProxy(true)
     if (!session.token) {
-      errBox.textContent = '本机没有该连接的会话：宿主页的扫码会话无法跨站带回（浏览器同源隔离）。请用上方账号密码登录（同一宿主账号，经本机代理全闭环）；宿主侧 G1 回跳增强上线后扫码将自动带回本机。'
+      errBox.textContent = '本机没有该连接的会话：宿主回跳只对 localhost / 内网地址签票，当前面板域名不在白名单内，扫码会话带不回来。请用上方账号密码登录。'
       return
     }
     try {
