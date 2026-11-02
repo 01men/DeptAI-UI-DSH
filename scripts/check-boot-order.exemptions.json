@@ -1,0 +1,14 @@
+{
+  "exemptions": [
+    {
+      "kind": "boot_yml_order",
+      "key": "plugin-connect",
+      "reason": "connect 在两种宿主形态中角色不同、装配位次有意不同：boot-all.ts 为 host 角色（位于 modelgw 之后，提供远程接入端点）；cordis yml 为 client 角色（位于 platform-core 之后第二位——client 角色要在业务工具注册前完成代理包裹，见 cordis.yml 注释）。销账条件：connect 统一为同角色同位次时移除本豁免（RFA-2026-10-13 R3，2026-10-13）"
+    },
+    {
+      "kind": "depends_free_text",
+      "key": "全部业务插件",
+      "reason": "plugin-console depends 的自然语言条目：console 是接入层，实际依赖随注入面演进（由 [A] inject×provide 校验精确覆盖），逐插件枚举反而易漂移。销账条件：depends 改为机器可校验的精确枚举时移除本豁免（RFA-2026-10-13 R3，2026-10-13）"
+    }
+  ]
+}

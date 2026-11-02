@@ -105,3 +105,29 @@ test('连续失败累进计数，health() 反映最近错误', async () => {
   await new Promise((resolve) => setTimeout(resolve, 20))
   assert.equal(stream.health().consecutivePollFailures, frozen, 'close 后不再轮询')
 })
+
+test('eventNames：具名 SSE 事件按名订阅并附通道判别字段（A2A 任务流契约）', async () => {
+  const es = esStub()
+  es.named = {}
+  es.addEventListener = (name, fn) => { es.named[name] = fn }
+  const got = []
+  const stream = createEventStream({
+    url: 'http://x/stream', pollPath: 'http://x/poll',
+    eventNames: ['task.snapshot', 'task.terminal'],
+    onMessage: (data) => got.push(data),
+    EventSourceImpl: class { constructor() { return es } },
+    fetchImpl: async () => { throw new Error('不应轮询') },
+  })
+  es.open()
+  // 具名事件必须走 addEventListener（onmessage 收不到）
+  es.named['task.snapshot']({ data: JSON.stringify({ taskId: 'task_1', state: 'working', event: 'spoofed' }) })
+  es.named['task.terminal']({ data: JSON.stringify({ taskId: 'task_1', state: 'completed' }) })
+  // 未声明的事件不订阅（不会凭空扩面）
+  assert.equal(es.named['task.progress'], undefined, '未声明的事件不应注册监听')
+  assert.deepEqual(got, [
+    // 载荷同名字段不得覆盖通道判别（event 最后写）
+    { taskId: 'task_1', state: 'working', event: 'task.snapshot' },
+    { taskId: 'task_1', state: 'completed', event: 'task.terminal' },
+  ])
+  stream.close()
+})

@@ -45,10 +45,21 @@ export function isBareLanding(hash) {
   return value === '' || value === '#/' || value === '#/dashboard'
 }
 
-/** 登录回跳地址白名单：仅同源绝对路径（/ 开头且非 //），防 open redirect */
+/**
+ * 登录回跳地址白名单：仅同源绝对路径（/ 开头且非 //），防 open redirect。
+ * 安全审查 P2-1（2026-10-31）：拒绝反斜杠与控制字符——浏览器把 `/\` 归一化为 `//`
+ * （协议相对 → 跨源），`%0d%0a`/`\t` 等控制字符可干扰头解析与地址栏语义；
+ * 并以 URL 解析复核确认结果仍为本源相对路径（双保险）。
+ */
 export function sanitizeNext(raw) {
   const value = String(raw ?? '')
   if (!value.startsWith('/') || value.startsWith('//')) return ''
+  if (value.includes('\\')) return ''
+  if (/[\u0000-\u001f\u007f]/.test(value)) return ''
+  try {
+    const parsed = new URL(value, 'https://ybkkasi.invalid')
+    if (parsed.origin !== 'https://ybkkasi.invalid') return ''
+  } catch { return '' }
   return value
 }
 

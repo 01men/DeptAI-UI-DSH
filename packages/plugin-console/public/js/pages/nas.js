@@ -1,5 +1,6 @@
 /** NAS 存储：FS 文件存储类资产纳管（列表 / 新建 / mcpServers JSON 导入 / 详情 / 文件浏览器）。 */
 import { api, session } from '../api.js'
+import rqI18n from '../i18n.js'
 import { icon } from '../icons.js'
 import {
   h, $, $$, esc, toast, openDrawer, openModal, confirmDialog,
@@ -23,12 +24,13 @@ export async function renderNas(content, params, ctx) {
   content.innerHTML = `
     <div class="page-head">
       <div>
+        <div class="micro-label">NAS / FILES</div>
         <div class="page-title">NAS 存储</div>
-        <div class="page-desc">FS 文件存储类资产：经 MCP 文件网关（地址 + Bearer 令牌 + X-NAS-IP 路由头）统一纳管，探活 → 上线 → 工具发现，文件操作全程审计留痕。</div>
+        <div class="page-sub">FS 文件存储类资产：经 MCP 文件网关（地址 + Bearer 令牌 + X-NAS-IP 路由头）统一纳管，探活 → 上线 → 工具发现，文件操作全程审计留痕。</div>
       </div>
       <div class="page-actions">
-        <button class="btn btn-default" id="nas-import">${icon('plug', 14)}导入 mcpServers JSON</button>
-        <button class="btn btn-primary" id="nas-create">${icon('plus', 14)}新建 NAS 资产</button>
+        ${session.can('nas.write') ? `<button class="btn btn-default" id="nas-import">${icon('plug', 14)}导入 mcpServers JSON</button>` : ''}
+        ${session.can('nas.write') ? `<button class="btn btn-primary" id="nas-create">${icon('plus', 14)}新建 NAS 资产</button>` : ''}
       </div>
     </div>
     <div class="filter-bar">
@@ -51,8 +53,7 @@ export async function renderNas(content, params, ctx) {
       holder.appendChild(emptyState({
         title: '还没有 NAS 资产',
         desc: '新建资产或粘贴 mcpServers JSON 一键纳管，网关可达即可上线并发现文件工具',
-        actionText: '新建 NAS 资产',
-        onAction: () => $('#nas-create').click(),
+        ...(session.can('nas.write') ? { actionText: '新建 NAS 资产', onAction: () => $('#nas-create').click() } : {}),
         icon: 'server',
       }))
       return
@@ -85,8 +86,10 @@ export async function renderNas(content, params, ctx) {
       void refresh()
     }
   })
-  $('#nas-create').onclick = () => openNasCreate(schema, ctx)
-  $('#nas-import').onclick = () => openNasImport(ctx)
+  const createBtn = $('#nas-create')
+  if (createBtn) createBtn.onclick = () => openNasCreate(schema, ctx)
+  const importBtn = $('#nas-import')
+  if (importBtn) importBtn.onclick = () => openNasImport(ctx)
 
   renderList(data.items)
   if (params.get('action') === 'create') openNasCreate(schema, ctx)
@@ -142,7 +145,7 @@ function openNasForm({ title, hint, schema, initial, submitText, onSubmit }) {
   modal.el.querySelector('[data-ok]').onclick = async (e) => {
     const btn = e.currentTarget
     const data = collectForm(modal.body)
-    if (!data.name) return toast('请填写资产名称', 'error')
+    if (!data.name) return toast(rqI18n.t('请填写资产名称'), 'error')
     const attrs = {}
     for (const [key, value] of Object.entries(data)) {
       if (key.startsWith('attr_') && value !== '') attrs[key.slice(5)] = value
@@ -166,7 +169,7 @@ function openNasCreate(schema, ctx) {
     hint: '必填最小集即可创建草稿；上线前需补全接入属性（网关地址 / 令牌 / 设备 IP）。',
     onSubmit: async (data) => {
       await api.post('/api/nas', { name: data.name, slug: data.slug, attrs: data.attrs })
-      toast('已创建（草稿），健康探活通过后可上线')
+      toast(rqI18n.t('已创建（草稿），健康探活通过后可上线'))
       ctx.rerender()
     },
   })
@@ -175,11 +178,11 @@ function openNasCreate(schema, ctx) {
 /** 二次编辑：复用 schema 表单回填；留空字段保持不变（含令牌）。 */
 function openNasEdit(nas, schema, ctx) {
   openNasForm({
-    title: `编辑 NAS 资产 · ${nas.name}`, schema, initial: nas, submitText: '保存',
+    title: rqI18n.t('编辑 NAS 资产 · {name}', { name: nas.name }), schema, initial: nas, submitText: '保存',
     hint: '留空的属性保持原值不变；接入属性（网关/令牌/设备 IP）变更后即时生效并触发重新探活。',
     onSubmit: async (data) => {
       await api.patch(`/api/nas/${nas.id}`, { name: data.name, attrs: data.attrs })
-      toast('已保存')
+      toast(rqI18n.t('已保存'))
       ctx.rerender()
     },
   })
@@ -206,8 +209,8 @@ function openNasImport(ctx) {
   modal.el.querySelector('[data-ok]').onclick = async (e) => {
     const btn = e.currentTarget
     const data = collectForm(modal.body)
-    if (!data.config) return toast('请粘贴 MCP 配置 JSON', 'error')
-    try { JSON.parse(data.config) } catch { return toast('配置不是合法 JSON，请检查后重试', 'error') }
+    if (!data.config) return toast(rqI18n.t('请粘贴 MCP 配置 JSON'), 'error')
+    try { JSON.parse(data.config) } catch { return toast(rqI18n.t('配置不是合法 JSON，请检查后重试'), 'error') }
     btn.classList.add('btn-loading')
     try {
       const result = await api.post('/api/nas/import', {
@@ -216,7 +219,7 @@ function openNasImport(ctx) {
         description: data.description || undefined,
       })
       modal.body.querySelector('#import-results').innerHTML = `
-        <div class="card-title mt-14 mb-8">导入结果（成功 ${result.imported} / ${result.results.length}）</div>
+        <div class="card-title mt-14 mb-8">${esc(rqI18n.t('导入结果（成功 {a} / {b}）', { a: result.imported, b: result.results.length }))}</div>
         ${result.results.map((item) => `
           <div class="card card-pad mb-8">
             <div class="flex-between">
@@ -225,11 +228,11 @@ function openNasImport(ctx) {
             </div>
             ${item.ok ? `
               <div class="fs-12 text-3 mt-8">
-                网关${item.reachable ? `<span style="color:var(--ok)">可达</span>，发现 ${item.tools ?? 0} 个工具，状态 ${esc(item.status ?? '')}` : '<span style="color:var(--warn)">不可达</span>'}
+                ${esc(rqI18n.t('网关'))}${item.reachable ? `<span style="color:var(--ok)">${esc(rqI18n.t('可达'))}</span>${esc(rqI18n.t('，发现 {n} 个工具，状态 {status}', { n: item.tools ?? 0, status: item.status ?? '' }))}` : `<span style="color:var(--warn)">${esc(rqI18n.t('不可达'))}</span>`}
               </div>` : ''}
             ${item.error ? `<div class="fs-12 mt-8" style="color:var(--danger)">${esc(item.error)}</div>` : ''}
           </div>`).join('')}`
-      if (result.imported > 0) toast(`已导入 ${result.imported} 个 NAS 资产`)
+      if (result.imported > 0) toast(rqI18n.t('已导入 {n} 个 NAS 资产', { n: result.imported }))
       if (result.imported === result.results.length) { modal.close(); ctx.rerender() }
     } catch (error) {
       toast(error.message, 'error')
@@ -247,19 +250,19 @@ async function openNasDetail(id, ctx, schema) {
 
   const drawer = openDrawer({
     title: nas.name,
-    sub: `${nas.slug} · ${nas.attrs?.gatewayUrl ?? '未配置网关'}`,
+    sub: `${nas.slug} · ${nas.attrs?.gatewayUrl ?? rqI18n.t('未配置网关')}`,
     wide: true,
     body: `
       <div class="flex mb-14" style="gap:8px;flex-wrap:wrap">
         ${statusBadge(nas.status)}
         ${healthCell(nas.health)}
-        <span class="badge badge-info no-dot">密级：${dataClassLabel(nas.attrs?.dataClass)}</span>
+        <span class="badge badge-info no-dot">${esc(rqI18n.t('密级：{level}', { level: rqI18n.t(dataClassLabel(nas.attrs?.dataClass)) }))}</span>
         ${(Array.isArray(nas.attrs?.tags) ? nas.attrs.tags : []).map((tag) => `<span class="badge badge-muted no-dot">${esc(tag)}</span>`).join('')}
       </div>
 
       <div class="tabs" id="nas-tabs">
         <div class="tab active" data-tab="overview">概览</div>
-        <div class="tab" data-tab="tools">网关工具 (${(nas.gatewayTools ?? []).length})</div>
+        <div class="tab" data-tab="tools">${esc(rqI18n.t('网关工具 ({n})', { n: (nas.gatewayTools ?? []).length }))}</div>
         <div class="tab" data-tab="fs">文件浏览</div>
         <div class="tab" data-tab="audit">审计</div>
       </div>
@@ -363,12 +366,12 @@ async function openNasDetail(id, ctx, schema) {
         ? Object.entries(infoRaw).filter(([, v]) => ['string', 'number', 'boolean'].includes(typeof v)).slice(0, 8)
         : []
       host.innerHTML = `
-        <div class="fs-12 text-3 mb-8">共享文件夹（${shares.length}）· 点击跳转文件浏览：</div>
+        <div class="fs-12 text-3 mb-8">${esc(rqI18n.t('共享文件夹（{n}）· 点击跳转文件浏览：', { n: shares.length }))}</div>
         <div class="flex" style="gap:6px;flex-wrap:wrap">
           ${shares.length ? shares.map((s) => `<span class="chip" data-share="${esc(s.name)}" style="cursor:pointer">${icon('box', 12)} ${esc(s.name)}</span>`).join('') : '<span class="fs-12 text-4">未查询到共享文件夹</span>'}
         </div>
         ${infoItems.length ? `
-          <div class="fs-12 text-3 mt-14 mb-8">授权根路径 ${esc(rootPath)} 详情：</div>
+          <div class="fs-12 text-3 mt-14 mb-8">${esc(rqI18n.t('授权根路径 {path} 详情：', { path: rootPath }))}</div>
           <div class="desc-grid">
             ${infoItems.map(([k, v]) => `<div class="desc-item"><span class="k">${esc(k)}</span><span class="v mono">${esc(String(v))}</span></div>`).join('')}
           </div>` : ''}`
@@ -385,13 +388,13 @@ async function openNasDetail(id, ctx, schema) {
   const deleteBtn = drawer.el.querySelector('#nas-delete')
   if (deleteBtn) deleteBtn.onclick = async () => {
     const result = await confirmDialog({
-      title: `删除 NAS · ${nas.name}`, requireReason: true, danger: true, confirmText: '确认删除',
+      title: rqI18n.t('删除 NAS · {name}', { name: nas.name }), requireReason: true, danger: true, confirmText: '确认删除',
       message: '将永久删除该资产台账（含健康档案与工具发现缓存），操作不可恢复，审计数据保留。',
     })
     if (!result) return
     try {
       await api.delete(`/api/nas/${nas.id}`)
-      toast('已删除'); drawer.close(); ctx.rerender()
+      toast(rqI18n.t('已删除')); drawer.close(); ctx.rerender()
     } catch (error) { toast(error.message, 'error') }
   }
 
@@ -400,7 +403,7 @@ async function openNasDetail(id, ctx, schema) {
     btn.classList.add('btn-loading')
     try {
       const result = await api.post(`/api/nas/${nas.id}/health`)
-      toast(`探测完成：${healthText(result.status)}（${result.latencyMs}ms）`, result.status === 'down' ? 'error' : 'success')
+      toast(rqI18n.t('探测完成：{status}（{ms}ms）', { status: rqI18n.t(healthText(result.status)), ms: result.latencyMs }), result.status === 'down' ? 'error' : 'success')
       drawer.close(); ctx.rerender()
     } catch (error) { toast(error.message, 'error') } finally { btn.classList.remove('btn-loading') }
   }
@@ -410,7 +413,7 @@ async function openNasDetail(id, ctx, schema) {
     btn.classList.add('btn-loading')
     try {
       const result = await api.post(`/api/nas/${nas.id}/sync-tools`)
-      toast(`工具清单已同步：${result.count} 个工具`)
+      toast(rqI18n.t('工具清单已同步：{n} 个工具', { n: result.count }))
       drawer.close(); ctx.rerender()
     } catch (error) { toast(error.message, 'error') } finally { btn.classList.remove('btn-loading') }
   }
@@ -420,31 +423,31 @@ async function openNasDetail(id, ctx, schema) {
     btn.onclick = async () => {
       if (transition.action === 'offline') {
         const result = await confirmDialog({
-          title: `下线 NAS · ${nas.name}`, requireReason: true, danger: true, confirmText: '确认下线',
+          title: rqI18n.t('下线 NAS · {name}', { name: nas.name }), requireReason: true, danger: true, confirmText: '确认下线',
           message: `下线后该 NAS 的全部文件操作（含 Skill 包存储）将立即不可用，审计数据保留。`,
         })
         if (!result) return
         try {
           await api.post(`/api/nas/${nas.id}/transition`, { action: 'offline', note: result.reason })
-          toast('已下线'); drawer.close(); ctx.rerender()
+          toast(rqI18n.t('已下线')); drawer.close(); ctx.rerender()
         } catch (error) { toast(error.message, 'error') }
         return
       }
       if (transition.action === 'archive') {
         const result = await confirmDialog({
-          title: `归档 NAS · ${nas.name}`, danger: true, confirmText: '确认归档',
+          title: rqI18n.t('归档 NAS · {name}', { name: nas.name }), danger: true, confirmText: '确认归档',
           message: `归档为终态操作：资产转为只读台账，不再参与健康巡检与文件操作。`,
         })
         if (!result) return
         try {
           await api.post(`/api/nas/${nas.id}/transition`, { action: 'archive' })
-          toast('已归档'); drawer.close(); ctx.rerender()
+          toast(rqI18n.t('已归档')); drawer.close(); ctx.rerender()
         } catch (error) { toast(error.message, 'error') }
         return
       }
       try {
         await api.post(`/api/nas/${nas.id}/transition`, { action: transition.action })
-        toast('已上线'); drawer.close(); ctx.rerender()
+        toast(rqI18n.t('已上线')); drawer.close(); ctx.rerender()
       } catch (error) { toast(error.message, 'error') }
     }
   }
@@ -532,7 +535,7 @@ function mountFsBrowser(host, nas, ctx) {
           document.body.appendChild(a)
           a.click()
           a.remove()
-          toast(`已开始下载 ${entry.name}`)
+          toast(rqI18n.t('已开始下载 {name}', { name: entry.name }))
         } catch (error) { toast(error.message, 'error') }
         finally { downloadBtn.classList.remove('btn-loading') }
       }
@@ -547,7 +550,7 @@ function mountFsBrowser(host, nas, ctx) {
       if (renameBtn) renameBtn.onclick = (e) => {
         e.stopPropagation()
         const modal = openModal({
-          title: `重命名 · ${entry.name}`,
+          title: rqI18n.t('重命名 · {name}', { name: entry.name }),
           body: field('新名称', inputField('newName', { value: entry.name }), { required: true }),
           foot: '<button class="btn btn-default" data-cancel>取消</button><button class="btn btn-primary" data-ok>重命名</button>',
         })
@@ -557,7 +560,7 @@ function mountFsBrowser(host, nas, ctx) {
           if (!newName || newName === entry.name) return modal.close()
           try {
             await api.post(`/api/nas/${nas.id}/fs/rename`, { path, newName })
-            toast('已重命名'); modal.close(); void load()
+            toast(rqI18n.t('已重命名')); modal.close(); void load()
           } catch (error) { toast(error.message, 'error') }
         }
       }
@@ -565,13 +568,13 @@ function mountFsBrowser(host, nas, ctx) {
       if (deleteBtn) deleteBtn.onclick = async (e) => {
         e.stopPropagation()
         const result = await confirmDialog({
-          title: `删除 · ${entry.name}`, danger: true, confirmText: '确认删除',
-          message: `将从 NAS 删除 <b>${esc(path)}</b>${entry.isDir ? '（含目录内全部内容）' : ''}，操作将写入审计日志。`,
+          title: rqI18n.t('删除 · {name}', { name: entry.name }), danger: true, confirmText: '确认删除',
+          message: rqI18n.t('将从 NAS 删除 <b>{path}</b>{dir}，操作将写入审计日志。', { path: esc(path), dir: entry.isDir ? rqI18n.t('（含目录内全部内容）') : '' }),
         })
         if (!result) return
         try {
           await api.post(`/api/nas/${nas.id}/fs/delete`, { paths: [path] })
-          toast('已删除'); void load()
+          toast(rqI18n.t('已删除')); void load()
         } catch (error) { toast(error.message, 'error') }
       }
     })
@@ -590,24 +593,24 @@ function mountFsBrowser(host, nas, ctx) {
 
   const openMkdir = () => {
     const modal = openModal({
-      title: `新建文件夹 · ${currentPath}`,
+      title: rqI18n.t('新建文件夹 · {path}', { path: currentPath }),
       body: field('文件夹名称', inputField('folder', { placeholder: '如：skill-packages' }), { required: true }),
       foot: '<button class="btn btn-default" data-cancel>取消</button><button class="btn btn-primary" data-ok>创建</button>',
     })
     modal.el.querySelector('[data-cancel]').onclick = () => modal.close()
     modal.el.querySelector('[data-ok]').onclick = async () => {
       const folder = collectForm(modal.body).folder
-      if (!folder) return toast('请填写文件夹名称', 'error')
+      if (!folder) return toast(rqI18n.t('请填写文件夹名称'), 'error')
       try {
         await api.post(`/api/nas/${nas.id}/fs/mkdir`, { path: joinPath(currentPath, folder) })
-        toast('已创建'); modal.close(); void load()
+        toast(rqI18n.t('已创建')); modal.close(); void load()
       } catch (error) { toast(error.message, 'error') }
     }
   }
 
   const openUpload = () => {
     const modal = openModal({
-      title: `上传文件 · ${currentPath}`, wide: true,
+      title: rqI18n.t('上传文件 · {path}', { path: currentPath }), wide: true,
       body: `
         <div class="form-grid">
           <div>
@@ -647,7 +650,7 @@ function mountFsBrowser(host, nas, ctx) {
       const totalBytes = items.reduce((s, it) => s + it.file.size, 0)
       listHost.innerHTML = items.length === 0
         ? '<div class="muted-box">暂未选择文件</div>'
-        : `<div class="fs-12 text-3 mb-8">待上传 <b>${items.length}</b> 项 · 共 ${fmtBytes(totalBytes)}（点击「开始上传」执行）</div>
+        : `<div class="fs-12 text-3 mb-8">${esc(rqI18n.t('待上传 <b>{n}</b> 项 · 共 {size}（点击「开始上传」执行）', { n: items.length, size: fmtBytes(totalBytes) }))}</div>
            <div style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:6px">
              ${items.map((it, i) => `<div class="flex" style="padding:6px 10px;border-bottom:1px solid var(--border);font-size:12px">
                <span class="text-4" style="min-width:32px">${i + 1}.</span>
@@ -663,14 +666,14 @@ function mountFsBrowser(host, nas, ctx) {
     modal.el.querySelector('[data-ok]').onclick = async (e) => {
       const btn = e.currentTarget
       const items = collectItems()
-      if (items.length === 0) return toast('请选择文件或文件夹', 'error')
+      if (items.length === 0) return toast(rqI18n.t('请选择文件或文件夹'), 'error')
       btn.classList.add('btn-loading')
       btn.disabled = true
 
       const destDir = `/${[currentPath, ''].join('/').split('/').filter(Boolean).join('/')}`.replace(/\/+$/, '') || '/'
       let done = 0
       let failed = 0
-      listHost.insertAdjacentHTML('beforeend', `<div class="fs-12 mt-8">进度：<b id="upd">0</b> / ${items.length}（失败 <b id="upf" style="color:var(--danger)">0</b>）</div>`)
+      listHost.insertAdjacentHTML('beforeend', `<div class="fs-12 mt-8">${esc(rqI18n.t('进度：<b id="upd">0</b> / {total}（失败 <b id="upf" style="color:var(--danger)">0</b>）', { total: items.length }))}</div>`)
       const upd = listHost.querySelector('#upd')
       const upf = listHost.querySelector('#upf')
 
@@ -686,7 +689,7 @@ function mountFsBrowser(host, nas, ctx) {
           failed = result.failed.length
           upd.textContent = String(done)
           upf.textContent = String(failed)
-          if (result.failed.length > 0) console.warn('upload-many failures', result.failed)
+          if (result.failed.length > 0) console.warn('upload-many 失败明细', result.failed)
         } else {
           for (const item of items) {
             try {
@@ -696,20 +699,20 @@ function mountFsBrowser(host, nas, ctx) {
               done++
             } catch (error) {
               failed++
-              console.warn(`upload ${item.relativePath} failed`, error)
+              console.warn(`上传 ${item.relativePath} 失败`, error)
             }
             upd.textContent = String(done + failed)
             upf.textContent = String(failed)
           }
         }
         if (failed === 0) {
-          toast(`已上传 ${done} 项到 ${destDir}`)
+          toast(rqI18n.t('已上传 {n} 项到 {dir}', { n: done, dir: destDir }))
           modal.close(); void load()
         } else if (done > 0) {
-          toast(`部分成功：${done} 成功 / ${failed} 失败`, 'error')
+          toast(rqI18n.t('部分成功：{ok} 成功 / {f} 失败', { ok: done, f: failed }), 'error')
           void load()
         } else {
-          toast(`上传失败：${failed} 项`, 'error')
+          toast(rqI18n.t('上传失败：{n} 项', { n: failed }), 'error')
         }
       } catch (error) {
         toast(error.message, 'error')
@@ -724,7 +727,7 @@ function mountFsBrowser(host, nas, ctx) {
     const modal = openModal({
       title: '搜索文件', wide: true,
       body: `
-        ${field('匹配模式', inputField('pattern', { placeholder: '如：report 或 *.zip' }), { required: true, hint: currentPath ? `搜索范围：${currentPath}` : '搜索范围：全部共享文件夹（根路径）' })}
+        ${field('匹配模式', inputField('pattern', { placeholder: '如：report 或 *.zip' }), { required: true, hint: currentPath ? rqI18n.t('搜索范围：{path}', { path: currentPath }) : rqI18n.t('搜索范围：全部共享文件夹（根路径）') })}
         <div id="fs-search-results"></div>`,
       foot: '<button class="btn btn-default" data-cancel>关闭</button><button class="btn btn-primary" data-ok>搜索</button>',
     })
@@ -732,13 +735,13 @@ function mountFsBrowser(host, nas, ctx) {
     modal.el.querySelector('[data-ok]').onclick = async (e) => {
       const btn = e.currentTarget
       const pattern = collectForm(modal.body).pattern
-      if (!pattern) return toast('请填写匹配模式', 'error')
+      if (!pattern) return toast(rqI18n.t('请填写匹配模式'), 'error')
       btn.classList.add('btn-loading')
       try {
         const raw = await api.post(`/api/nas/${nas.id}/fs/search`, { pattern, path: currentPath || '/' })
         const results = normalizeSearchResults(raw)
         modal.body.querySelector('#fs-search-results').innerHTML = results.length ? `
-          <div class="card-title mt-14 mb-8">命中 ${results.length} 项</div>
+          <div class="card-title mt-14 mb-8">${esc(rqI18n.t('命中 {n} 项', { n: results.length }))}</div>
           <div style="max-height:280px;overflow-y:auto">
             ${results.map((item) => `
               <div class="flex" style="padding:6px 0;border-bottom:1px solid var(--border)">
@@ -765,13 +768,13 @@ async function openShareLinkModal(nas, path, entry) {
   let policy = null
   try { policy = await api.get('/api/nas/authz/share-link-policy') } catch { policy = null }
   const canAuthzWrite = session.can('nas.authz.write')
-  const permanentReason = !canAuthzWrite ? '需 nas.authz.write 权限' : (policy && !policy.allowPermanent ? '管理员未开启永久档位' : '')
+  const permanentReason = !canAuthzWrite ? rqI18n.t('需 nas.authz.write 权限') : (policy && !policy.allowPermanent ? rqI18n.t('管理员未开启永久档位') : '')
   // 档位开关在「NAS 数据权限」治理页；有权限的管理员给一条直达路径（无权限者只说明原因）
   const permanentHint = permanentReason && canAuthzWrite
-    ? `${permanentReason}，可在「数据权限 → 分享链接档位」中开启`
+    ? rqI18n.t('{reason}，可在「数据权限 → 分享链接档位」中开启', { reason: permanentReason })
     : permanentReason
   const modal = openModal({
-    title: `复制下载链接 · ${entry.name}`,
+    title: rqI18n.t('复制下载链接 · {name}', { name: entry.name }),
     body: `
       <div class="form-hint mb-14">链接可贴到聊天/邮件等任意场景，打开即下载（无需登录）；取流时按<b>签发人当时的数据权限</b>实时复核，权限回收后链接即失效，也可在「链接管理」中随时吊销。</div>
       <div class="form-label">有效期</div>
@@ -780,7 +783,7 @@ async function openShareLinkModal(nas, path, entry) {
         <span class="chip active" data-t="24h" style="cursor:pointer">24 小时</span>
         <span class="chip" data-t="7d" style="cursor:pointer">7 天</span>
         <span class="chip" data-t="30d" style="cursor:pointer">30 天</span>
-        <span class="chip" data-t="permanent" style="cursor:pointer;${permanentReason ? 'opacity:.45' : ''}" ${permanentHint ? `title="${esc(permanentHint)}"` : ''}>永久${permanentReason ? `（${esc(permanentReason)}）` : ''}</span>
+        <span class="chip" data-t="permanent" style="cursor:pointer;${permanentReason ? 'opacity:.45' : ''}" ${permanentHint ? `title="${esc(permanentHint)}"` : ''}>${esc(rqI18n.t('永久'))}${permanentReason ? esc(rqI18n.t('（{reason}）', { reason: permanentReason })) : ''}</span>
       </div>
       <div class="fs-11 text-4" style="margin-top:8px">默认 24 小时；30 天与永久为显式选择——永久链接在权限回收前长期有效，签发前请确认文件适合长期分享。${permanentHint ? `<br><span style="color:var(--warn)">${esc(permanentHint)}</span>` : ''}</div>`,
     foot: '<button class="btn btn-default" data-cancel>取消</button><button class="btn btn-primary" data-ok>复制链接</button>',
@@ -810,7 +813,7 @@ async function openShareLinkModal(nas, path, entry) {
         ? await api.post(`/api/nas/${nas.id}/fs/share-link`, { path, permanent: true })
         : await api.post(`/api/nas/${nas.id}/fs/share-link`, { path, ttlSec: SHARE_TIER_TTL[tier] })
       copyText(result.url)
-      toast(tier === 'permanent' ? '下载链接已复制，永久有效（可在链接管理中吊销）' : `下载链接已复制，${result.ttlLabel}内有效`)
+      toast(tier === 'permanent' ? rqI18n.t('下载链接已复制，永久有效（可在链接管理中吊销）') : rqI18n.t('下载链接已复制，{ttl}内有效', { ttl: result.ttlLabel }))
       modal.close()
     } catch (error) { toast(error.message, 'error') }
     finally { btn.classList.remove('btn-loading') }
@@ -820,7 +823,7 @@ async function openShareLinkModal(nas, path, entry) {
 async function openShareLinksManager(nas) {
   const canRevoke = session.can('nas.authz.write')
   const modal = openModal({
-    title: `链接管理 · ${nas.name}`, wide: true,
+    title: rqI18n.t('链接管理 · {name}', { name: nas.name }), wide: true,
     body: '<div id="share-links-list"><div class="fs-12 text-4" style="padding:12px 0">加载中…</div></div>',
     foot: '<button class="btn btn-default" data-cancel>关闭</button>',
   })
@@ -858,7 +861,7 @@ async function openShareLinksManager(nas) {
           if (!ok) return
           try {
             await api.post(`/api/nas/${nas.id}/fs/share-links/${btn.dataset.revoke}/revoke`, {})
-            toast('已吊销')
+            toast(rqI18n.t('已吊销'))
             void load()
           } catch (error) { toast(error.message, 'error') }
         }
@@ -874,14 +877,14 @@ function shareStatusBadge(item) {
   if (item.revokedAt) return `<span class="badge badge-danger no-dot">已吊销</span><span class="fs-11 text-4" style="margin-left:4px">${timeAgo(item.revokedAt)}</span>`
   if (item.status === 'expired') return '<span class="badge badge-muted no-dot">已过期</span>'
   if (item.expiresAt === null) return '<span class="badge badge-warn no-dot">永久有效</span>'
-  return `<span class="badge badge-ok no-dot">有效</span><span class="fs-11 text-4" style="margin-left:4px">剩 ${shareRemaining(item.remainingSec)}</span>`
+  return `<span class="badge badge-ok no-dot">有效</span><span class="fs-11 text-4" style="margin-left:4px">${esc(rqI18n.t('剩 {time}', { time: shareRemaining(item.remainingSec) }))}</span>`
 }
 
 function shareRemaining(sec) {
-  if (sec === null) return '永久'
-  if (sec >= 86400) return `${Math.floor(sec / 86400)} 天 ${Math.floor((sec % 86400) / 3600)} 时`
-  if (sec >= 3600) return `${Math.floor(sec / 3600)} 时 ${Math.floor((sec % 3600) / 60)} 分`
-  return `${Math.max(1, Math.floor(sec / 60))} 分`
+  if (sec === null) return rqI18n.t('永久')
+  if (sec >= 86400) return rqI18n.t('{d} 天 {h} 时', { d: Math.floor(sec / 86400), h: Math.floor((sec % 86400) / 3600) })
+  if (sec >= 3600) return rqI18n.t('{h} 时 {m} 分', { h: Math.floor(sec / 3600), m: Math.floor((sec % 3600) / 60) })
+  return rqI18n.t('{m} 分', { m: Math.max(1, Math.floor(sec / 60)) })
 }
 
 // ---------- helpers ----------
@@ -930,7 +933,7 @@ function normalizeSearchResults(raw) {
 function readFileBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onerror = () => reject(new Error('读取本地文件失败'))
+    reader.onerror = () => reject(new Error(rqI18n.t('读取本地文件失败')))
     reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
     reader.readAsDataURL(file)
   })

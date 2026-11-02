@@ -109,6 +109,8 @@ const state = {
   channelId: localStorage.getItem('panel_channel') ?? '',
   messages: [],
   tasks: [],
+  /** 执行中枢目标投影（DSH issue#4 修订）：{goals,issues}；null=未装载/降级。 */
+  goals: null,
   artifacts: [],
   board: null,
   boardPlatform: localStorage.getItem('panel_board_platform') ?? '',
@@ -203,6 +205,21 @@ function showModal(title, bodyHtml) {
 function hideModal() {
   stopDdLoginPoll()
   $id('mask')?.classList.remove('show')
+}
+
+// 平台零弹窗铁律（design-adaptation-spec §6，2026-10-29 架构统一合规化）：自持确认框
+// 替代 window.confirm——同步阻塞式浏览器对话框退役，交互与全站抽屉/模态一致。
+function confirmAction(title, message) {
+  return new Promise((resolve) => {
+    showModal(title, `
+      <p class="st-d">${esc(message)}</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+        <button class="btn" id="confirmCancel">取消</button>
+        <button class="btn primary" id="confirmOk">确认</button>
+      </div>`)
+    $id('confirmCancel').onclick = () => { hideModal(); resolve(false) }
+    $id('confirmOk').onclick = () => { hideModal(); resolve(true) }
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -559,6 +576,7 @@ function navDef() {
       ['roadmap', '转型路线图', '⇥', ''],
     ],
     flow: [
+      ['goals', '目标投影', '◎', state.goals ? String(state.goals.goals?.length ?? 0) : ''],
       ['flow', '全部任务', '▦', activeTasks().length ? String(activeTasks().length) : ''],
       ['inbox', '我的收件箱', '☞', inboxCount ? String(inboxCount) : ''],
     ],
@@ -752,7 +770,7 @@ function renderTopRight() {
       showLoginModal()
       return
     }
-    if (!window.confirm(`退出当前账号（${user?.displayName ?? ''}）？`)) return
+    if (!(await confirmAction('退出登录', `退出当前账号（${user?.displayName ?? ''}）？`))) return
     session.clear()
     renderLoginGuide()
     void toast('已退出登录')
@@ -1062,7 +1080,10 @@ async function loadViewData() {
   try {
     // 演示预览态总是装载图谱：演示会话/任务由图谱包确定性派生（previewMessages/previewTasks）
     const wantsGraph = state.industryDemo || ['compass', 'thread', 'compare', 'roadmap', 'tools', 'kmodels', 'talent', 'elements'].includes(state.nav) || state.nav === 'cockpit'
-    const wantsTasks = !state.industryDemo && (['flow', 'inbox'].includes(state.nav) || state.nav === 'cockpit' || state.space === 'collab')
+    const wantsTasks = !state.industryDemo && (['flow', 'inbox', 'goals'].includes(state.nav) || state.nav === 'cockpit' || state.space === 'collab')
+    if (!state.industryDemo && state.nav === 'goals') {
+      jobs.push(api.get(`/api/panel/${state.dept}/goals`).then((res) => { state.goals = res }).catch(() => { state.goals = null }))
+    }
     const jobs = []
     if (wantsGraph && state.industry && !state.scenegraph) {
       jobs.push(api.get(`/api/panel/scenegraph?industry=${state.industry.code.toUpperCase()}`).then((res) => { state.scenegraph = res }).catch(() => { state.scenegraph = null }))
@@ -1133,6 +1154,7 @@ function renderView() {
     compare: () => viewCompare(pack),
     cockpit: () => viewCockpit(pack),
     roadmap: () => viewRoadmap(pack),
+    goals: () => viewGoals(),
     flow: () => viewFlow(),
     inbox: () => viewInbox(),
     mchannels: () => viewMChannels(),
@@ -1511,6 +1533,58 @@ function viewCockpit(pack) {
 // 执行空间：任务看板 / 我的收件箱
 // ---------------------------------------------------------------------------
 
+/** 执行中枢目标投影（DSH issue#4 修订，2026-10-29）：读透 exec-hub（不复制权威状态）——
+ * 目标（metric 基线→目标值）+ 任务（血缘 goalAncestry/执行锁/面板关联）+ 验收动作（签认关闭/打回返工）。
+ * 执行中枢缺席（503 DEGRADED）→ 诚实降级说明，绝不本地造假目标数据。 */
+function viewGoals() {
+  let h = '<div class="iaw-view">'
+  h += `<div class="iaw-page-head"><div><h1>目标投影</h1><p>执行中枢（exec-hub）为唯一任务事实源：此处只读透权威目标与任务，验收结论经面板签认后镜像回写</p></div></div>`
+  if (!state.goals) {
+    h += `<div class="iaw-alert i"><span>▣</span><div class="sp"><b>执行中枢未接入</b>——目标投影需要宿主平台装配执行中枢（exec-hub）。连接宿主后此处下发目标/任务权威数据（当前为诚实降级，不展示本地仿冒数据）。</div></div>`
+    h += '</div>'
+    return h
+  }
+  const goals = state.goals.goals ?? []
+  const issues = state.goals.issues ?? []
+  const goalTitle = (id) => goals.find((g) => g.id === id)?.title ?? null
+  const pct = (g) => (Number.isFinite(g.metricBaseline) && Number.isFinite(g.metricTarget) && g.metricBaseline !== g.metricTarget)
+    ? Math.max(0, Math.min(100, Math.round(((g.metricCurrent ?? g.metricBaseline) - g.metricBaseline) / (g.metricTarget - g.metricBaseline) * 100)))
+    : null
+  h += `<div class="iaw-grid-2">`
+  for (const g of goals) {
+    const p = pct(g)
+    h += `<div class="iaw-panel"><div class="iaw-panel-h"><h3>${esc(g.title)}</h3><span class="iaw-pill ${g.status === 'active' ? 'iaw-pill-ok' : 'iaw-pill-neutral'}">${esc(g.status)}</span></div>
+      ${g.description ? `<p class="iaw-muted" style="margin:6px 0 0;font-size:12px">${esc(g.description)}</p>` : ''}
+      ${g.metric ? `<div style="margin-top:8px;font-size:12px"><b>${esc(g.metric)}</b>：${g.metricBaseline ?? '—'} → ${g.metricTarget ?? '—'}${g.metricUnit ? ` ${esc(g.metricUnit)}` : ''}${p !== null ? `<div class="prog-wrap" style="margin-top:6px"><div class="prog" style="width:${p}%"></div></div><span class="iaw-muted" style="font-size:11px">进度 ${p}%${g.metricCurrent !== undefined ? `（当前 ${g.metricCurrent}）` : ''}</span>` : ''}</div>` : ''}
+      <div class="iaw-muted" style="margin-top:6px;font-size:11px">${g.parentGoalId && goalTitle(g.parentGoalId) ? `父目标：${esc(goalTitle(g.parentGoalId))} · ` : ''}${g.periodStart || g.periodEnd ? `周期 ${esc(g.periodStart ?? '—')} ~ ${esc(g.periodEnd ?? '—')}` : ''}</div>
+    </div>`
+  }
+  if (goals.length === 0) h += '<div class="iaw-alert i"><span>▣</span><div class="sp">执行中枢暂无本部门范围的目标——在控制台「执行中枢」登记目标后此处自动投影。</div></div>'
+  h += '</div>'
+  h += '<div class="iaw-sect-title">执行任务（权威面）<span class="line"></span></div>'
+  h += '<div class="iaw-card" style="overflow:auto"><table class="iaw-tbl"><thead><tr><th style="min-width:180px">任务</th><th>状态</th><th>优先级</th><th>血缘目标</th><th>面板关联</th><th>验收</th></tr></thead><tbody>'
+  const ISSUE_ST = { todo: '待办', in_progress: '进行中', review: '待审', done: '完成', cancelled: '已取消' }
+  for (const is of issues) {
+    const linked = (is.panelTaskIds ?? []).map((tid) => activeTasks().find((t) => t.id === tid)).filter(Boolean)
+    const linkedTask = linked[0]
+    const verdictCell = linkedTask
+      ? (linkedTask.verdict
+        ? `<span class="iaw-pill ${linkedTask.verdict === 'accepted' ? 'iaw-pill-ok' : 'iaw-pill-warn'}">${linkedTask.verdict === 'accepted' ? '✓ 已签认' : '↩ 已打回'}</span>`
+        : (!state.industryDemo && session.can('panel.task.write') ? `<span style="display:flex;gap:4px"><button class="iaw-chip" data-verdict="${esc(linkedTask.id)}" data-to="accepted" title="签认关闭">✓ 签认</button><button class="iaw-chip" data-verdict="${esc(linkedTask.id)}" data-to="rework" title="打回返工">↩ 返工</button></span>` : '<span class="iaw-muted">待验收</span>'))
+      : '<span class="iaw-muted">—</span>'
+    h += `<tr><td>${esc(is.title)}${linkedTask ? `<div class="iaw-muted" style="font-size:11px">面板任务：${esc(linkedTask.title)}</div>` : ''}</td>
+      <td><span class="iaw-pill ${is.status === 'done' ? 'iaw-pill-ok' : is.status === 'cancelled' ? 'iaw-pill-neutral' : 'iaw-pill-info'}">${esc(ISSUE_ST[is.status] ?? is.status)}</span></td>
+      <td>${esc(is.priority ?? '—')}</td>
+      <td class="iaw-muted" style="font-size:11px">${(is.goalAncestry ?? []).map((gid) => goalTitle(gid) ?? gid).join(' ← ') || '—'}</td>
+      <td>${linked.length ? `<span class="iaw-chip" style="cursor:default">▤ ${linked.length}</span>` : '<span class="iaw-muted">未关联</span>'}</td>
+      <td>${verdictCell}</td></tr>`
+  }
+  if (issues.length === 0) h += '<tr><td colspan="6" class="iaw-muted">执行中枢暂无本部门范围的任务</td></tr>'
+  h += '</tbody></table></div>'
+  h += '</div>'
+  return h
+}
+
 function viewFlow() {
   const tasks = activeTasks()
   const review = tasks.filter((t) => t.lane === 'review')
@@ -1526,9 +1600,10 @@ function viewFlow() {
     h += `<div class="iaw-fklane"><div class="iaw-fklane-h">${LANE_LABELS[lane]}<span class="cnt">${arr.length}</span></div><div class="iaw-fklane-b">`
     for (const t of arr) {
       h += `<div class="iaw-task" data-task="${esc(t.id)}" data-lane="${esc(t.lane)}">
-        <div class="tt">${esc(t.title)}</div>
+        <div class="tt">${esc(t.title)}${t.verdict ? `<span class="iaw-pill ${t.verdict === 'accepted' ? 'iaw-pill-ok' : 'iaw-pill-warn'}" style="margin-left:6px;font-size:10px">${t.verdict === 'accepted' ? '✓ 已签认' : '↩ 已打回'}</span>` : ''}</div>
         <div class="tm">
           <span class="who">${t.assigneeType === 'agent' ? '🤖' : '🧑'} ${esc(t.assigneeName ?? '未指派')}</span>
+          ${t.execIssueId ? `<span class="scene" style="cursor:default" title="执行中枢血缘（面板=投影，权威在 exec-hub）">⛓ exec</span>` : ''}
           ${t.sceneCode ? `<span class="scene" data-scene="${esc(t.sceneCode)}">${esc(t.sceneCode)}</span>` : ''}
           <span style="margin-left:auto;display:flex;gap:4px">
             ${!state.industryDemo && lane !== 'todo' ? `<button class="iaw-chip" data-move="${esc(t.id)}" data-to="${LANE_ORDER[LANE_ORDER.indexOf(lane) - 1]}" title="回退">←</button>` : ''}
@@ -1818,6 +1893,16 @@ function wireView(host) {
   host.querySelectorAll('[data-addlane]').forEach((el) => {
     el.onclick = () => showNewTask(el.dataset.addlane)
   })
+  // 验收裁决（DSH issue#4 修订）：签认关闭 / 打回返工——结论镜像回写执行中枢（服务端负责）
+  host.querySelectorAll('[data-verdict]').forEach((el) => {
+    el.onclick = async () => {
+      try {
+        await api.post(`/api/panel/tasks/${el.dataset.verdict}/verdict`, { verdict: el.dataset.to })
+        void toast(el.dataset.to === 'accepted' ? '已签认关闭（结论已镜像执行中枢）' : '已打回返工（执行中枢任务已重开）')
+        await refreshView()
+      } catch (error) { void toast(error.message, 'error') }
+    }
+  })
   host.querySelectorAll('[data-task]').forEach((el) => {
     el.onclick = (event) => {
       if (event.target.closest('[data-move],[data-scene]')) return
@@ -1852,7 +1937,7 @@ function wireView(host) {
   host.querySelectorAll('[data-mdel]').forEach((el) => {
     el.onclick = async () => {
       const model = state.models.find((item) => item.id === el.dataset.mdel)
-      if (!window.confirm(`确定从模型目录移除「${model?.slug ?? el.dataset.mdel}」？（绑定该模型的 Agent 将无法调用）`)) return
+      if (!(await confirmAction('移除模型', `确定从模型目录移除「${model?.slug ?? el.dataset.mdel}」？（绑定该模型的 Agent 将无法调用）`))) return
       el.disabled = true
       try {
         await api.delete(`/api/panel/models/${el.dataset.mdel}`)
@@ -3008,9 +3093,8 @@ async function showBind() {
         const authorize = await api.post('/api/auth/sso/bind/authorize', { provider: 'dingtalk' })
         const url = authorize.redirectUrl ?? authorize.url ?? authorize.redirect_uri
         if (url) {
-          window.open(url, '_blank', 'width=520,height=640')
-          void toast('已打开钉钉授权页，完成后回到本页自动刷新状态')
-          setTimeout(() => { void refreshDingtalk().then(() => { hideModal(); void showBind() }) }, 4000)
+          // 零弹窗铁律合规：与 console 同规整页跳转 IdP 授权页，授权完成后整页返回
+          window.location.href = url
         } else {
           void toast('平台未返回授权地址，请检查钉钉连接器登录配置', 'error')
         }

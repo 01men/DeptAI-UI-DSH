@@ -1,0 +1,32 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:10.809Z",
+    "updatedAt": "2026-10-20T04:14:10.809Z",
+    "id": "org_mvg65e9lidmbgujd",
+    "name": "元冰可集团",
+    "parentId": null,
+    "order": 1,
+    "status": "active",
+    "customFields": {}
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.746Z",
+    "updatedAt": "2026-10-20T04:14:34.746Z",
+    "id": "org_mvg65wqiidmm0h3x",
+    "name": "QA技术中心",
+    "parentId": "org_mvg65e9lidmbgujd",
+    "order": 2,
+    "status": "active",
+    "customFields": {}
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.747Z",
+    "updatedAt": "2026-10-20T04:14:34.747Z",
+    "id": "org_mvg65wqjidmow2ek",
+    "name": "QA隔离部",
+    "parentId": "org_mvg65e9lidmbgujd",
+    "order": 3,
+    "status": "active",
+    "customFields": {}
+  }
+]

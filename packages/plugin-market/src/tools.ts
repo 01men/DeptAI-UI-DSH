@@ -13,6 +13,7 @@ export function apply(ctx: Context) {
   t.register(defineTool({
     name: 'market_plugin_list',
     description: '列出第三方插件市场已上架的 L0 声明式插件（含能力请求与计量声明）。',
+    permission: 'market.read',
     parameters: {},
     output: { type: 'object', additionalProperties: true },
     async execute() {

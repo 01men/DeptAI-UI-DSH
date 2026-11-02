@@ -1,0 +1,29 @@
+# 一键体验实例（W1 市场引爆批次，2026-10-17）：
+#   docker compose up -d   →  http://localhost:7300（≤60 秒可访问，打开即免登只读演示控制台）
+#
+# 两个环境变量各管一件事：
+#   DEMO_SEED=1   首启注入完整演示数据（组织树/账号/MCP/Skill/Agent/应用/28 天历史用量，
+#                 演示账号 admin / ops / hr / dev / audit，口令均为 Ybk@2026）
+#   DEMO_MODE=1   免登只读演示态：访客不注册不登录直接进控制台，权限集为 26 个 .read
+#                 点白名单，写操作 403/405（详见 packages/plugin-console/src/demo-mode.ts）
+# 仅在演示实例上开启：DEMO_MODE 会开放实例全部只读数据面，勿接真实业务数据。
+services:
+  ybkkasi:
+    build: .
+    image: ybkkasi:1.3.0
+    container_name: ybkkasi-demo
+    ports:
+      - "7300:7300"
+    environment:
+      DEMO_MODE: "1"
+      DEMO_SEED: "1"
+      ORG_NAME: 元冰可演示集团
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7300/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

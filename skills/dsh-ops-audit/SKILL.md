@@ -1,3 +1,8 @@
+---
+name: dsh-ops-audit
+description: 查询审计日志、告警、审批与用量成本。
+---
+
 # Skill: dsh-ops-audit
 
 ## 何时使用

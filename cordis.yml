@@ -72,9 +72,25 @@
     # 事务流引擎（/api/flow/*：TF 编排/模板库/SLA/甘特）：guarded 路由依赖 console 中间件，须在其后装配
     - id: ops-flow-core
       name: '<PROJECT_ROOT>/packages/plugin-flow-core/src/index.ts'
+    # 执行中枢（/api/exec/*：目标血缘/任务执行锁/心跳唤醒/例行调度）：guarded 路由依赖 console 中间件
+    # 与 resourceCore/agentRegistry/modelgw/flow 服务先行，须在 flow-core 之后装配
+    - id: ops-exec-hub
+      name: '<PROJECT_ROOT>/packages/plugin-exec-hub/src/index.ts'
+    # 数字员工域（员工/任用/permit/受控调用/交付验收）：/api/workforce/* guarded 路由依赖 console 中间件，
+    # 员工工作路径依赖 exec-hub 先行，须在其后、钉钉桥接之前装配；装配完成后经 workforcePolicy 窄端口登记策略实现
+    - id: ops-workforce
+      name: '<PROJECT_ROOT>/packages/plugin-workforce/src/index.ts'
     # 钉钉桥接（群桥/出向投递/审批推送/告警通道）：订阅 panel.message.created / audit.alert.fired
     - id: ops-dingtalk-bridge
       name: '<PROJECT_ROOT>/packages/plugin-dingtalk-bridge/src/index.ts'
+    # UHP 执行驱动（/v1/uhp 协议面 + /api/uhp/* guarded 路由）：依赖 console 中间件与 modelgw 先行；
+    # 与 A2A 协作平面只走事件总线联动（a2a.task.dispatch/progress/cancel）
+    - id: ops-uhp
+      name: '<PROJECT_ROOT>/packages/plugin-uhp/src/index.ts'
+    # A2A 协作平面（well-known 卡片/目录/JSON-RPC/治理五查/协商引擎/验收/巡检）：
+    # 卡片授权集投影依赖 skillhub/mcp/agent 先行，guarded 路由依赖 console 中间件
+    - id: ops-a2a
+      name: '<PROJECT_ROOT>/packages/plugin-a2a/src/index.ts'
     # 单进程单入口：把元冰可数据面挂进 dsh webServer（/gate01 前缀），必须在 console 之后装配
     - id: ops-dsh-bridge
       name: '<PROJECT_ROOT>/packages/plugin-dsh-bridge/src/index.ts'

@@ -10,6 +10,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
+import { t } from '../../platform-i18n/src/index.ts'
 import type { ConnectClientService } from './client.ts'
 
 export interface ConfigServerConfig {
@@ -81,7 +82,7 @@ export class ConnectConfigServer extends Service {
     }
     try {
       if (!this.sameOriginGuard(req)) {
-        reply(403, { ok: false, error: { code: 'FORBIDDEN_ORIGIN', message: '配置接口仅允许本机访问' } })
+        reply(403, { ok: false, error: { code: 'FORBIDDEN_ORIGIN', message: t('配置接口仅允许本机访问') } })
         return
       }
       if (method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
@@ -131,7 +132,7 @@ export class ConnectConfigServer extends Service {
         reply(200, { ok: true, data: { configured: false } })
         return
       }
-      reply(404, { ok: false, error: { code: 'NOT_FOUND', message: `路由不存在：${method} ${url.pathname}` } })
+      reply(404, { ok: false, error: { code: 'NOT_FOUND', message: t('路由不存在：{method} {path}', { method, path: url.pathname }) } })
     } catch (error) {
       reply(400, { ok: false, error: { code: 'BAD_REQUEST', message: error instanceof Error ? error.message : String(error) } })
     }
@@ -140,7 +141,7 @@ export class ConnectConfigServer extends Service {
   /** 连通性 + 令牌 + 一次真实读调用（列 Agent）三合一体检。 */
   private async probe(): Promise<Record<string, unknown>> {
     const config = this.client.getConfig()
-    if (!config) return { configured: false, hint: '请先填写宿主地址与接入码完成接入' }
+    if (!config) return { configured: false, hint: t('请先填写宿主地址与接入码完成接入') }
     const result = await this.client.status()
     let sample: Record<string, unknown> = {}
     try {

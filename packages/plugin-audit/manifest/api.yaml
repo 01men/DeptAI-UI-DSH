@@ -2,7 +2,8 @@
 plugin: dsh-plugin-audit
 base: /api
 endpoints:
-  - GET /api/audit/logs · GET /api/audit/summary
+  - GET /api/audit/logs（?traceId= 全链 trace 精确检索，W3-T5 §14） · GET /api/audit/summary
+  - GET /api/audit/export?since=&until=（application/x-ndjson；哈希链可校验导出）
   - GET/POST /api/audit/alert-rules · PATCH /api/audit/alert-rules/:id · GET /api/audit/alerts · POST /api/audit/alerts/:id/read · POST /api/audit/alerts/read-all
   - GET /api/audit/cost?groupBy=app|agent|org|date
   - GET /api/approvals · GET /api/approvals/sla · POST /api/approvals/:id/decide · DELETE /api/approvals/:id（仅驳回单可删）
@@ -13,6 +14,7 @@ tools:
   - audit_alerts_list
   - audit_alerts_read_all
   - approval_decide
+  - approval_list
   - audit_cost_report
 services:
   - key: audit

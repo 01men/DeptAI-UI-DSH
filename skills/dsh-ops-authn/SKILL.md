@@ -1,3 +1,8 @@
+---
+name: dsh-ops-authn
+description: 管理机器身份、令牌与凭证的签发、撤销和轮换。
+---
+
 # Skill: dsh-ops-authn
 
 ## 何时使用

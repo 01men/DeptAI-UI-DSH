@@ -1,0 +1,21 @@
+# 事件声明（发布/订阅）——跨插件联动只许通过事件或扩展点（a2a↔uhp 只走总线铁律）
+plugin: dsh-plugin-a2a
+events:
+  - name: a2a.task.dispatch
+    mode: emit
+    description: 发布：任务派发 → UHP 执行驱动（含幂等键 a2a:<agentId>:<principal>:<taskId>:a<attempt>）
+  - name: a2a.task.progress
+    mode: on
+    description: 订阅：UHP 执行进度/终态 → 八态状态机推进 + 完成收口计量（contextId 协作链）；仅平台派发记录会发出（P0 来源配对校验在此消费）
+  - name: a2a.task.cancel
+    mode: emit
+    description: 发布：任务取消 → UHP 取消联动
+  - name: a2a.task.changed
+    mode: emit
+    description: 发布：任务状态机变迁（console 协作追踪/SSE 数据源）
+  - name: agent.a2a.invoked
+    mode: emit
+    description: 发布：contract-c3 v1 既有事件（兼容保留），附 taskId/contextId 语义升级
+  - name: approval.decided
+    mode: on
+    description: 订阅：a2a.task.authorize 工单驳回 → 任务终态 rejected

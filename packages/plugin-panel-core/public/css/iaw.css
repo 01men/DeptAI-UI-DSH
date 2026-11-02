@@ -444,3 +444,11 @@
 .iaw-preview-bar .pv-pending{font-size:11px;padding:2px 9px;border-radius:999px;background:#FFEFCC;color:#9C6608;font-weight:500;flex:none;white-space:nowrap}
 .iaw-app .iaw-msg .role.demo{background:var(--warning-50);color:var(--warning-700);font-weight:500}
 .iaw-composer .box.locked{display:flex;align-items:center;gap:8px;padding:13px 14px;color:var(--text-tertiary);font-size:12.5px;background:var(--bg-subtle);border-style:dashed;justify-content:center}
+
+/* ── 执行中枢目标投影（2026-10-29 DSH issue#4 修订）──────────────────────── */
+.iaw-pill-ok{background:#E8F5EE;color:#0A6A35}
+.iaw-pill-warn{background:#FFF6E0;color:#9C6608}
+.iaw-pill-info{background:#EAF3FE;color:#0F4CA8}
+.iaw-muted{color:var(--text-tertiary)}
+.prog-wrap{height:6px;border-radius:3px;background:var(--bg-subtle);overflow:hidden}
+.prog-wrap .prog{display:block;height:100%;background:#0F766E;border-radius:3px}

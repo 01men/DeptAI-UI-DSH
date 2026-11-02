@@ -4,3 +4,5 @@ points:
   - app.read
   - app.write
   - app.offline
+  # 外部凭证取值（issue #19）：登记/轮换沿用 app.write，取值（拿到明文）独立授权 + 逐次审计
+  - app.credential.fetch

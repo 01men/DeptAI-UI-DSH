@@ -63,8 +63,8 @@ const PLUGINS = [
       'GET/POST /api/iam/orgs · GET /api/iam/orgs/tree · PATCH /api/iam/orgs/:id · DELETE /api/iam/orgs/:id（body {cascade:true} 一键级联删除子树，直属账号上移到上级组织）',
       'GET/POST /api/iam/users · PATCH /api/iam/users/:id · POST /api/iam/users/import',
       'PATCH /api/iam/users/:id（status 冻结/恢复即走此处） · POST /api/iam/users/:id/reset-password',
-      'POST /api/iam/users/:id/bindings · DELETE /api/iam/users/:id/bindings/:provider（三方身份绑定）',
-      'GET /api/iam/roles · GET /api/iam/permissions · POST /api/iam/roles · PATCH /api/iam/roles/:id',
+      'POST /api/iam/users/:id/bindings · DELETE /api/iam/users/:id/bindings/:provider（三方身份绑定；DELETE 支持 ?corpId= 限定单一主体，解绑写 bindingExemptions 防同步自动补回） · POST /api/iam/users/:id/bindings/:provider/replace（更换前置解绑，随后走扫码绑定）',
+      'GET /api/iam/roles · GET /api/iam/permissions · POST /api/iam/roles · PATCH /api/iam/roles/:id · DELETE /api/iam/roles/:id（R4 删除面：内置/仍被挂载拒绝）· DELETE /api/iam/users/:id（R4 删除面：仅已注销账号）',
       'GET/POST /api/iam/groups · PATCH/DELETE /api/iam/groups/:id · POST /api/iam/groups/refresh-snapshots',
       'GET/POST /api/iam/connectors · PUT /api/iam/connectors/:provider · POST /api/iam/connectors/:provider/test · POST /api/iam/connectors/:provider/sync · POST /api/iam/connectors/auto-sync · DELETE /api/iam/connectors/:provider',
       'GET /api/iam/conflicts · POST /api/iam/conflicts/:id/resolve',
@@ -91,6 +91,7 @@ const PLUGINS = [
       'POST /api/auth/login · POST /api/auth/sso · POST /api/auth/client-credentials',
       'GET /api/auth/me · POST /api/auth/logout（主动登出：sid 全链吊销）',
       'GET /api/auth/providers · GET /api/auth/sso · GET /api/auth/sso/callback · POST /api/auth/sso/authorize · POST /api/auth/sso/register · POST /api/auth/sso/bind · POST /api/auth/sso/bind/authorize（SSO 注册/绑定面，console 承载）',
+      'POST /api/auth/sso/unbind（本人自助解绑三方身份；操作对象恒为会话本人，需 6 位二次验证码）',
       'POST /api/auth/refresh（刷新票换新访问令牌） · POST /api/auth/entry-ticket-session（票据免登建立控制台会话） · POST /api/auth/entry-tickets/self（面板自领票据）',
       'POST /api/authn/entry-tickets/redeem（公开：平台授权直达换身份） · POST /api/authn/verify-audience（受众校验） · GET /api/authn/bindable-resources（可绑定资源清单）',
       'GET/POST /api/authn/oidc/clients · PATCH /api/authn/oidc/clients/:id · POST /api/authn/oidc/clients/:id/rotate（OIDC 客户端治理）',
@@ -101,6 +102,8 @@ const PLUGINS = [
       'GET/POST /api/authn/principals · PATCH /api/authn/principals/:id（scopes 调整，联动吊销令牌）',
       'POST /api/authn/principals/:id/disable|enable|rotate-secret（轮换：旧值即废，新值仅一次返回）',
       'GET/POST /api/authn/tokens · DELETE /api/authn/tokens/:jti · POST /api/authn/rotate-secret',
+      // W1 MCP 治理（契约 §3/§15）：委托令牌交换——自委托（机器为自己换牌）/ 代用户委托 / 人类→目标主体
+      'POST /api/authn/token/exchange（委托令牌交换：audience 绑定 mcp:service:<slug> 或 plugin:<id>）',
     ],
     tools: ['authn_token_issue', 'authn_token_revoke', 'authn_token_list', 'authn_credential_create', 'authn_credential_scopes', 'authn_credential_rotate'],
     ui: { routes: ['#/authn'], menus: [{ group: '治理与运营', items: ['认证与令牌'] }] },
@@ -115,10 +118,12 @@ const PLUGINS = [
       ['（订阅全部业务事件自动落审计）', 'on', 'mcp/skill/agent/app/token/iam'],
     ],
     api: [
-      'GET /api/audit/logs · GET /api/audit/summary',
+      'GET /api/audit/logs（?traceId= 全链 trace 精确检索，W3-T5 §14） · GET /api/audit/summary',
+      // W3-T5 §14：审计 ndjson 流式导出（append-only，行序=时间序，附尾行 _chainTip；权限点同 audit.read）
+      'GET /api/audit/export?since=&until=（application/x-ndjson；哈希链可校验导出）',
       'GET/POST /api/audit/alert-rules · PATCH /api/audit/alert-rules/:id · GET /api/audit/alerts · POST /api/audit/alerts/:id/read · POST /api/audit/alerts/read-all',
       'GET /api/audit/cost?groupBy=app|agent|org|date',
-      'GET /api/approvals · GET /api/approvals/sla · POST /api/approvals/:id/decide',
+      'GET /api/approvals · GET /api/approvals/sla · POST /api/approvals/:id/decide · DELETE /api/approvals/:id（仅驳回单可删）',
       'POST /api/audit/evidence（panel.write；IAW 5-1 结论级证据锚点登记）· GET /api/audit/evidence/:id（panel.read）',
       'GET /api/audit/timeline?sceneCode=（panel.read；IAW 5-2 场景/任务维度审计时间线）',
     ],
@@ -127,8 +132,13 @@ const PLUGINS = [
   },
   {
     dir: 'mcp', id: 'dsh-plugin-mcp', label: 'MCP 部署服务',
-    depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam', 'dsh-plugin-audit'], permissions: ['mcp.service.read', 'mcp.service.write', 'mcp.service.deploy', 'mcp.service.offline', 'mcp.permgroup.write', 'mcp.invoke'],
-    services: [['mcpRegistry', 'ctx.mcpRegistry', '服务注册/版本/灰度/回滚 + 健康探活熔断 + 权限组 + 调用网关 + 监控']],
+    depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam', 'dsh-plugin-audit'], permissions: ['mcp.service.read', 'mcp.permgroup.read', 'mcp.service.write', 'mcp.service.deploy', 'mcp.service.offline', 'mcp.permgroup.write', 'mcp.invoke', 'mcp.risk.admin'],
+    permissionComments: { 'mcp.risk.admin': 'W 批次 W1（V11 根治）：MCP 工具风险登记审批（登记/两级审批/重审清单/退场）', 'mcp.permgroup.read': 'W3-T5（MCP 治理契约 §12/§15）：scope 模板读取点（scope-template，dry 语义）' },
+    permissionCommentsManifest: { 'mcp.risk.admin': 'W 批次 W1（V11 根治）：MCP 工具可信风险登记审批面——登记/两级审批/重审清单/退场', 'mcp.permgroup.read': 'W3-T5（MCP 治理契约 §12/§15）：读取 MCP 权限组与 scope 模板' },
+    services: [
+      ['mcpRegistry', 'ctx.mcpRegistry', '服务注册/版本/灰度/回滚 + 健康探活熔断 + 权限组 + 调用网关 + 监控'],
+      ['mcpToolRisks', 'ctx.mcpToolRisks', 'W1/V11 工具可信风险登记（submit/decide 两级审批/list/reviewList 重审清单/retire 退场；effectiveRisk 为网关闸门唯一风险来源）'],
+    ],
     events: [
       ['mcp.deployed / mcp.offlined', 'emit', '部署与下线'],
       ['mcp.unhealthy', 'emit', '熔断告警（audit 订阅）'],
@@ -142,7 +152,17 @@ const PLUGINS = [
       'POST /api/mcp/services/:id/verify|deploy|rollback|offline|health · POST /api/mcp/services/:id/final-review（两级审批终审）',
       'GET /api/mcp/services/:id/metrics · GET /api/mcp/calls',
       'GET/POST /api/mcp/perm-groups · PATCH/DELETE /api/mcp/perm-groups/:id',
-      'POST /api/mcp/invoke（网关统一鉴权/限流/审计）',
+      'POST /api/mcp/invoke（网关统一鉴权/限流/审计；body.work 仅 permitId/runId/stepKey 索引透传；兼容层：Agent 标准默认路径是 /mcp/services/:serviceSlug，W2-T3 §9）',
+      'POST/GET /api/mcp/risk-registry · POST /api/mcp/risk-registry/:id/decide|retire · GET /api/mcp/risk-registry/review-list（W1/V11 工具风险登记：两级审批+全量重审，mcp.risk.admin）',
+      // 以下两段为防覆盖同步：W1-T2 曾只手工写进 manifest/api.yaml，npm run manifests 会抹掉——
+      // 补进生成器使生成输出与手工事实一致（仅 mcp 段，additive）。
+      'POST /api/mcp/services/:id/owner-entity（归属指派） · GET /api/mcp/governance/summary（治理待办：unowned/plainHeaderServices/nonGateway，W1-T2 §5）',
+      'PUT/GET /api/mcp/services/:id/credential（下游凭证 SecretBroker：值落密钥文件 0600，业务集合与响应零明文，W1-T2 §6）',
+      'POST /api/mcp/credentials/migrate（存量明文敏感头迁移入 SecretBroker；dryRun 预检报告）',
+      // W2-T3 §7/§8：服务级 MCP 数据面（标准 MCP 协议直连单服务；注册于 plugin-console routes/mcp-dataplane.ts）
+      'POST /mcp/services/:serviceSlug（服务级 MCP 数据面：Bearer 平台令牌或 aud=mcp:service:<slug> 委托令牌，initialize/ping/tools/list/tools/call，tools/list 经 authorizedToolsFor 按调用方过滤，tools/call 统一走网关 invoke 链） · GET/DELETE /mcp/services/:serviceSlug（Streamable HTTP 会话语义与平台 /mcp 一致：GET=SSE 长流不支持 405，DELETE=会话终结恒成功） · POST /mcp/s/:serviceId（同上别名，按服务 ID 直达） · GET/DELETE /mcp/s/:serviceId（同上）',
+      // W3-T5 §12/§14（防覆盖同步，与手工 manifest/api.yaml 一致）：策略模拟与 scope 模板（dry 语义不落库）
+      'POST /api/mcp/perm-groups/dry-run（mcp.permgroup.write；权限变更影响预演：newServices/writeTools/confidential/crossOrg/affectedSubjects，不落库） · POST /api/mcp/perm-groups/:id/scope-template（mcp.permgroup.read；按权限组策略生成资源限定 scope 模板 mcp.service:/mcp.tool: 形态，W3-T5 契约 §12/§14 控制台消费面）',
     ],
     tools: ['mcp_service_list', 'mcp_deploy', 'mcp_offline', 'mcp_metrics', 'mcp_invoke', 'mcp_health_check'],
     ui: { routes: ['#/mcp'], menus: [{ group: 'AI 资源', items: ['MCP 服务'] }] },
@@ -262,6 +282,9 @@ const PLUGINS = [
       'GET /api/apps/:id（含 topology/cost/impact） · DELETE /api/apps/:id（下架移除）',
       'POST /api/apps/:id/sso-client · PATCH /api/apps/:id/sso-client · POST /api/apps/:id/sso-client/rotate（应用 SSO 客户端治理） · POST /api/apps/:id/onboarding-prompt（接入提示词重生成）',
       'GET /api/apps/developer-options（开发者接入选项）',
+      // W2 应用能力绑定（契约 §10/§15）：应用 ↔ MCP 服务绑定（绑定回写服务归属、冲突 409 OWNER_CONFLICT）
+      'GET/POST /api/apps/:id/capabilities · DELETE /api/apps/:id/capabilities/:serviceId（应用 MCP 能力绑定）',
+      'GET /api/apps/:id/org-sync（组织架构同步快照：组织树+在职成员，?ifNoneMatch= 零载荷变更轮询；应用自助复用平台组织模块，经 console 暴露）',
       '# 平台侧自动折算：entry-ticket 兑换 / OIDC 发码 → DAU；浏览器 beacon → PV/UV（端点经 console 聚合暴露）',
     ],
     tools: ['app_list', 'app_topology', 'app_metrics', 'app_metrics_report', 'app_cost_breakdown'],
@@ -288,13 +311,14 @@ const PLUGINS = [
       'GET /api/nas/authz/scope · GET /api/nas/authz/rules · PUT /api/nas/authz/rules · POST /api/nas/authz/rules/import（授权规则面）',
       'POST /api/nas/authz/check（单点鉴权自查） · POST /api/nas/authz/exceptions · GET /api/nas/authz/exceptions（例外登记/清单）',
       'GET /api/nas/authz/decisions（判定留痕查询） · POST /api/nas/authz/reconcile · POST /api/nas/authz/leader-vacancy-scan（对账与主例外巡检）',
+      'POST /api/nas/authz/ownership/record（网关写类操作成功后的所有权登记/维护上报，nas.ownership.write） · GET /api/nas/authz/ownership（所有权查询，nas.authz.read）',
     ],
     tools: ['nas_list', 'nas_get', 'nas_health_check', 'nas_fs_list', 'nas_fs_search', 'nas_fs_mkdir', 'nas_fs_delete', 'nas_fs_upload'],
     ui: { routes: ['#/nas'], menus: [{ group: 'AI 资源', items: ['NAS 存储'] }] },
   },
   {
     dir: 'console', id: 'dsh-plugin-console', label: '管理控制台（接入层）',
-    depends: ['dsh-plugin-platform-core', '全部业务插件'], permissions: ['console.login'],
+    depends: ['dsh-plugin-platform-core', '全部业务插件'], permissions: ['console.login', 'console.read'],
     services: [],
     events: [
       ['audit.authz.denied', 'emit', '网关越权拒绝（audit 订阅计数告警）'],
@@ -302,20 +326,28 @@ const PLUGINS = [
     ],
     api: [
       'POST /api/tools/execute（工具桥：与 dsh ToolRuntime 同一契约）',
-      'GET/POST/DELETE /mcp（平台即 MCP Server：Streamable HTTP，initialize/tools/list/tools/call，Bearer 鉴权 + 工具级权限点；GET=SSE 流、DELETE=会话终结） · GET /docs（控制台文档页）',
-      'GET /api/health（存活探针） · GET /api/tools/schemas（工具 schema 目录） · GET /api/platform/route-matrix（路由矩阵自检）',
-      'GET /api/platform/info（插件树/工具目录/集合） · GET /api/overview（工作台聚合）',
+      'GET/POST/DELETE /mcp（平台即 MCP Server：Streamable HTTP，initialize/tools/list/tools/call，Bearer 鉴权 + 工具级权限点；GET=SSE 流、DELETE=会话终结） · GET /docs（控制台文档页） · GET /locales/:locale（UI 全球化词典合并端点，2026-10-16：platform-i18n 服务端文案 + 控制台/面板 SPA 词典三层合并，公开静态文案无鉴权面）',
+      'GET /api/health（存活探针） · GET /api/tools/schemas（console.read；工具 schema 目录） · GET /api/platform/route-matrix（路由矩阵自检）',
+      'GET /api/platform/bootstrap（公开；首启状态：仅回 initialPasswordPending 布尔，登录页部署提示用） · GET /api/platform/bootstrap/detail（authenticated；首启状态全量：mode/orgName/seededAt/口令文件路径） · GET /api/platform/demo（公开；DEMO_MODE=1 演示态标记：仅回 {demo,principalId,name,readonlyPermissions}，供前端显示只读横幅；非演示态回 {demo:false}，不含业务数据）',
+      'GET /api/finops/overview?month=YYYY-MM&window=分钟（usage.read；M2 CFO 视图：成本穿透 org×model+环比 + 空转检测一次取全）',
+      'GET /api/finops/idle?month=YYYY-MM&window=分钟（usage.read；空转检测独立查询，近似口径「无后续动作调用」）',
+      'GET /api/finops/report/monthly?month=YYYY-MM[&format=csv]（usage.read；CFO 成本报表，CSV 为 Excel 友好 BOM）',
+      'GET /api/platform/info（console.read；插件树/工具目录/集合） · GET /api/overview（console.read；工作台聚合） · GET /api/usage/recent（console.read；全员工作台最近调用自见）',
       'GET /api/assets/inventory（资产台账） · POST /api/assets/healthcheck（健康巡检） · GET /api/assets/report（成本报表）',
       'GET /api/assets/benefit（成本穿透：内部成本参考 + 单位 DAU 成本，零价快照口径） · GET /api/assets/retire-reasons（下架分析：弃用/下线原因聚合）',
       'GET /api/skills/usage-heatmap（技能热力图：skill × 日 使用矩阵）',
+      'GET /api/fleet/ledger?type=&search=（usage.read；设计适配 5.2 六类资产统一台账：health/lifecycle/grayPercent/calls30d/tokens30d/cost30d/trend[14]/dau/autonomy——usage 事件真实聚合，无数据 0/空数组）',
+      'GET /api/usage/report?days=28&dim=tokens|cost（usage.read；设计适配 5.5 用量与成本报表：日序列/部门分摊占比环比/Top 资产/单位 DAU 成本，全部 usage 事件真实聚合）',
+      'GET /api/modelgw/routes-usage（modelgw.read；设计适配 5.4 模型路由 30 天消耗：tokens30d/share/cost30d 按 model 聚合，零消耗路由诚实列 0）',
+      'GET /api/usage/collaborations（usage.read；C4 协作链计量：context 单链明细或窗口 Top 协作链，contextId 归集一次跨员工协作总成本）',
       'GET /api/usage/report/monthly（J4 月度用量报表：部门/Agent/Skill tokens 三维聚合；format=csv 自助导出）',
       'POST /api/usage/retention/purge（usage.admin；保留策略手动巡检，body.days 可临时收紧窗口，0=跳过）',
       'GET /api/usage/summary?window=today|month&org=&subject=（panel.read；IAW 4-1 成本摘要+预算进度，非 usage.read 主体强制收敛自身组织）',
       'GET /api/usage/feedback-stats?days=7|30|90|all（panel.read；IAW 4-2 产出采纳率聚合）',
-      'GET /api/notifications?since=&limit= · POST /api/notifications/read-cursor（console.login；IAW 8-1 通知中心持久化+已读游标）',
+      'GET /api/notifications?since=&limit=（console.read） · POST /api/notifications/read-cursor（console.login；IAW 8-1 通知中心持久化+已读游标）',
       'GET /api/modelgw/channel-groups（panel.read）· PUT /api/modelgw/channel-groups（panel.config.write；IAW 1-2 渠道组降级链）',
       'GET /api/modelgw/:slug/telemetry?window=7d（panel.read；IAW 1-3 渠道遥测，TTFT 诚实缺列）',
-      'GET /api/modelgw/budgets（panel.read）· PUT /api/modelgw/budgets（panel.config.write；IAW 1-4 预算熔断）',
+      'GET /api/modelgw/budgets（panel.read）· PUT /api/modelgw/budgets（panel.config.write；IAW 1-4 预算熔断；支持 subject 主体预算 agent:/app: 与 freezeAgent 联动冻结）· DELETE /api/modelgw/budgets/:id（panel.config.write；R4 删除面）',
       'PUT /api/iam/scene-policies（iam.scene.write）· GET /api/iam/scene-policies（iam.org.read）· DELETE /:id（IAW 6-1 场景级授权）· POST /api/iam/scene-authz/check（panel.read 自查）',
       'GET /api/resource/datasets?scene=（panel.read）· PUT /api/resource/datasets · PUT /api/resource/datasets/:code/quality（resource.dataset.write；IAW 2-1/2-2）',
       'GET /api/resource/lineage?dataset=（panel.read）· PUT /api/resource/lineage（resource.dataset.write；IAW 2-3 血缘）',
@@ -331,6 +363,7 @@ const PLUGINS = [
       'POST /api/usage/record（写入计量） · GET /api/usage/events（事件流水） · GET /api/usage/totals（聚合） · GET /api/usage/recent（最近条目）',
       'POST /api/usage/reconcile（对账） · POST /api/usage/replay（重放） · GET/PUT /api/usage/price-book（价格册）',
       'GET /api/usage/dead-letters · POST /api/usage/dead-letters/retry（死信查询/重投） · POST /api/usage/feedback（采纳率反馈） · PUT /api/usage/capability-grants（能力授予）',
+      'GET /api/bus/dead-letters · POST /api/bus/dead-letters/retry（总线死信查询/逐条重投，QA C-03；usage.admin）',
       'GET/POST /api/apps/beacon（公开访客埋点：GET 1x1 GIF / POST JSON；?app=&vid=&uid= → PV 累加、UV 去重；IP+应用 60 次/分钟限流）',
       '# 静态托管 public/ SPA（飞书级控制台）',
     ],
@@ -382,8 +415,11 @@ const PLUGINS = [
     ui: { routes: [], menus: [] },
   },
   {
-    dir: 'panel-core', id: 'dsh-plugin-panel-core', label: '部门 Agent 工作台面板（骨架+数据面）',
-    depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam', 'dsh-plugin-audit', 'dsh-plugin-usage', 'dsh-plugin-modelgw'],
+    // 2026-10-29 面板架构统一：面板轨实现收编自 01men/DeptAI-UI-DSH（IAW 六空间工作台），
+    // inject 瘦身为数据面基座 5 键（iam/authn/audit/usage/modelgw/skillhub 转运行期软依赖降级），
+    // depends 随之收敛——与上游面板轨 plugin.yaml 保持同一事实。
+    dir: 'panel-core', id: 'dsh-plugin-panel-core', label: '行业 AI 工作台面板（一图四清单 · 五空间 + 制造工具箱）',
+    depends: ['dsh-plugin-platform-core'],
     permissions: ['panel.read', 'panel.write', 'panel.task.write', 'panel.config.write', 'scenegraph.read', 'scenegraph.activate'],
     services: [
       ['panel', 'ctx.panel', '部门面板域：deptConfigs/channels/messages/tasks/artifacts/readCursors/activations + panelAgentRuntime + widget 求值'],
@@ -397,10 +433,14 @@ const PLUGINS = [
       ['dingtalk-bridge.delivered', 'subscribe', '钉钉投递回执 → 消息 ddSync 状态更新'],
     ],
     api: [
+      'GET /api/panel/board?platform=（panel.read；战略看板聚合+卡片包下发，双轨迁移自 portal/console）',
       'GET /api/panel/depts · GET /api/panel/:dept/overview · GET /api/panel/:dept/board（panel.read）',
       'GET/PUT /api/panel/:dept/widgets · GET/PUT /api/panel/:dept/kpis（读 panel.read / 写 panel.config.write）',
-      'GET/POST /api/panel/:dept/channels · GET/POST /api/panel/:dept/messages · POST /api/panel/messages/:id/card-action',
-      'GET/POST /api/panel/:dept/tasks · POST /api/panel/tasks/:id/transition（panel.task.write）',
+      'GET /api/panel/models（panel.read）· POST /api/panel/models · DELETE /api/panel/models/:id · POST /api/panel/models/:slug/test（panel.config.write；与 dsh 服务共用 modelgw 模型目录）',
+      'GET/POST /api/panel/:dept/channels · GET/POST /api/panel/:dept/messages（POST 支持 model 参数=对话框切换已登记模型）· POST /api/panel/messages/:id/card-action',
+      'GET/POST /api/panel/:dept/tasks · POST /api/panel/tasks/:id/transition（panel.task.write；POST 支持执行中枢血缘 execIssueId/goalId/evidenceRefs/reworkOf，携带即投影 exec-hub 权威）',
+      'GET /api/panel/:dept/goals（panel.read；执行中枢目标投影：读透 exec-hub 不复制权威状态，缺席 503 DEGRADED）',
+      'POST /api/panel/tasks/:id/verdict（panel.task.write；验收裁决：签认关闭/打回返工，镜像回写 exec-hub）',
       'GET /api/panel/:dept/artifacts · GET /api/panel/:dept/poll（降级轮询）',
       'GET /api/panel/:dept/skills（panel.read）· POST /api/panel/:dept/skills/invoke（panel.write；J1 直调：降级=200+ok:false，鉴权/范围=403/400）',
       'POST /api/panel/stream-ticket（panel.read + 部门范围校验；换取 ≤60s 一次性 SSE 票据，H4）',
@@ -408,15 +448,28 @@ const PLUGINS = [
       'GET /api/panel/industries（三态）· POST /api/panel/industries/:code/activate-requests',
       'GET /api/panel/scenegraph?industry=（scenegraph.read）· POST /api/panel/scenegraphs/reload（panel.config.write）',
       'GET /panel（面板 SPA 页面） · GET /api/panel/orgs（部门树）',
-      'GET/POST /api/panel/models（模型端点登记） · DELETE /api/panel/models/:id · POST /api/panel/models/:id/test（连通性测试）',
       'POST /api/panel/channels/:id/read（频道已读游标）',
       'PUT /api/panel/:dept/config（面板配置） · PUT /api/panel/:dept/agents（Agent 阵容） · POST /api/panel/:dept/artifacts（产物登记）',
       'POST /api/panel/:dept/scenes/:scene/diagnose（场景诊断） · POST /api/panel/:dept/scenes/:scene/sync-dingtalk（场景钉钉同步）',
+      'POST /api/panel/auth/login · POST /api/panel/auth/refresh（面板命名空间登录/换票：iam+authn 基线种子链，01门登录通道）',
+      'GET/POST/DELETE /api/panel/ddws/login（dws CLI 设备流登录：发起/轮询/取消；写动词 panel.config.write，读 panel.read）',
+      'GET /api/panel/ddws/status（panel.read；installed/bound/auth 形状）· POST /api/panel/ddws/install · POST /api/panel/ddws/test · POST /api/panel/ddws/pull（panel.config.write）',
+      'PUT/DELETE /api/panel/ddws/bind（panel.config.write；绑定/解绑钉钉群）',
+      'POST /api/panel/:dept/agent-stream（panel.read；SSE 流式对话降级通道）',
+      '# —— 制造工具箱（2026-10-19 并入「制造业 AI 工具集」，docs/plan-mfg-toolkit-fusion-20261019.md）——',
+      '# 13 个确定性计算内核 + 3 个 AI 工具（Skill 放行制）+ 100 项选题清单；模型面经平台网关，面板零密钥。',
+      'GET /api/panel/mfg/catalog（panel.read；工具目录 + 分类 + Skill 放行状态 + 模型就绪态）',
+      'GET /api/panel/mfg/roadmap（panel.read；100 项选题清单：来源追溯/验收标准/交付边界/状态）',
+      'POST /api/panel/mfg/tools/:id/run（panel.write；统一执行入口：strict 字段校验 + 溢出拦截 + 质量门禁）',
+      'GET /api/panel/mfg/tools/:id/template（panel.read；输入模板字段）· POST /api/panel/mfg/tools/:id/export（panel.read；JSON/Markdown 导出）',
+      'GET /api/panel/mfg/releases（panel.read；Skill 放行记录与有效性判定）· GET /api/panel/mfg/evaluation-plan（panel.read；真实评估计划与四类样例，不发起调用）',
+      'POST /api/panel/mfg/evaluate（panel.config.write；执行真实模型评估产出 live 报告——报告不构成放行）',
+      'POST /api/panel/mfg/releases（panel.config.write；审核人签署放行）· DELETE /api/panel/mfg/releases/:skillId（panel.config.write；撤回放行）',
     ],
-    tools: ['panel_agents_list', 'panel_msg_send', 'panel_task_create', 'panel_task_transition', 'panel_scene_diag', 'panel_widget_data', 'panel_agent_invoke', 'panel_skill_invoke'],
+    tools: ['panel_agents_list', 'panel_msg_send', 'panel_task_create', 'panel_task_transition', 'panel_scene_diag', 'panel_widget_data', 'panel_agent_invoke', 'panel_board_digest', 'panel_skill_invoke', 'panel_mfg_tools_list', 'panel_mfg_tool_run', 'panel_mfg_roadmap'],
     ui: {
-      routes: ['/panel/（独立零构建 SPA：顶栏/部门 rail/三栏/会话/任务看板/部门知识/场景图谱）'],
-      menus: [{ group: '总览', items: ['部门面板（/panel/ 外链入口）'] }],
+      routes: ['/panel/（独立零构建 SPA：IAW 顶栏/六空间导航/会话执行卡/任务泳道/场景图谱/制造工具箱）'],
+      menus: [{ group: '总览', items: ['行业 AI 工作台（/panel/ 外链入口）'] }],
     },
   },
   {
@@ -438,6 +491,34 @@ const PLUGINS = [
       'POST /api/flow/flows/:id/steps/:key/transition（flow.write；start/complete/block/restart/skip）· POST /api/flow/flows/:id/cancel',
     ],
     ui: { routes: [], menus: [] },
+  },
+  {
+    dir: 'exec-hub', id: 'dsh-plugin-exec-hub', label: '执行中枢（目标血缘/任务执行锁/心跳唤醒/例行调度）',
+    depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam', 'dsh-plugin-authn', 'dsh-plugin-audit', 'dsh-plugin-modelgw', 'dsh-plugin-agent', 'dsh-plugin-flow-core', 'dsh-plugin-usage', 'dsh-plugin-mcp', 'dsh-plugin-skillhub', 'dsh-plugin-nas'],
+    permissions: ['exec.read', 'exec.write', 'exec.admin'],
+    services: [
+      ['execHub', 'ctx.execHub', '执行中枢：目标/项目/任务三层血缘 + CAS 任务执行锁 + 心跳唤醒队列（预算前置/权限校验/P0 审批门禁）+ 例行调度（interval/cron/webhook）+ Agent 健康度（R8/R9/R10，2026-10-14）'],
+    ],
+    events: [
+      ['exec.goal.changed', 'emit', '目标/项目 CRUD 与改挂（通知中心消费）'],
+      ['exec.issue.changed', 'emit', '任务创建/流转/派发/锁释放（SSE 与通知消费）'],
+      ['exec.wake.enqueued', 'emit', '唤醒入队（幂等键去重后）'],
+      ['exec.run.completed', 'emit', 'run 收尾（run 级释放锁，任务转审阅）'],
+      ['exec.lock.reclaimed', 'emit', '僵尸锁强制回收（告警通知）'],
+      ['exec.heartbeat.recorded', 'emit', '心跳留痕（Agent 健康度数据源）'],
+      ['exec.routine.changed', 'emit', '例行规则变更'],
+      ['agent.frozen', 'subscribe', 'Agent 冻结（预算联动）→ 告警通知'],
+    ],
+    api: [
+      'GET /api/exec/overview（exec.read；总览：唤醒、锁、健康度；设计适配 5.1 增量并入工作台驾驶舱字段 insight 与 kpis——洞察文案由 goals 完成度加告警真实派生、异常清单、六类资产计数、今日调用与消耗、风险分级，2026-10-14 additive）· GET /api/exec/goals · POST /api/exec/goals · PATCH /api/exec/goals/:id · DELETE /api/exec/goals/:id（exec.write；有子目标/项目 409）',
+      'GET /api/exec/projects（issueProgress 随行）· POST /api/exec/projects · PATCH /api/exec/projects/:id · DELETE /api/exec/projects/:id（exec.write；有任务 409）',
+      'GET /api/exec/issues?status=&agentId=&projectId= · POST /api/exec/issues（assign 触发唤醒）· PATCH /api/exec/issues/:id（改派触发唤醒+血缘重物化）· POST /api/exec/issues/:id/transition · POST /api/exec/issues/:id/wake · DELETE /api/exec/issues/:id（exec.write）· GET /api/exec/lineage/:issueId（exec.read）',
+      'GET /api/exec/wakes?status=（exec.read）· GET /api/exec/runs?status= · POST /api/exec/wakeup（exec.write；API 触发源）',
+      'GET/POST /api/exec/routines · PATCH/DELETE /api/exec/routines/:id（exec.write；interval/cron/webhook 三源）· POST /api/exec/tick（exec.admin；手动调度）',
+      'POST /api/exec/webhook/:path（public selfValidated；路径即凭证，未登记/停用一律 404 fail-closed）',
+    ],
+    tools: ['exec_wakeup_status', 'exec_claim', 'exec_complete', 'exec_lineage'],
+    ui: { routes: ['#/exec'], menus: [{ group: '总览', items: ['执行中枢'] }] },
   },
   {
     dir: 'dingtalk-bridge', id: 'dsh-plugin-dingtalk-bridge', label: '钉钉桥接（群桥/出向投递/审批推送/告警通道）',
@@ -496,7 +577,7 @@ provides:
   services:
 ${plugin.services.map(([key]) => `    - ${key}`).join('\n') || '    []'}
 permissions:
-${plugin.permissions.map((p) => `  - ${p}`).join('\n') || '  []'}
+${plugin.permissions.map((p) => `${plugin.permissionComments?.[p] ? `  # ${plugin.permissionComments[p]}\n` : ''}  - ${p}`).join('\n') || '  []'}
 `)
 
   write(join(manifestDir, 'api.yaml'), `
@@ -515,7 +596,7 @@ ${plugin.services.map(([key, prop, desc]) => `  - key: ${key}\n    access: ${pro
 # 权限点声明（注册进统一 RBAC，控制台/CLI/工具共用）
 plugin: ${plugin.id}
 points:
-${plugin.permissions.map((p) => `  - ${p}`).join('\n') || '  []'}
+${plugin.permissions.map((p) => `${plugin.permissionCommentsManifest?.[p] ? `  # ${plugin.permissionCommentsManifest[p]}\n` : ''}  - ${p}`).join('\n') || '  []'}
 `)
 
   write(join(manifestDir, 'events.yaml'), `

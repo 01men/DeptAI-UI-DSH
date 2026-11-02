@@ -1,0 +1,22 @@
+[
+  {
+    "createdAt": "2026-10-20T10:06:13.923Z",
+    "updatedAt": "2026-10-20T10:06:13.923Z",
+    "id": "hb_mvgiq4yriflfh5by",
+    "agentId": "agt_mvgio9qzifioxb4y",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "at": "2026-10-20T10:06:13.923Z",
+    "outcome": "skipped_budget",
+    "detail": "Agent 主体预算（agent:agt_mvgio9qzifioxb4y）已超限，action=block"
+  },
+  {
+    "createdAt": "2026-10-20T10:06:13.923Z",
+    "updatedAt": "2026-10-20T10:06:13.923Z",
+    "id": "hb_mvgiq4yriflj1tla",
+    "agentId": "agt_mvgio9qzifioxb4y",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "at": "2026-10-20T10:06:13.923Z",
+    "outcome": "skipped_frozen",
+    "detail": "api"
+  }
+]

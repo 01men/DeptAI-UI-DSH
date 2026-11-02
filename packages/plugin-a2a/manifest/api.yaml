@@ -1,0 +1,23 @@
+# OpenAPI 摘要（REST + 服务键）—— CLI/Skill/Web 三端对齐的唯一事实源
+plugin: dsh-plugin-a2a
+base: /api
+endpoints:
+  # Agent Card 发现（well-known 协议面免鉴权；JWS Ed25519 签名，先验签后采信）
+  - GET /.well-known/agent-card.json（平台目录卡，含验签公钥）
+  - GET /.well-known/agents/:slug/agent-card.json（单员工签名卡）
+  # 目录检索（跨运行时发现）
+  - GET /api/a2a/directory
+  # A2A 主端点（JSON-RPC 2.0 方法面：message/send、message/stream、tasks/get、tasks/list、tasks/cancel）
+  - POST /api/agents/:slug/a2a（复用 v1 权限点 agent.a2a.invoke）
+  # 任务 SSE 事件流（/v1 协议面自校验 token 参数，fail-closed）
+  - GET /v1/a2a/tasks/:taskId/events
+  # 治理视图 REST（console 协作追踪数据源）
+  - GET /api/a2a/tasks · GET /api/a2a/tasks/:taskId
+  - POST /api/a2a/tasks/:taskId/acceptance（人工交付验收，验收不轻信自报）
+  - GET /api/a2a/fulfillment（协作履约视图）
+  - GET /api/a2a/rules · POST /api/a2a/rules · DELETE /api/a2a/rules/:id
+  - POST /api/a2a/patrol/run · GET /api/a2a/patrols（声明授权一致性巡检）
+services:
+  - key: a2aCollab
+    access: ctx.a2aCollab
+    description: A2A 协作平面——Agent Card 签名/目录/JSON-RPC 方法面/治理五查/协商引擎/验收与巡检

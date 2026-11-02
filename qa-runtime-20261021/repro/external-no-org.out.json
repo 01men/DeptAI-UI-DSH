@@ -1,0 +1,13 @@
+{
+  "principalKind": "external",
+  "dispatch": {
+    "ok": true,
+    "state": "auth_required"
+  },
+  "tasksGet": {
+    "code": -32003,
+    "message": "无权查看该任务（超出你的组织可见范围）"
+  },
+  "tasksListCount": 0,
+  "verdict": "FAIL（无法读取自己发起的任务；外部集成闭环断裂）"
+}

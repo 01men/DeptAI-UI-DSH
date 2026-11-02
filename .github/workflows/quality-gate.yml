@@ -1,0 +1,82 @@
+# 元冰可（YuanBingKe）质量闸门（EXEC-CHECKLIST 3.2）：CI 双轨。
+#
+# 双轨原则：
+#   - 独立宿主轨（job `gate`）：平台以 cordis 独立宿主自举，是交付承诺的一部分，
+#     必须绿——它背书 PR 合入与 main 的 SLA。
+#   - dsh 挂载轨（job `dsh-compat`）：平台作为插件挂进 dsh 宿主的兼容性探测，
+#     属实验性质——dsh 为外部依赖，其抖动不应阻塞平台交付，故允许红
+#     （continue-on-error）且仅手动触发。
+# 本文件取代 selftest.yml（历史经 git rm 保留）；原 P95 阈值键原样折叠进 gate。
+#   P95_GATE_LOGIN_MS    登录换票 P95 上限（默认 800ms）
+#   P95_GATE_INVOKE_MS   connector invoke P95 上限（默认 1500ms）
+name: quality-gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        # 24 = 主线（CONTRIBUTING 实测版本）；22.14 = 类型剥离尚未默认开启的 Node 线（22.18 / 23.6 起才默认），
+        # 守住 engines >=22.6 的承诺：selftest 自守卫与 npm scripts 内联 --experimental-strip-types 在此轨实证（issue #4 回归护栏）
+        node: ['22.14', '24']
+    name: gate (node ${{ matrix.node }})
+    env:
+      P95_GATE_LOGIN_MS: '800'
+      P95_GATE_INVOKE_MS: '1500'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: CLI dry-run safety tests
+        run: npm run test:cli
+      - name: Manifest lint (manifests ↔ implementation)
+        run: npm run lint:manifests
+      - name: Boot-order lint (依赖先于使用)
+        run: npm run lint:boot-order
+      - name: CJK coverage lint
+        run: npm run lint:cjk
+      - name: i18n coverage lint (三语文案覆盖率 ≥95%，文件级)
+        run: npm run lint:i18n
+      - name: Realtime transport tests (SSE 优先 + 轮询降级)
+        run: node packages/plugin-console/public/js/realtime.test.mjs
+      - name: Theme prototypes and execution heartbeat tests
+        run: |
+          node --test packages/plugin-console/public/js/theme.test.mjs packages/plugin-console/public/js/theme-integration.test.mjs
+          node --experimental-strip-types --test packages/plugin-exec-hub/src/timer-permission.test.mjs packages/plugin-panel-core/src/metering-org.test.mjs
+      - name: Selftest (全量断言 incl. P95 gate & fault injection)
+        run: npm run selftest
+      # test:contracts 由耦合组添加，可能尚未存在：--if-present 兼容空缺
+      - name: Contract tests
+        run: npm run test:contracts --if-present
+
+  dsh-compat:
+    # 实验轨：仅手动触发，避免 push/PR 被 dsh 侧网络抖动拖累
+    if: github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: ['0.1.0-rc.7', '0.1.0-rc.9']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: dsh compatibility probe (五项断言)
+        run: node scripts/check-dsh-compat.mjs ${{ matrix.dsh }}

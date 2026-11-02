@@ -1,15 +1,20 @@
 # 插件声明：id、版本、依赖与权限点（插件标准解剖结构）
 id: dsh-plugin-mcp
-version: 1.1.0
+version: 1.5.0
 label: MCP 部署服务
 depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam', 'dsh-plugin-audit']
 provides:
   services:
     - mcpRegistry
+    - mcpToolRisks
 permissions:
   - mcp.service.read
+  # W3-T5（MCP 治理契约 §12/§15）：scope 模板读取点（scope-template，dry 语义）
+  - mcp.permgroup.read
   - mcp.service.write
   - mcp.service.deploy
   - mcp.service.offline
   - mcp.permgroup.write
   - mcp.invoke
+  # W 批次 W1（V11 根治）：MCP 工具风险登记审批（登记/两级审批/重审清单/退场）
+  - mcp.risk.admin

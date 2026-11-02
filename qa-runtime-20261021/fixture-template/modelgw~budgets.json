@@ -1,0 +1,27 @@
+[
+  {
+    "createdAt": "2026-10-20T10:04:46.817Z",
+    "updatedAt": "2026-10-20T10:04:46.817Z",
+    "id": "mbgt_mvgio9r5ifiu466w",
+    "modelSlug": "*",
+    "subject": "agent:agt_mvgio9qnifi6tuw3",
+    "dailyLimitCents": 0,
+    "monthlyLimitCents": 0,
+    "warnRatio": 0.8,
+    "action": "block",
+    "enabled": true
+  },
+  {
+    "createdAt": "2026-10-20T10:05:03.617Z",
+    "updatedAt": "2026-10-20T10:05:03.617Z",
+    "id": "mbgt_mvgiomptifkwrubm",
+    "modelSlug": "*",
+    "subject": "agent:agt_mvgio9qzifioxb4y",
+    "freezeAgent": true,
+    "dailyLimitCents": 0,
+    "monthlyLimitCents": 0,
+    "warnRatio": 0.8,
+    "action": "block",
+    "enabled": true
+  }
+]

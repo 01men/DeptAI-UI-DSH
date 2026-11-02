@@ -1,0 +1,44 @@
+# 镜像构建上下文白名单化收敛（W1 批次）：运行时只读 src/ packages/ docs/ 与根 package*.json、
+# cordis*.yml（Dockerfile 逐项 COPY）；本文件负责把其余一切挡在构建上下文外——
+# 尤其 data*/（含历史 QA 数据目录，体量大且含实例状态）、node_modules、.git 与内部过程物料。
+
+# 版本控制与本地工具状态
+.git
+.zcode
+.workbuddy
+.github
+.vscode
+.DS_Store
+**/.DS_Store
+
+# 依赖与本地产物（容器内 npm ci 全新安装）
+node_modules
+**/node_modules
+logs
+*.log
+boot.log
+*.tmp
+
+# 数据目录：实例全部状态，绝不进镜像（.gitignore 已排除 data/ 与 data-*/，此处双保险）
+data
+data-*
+data-selftest*
+data-qa-*
+
+# 非运行时目录：测试 / 工具链 / 集成样例 / 归档（docs/ 除外——/docs 白名单伺服需要）
+tests
+scripts
+cli
+skills
+integrations
+archive
+
+# 根目录过程物料（内部文档在 docs/internal/，一并挡住）
+docs/internal
+README_副本.md
+llms.txt
+*.zip
+交互重设计-设计稿.html
+数字员工二期开发计划-20261015.md
+数字员工与平台资源调用-技术关联与施工实施路径-20261015.md
+测试报告-前后端整体适配验收-20261015

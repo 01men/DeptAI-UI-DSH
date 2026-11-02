@@ -6,6 +6,7 @@
  * 离域即拒绝并发 `connector.odd_exit`（走 OPT-P1-04 总线落审计）。
  * 边界从此可计算：目录外 action、陈旧目录、时间窗外调用不再依赖"admin 兜底"被动防御。
  */
+import { t } from '../../platform-i18n/src/index.ts'
 
 export interface OddDeclaration {
   /** provider（service）白名单：'*' 或显式列表；未声明=不限制。 */
@@ -48,27 +49,31 @@ export function inOdd(
   const now = options.now ?? new Date()
 
   if (Array.isArray(odd.allowedServices) && !odd.allowedServices.includes(action.service)) {
-    reasons.push(`provider ${action.service} 不在 ODD 白名单（允许：${odd.allowedServices.join('、') || '空'}）`)
+    reasons.push(t('provider {service} 不在 ODD 白名单（允许：{allowed}）', { service: action.service, allowed: odd.allowedServices.join('、') || t('空') }))
   }
 
   if (Array.isArray(odd.excludedActions) && odd.excludedActions.includes(action.id)) {
-    reasons.push(`action ${action.id} 在 ODD 显式排除清单内`)
+    reasons.push(t('action {action} 在 ODD 显式排除清单内', { action: action.id }))
   }
 
   if (typeof odd.dataFreshnessMinutes === 'number' && odd.dataFreshnessMinutes > 0) {
     const syncedAt = options.catalogSyncedAt ? Date.parse(options.catalogSyncedAt) : NaN
     if (Number.isNaN(syncedAt)) {
-      reasons.push('目录缺少同步时间戳，无法证明数据新鲜度（fail-closed）')
+      reasons.push(t('目录缺少同步时间戳，无法证明数据新鲜度（fail-closed）'))
     } else {
       const ageMinutes = (now.getTime() - syncedAt) / 60_000
       if (ageMinutes > odd.dataFreshnessMinutes) {
-        reasons.push(`目录数据已陈旧：距上次同步 ${Math.floor(ageMinutes)} 分钟，超过 ODD 阈值 ${odd.dataFreshnessMinutes} 分钟`)
+        reasons.push(t('目录数据已陈旧：距上次同步 {age} 分钟，超过 ODD 阈值 {threshold} 分钟', { age: Math.floor(ageMinutes), threshold: odd.dataFreshnessMinutes }))
       }
     }
   }
 
   if (odd.activeHours && !inActiveHours(now, odd.activeHours)) {
-    reasons.push(`当前时间 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} 在 ODD 许可时间窗（${odd.activeHours.start}:00–${odd.activeHours.end}:00）之外`)
+    reasons.push(t('当前时间 {time} 在 ODD 许可时间窗（{start}:00–{end}:00）之外', {
+      time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+      start: odd.activeHours.start,
+      end: odd.activeHours.end,
+    }))
   }
 
   return { in: reasons.length === 0, reasons }
@@ -90,21 +95,21 @@ export function normalizeOdd(input: unknown): OddDeclaration | undefined {
       && odd.allowedServices.every((item) => typeof item === 'string' && item.trim() !== '')) {
       normalized.allowedServices = odd.allowedServices
     } else {
-      throw new Error(`ODD 声明非法：allowedServices 须为 '*' 或非空字符串数组（收到 ${JSON.stringify(odd.allowedServices)}）`)
+      throw new Error(t('ODD 声明非法：allowedServices 须为 \'*\' 或非空字符串数组（收到 {value}）', { value: JSON.stringify(odd.allowedServices) }))
     }
   }
   if (odd.excludedActions !== undefined) {
     if (Array.isArray(odd.excludedActions) && odd.excludedActions.every((item) => typeof item === 'string' && item.trim() !== '')) {
       if (odd.excludedActions.length > 0) normalized.excludedActions = [...odd.excludedActions]
     } else {
-      throw new Error(`ODD 声明非法：excludedActions 须为非空字符串数组（收到 ${JSON.stringify(odd.excludedActions)}）`)
+      throw new Error(t('ODD 声明非法：excludedActions 须为非空字符串数组（收到 {value}）', { value: JSON.stringify(odd.excludedActions) }))
     }
   }
   if (odd.dataFreshnessMinutes !== undefined) {
     if (typeof odd.dataFreshnessMinutes === 'number' && Number.isFinite(odd.dataFreshnessMinutes) && odd.dataFreshnessMinutes > 0) {
       normalized.dataFreshnessMinutes = odd.dataFreshnessMinutes
     } else {
-      throw new Error(`ODD 声明非法：dataFreshnessMinutes 须为正数（分钟），收到 ${JSON.stringify(odd.dataFreshnessMinutes)}`)
+      throw new Error(t('ODD 声明非法：dataFreshnessMinutes 须为正数（分钟），收到 {value}', { value: JSON.stringify(odd.dataFreshnessMinutes) }))
     }
   }
   if (odd.activeHours !== undefined) {
@@ -113,7 +118,7 @@ export function normalizeOdd(input: unknown): OddDeclaration | undefined {
     if (valid(start) && valid(end)) {
       normalized.activeHours = { start, end }
     } else {
-      throw new Error(`ODD 声明非法：activeHours.start/end 须为 0-23 的整数（本地时，24h 制），收到 ${JSON.stringify(odd.activeHours)}`)
+      throw new Error(t('ODD 声明非法：activeHours.start/end 须为 0-23 的整数（本地时，24h 制），收到 {value}', { value: JSON.stringify(odd.activeHours) }))
     }
   }
   return Object.keys(normalized).length > 0 ? normalized : undefined

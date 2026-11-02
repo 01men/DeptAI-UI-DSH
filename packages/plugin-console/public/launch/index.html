@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YBK · Enterprise AI Asset Governance — one control plane for every MCP server, skill, agent, and AI app</title>
+<meta name="description" content="YBK turns every MCP server, Skill, Agent and AI app in your company into an asset you can govern, cost and audit. Fully self-hosted, MIT.">
+<meta property="og:title" content="YBK · Enterprise AI Asset Governance">
+<meta property="og:description" content="One control plane for every MCP server, skill, agent, and AI app.">
+<meta property="og:image" content="https://demo.ybkkasi.com/launch/img/ph-thumbnail-1200x630.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://demo.ybkkasi.com/launch">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="YBK · Enterprise AI Asset Governance">
+<meta name="twitter:description" content="One control plane for every MCP server, skill, agent, and AI app. Self-hosted, MIT.">
+<meta name="twitter:image" content="https://demo.ybkkasi.com/launch/img/ph-thumbnail-1200x630.jpg">
+<link rel="icon" href="/ybk-mark.png">
+<style>
+:root{
+  --bg:#f8f6f3; --surface:#fffdfb; --border:#e0ddd8; --border-strong:#d1cdc6;
+  --t1:#231f1d; --t2:#4d4643; --t3:#706864;
+  --brand:#0a5f87; --brand-deep:#084a68; --brand-soft:#e8f1f6;
+  --ok:#2F9E44; --warn:#E8590C;
+  --r:8px; --r-lg:14px;
+  --font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);font-size:16px;line-height:1.6;color:var(--t1);background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--brand);text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:0;z-index:20;background:rgba(248,246,243,.88);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border)}
+.navin{max-width:1080px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:20px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.01em;color:var(--t1)}
+.logo img{width:26px;height:26px;border-radius:6px}
+.navlinks{display:flex;gap:22px;margin-left:auto;font-size:14px;color:var(--t2);flex-wrap:wrap}
+.navlinks a:hover{color:var(--brand)}
+@media(max-width:760px){.navlinks{display:none}}
+
+/* ---------- hero ---------- */
+.hero{padding:76px 0 56px;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);background:var(--brand-soft);border:1px solid #cfe0ea;border-radius:999px;padding:5px 13px}
+h1{font-size:clamp(32px,5.2vw,52px);line-height:1.12;letter-spacing:-.025em;margin:22px 0 16px;font-weight:750}
+h1 .sub{display:block;font-size:clamp(17px,2.3vw,23px);font-weight:450;color:var(--t2);letter-spacing:-.01em;margin-top:16px;line-height:1.45}
+.lede{font-size:17px;color:var(--t2);max-width:720px;margin:0 auto 30px}
+.cn{font-size:14.5px;color:var(--t3);margin-top:10px}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;padding:12px 22px;border-radius:var(--r);border:1px solid transparent;transition:transform .12s ease,box-shadow .12s ease}
+.btn:hover{transform:translateY(-1px)}
+.btn-p{background:var(--brand);color:#fff;box-shadow:0 1px 2px rgba(10,95,135,.25)}
+.btn-p:hover{background:var(--brand-deep);box-shadow:0 6px 18px rgba(10,95,135,.22)}
+.btn-s{background:var(--surface);color:var(--t1);border-color:var(--border-strong)}
+.btn-s:hover{border-color:var(--brand);color:var(--brand)}
+.btn-note{font-size:12.5px;color:var(--t3);margin-top:16px}
+
+/* ---------- metrics ---------- */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-top:44px}
+.m{background:var(--surface);padding:20px 12px;text-align:center}
+.m b{display:block;font-size:25px;font-weight:700;letter-spacing:-.02em;color:var(--brand)}
+.m span{font-size:12px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+
+/* ---------- section ---------- */
+section{padding:64px 0}
+.sec-head{max-width:720px;margin-bottom:36px}
+.kicker{font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--brand);margin-bottom:10px}
+h2{font-size:clamp(24px,3.4vw,34px);line-height:1.2;letter-spacing:-.022em;font-weight:720;margin-bottom:12px}
+.sec-head p{color:var(--t2);font-size:16.5px}
+hr.sep{border:0;border-top:1px solid var(--border);margin:0}
+
+/* ---------- cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px}
+.card h3{font-size:17px;font-weight:680;letter-spacing:-.01em;margin-bottom:9px;display:flex;align-items:center;gap:9px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--brand);flex:none}
+.card p{font-size:14.5px;color:var(--t2);line-height:1.62}
+.card code{font-family:var(--mono);font-size:12.5px;background:var(--brand-soft);padding:1px 6px;border-radius:4px;color:var(--brand-deep)}
+
+/* ---------- shot ---------- */
+.shot{border:1px solid var(--border-strong);border-radius:var(--r-lg);overflow:hidden;background:var(--surface);box-shadow:0 1px 2px rgba(35,31,29,.05)}
+.shot img{display:block;width:100%;height:auto}
+.shot-cap{padding:13px 17px;font-size:13.5px;color:var(--t3);border-top:1px solid var(--border)}
+.shot-cap b{color:var(--t1);font-weight:640}
+
+/* ---------- compare ---------- */
+table{width:100%;border-collapse:collapse;font-size:14.5px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:650;background:#fbfaf8}
+tr:last-child td{border-bottom:0}
+td b{font-weight:640}
+.yes{color:var(--ok);font-weight:600}
+.no{color:var(--t3)}
+.tbl-wrap{overflow-x:auto}
+
+/* ---------- gallery ---------- */
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.gal .shot-cap{font-size:13px}
+
+/* ---------- code ---------- */
+pre{background:#1c1917;color:#e8e2dc;border-radius:var(--r-lg);padding:20px 22px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.75}
+pre .c{color:#8b837c}
+pre .p{color:#7cc4e0}
+
+/* ---------- faq ---------- */
+details{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px 18px;margin-bottom:9px}
+summary{cursor:pointer;font-weight:640;font-size:15px}
+details p{margin-top:11px;font-size:14.5px;color:var(--t2)}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--border);padding:44px 0 60px;text-align:center;color:var(--t3);font-size:13.5px}
+footer .links{display:flex;gap:20px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+.cta2{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:28px 0 14px}
+</style>
+</head>
+<body>
+
+<nav><div class="navin">
+  <div class="logo"><img src="/ybk-mark.png" alt=""><span>YBK · 元冰可</span></div>
+  <div class="navlinks">
+    <a href="#why">Why</a>
+    <a href="#cost">Cost</a>
+    <a href="#govern">Govern</a>
+    <a href="#shots">Screens</a>
+    <a href="#run">Self-host</a>
+    <a href="#faq">FAQ</a>
+    <a href="https://github.com/01men/ybkkasi" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="eyebrow">Open source · MIT · Self-hosted</span>
+  <h1>One control plane for every MCP server, skill, agent, and AI app
+    <span class="sub">Your company is wiring agents and tools together faster than anyone can track them. YBK turns all of it into an asset you can govern, cost, and audit.</span>
+  </h1>
+  <p class="lede">七类 AI 资产统一台账 · 成本三维归因 · 生命周期状态机 · 94 个权限点 · 完整审计留痕</p>
+  <p class="cn">元冰可 · 企业 AI 资源管理平台 — 完全自托管，中文企业内网可直接私有化部署</p>
+  <div class="cta" style="margin-top:28px">
+    <a class="btn btn-p" href="https://demo.ybkkasi.com" target="_blank" rel="noopener">Open the live demo →</a>
+    <a class="btn btn-s" href="https://github.com/01men/ybkkasi" target="_blank" rel="noopener">Star on GitHub</a>
+  </div>
+  <p class="btn-note">The demo is a read-only snapshot with real seed data — no signup, nothing to install.</p>
+
+  <div class="metrics">
+    <div class="m"><b>7</b><span>asset types</span></div>
+    <div class="m"><b>94</b><span>permission points</span></div>
+    <div class="m"><b>499</b><span>REST routes</span></div>
+    <div class="m"><b>98</b><span>MCP tools</span></div>
+    <div class="m"><b>1819</b><span>assertions green</span></div>
+    <div class="m"><b>0</b><span>added dependencies</span></div>
+  </div>
+</div></header>
+
+<hr class="sep">
+
+<section id="why"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">The problem</div>
+    <h2>Agent sprawl is a bookkeeping problem, not a tooling problem</h2>
+    <p>Most teams now have MCP servers, prompt skills, autonomous agents and internal AI apps running in production. Nobody has one place that answers: who owns this, what does it cost, who is allowed to call it, and what happened last Tuesday.</p>
+  </div>
+  <div class="cards">
+    <div class="card"><h3><span class="dot"></span>Five ledgers, no ledger</h3><p>Observability tools watch traces. IAM tools issue credentials. Cost tools read invoices. None of them agree on what an "asset" is — so nothing can be retired.</p></div>
+    <div class="card"><h3><span class="dot"></span>Totals don't cut costs</h3><p>"Spend is up 30%" is not an answer. You need to attribute it to <b>department × agent × skill</b> before you can act on it.</p></div>
+    <div class="card"><h3><span class="dot"></span>SaaS can't hold your keys</h3><p>Source code, prompts, tool credentials and audit logs sit inside your firewall. Most AI tooling today assumes the opposite.</p></div>
+  </div>
+</div></section>
+
+<hr class="sep">
+
+<section id="cost"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">The differentiator</div>
+    <h2>Cost attribution, not cost observation</h2>
+    <p>Trace viewers tell you what happened. YBK tells you <b>which department, which agent, and which skill</b> is responsible — the three axes you need to actually cut a number.</p>
+  </div>
+  <figure class="shot" style="margin:0">
+    <img src="/launch/img/20-usage-cost.jpg" alt="YBK usage and cost attribution dashboard showing cost broken down by department, agent and skill" width="1600" height="1000" fetchpriority="high">
+    <figcaption class="shot-cap"><b>Usage &amp; cost</b> — three-axis attribution (department × agent × skill), with per-asset trend and budget burn.</figcaption>
+  </figure>
+</div></section>
+
+<hr class="sep">
+
+<section id="govern"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">Governance</div>
+    <h2>One ledger, one identity, one audit trail</h2>
+    <p>MCP services, Skills, Agents, AI apps and NAS hosts all live in the same inventory with the same lifecycle state machine — so retiring a stale agent is a state change, not a scavenger hunt.</p>
+  </div>
+  <div class="cards">
+    <div class="card"><h3><span class="dot"></span>Lifecycle state machine</h3><p>Draft → registered → active → deprecated → retired, with dependency topology so you can see the blast radius before you change anything.</p></div>
+    <div class="card"><h3><span class="dot"></span>94 permission points</h3><p>Fine-grained <code>resource.action</code> permissions enforced server-side on 499 REST routes and 98 MCP tools. Read and write are genuinely separated.</p></div>
+    <div class="card"><h3><span class="dot"></span>Immutable audit log</h3><p>Every mutation records actor, target, before/after and approval chain. Exports as JSON for your SIEM.</p></div>
+    <div class="card"><h3><span class="dot"></span>Approval workflows</h3><p>Registering or promoting an asset routes through approvers. Demo data includes real approval chains.</p></div>
+  </div>
+</div></section>
+
+<hr class="sep">
+
+<section id="how"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">How it compares</div>
+    <h2>Where YBK sits</h2>
+    <p>These tools solve adjacent problems well. YBK's scope is the whole inventory — identity, cost, lifecycle and audit together.</p>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Capability</th><th>YBK</th><th>Trace / LLM observability</th><th>Agent identity (IGA)</th><th>Generic CMDB</th></tr></thead>
+    <tbody>
+      <tr><td>Unified asset ledger (5 types)</td><td class="yes">Yes</td><td class="no">No</td><td class="no">Partial</td><td class="no">Partial</td></tr>
+      <tr><td>Cost attribution (dept × agent × skill)</td><td class="yes">Yes</td><td class="no">Spend totals only</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td>Lifecycle state machine</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td></tr>
+      <tr><td>Dependency blast-radius analysis</td><td class="yes">Yes</td><td class="no">Call graph only</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td>Fully self-hosted + MIT</td><td class="yes">Yes</td><td class="no">SaaS / paid self-host</td><td class="no">Self-host varies</td><td class="no">Paid</td></tr>
+      <tr><td>Zero added dependencies</td><td class="yes">Yes</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+      <tr><td>zh-CN / en-US / ja-JP</td><td class="yes">Yes</td><td class="no">EN only</td><td class="no">EN only</td><td class="varies">Varies</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:14px;font-size:13.5px;color:var(--t3)">Competitor capabilities change fast — this table reflects what was publicly documented when this page was built.</p>
+</div></section>
+
+<hr class="sep">
+
+<section id="shots"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">Real screenshots</div>
+    <h2>Everything below is the live system</h2>
+    <p>Captured from the public read-only demo instance with real seed data. No mockups, no design mock data.</p>
+  </div>
+  <div class="gal">
+    <figure class="shot" style="margin:0"><img src="/launch/img/21-audit.jpg" alt="YBK audit log" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>Audit log</b> — actor, target, before/after</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/22-skills.jpg" alt="YBK skill registry" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>Skills</b> — prompt/skill assets</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/23-agents.jpg" alt="YBK agent registry" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>Agents</b> — autonomous assets</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/24-mcps.jpg" alt="YBK MCP server registry" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>MCP services</b> — server inventory</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/25-roles.jpg" alt="YBK roles and permissions" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>Roles</b> — 94 permission points</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/26-approvals.jpg" alt="YBK approval workflows" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>Approvals</b> — promotion chains</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/27-financial.jpg" alt="YBK financial view" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>FinOps</b> — budget burn</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/28-orgs.jpg" alt="YBK organization view" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>Organizations</b> — ownership</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/29-apps.jpg" alt="YBK AI app registry" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>AI apps</b> — the fifth asset type</figcaption></figure>
+    <figure class="shot" style="margin:0"><img src="/launch/img/30-nas.jpg" alt="YBK NAS host connections" loading="lazy" width="1600" height="1000"><figcaption class="shot-cap"><b>Host connections</b> — NAS / self-hosted hosts</figcaption></figure>
+  </div>
+</div></section>
+
+<hr class="sep">
+
+<section id="run"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">Self-host</div>
+    <h2>Runs on Node 22. No build step, no database server.</h2>
+    <p>Native TypeScript executed directly by Node, with <code>node:sqlite</code> for storage. We added zero runtime dependencies — the audit log and the ledger are the product, not an afterthought.</p>
+  </div>
+<pre><span class="c"># clone + run (needs Node 22.6+)</span>
+git clone https://github.com/01men/ybkkasi.git
+cd ybkkasi &amp;&amp; npm install &amp;&amp; npm start   <span class="c"># → http://127.0.0.1:7300</span>
+
+<span class="c"># or with Docker</span>
+docker compose up -d          <span class="c"># Dockerfile + docker-compose.yml included</span>
+
+<span class="c"># verify it works</span>
+npm run selftest              <span class="c"># 1819 assertions</span></pre>
+  <p style="margin-top:14px;font-size:13.5px;color:var(--t3)">Also available as 98 MCP tools, so an agent can read its own governance state.</p>
+</div></section>
+
+<hr class="sep">
+
+<section id="faq"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">FAQ</div>
+    <h2>Questions people actually ask</h2>
+  </div>
+  <details><summary>Is this another "AI governance" wrapper on top of an LLM gateway?</summary><p>No — and the distinction matters. LLM gateways sit in the request path. YBK sits in the inventory layer: it knows what assets exist, what they cost, who owns them and what their blast radius is when you change them. Many teams run both.</p></details>
+  <details><summary>How is this different from a trace viewer like LangSmith or Helicone?</summary><p>They answer "what happened in this request". YBK answers "which department, agent and skill is responsible for this spend, and who approved running it". Trace data is an input to that question, not the answer.</p></details>
+  <details><summary>Who maintains it?</summary><p>One person. That is a real limitation and worth stating plainly. The mitigations are architectural rather than promissory: MIT source you can read today, self-hosting so nothing breaks if I disappear, and 1819 assertions in CI so regressions surface immediately.</p></details>
+  <details><summary>Does it support multi-tenant / SaaS deployment?</summary><p>The architecture supports org-level isolation and there is a five-platform theme system, but the hosted SaaS path is not the product today. The product is the self-hosted instance you run inside your own network.</p></details>
+  <details><summary>Is the demo I can click the real product?</summary><p>It is the real product running against seeded data in read-only mode. Write operations return 405 by design. To try writes, self-host it.</p></details>
+  <details><summary>What about credential hosting and rotation?</summary><p>Long-lived third-party credentials (API keys, internal service tokens) now have a platform home: registered values are AES-256-GCM encrypted at rest, retrieval requires a dedicated permission point (app.credential.fetch) with per-access audit, and rotation is a same-key overwrite (old value invalid immediately). Short-lived workload identity (SPIFFE-style) for agent runtimes remains on the roadmap; agent platform identities today use rotatable machine credentials.</p></details>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="cta2">
+    <a class="btn btn-p" href="https://demo.ybkkasi.com" target="_blank" rel="noopener">Open the live demo →</a>
+    <a class="btn btn-s" href="https://github.com/01men/ybkkasi" target="_blank" rel="noopener">Source on GitHub</a>
+    <a class="btn btn-s" href="#run">Self-host in 60s</a>
+  </div>
+  <div class="links">
+    <a href="https://github.com/01men/ybkkasi" target="_blank" rel="noopener">Repository</a>
+    <a href="https://github.com/01men/ybkkasi/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Architecture</a>
+    <a href="https://github.com/01men/ybkkasi/issues" target="_blank" rel="noopener">Issues</a>
+    <a href="https://github.com/01men/ybkkasi/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+    <a href="https://demo.ybkkasi.com" target="_blank" rel="noopener">Demo console</a>
+  </div>
+  <p>YBK · 元冰可 — Enterprise AI Asset Governance · v1.5.0 · MIT licensed · Hangzhou YuanBingKe Technology</p>
+</div></footer>
+
+</body>
+</html>

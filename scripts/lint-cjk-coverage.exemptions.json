@@ -1,0 +1,1414 @@
+{
+  "exemptions": [
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/app.js::dingtalk",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/asset-filters.js::agent",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/asset-filters.js::skill",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/asset-filters.js::model",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/cmdk.js::hashchange",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/connections.js::local",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/errors.js::expired",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/landing.js::console",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/next-redirect.js::next",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/next-redirect.js::#entry_ticket=",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/onboarding.js::curl -s -X POST /api/auth/client-credentials",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/onboarding.js::-d '{\"clientId\":\"\",\"clientSecret\":\"\"}'",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/onboarding.js::curl -s -X POST /api/agents//metrics-report",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/onboarding.js::-d '{\"dau\":1,\"sessions\":1,\"uniqueUsers\":1}'",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/onboarding.js::curl -s -X POST /api/apps//metrics-report",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/onboarding.js::-d '{\"dau\":1,\"sessions\":1,\"avgDepth\":1,\"retention7\":0}'",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/onboarding.js::POST /api/apps//sso-client -H \"Authorization: Bearer <token>\"",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/a2a.js::error",
+      "reason": "UI 语义 tone 枚举（toast(message, 'error') 的提示级别协议值，CSS 类 toast-error 消费，非用户文案）；销账条件：该字面量改为中文文案或 toast 签名变更时复核（A2A 协作页新增，2026-10-20）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::#entry_ticket=",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::_blank",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::noopener",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::agents",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::ownerName",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::action",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::userId",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::overview",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::groups",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::draft",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::archived",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::attr_",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::tags_",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::entryUrl",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::code",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::id_token / access_token",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::POST /api/agents//sso-client",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::confidential",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/agents.js::client_id:     \r\nclient_secret:",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/approvals.js::pending",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/approvals.js::approve",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/approvals.js::reject",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/approvals.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/approvals.js::agent",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/approvals.js::plug",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/approvals.js::checkSquare",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::server",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::plug",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::<img class=\"res-icon\" src=\"\" alt=\"\" referrerpolicy=\"no-referrer\" style=\"object-f",
+      "reason": "CSS 样式值料；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::#entry_ticket=",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::_blank",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::noopener",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::apps",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::appType",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::action",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::<img src=\"\" alt=\"\" referrerpolicy=\"no-referrer\" style=\"width:22px;height:22px;bo",
+      "reason": "HTML/SVG 片段料（模板机制串）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::draft",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::archived",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::topology",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::code",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::id_token / access_token",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::POST /api/apps//sso-client",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::issuer",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::authorize",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::userinfo",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::POST /api/authn/entry-tickets/redeem",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::#entry_ticket=…",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::sparkles",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/apps.js::<path d=\"M, C, , ,\" fill=\"none\" stroke=\"#c9ccd4\" stroke-width=\"1.6\"/>",
+      "reason": "HTML/SVG 片段料（模板机制串）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/assets.js::plug",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/assets.js::sparkles",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/assets.js::server",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/assets.js::days",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/assets.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/audit.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/audit.js::dingtalk",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::frozen",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::offline",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::deprecated",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::online",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::principals",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::agent",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::external",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::principal_id: \nclient_id:     \nclient_secret:",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::action",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::client_id:     \nclient_secret:",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::discovery",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::authorize",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/authn.js::userinfo",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::export DSHCTL_URL=http://192.168.0.7:7300",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dshctl agent create",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::--model=<deepseek-chat|deepseek-reasoner|deepseek-coder>",
+      "reason": "CLI/URL 语法料；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::--riskLevel=<low|medium|high>",
+      "reason": "CLI/URL 语法料；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dshctl auth client-credentials",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dsh plugin --profile web add github:01men/ybkk-AIOS",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dshctl agent create --name=… --model=… --riskLevel=… --yes",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dshctl agent list",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dshctl connect setup",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dshctl app report",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::dshctl usage record",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::offline",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::archived",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::frozen",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connect.js::codes",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connections.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::oauth",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::api_key / custom_credential",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::riskCap",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::plug",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::margin:14px 0 8px;font-weight:600",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::muted",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::check",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::external",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::valuesJson",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::requestedScopes",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::provider",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::serviceInput",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::aliasSuffix",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::orgId",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::authType",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::_blank",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::noopener",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::read",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::shield",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::policies",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::subjects",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::policiesJson",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::rateLimitPerMin",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/connectors.js::activity",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::check",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::shieldCheck",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::alert",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::unhealthy",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::frozen",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::revoked",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::offlined",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::offline",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::deprecated",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::deployed",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::published",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::onlined",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::registered",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/dashboard.js::approval",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/finops.js::month",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/finops.js::tokens",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/conflicts.js::platform",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/conflicts.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/connectors.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/connectors.js::dingtalk",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/connectors.js::action",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/groups.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/helpers.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/members.js::move",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/members.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/members.js::parentId",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/members.js::fixed",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/members.js::<input type=\"checkbox\" class=\"member-check\" data-id=\"\">",
+      "reason": "HTML/SVG 片段料（模板机制串）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/members.js::dingtalk",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/iam/roles.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/login.js::admin",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/login.js::hashchange",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/login.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/login.js::dingtalk",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/login.js::#login-ding-submit",
+      "reason": "kebab-case 协议键/类名料；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::action",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::monitor",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::http",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::stdio",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::hosted",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::book",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::users",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/mcp.js::coins",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::read",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::write",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::modify",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::share",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::admin",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::maxTtlSec",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::permanentPermission",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::effect",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::nasId",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::path",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::userIds",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::expiresAt",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::note",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::userId",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas-authz.js::paths",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::action",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::attr_",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::tags_",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::overview",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::string",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::number",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::boolean",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::offline",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::archive",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::newName",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::folder",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::entries",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::shares",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::directory",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::results",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/nas.js::matches",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/oauth.js::dingtalk",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/oauth.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/oauth.js::state",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/oauth.js::client",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/platform.js::settings",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/platform.js::layers",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/platform.js::users",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/platform.js::scroll",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/platform.js::plug",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/platform.js::sparkles",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/platform.js::fingerprint",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::skill",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::model",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::strategy",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::marketing",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::manufacturing",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::quality",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::internal",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::secret",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::confidential",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/register.js::smooth",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::users",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::shield",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::sparkles",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::skills",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::downloads",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::market",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::mine",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::review",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::action",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::readme",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::security",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::reject",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::approve",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::local",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::published",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::approved",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::rejected",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::scanning",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/skills.js::deprecated",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/realtime.js::polling",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/realtime.js::connecting",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/realtime.js::unsupported",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/ui.js::']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/ui.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/ui.js::<path d=\"\" fill=\"none\" stroke=\"\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-",
+      "reason": "HTML/SVG 片段料（模板机制串）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/ui.js::relative",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/ui.js::<input class=\"input \" name=\"\" placeholder=\"\" value=\"\">",
+      "reason": "HTML/SVG 片段料（模板机制串）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/ui.js::heng_ops_concept_",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/update.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/update.js::loading",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/update.js::git pull --ff-only + npm install",
+      "reason": "命令示例料（用户复制执行的命令行，语法契约）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::&lt;span class='mention'&gt;",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::<span class=\"mention\">",
+      "reason": "HTML/SVG 片段料（模板机制串）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::&lt;span class=\"mention\"&gt;",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::todo",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::doing",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::review",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::done",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::down",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::pending",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::error",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::panel_channel_",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::chat",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::scene",
+      "reason": "状态/动作枚举值（协议层保留 ASCII，展示经中文伴随映射）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::dingtalk",
+      "reason": "字段键/表单域 id/DOM 键（camelCase 标识符，协议层保留 ASCII）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::_blank",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-panel-core/public/js/app.js::width=520,height=640",
+      "reason": "其他机制料（逐条人审归档）；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "cli/dshctl.mjs::?path=",
+      "reason": "CLI/URL 语法料；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "cli/dshctl.mjs::?q=&kind=providers",
+      "reason": "CLI/URL 语法料；销账条件：该字面量改为中文文案或协议键变更时复核（REFACTOR-2026-10-13 阶段 2 机制料底册）"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/home.js::smooth",
+      "reason": "ScrollBehavior API 枚举值（behavior:smooth，协议层保留 ASCII，QA-20261013 移动端适配 D-1 锚点滚动引入）；销账条件：API 用法变更或该行删除时复核"
+    },
+    {
+      "kind": "literal",
+      "key": "packages/plugin-console/public/js/pages/a2a.js::context",
+      "reason": "URL 查询参数名（#/a2a?tab=tasks&context=<协作链 ID>，协议键保留 ASCII，A2AUHP 验收 C 组 G1 协作链下钻引入）；销账条件：参数名变更或该用法删除时复核"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 {
-  "name": "@ybkk/plugin-rq-card",
+  "name": "@dsh-ops/plugin-rq-card",
   "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "01门 会话侧注入插件（WP-06 演进）：四态执行卡片 + 👍/👎 反馈条 + 连接宿主向导，dsh.client 双面插件（浏览器半经 /plugins/<id>/client.js 下发）",
+  "description": "元冰可会话侧注入插件（WP-06，experimental）：四态执行卡片 + 👍/👎 反馈条，dsh.client 双面插件（浏览器半经 /plugins/<id>/client.js 下发；W5 起宿主耦合面经 host-port.ts 窄端口收敛，dsh 升级只需重跑 npm run test:contracts）",
   "exports": {
-    ".": "./dist/index.js",
+    ".": "./src/index.ts",
     "./client": {
       "default": "./lib/client.js"
     },
@@ -18,7 +18,6 @@
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-conversation",
-        "@deepseek-ai/dsh-client-ui-settings",
         "@deepseek-ai/dsh-client-locale"
       ]
     }

@@ -1,0 +1,47 @@
+  ✔ C1 后端 A2A/UHP 端点前端接线率（17/17）
+     未接端点：无
+  ✔ C1 未接端点占比 ≤ 20%
+  ✔ C1 已接端点 HTTP 方法无错配
+  ✔ C2 /api/usage/collaborations 前端接线（Q-11 重点主缺口）
+  ✔ C2 协作链区块渲染函数存在（非仅请求）
+  ✔ C3 a2a.js 文案键总数（108）
+  ✘ C3 en-US 覆盖率 ≥ 95%（缺 7）  ← ["运行时","取消","删除","{n} ms","步数预算","UHP 执行记录","{n} 小时"]
+  ✘ C3 ja-JP 覆盖率 ≥ 95%（缺 7）  ← ["运行时","取消","删除","{n} ms","步数预算","UHP 执行记录","{n} 小时"]
+  ✔ C3 词典无「中文键 → 裸协议词」翻译（如 验收通过→accepted）
+  ✔ C4 无 a2a.task.accept 权限时验收按钮隐藏（canAccept 判定）
+  ✔ C4 无权限/非完成态时给出说明文案（而非只隐藏按钮）
+  ✔ C4 a2a.admin 规则管理入口有权限判定
+  ✔ C5 平台具备 SSE 传输基建（realtime.js 支持 EventSource + 轮询降级）
+  ✘ C5【体验缺口】a2a 页未接入 SSE，长任务仅一次性快照（Q-15 未修）  ← a2a page has no SSE; only polling snapshot
+  ✔ C6 加载屏插件数与 /api/platform/info 一致
+  ✔ C6 加载屏权限点数与 /api/iam/permissions 一致
+  ✔ C6 启动文案词典无历史数字死键（84/85/94 等）
+  ✔ C7 a2a 页面已在 SPA 路由注册表中注册
+  ✔ C7 a2a.js 可被 ESM 加载（无语法/顶层错误）
+  ✔ C7 a2a.js 导出渲染入口
+
+{
+  "total": 20,
+  "passed": 17,
+  "failed": 3,
+  "failures": [
+    {
+      "group": "C",
+      "name": "C3 en-US 覆盖率 ≥ 95%（缺 7）",
+      "pass": false,
+      "detail": "[\"运行时\",\"取消\",\"删除\",\"{n} ms\",\"步数预算\",\"UHP 执行记录\",\"{n} 小时\"]"
+    },
+    {
+      "group": "C",
+      "name": "C3 ja-JP 覆盖率 ≥ 95%（缺 7）",
+      "pass": false,
+      "detail": "[\"运行时\",\"取消\",\"删除\",\"{n} ms\",\"步数预算\",\"UHP 执行记录\",\"{n} 小时\"]"
+    },
+    {
+      "group": "C",
+      "name": "C5【体验缺口】a2a 页未接入 SSE，长任务仅一次性快照（Q-15 未修）",
+      "pass": false,
+      "detail": "a2a page has no SSE; only polling snapshot"
+    }
+  ]
+}

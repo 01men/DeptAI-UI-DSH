@@ -18,6 +18,7 @@ import { randomBytes } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
 import { type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 
 export interface EntryTicketRecord extends RecordBase {
   /** 票据本体即主键（etk_ + 256bit 随机值）；兑换后立即置 consumedAt。
@@ -52,7 +53,7 @@ export class EntryTicketService extends Service {
     super(ctx, 'entryTickets')
     this.cleanupTimer = setInterval(() => this.cleanupExpired(), 24 * 3600_000)
     this.cleanupTimer.unref?.() // OPT-P3-02
-    ctx.effect(() => {
+    ctx.effect(() => () => {
       if (this.cleanupTimer) clearInterval(this.cleanupTimer)
     })
   }
@@ -70,8 +71,8 @@ export class EntryTicketService extends Service {
    *  maxTtlSeconds：票种 TTL 硬上限（self 自助票 ≤120s，交接清单 G1——覆盖 env 调高）。 */
   issue(input: { refType: 'agent' | 'app' | 'self'; refId: string; userId: string; userName: string }, options: { maxTtlSeconds?: number } = {}): { ticket: string; expiresAt: string; ttlSeconds: number } {
     const user = this.ctx.iam.users().get(input.userId)
-    if (!user) throw new Error('用户不存在')
-    if (user.status !== 'active') throw new Error('账号状态异常，无法签发入场票据')
+    if (!user) throw new Error(t('用户不存在'))
+    if (user.status !== 'active') throw new Error(t('账号状态异常，无法签发入场票据'))
     const ttlSeconds = Math.min(EntryTicketService.ttlSeconds(), options.maxTtlSeconds ?? EntryTicketService.ttlSeconds())
     const ticket = 'etk_' + randomBytes(32).toString('base64url')
     const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString()
@@ -92,12 +93,12 @@ export class EntryTicketService extends Service {
    */
   redeem(ticket: string, clientIp: string): { refType: EntryTicketRecord['refType']; refId: string; expiresAt: string; identity: EntryTicketIdentity } {
     const record = this.tickets().get(String(ticket ?? ''))
-    if (!record) throw new Error('入场票据无效')
-    if (record.consumedAt) throw new Error('入场票据已被使用（一次性，防重放）')
-    if (new Date(record.expiresAt).getTime() < Date.now()) throw new Error('入场票据已过期，请从控制台重新打开')
+    if (!record) throw new Error(t('入场票据无效'))
+    if (record.consumedAt) throw new Error(t('入场票据已被使用（一次性，防重放）'))
+    if (new Date(record.expiresAt).getTime() < Date.now()) throw new Error(t('入场票据已过期，请从控制台重新打开'))
     this.tickets().update(record.id, { consumedAt: new Date().toISOString(), consumedIp: clientIp })
     const user = this.ctx.iam.users().get(record.userId)
-    if (!user || user.status !== 'active') throw new Error('签发用户状态异常（冻结/离职联动失效）')
+    if (!user || user.status !== 'active') throw new Error(t('签发用户状态异常（冻结/离职联动失效）'))
     const org = this.ctx.iam.orgs().get(user.orgId)
     return {
       refType: record.refType,

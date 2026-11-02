@@ -1,0 +1,182 @@
+[
+  {
+    "createdAt": "2026-10-20T04:17:12.437Z",
+    "updatedAt": "2026-10-20T04:17:12.437Z",
+    "id": "a2ar_mvg69aetidxif2gw",
+    "name": "C组规则",
+    "matchKeyword": "cqa",
+    "enabled": true,
+    "createdBy": "usr_mvg65e9midmcih9e"
+  },
+  {
+    "createdAt": "2026-10-20T04:17:12.438Z",
+    "updatedAt": "2026-10-20T04:17:12.438Z",
+    "id": "a2ar_mvg69aeuidxmpofn",
+    "name": "C组规则",
+    "matchKeyword": "cqa",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:18:07.265Z",
+    "updatedAt": "2026-10-20T04:18:07.265Z",
+    "id": "a2ar_mvg6agptie6diduo",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:18:35.971Z",
+    "updatedAt": "2026-10-20T04:18:35.971Z",
+    "id": "a2ar_mvg6b2v7ie966173",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:18:51.063Z",
+    "updatedAt": "2026-10-20T04:18:51.063Z",
+    "id": "a2ar_mvg6beifiebjrfa3",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:18:57.208Z",
+    "updatedAt": "2026-10-20T04:18:57.208Z",
+    "id": "a2ar_mvg6bj94iedkn4xj",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:01.257Z",
+    "updatedAt": "2026-10-20T04:21:01.257Z",
+    "id": "a2ar_mvg6e6yxieny9w8y",
+    "name": "组A-越权取消探针",
+    "matchKeyword": "ZZOVERWRITE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:18.682Z",
+    "updatedAt": "2026-10-20T04:21:18.682Z",
+    "id": "a2ar_mvg6ekeyieolpqoe",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:27.734Z",
+    "updatedAt": "2026-10-20T04:21:27.734Z",
+    "id": "a2ar_mvg6ereeietj74j7",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:37.091Z",
+    "updatedAt": "2026-10-20T04:21:37.091Z",
+    "id": "a2ar_mvg6eymbif2c8sk7",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:52.031Z",
+    "updatedAt": "2026-10-20T04:21:52.031Z",
+    "id": "a2ar_mvg6fa5bif87p3jg",
+    "name": "组A-契约探针-取消",
+    "matchKeyword": "ZZCANCELPROBE",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:07.921Z",
+    "updatedAt": "2026-10-20T04:22:07.921Z",
+    "id": "a2ar_mvg6fmepifa4jtu0",
+    "name": "组A-E-续答探针-1792470127907",
+    "matchKeyword": "ZZRECONT",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:25.692Z",
+    "updatedAt": "2026-10-20T04:22:25.692Z",
+    "id": "a2ar_mvg6g04cifazy59u",
+    "name": "组A-E-续答探针-1792470145679",
+    "matchKeyword": "ZZRECONT",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:36.355Z",
+    "updatedAt": "2026-10-20T04:22:36.355Z",
+    "id": "a2ar_mvg6g8cjifbjvyx2",
+    "name": "组A-E-续答探针-1792470156340",
+    "matchKeyword": "ZZRECONT",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:53.949Z",
+    "updatedAt": "2026-10-20T04:22:53.949Z",
+    "id": "a2ar_mvg6glx9ifc67d4n",
+    "name": "组A-E-续答探针-1792470173935",
+    "matchKeyword": "ZZRECONT",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T10:07:22.991Z",
+    "updatedAt": "2026-10-20T10:07:22.991Z",
+    "id": "a2ar_mvgirm9bifms28gn",
+    "name": "D1-关键词敏感规则",
+    "matchKeyword": "D-AUTH-KEYWORD",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T10:07:53.115Z",
+    "updatedAt": "2026-10-20T10:07:53.115Z",
+    "id": "a2ar_mvgis9i3ifole2nu",
+    "name": "D1-关键词敏感规则",
+    "matchKeyword": "D-AUTH-KEYWORD",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T10:09:47.743Z",
+    "updatedAt": "2026-10-20T10:09:47.743Z",
+    "id": "a2ar_mvgiupy7ig0x8ta8",
+    "name": "D1-关键词敏感规则",
+    "matchKeyword": "D-AUTH-KEYWORD",
+    "enabled": true,
+    "createdBy": "usr_mvg65wukidnsk7vg"
+  },
+  {
+    "createdAt": "2026-10-20T10:20:01.600Z",
+    "updatedAt": "2026-10-20T10:20:01.600Z",
+    "id": "a2ar_mvgj7vlsigyvfm1v",
+    "name": "复核规则-1792491601599",
+    "matchKeyword": "复核取消越权",
+    "enabled": true,
+    "createdBy": "usr_mvg65e9midmcih9e"
+  },
+  {
+    "createdAt": "2026-10-20T10:20:10.765Z",
+    "updatedAt": "2026-10-20T10:20:10.765Z",
+    "id": "a2ar_mvgj82odigzhshwl",
+    "name": "lead-rule-1792491610765",
+    "matchKeyword": "LEADCANCEL",
+    "enabled": true,
+    "createdBy": "usr_mvg65e9midmcih9e"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "initial": "completed",
+  "cancelTerminalResult": {
+    "code": -32000,
+    "message": "任务已终态（completed），不可取消"
+  },
+  "finalState": "completed",
+  "verdict": "PASS（终态拒绝二次取消）"
+}

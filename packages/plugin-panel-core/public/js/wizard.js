@@ -264,7 +264,8 @@ function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
     <button class="btn wz-back" id="wzLoginBack">← 重新选择服务器</button>
     <div id="wzLoginErr" class="wz-err"></div>`
   body.querySelector('#wzLoginDd').onclick = () => {
-    window.open(`${hubPanelBase}/?next=${encodeURIComponent(localPanelUrl)}#/login`, '_blank', 'noopener')
+    // 零弹窗铁律合规（2026-10-29 架构统一）：整页跳转宿主登录页；登录成功后按 next 回跳本机面板
+    window.location.href = `${hubPanelBase}/?next=${encodeURIComponent(localPanelUrl)}#/login`
   }
   // 回导校验（G1 未采纳期的诚实降级）：本机面板与宿主跨源，浏览器同源隔离使宿主页扫码会话
   // 无法直接带回——这里只校验「本机是否已持有该连接的有效会话」：有效即进工作台；无效则如实

@@ -1,0 +1,360 @@
+  ✔ A0 账号矩阵登录（admin/ops/approver/collab/acceptor/a2aadmin/member/outsider）
+  ✔ A0 夹具：目标员工上线 + A3 调用方凭证
+  ✔ A1 平台目录卡匿名可读且为规范裸体（无 {ok,data} 信封）
+  ✔ A1 平台目录卡声明 Ed25519 验签公钥
+  ✔ A1 单员工卡 JWS 独立验签通过（Ed25519）
+  ✔ A1 篡改 card.url 后验签失败（签名真实覆盖 body）
+  ✔ A1 卡片声明 eventsUrl / securitySchemes.scopes / 协议扩展
+  ✔ A1 卡片计量双主体口径声明（callerMeteringSubject）
+  ✔ A1 不存在员工卡 404（不泄露存在性）
+  ✔ A1 UHP 发现面免鉴权 + 版本锁定 2026-08-11 + conformance=core
+  ✔ A1 UHP 发现面诚实声明 files_input/files_output=false（未做 NAS artifact）
+  ✘ A1【契约一致性】UHP 发现面应为规范裸体（当前仍包平台信封 {ok,data}，与 well-known 修复口径不一致）  ← {"topKeys":["ok","data"],"wrapped":true}
+  ✔ A1 发现面公布的 harness id 可直接作 model 调用（往返一致，非 404）
+  ✔ A2 服务面可观测（health 200，作为总线纪律前置）
+  ✔ A2 执行链路 A2A→UHP 贯通（execute_report 经 UHP 完成）
+  ✔ A2 任务 attempts=1（首次派发）
+  ✔ A2 UHP 执行记录与 A2A 任务一一对应（taskId + responseId 双向可查）
+  ✔ A2 执行记录归属字段完整（callerPrincipalId / callerKind / dispatchedByPlatform / actChainJson 落账）
+  ✔ A2 审批规则创建（a2a.admin）
+  ✔ A2 受害任务处于 auth_required（人在环等待）
+  ✔ A2 P0 护栏：外部凭证注入 ybk_a2a_task_id → 400 TASK_BINDING_FORBIDDEN
+  ✔ A2 P0 护栏：受害任务未被推进（仍 auth_required，零伪造 artifact）
+  ✔ A2 外部直调 UHP 记录不建立任务归属（无 task_id）
+  ✔ A2 仓储面存在 progress 来源拒绝审计通道（可观测）
+  ✔ A3 八态枚举在任务集合中可观测（≥5 态，含终态与非终态）
+  ✔ A3 任务 history 状态迁移成链（含 status 条目）
+  ✔ A3 completed 任务带 finishedAt/startedAt（时序可审计）
+  ✔ A3 协商矩阵拒绝任务 mode=rejected（不再误记 single_turn）
+  ✔ A4 协商矩阵 16 格与方案 §6.4 逐格一致（纯函数）
+  ✔ A4 A3×A3 要约接受 → 自动执行 completed（协议行为真实）
+  ✔ A4 协商要约双向留痕（offers ≥1 + history type=offer）
+  ✔ A4 还价 → input_required，3 轮超限 → rejected（轮次上限硬约束）
+  ✔ A5 同幂等键重放返回原 response（不重复执行）
+  ✔ A5 审批恢复幂等（completed + attempts=1，无重复执行）
+  ✔ A5 协作链计量按 contextId 归集（calls=1）
+  ✔ A5 计量幂等键含 taskId 与 attempt 序号（两层同形）
+  ✔ A5 计量事件带 context_id 列（additive 迁移生效）
+  ✔ A6 message/stream 返回 JSON-RPC Task（与 message/send 同构，非裸 SSE）
+  ✔ A6 tasks/list 方法可用且返回数组
+  ✔ A7 请求级 tools/functions/mcp_servers 注入接受但不生效（ignored_fields 留痕）
+  ✔ A7 previous_response_id 续接继承 session_id（可靠归组键）
+  ✔ A7 续接把上一轮 assistant 回答回填进上下文（stub 实收）
+  ✔ A7 UHP 无令牌 401 fail-closed
+  ✔ A7 UHP 无 uhp.invoke → 403
+  ✔ A7 SSE 无令牌 401 / 坏令牌 401（错误码规范，不混入 400）
+  ✔ A7 SSE 带令牌建立（text/event-stream + 历史快照）
+  ✔ A8 一致性巡检捕获 harness 幽灵引用（声明>授权的漂移）
+  ✔ A8 巡检报告可回溯查询（/api/a2a/patrols）
+  ✔ A8 隔离组织账号目录零可见（组织子树收敛）
+
+{
+  "group": "A",
+  "total": 49,
+  "passed": 48,
+  "failed": 1,
+  "failures": [
+    {
+      "group": "A",
+      "name": "A1【契约一致性】UHP 发现面应为规范裸体（当前仍包平台信封 {ok,data}，与 well-known 修复口径不一致）",
+      "pass": false,
+      "detail": "{\"topKeys\":[\"ok\",\"data\"],\"wrapped\":true}"
+    }
+  ],
+  "rows": [
+    {
+      "group": "A",
+      "name": "A0 账号矩阵登录（admin/ops/approver/collab/acceptor/a2aadmin/member/outsider）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A0 夹具：目标员工上线 + A3 调用方凭证",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 平台目录卡匿名可读且为规范裸体（无 {ok,data} 信封）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 平台目录卡声明 Ed25519 验签公钥",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 单员工卡 JWS 独立验签通过（Ed25519）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 篡改 card.url 后验签失败（签名真实覆盖 body）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 卡片声明 eventsUrl / securitySchemes.scopes / 协议扩展",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 卡片计量双主体口径声明（callerMeteringSubject）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 不存在员工卡 404（不泄露存在性）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 UHP 发现面免鉴权 + 版本锁定 2026-08-11 + conformance=core",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1 UHP 发现面诚实声明 files_input/files_output=false（未做 NAS artifact）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A1【契约一致性】UHP 发现面应为规范裸体（当前仍包平台信封 {ok,data}，与 well-known 修复口径不一致）",
+      "pass": false,
+      "detail": "{\"topKeys\":[\"ok\",\"data\"],\"wrapped\":true}"
+    },
+    {
+      "group": "A",
+      "name": "A1 发现面公布的 harness id 可直接作 model 调用（往返一致，非 404）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 服务面可观测（health 200，作为总线纪律前置）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 执行链路 A2A→UHP 贯通（execute_report 经 UHP 完成）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 任务 attempts=1（首次派发）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 UHP 执行记录与 A2A 任务一一对应（taskId + responseId 双向可查）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 执行记录归属字段完整（callerPrincipalId / callerKind / dispatchedByPlatform / actChainJson 落账）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 审批规则创建（a2a.admin）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 受害任务处于 auth_required（人在环等待）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 P0 护栏：外部凭证注入 ybk_a2a_task_id → 400 TASK_BINDING_FORBIDDEN",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 P0 护栏：受害任务未被推进（仍 auth_required，零伪造 artifact）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 外部直调 UHP 记录不建立任务归属（无 task_id）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A2 仓储面存在 progress 来源拒绝审计通道（可观测）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A3 八态枚举在任务集合中可观测（≥5 态，含终态与非终态）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A3 任务 history 状态迁移成链（含 status 条目）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A3 completed 任务带 finishedAt/startedAt（时序可审计）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A3 协商矩阵拒绝任务 mode=rejected（不再误记 single_turn）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A4 协商矩阵 16 格与方案 §6.4 逐格一致（纯函数）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A4 A3×A3 要约接受 → 自动执行 completed（协议行为真实）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A4 协商要约双向留痕（offers ≥1 + history type=offer）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A4 还价 → input_required，3 轮超限 → rejected（轮次上限硬约束）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A5 同幂等键重放返回原 response（不重复执行）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A5 审批恢复幂等（completed + attempts=1，无重复执行）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A5 协作链计量按 contextId 归集（calls=1）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A5 计量幂等键含 taskId 与 attempt 序号（两层同形）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A5 计量事件带 context_id 列（additive 迁移生效）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A6 message/stream 返回 JSON-RPC Task（与 message/send 同构，非裸 SSE）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A6 tasks/list 方法可用且返回数组",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A7 请求级 tools/functions/mcp_servers 注入接受但不生效（ignored_fields 留痕）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A7 previous_response_id 续接继承 session_id（可靠归组键）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A7 续接把上一轮 assistant 回答回填进上下文（stub 实收）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A7 UHP 无令牌 401 fail-closed",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A7 UHP 无 uhp.invoke → 403",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A7 SSE 无令牌 401 / 坏令牌 401（错误码规范，不混入 400）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A7 SSE 带令牌建立（text/event-stream + 历史快照）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A8 一致性巡检捕获 harness 幽灵引用（声明>授权的漂移）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A8 巡检报告可回溯查询（/api/a2a/patrols）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "A",
+      "name": "A8 隔离组织账号目录零可见（组织子树收敛）",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

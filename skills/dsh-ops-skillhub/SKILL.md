@@ -1,3 +1,8 @@
+---
+name: dsh-ops-skillhub
+description: 管理 Skill 的提交、审批、上架与安装。
+---
+
 # Skill: dsh-ops-skillhub
 
 ## 何时使用

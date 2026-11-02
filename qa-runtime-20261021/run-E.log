@@ -1,0 +1,64 @@
+  ✔ E0 夹具：目标上线 + harness 注册
+  ✔ E1 只读 well-known 发现卡片（外部客户端零 SDK）
+  ✔ E1 卡片含调用所需的全部契约面（endpoint/eventsUrl/scopes/协议扩展）
+  ✔ E1 外部客户端派活成功（message/send → Task）
+  ✘ E1 tasks/get 轮询返回同一任务终态（外部凭证可查自己发起的任务）  ← {"code":-32003,"message":"无权查看该任务（超出你的组织可见范围）","data":{"code":"FORBIDDEN"}}
+  ✘ E1【缺陷】外部 refType=external 凭证 dispatch 成功但 tasks/get 被组织判定拒绝（-32003）  ← {"code":-32003,"message":"无权查看该任务（超出你的组织可见范围）","data":{"code":"FORBIDDEN"}}
+  ✔ E1 tasks/list 可列举（外部客户端）
+  ✘ E1【缺陷】外部凭证 tasks/list 看不到自己发起的任务（返回空集）  ← {"count":0}
+  ✘ E1 SSE 事件流可按卡片地址建立（外部客户端）  ← status=403 ct=application/json; charset=utf-8 first={"ok":false,"error":{"code":"FORBIDDEN","message":"无权查看该任务（超出你的组织可见范围）"}}
+  ✔ E1 message/stream 返回 JSON-RPC Task（同构）
+  ✔ E1 tasks/cancel 外部客户端可取消自己发起的任务
+  ✘ E1【越权口径】外部客户端取消自己任务被拒（应允许）  ← {"code":-32003,"message":"无权查看该任务（超出你的组织可见范围）","data":{"code":"FORBIDDEN"}}
+  ✔ E2 卡片 JWS 独立验签通过
+  ✔ E2 篡改卡片 body 后验签失败（签名有效覆盖）
+  ✔ E3 轮换后 clientId 不变
+  ✔ E3 轮换后旧 secret 立即失效
+  ✔ E3 轮换后新 secret 可换令牌
+  ✔ E4 前置：OBO 目标上线
+  ✔ E4 OBO 令牌签发且带 act 链（human 主体）
+  ✔ E4 OBO 发起协作成功且任务落 onBehalfUser
+  ✔ E4 审计可追真实发起人（OBO 链消费点存在）
+  ✔ E5 CLI 帮助已覆盖 a2a/uhp（上一轮 Q-33 零覆盖）
+  ✔ E5 CLI a2a/uhp 子命令全部可用（8/8）
+  ✔ E5 CLI 遗留缺陷：无 TypeError/未知资源（agent topology / mcp get / group list）
+  ✔ E5 CLI 全局选项可前置（--token 在子命令前）
+  ✔ E5 CLI mcp invoke 失败时非零退出（不再 exit=0 假成功）
+
+{
+  "total": 26,
+  "passed": 21,
+  "failed": 5,
+  "failures": [
+    {
+      "group": "E",
+      "name": "E1 tasks/get 轮询返回同一任务终态（外部凭证可查自己发起的任务）",
+      "pass": false,
+      "detail": "{\"code\":-32003,\"message\":\"无权查看该任务（超出你的组织可见范围）\",\"data\":{\"code\":\"FORBIDDEN\"}}"
+    },
+    {
+      "group": "E",
+      "name": "E1【缺陷】外部 refType=external 凭证 dispatch 成功但 tasks/get 被组织判定拒绝（-32003）",
+      "pass": false,
+      "detail": "{\"code\":-32003,\"message\":\"无权查看该任务（超出你的组织可见范围）\",\"data\":{\"code\":\"FORBIDDEN\"}}"
+    },
+    {
+      "group": "E",
+      "name": "E1【缺陷】外部凭证 tasks/list 看不到自己发起的任务（返回空集）",
+      "pass": false,
+      "detail": "{\"count\":0}"
+    },
+    {
+      "group": "E",
+      "name": "E1 SSE 事件流可按卡片地址建立（外部客户端）",
+      "pass": false,
+      "detail": "status=403 ct=application/json; charset=utf-8 first={\"ok\":false,\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"无权查看该任务（超出你的组织可见范围）\"}}"
+    },
+    {
+      "group": "E",
+      "name": "E1【越权口径】外部客户端取消自己任务被拒（应允许）",
+      "pass": false,
+      "detail": "{\"code\":-32003,\"message\":\"无权查看该任务（超出你的组织可见范围）\",\"data\":{\"code\":\"FORBIDDEN\"}}"
+    }
+  ]
+}

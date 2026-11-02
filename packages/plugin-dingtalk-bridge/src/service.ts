@@ -1,5 +1,5 @@
 /**
- * @ybkk/plugin-dingtalk-bridge —— 钉钉桥接（review-dsh-agent-panel-v2 Phase 3）。
+ * @dsh-ops/plugin-dingtalk-bridge —— 钉钉桥接（review-dsh-agent-panel-v2 Phase 3）。
  *
  * 职责（出向优先，R-SPIKE 未决不做入向硬编码）：
  *   - 群桥绑定：panel 频道 ↔ 钉钉群会话（openConversationId + robotCode），purpose=channel/alerts
@@ -20,6 +20,7 @@ import { Service } from '@deepseek-ai/cordis'
 import type { Collection, RecordBase } from '../../platform-core/src/storage.ts'
 import { PlatformEvents } from '../../platform-core/src/bus.ts'
 import { newId } from '../../platform-core/src/ids.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 
 export interface BridgeChannelRecord extends RecordBase {
   /** panel:channels 的频道 id。 */
@@ -94,9 +95,9 @@ export class DingtalkBridgeService extends Service {
   /** 企业 accessToken（iam 连接器同款 API 形态；令牌仅内存缓存，不落盘）。 */
   private async accessToken(): Promise<{ token: string; oapiBase: string }> {
     const config = this.dingtalkConfig()
-    if (!config) throw new Error('钉钉连接器未配置（请先在控制台「三方集成」配置并启用）')
-    if (config.mode === 'mock') throw new Error('钉钉连接器为 mock 演示模式——不做真实外呼，切 real 并指向有效网关后再投递')
-    if (!config.secretActual) throw new Error('钉钉连接器缺少密钥（appSecret 未配置）')
+    if (!config) throw new Error(t('钉钉连接器未配置（请先在控制台「三方集成」配置并启用）'))
+    if (config.mode === 'mock') throw new Error(t('钉钉连接器为 mock 演示模式——不做真实外呼，切 real 并指向有效网关后再投递'))
+    if (!config.secretActual) throw new Error(t('钉钉连接器缺少密钥（appSecret 未配置）'))
     if (this.tokenCache && this.tokenCache.expiresAt > Date.now() + 60_000) return { token: this.tokenCache.token, oapiBase: config.oapiBase ?? 'https://oapi.dingtalk.com' }
     const apiBase = config.apiBase ?? 'https://api.dingtalk.com'
     const response = await fetch(`${apiBase}/v1.0/oauth2/accessToken`, {
@@ -106,7 +107,8 @@ export class DingtalkBridgeService extends Service {
     })
     const payload = (await response.json().catch(() => ({}))) as { accessToken?: string; expireIn?: number; message?: string }
     if (!response.ok || !payload.accessToken) {
-      throw new Error(`钉钉 accessToken 获取失败（HTTP ${response.status}）${payload.message ? `：${payload.message}` : ''}`)
+      const detail = payload.message ? t('：{message}', { message: payload.message }) : ''
+      throw new Error(t('钉钉 accessToken 获取失败（HTTP {status}）', { status: response.status }) + detail)
     }
     this.tokenCache = { token: payload.accessToken, expiresAt: Date.now() + (payload.expireIn ?? 7200) * 1000 }
     return { token: payload.accessToken, oapiBase: config.oapiBase ?? 'https://oapi.dingtalk.com' }
@@ -131,11 +133,11 @@ export class DingtalkBridgeService extends Service {
         }),
       })
     } catch (error) {
-      throw new Error(`钉钉投递网络失败：${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(t('钉钉投递网络失败：{message}', { message: error instanceof Error ? error.message : String(error) }))
     }
     const payload = (await response.json().catch(() => ({}))) as { errcode?: number; errmsg?: string; message?: string }
     if (!response.ok || (payload.errcode !== undefined && payload.errcode !== 0)) {
-      throw new Error(`钉钉投递被拒（HTTP ${response.status}）：${payload.errmsg ?? payload.message ?? 'unknown'}`)
+      throw new Error(t('钉钉投递被拒（HTTP {status}）：{message}', { status: response.status, message: payload.errmsg ?? payload.message ?? 'unknown' }))
     }
     return { ok: true }
   }
@@ -146,31 +148,20 @@ export class DingtalkBridgeService extends Service {
       ? this.bridgeChannels().findOne((item) => item.chatId === input.chatId)
       : this.bridgeChannels().find((item) => item.purpose === 'channel' && (!input.dept || item.dept === input.dept)).at(0)
       ?? this.bridgeChannels().find((item) => item.purpose === 'channel').at(0)
-    if (!bridge && !(input.chatId && input.robotCode)) {
-      // 无群桥也要回执事件（QA T-04）：否则面板消息永远停在 pending，用户看不出投递已失败
-      this.ctx.platformBus.emit(PlatformEvents.DingtalkDelivered, { messageId: input.messageId, ok: false, error: '未绑定群桥' })
-      return { delivered: false, error: '未绑定群桥' }
-    }
+    if (!bridge && !(input.chatId && input.robotCode)) return { delivered: false, error: t('未绑定群桥') }
     const chatId = bridge?.chatId ?? input.chatId!
     const robotCode = bridge?.robotCode ?? input.robotCode!
     const dedupKey = `${input.messageId}:${chatId}`
-    // 去重只认「已成功投递」（QA BUG-A-02）：failed 记录不阻断重投——瞬时网络抖动
-    // 曾把去重键永久毒化（查重不看 status 即返回 delivered:true，失败也落同一键），
-    // 导致该消息/审批永远推不出去且界面显示成功。
-    const existing = this.bridgeMessages().findOne((item) => item.dedupKey === dedupKey)
-    if (existing?.status === 'sent') return { delivered: true }
+    if (this.bridgeMessages().findOne((item) => item.dedupKey === dedupKey)) return { delivered: true }
     try {
       await this.sendToGroup({ chatId, robotCode, title: input.title, text: input.text })
-      // dedupKey 引擎级唯一：重投成功 = 原地覆盖 failed 记录（insert 会撞唯一约束）
-      if (existing) this.bridgeMessages().update(existing.id, { status: 'sent', error: undefined })
-      else this.bridgeMessages().insert({ id: newId('ddm'), messageId: input.messageId, direction: 'out', chatId, status: 'sent', dedupKey })
+      this.bridgeMessages().insert({ id: newId('ddm'), messageId: input.messageId, direction: 'out', chatId, status: 'sent', dedupKey })
       this.ctx.platformBus.emit(PlatformEvents.DingtalkDelivered, { messageId: input.messageId, ok: true, chatId })
       return { delivered: true }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       try {
-        if (existing) this.bridgeMessages().update(existing.id, { status: 'failed', error: message })
-        else this.bridgeMessages().insert({ id: newId('ddm'), messageId: input.messageId, direction: 'out', chatId, status: 'failed', error: message, dedupKey })
+        this.bridgeMessages().insert({ id: newId('ddm'), messageId: input.messageId, direction: 'out', chatId, status: 'failed', error: message, dedupKey })
       } catch { /* 回执落库失败不影响事件通知 */ }
       this.ctx.platformBus.emit(PlatformEvents.DingtalkDelivered, { messageId: input.messageId, ok: false, error: message, chatId })
       return { delivered: false, error: message }
@@ -182,13 +173,9 @@ export class DingtalkBridgeService extends Service {
     this.ctx.platformBus.on(PlatformEvents.PanelMessageCreated, (payload) => {
       const data = payload as { messageId?: string; dept?: string; ddSync?: string; senderName?: string; text?: string; title?: string } | undefined
       if (data?.ddSync !== 'pending' || !data.messageId) return
-      // 与 panel-core dws 本地直连面共存（2026-09-11）：无 channel 群桥时本桥让位——
-      // dws 钩子已无条件注册并承接诚实回执；若本桥仍发 ok:false「未绑定群桥」，会与 dws
-      // 迟到的 ok:true 形成双回执（先 failed+告警、后 sent），状态抖动 + 告警噪声。
-      if (this.bridgeChannels().find((item) => item.purpose === 'channel').length === 0) return
       void this.deliver({
         messageId: data.messageId, dept: data.dept,
-        title: `${data.senderName ?? '面板消息'} · 部门面板`,
+        title: t('{name} · 部门面板', { name: data.senderName ?? t('面板消息') }),
         text: data.text ?? '',
       }).catch(() => undefined)
     })
@@ -198,8 +185,8 @@ export class DingtalkBridgeService extends Service {
       void this.deliver({
         messageId: `card:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
         dept: data.dept,
-        title: data.title ?? '面板卡片',
-        text: `${data.text ?? ''}\n\n—— ${data.actorName ?? ''}（${data.channelName ? `频道：${data.channelName}` : '部门面板'}）`,
+        title: data.title ?? t('面板卡片'),
+        text: `${data.text ?? ''}\n\n${t('—— {actor}（{channel}）', { actor: data.actorName ?? '', channel: data.channelName ? t('频道：{name}', { name: data.channelName }) : t('部门面板') })}`,
       }).catch(() => undefined)
     })
     // 告警 dingtalk 通道坐实：全部告警推 purpose=alerts 群桥（规则 channels:['dingtalk'] 的投递实现）
@@ -211,7 +198,7 @@ export class DingtalkBridgeService extends Service {
         void this.deliver({
           messageId: `alert:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
           chatId: bridge.chatId, robotCode: bridge.robotCode,
-          title: `${data.severity === 'critical' ? '🚨' : '⚠️'} ${data.title ?? '平台告警'}`,
+          title: `${data.severity === 'critical' ? '🚨' : '⚠️'} ${data.title ?? t('平台告警')}`,
           text: data.message ?? '',
         }).catch(() => undefined)
       }

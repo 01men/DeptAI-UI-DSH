@@ -1,0 +1,8 @@
+# 权限点声明（注册进统一 RBAC，控制台/CLI/工具共用）
+plugin: dsh-plugin-workforce
+points:
+  - workforce.read
+  - workforce.write
+  - workforce.admin
+  - workforce.invoke
+  - workforce.accept

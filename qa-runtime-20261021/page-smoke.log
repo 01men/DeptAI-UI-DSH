@@ -1,0 +1,35 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✔ [PASS] P01 模型网关 gateway：路由卡 + Stat + 渠道链
+  ✔ [PASS] P02 用量与成本 usage：图表 + 维度切换
+  ✔ [PASS] P03 资产台账 assets：六类过滤 + 台账表
+  ✘ [FAIL] P04 AI 市场 skills：市场卡片结构 — 市场卡片应渲染
+  ✔ [PASS] P05 平台接入 access：三 tab
+  ✔ [PASS] P06 审批中心 approvals：左右布局 + 决策按钮钩子
+  ✔ [PASS] P07 工作台 dashboard：总览
+  ✔ [PASS] P07 工作台 dashboard?tab=cockpit：经营
+  ✔ [PASS] P07 工作台 dashboard?tab=goals：目标
+  ✔ [PASS] P07 工作台 dashboard?tab=actions：行动
+  ✔ [PASS] P07 工作台 dashboard?tab=collab：协作
+  ✔ [PASS] P07 工作台 dashboard?tab=ops：平台运行
+  ✔ [PASS] P08 renderIam index.js
+  ✔ [PASS] P08 renderIam index.js?tab=roles
+  ✔ [PASS] P08 renderIam index.js?tab=connectors
+  ✔ [PASS] P08 renderAudit audit.js
+  ✔ [PASS] P08 renderAudit audit.js?tab=alerts
+  ✔ [PASS] P08 renderFinops finops.js
+  ✔ [PASS] P08 renderAgents agents.js
+  ✔ [PASS] P08 renderApps apps.js
+  ✔ [PASS] P08 renderMcp mcp.js
+  ✔ [PASS] P08 renderNas nas.js
+  ✔ [PASS] P08 renderNasAuthz nas-authz.js
+  ✔ [PASS] P08 renderAuthn authn.js
+  ✔ [PASS] P08 renderConnectors connectors.js
+  ✔ [PASS] P08 renderRegister register.js
+  ✔ [PASS] P08 renderPlatform platform.js
+  ✔ [PASS] P08 renderExec exec.js
+  ✔ [PASS] P08 renderConnect connect.js
+  ✔ [PASS] P08 renderHome home.js
+  ✔ [PASS] P08 renderLogin login.js
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+页面冒烟结果：30/31 通过
+存在失败 ✘

@@ -1,0 +1,32 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:10.803Z",
+    "updatedAt": "2026-10-20T04:14:10.803Z",
+    "id": "agent-scopes-usage-write-v1",
+    "doneAt": "2026-10-20T04:14:10.803Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.803Z",
+    "updatedAt": "2026-10-20T04:14:10.803Z",
+    "id": "agent-scopes-connector-invoke-v1",
+    "doneAt": "2026-10-20T04:14:10.803Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.803Z",
+    "updatedAt": "2026-10-20T04:14:10.803Z",
+    "id": "agent-scopes-agent-write-v1",
+    "doneAt": "2026-10-20T04:14:10.803Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.803Z",
+    "updatedAt": "2026-10-20T04:14:10.803Z",
+    "id": "agent-scopes-modelgw-invoke-v1",
+    "doneAt": "2026-10-20T04:14:10.803Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.803Z",
+    "updatedAt": "2026-10-20T04:14:10.803Z",
+    "id": "agent-scopes-exec-rw-v1",
+    "doneAt": "2026-10-20T04:14:10.803Z"
+  }
+]

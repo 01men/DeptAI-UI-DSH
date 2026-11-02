@@ -15,6 +15,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
+import { t } from '../../platform-i18n/src/index.ts'
 
 /**
  * 价值标签（交接 F 清单 M 节，2026-09-11）：工信部原文口径为 降本/提质/增效/增收/安全/环保/新模式；
@@ -53,7 +54,7 @@ export interface ScenegraphScene {
 }
 
 export interface ScenegraphPack {
-  /** 行业代码（工信部图谱编码，如 QB01 家电 / GCJX 工程机械）。 */
+  /** 行业代码（工信部《参考指引（2025 版）》图谱编码，如 QB01 家电 / JB01 工程机械）。 */
   code: string
   name: string
   icon: string
@@ -75,53 +76,53 @@ export interface ScenegraphPack {
 export function validateScenegraph(input: unknown, source = 'scenegraph'): string[] {
   const errors: string[] = []
   const pack = input as ScenegraphPack
-  if (pack === null || typeof pack !== 'object') return [`${source}: 不是 JSON 对象`]
+  if (pack === null || typeof pack !== 'object') return [t('{source}: 不是 JSON 对象', { source })]
   if (!pack.code || typeof pack.code !== 'string' || !/^[A-Z][A-Z0-9]{2,9}$/.test(pack.code)) {
-    errors.push(`${source}: code 必填（行业图谱编码，大写字母开头 3-10 位，收到 ${String(pack.code)}）`)
+    errors.push(t('{source}: code 必填（行业图谱编码，大写字母开头 3-10 位，收到 {value}）', { source, value: String(pack.code) }))
   }
-  if (!pack.name || typeof pack.name !== 'string') errors.push(`${source}: name 必填`)
-  if (!pack.icon || typeof pack.icon !== 'string') errors.push(`${source}: icon 必填`)
-  if (!pack.version || typeof pack.version !== 'string') errors.push(`${source}: version 必填`)
-  if (!pack.chains || typeof pack.chains !== 'string') errors.push(`${source}: chains（行业链条主线）必填`)
+  if (!pack.name || typeof pack.name !== 'string') errors.push(t('{source}: name 必填', { source }))
+  if (!pack.icon || typeof pack.icon !== 'string') errors.push(t('{source}: icon 必填', { source }))
+  if (!pack.version || typeof pack.version !== 'string') errors.push(t('{source}: version 必填', { source }))
+  if (!pack.chains || typeof pack.chains !== 'string') errors.push(t('{source}: chains（行业链条主线）必填', { source }))
   if (!pack.activities || typeof pack.activities !== 'object' || Array.isArray(pack.activities)) {
-    errors.push(`${source}: activities 必填（业务活动 → 场景清单）`)
+    errors.push(t('{source}: activities 必填（业务活动 → 场景清单）', { source }))
     return errors
   }
   const seen = new Set<string>()
   let total = 0
   for (const [activity, scenes] of Object.entries(pack.activities)) {
     if (!SCENE_ACTIVITIES.includes(activity as SceneActivity)) {
-      errors.push(`${source}: activities.${activity} 非法（应为 ${SCENE_ACTIVITIES.join('/')}）`)
+      errors.push(t('{source}: activities.{activity} 非法（应为 {expected}）', { source, activity, expected: SCENE_ACTIVITIES.join('/') }))
       continue
     }
     if (!Array.isArray(scenes) || scenes.length === 0) {
-      errors.push(`${source}: activities.${activity} 必须是非空场景数组`)
+      errors.push(t('{source}: activities.{activity} 必须是非空场景数组', { source, activity }))
       continue
     }
     scenes.forEach((scene, index) => {
       total++
       const at = `${source}: activities.${activity}[${index}]`
-      if (!scene?.code || typeof scene.code !== 'string') errors.push(`${at}.code 必填`)
-      else if (seen.has(scene.code)) errors.push(`${at}.code 全图重复：${scene.code}`)
+      if (!scene?.code || typeof scene.code !== 'string') errors.push(t('{at}.code 必填', { at }))
+      else if (seen.has(scene.code)) errors.push(t('{at}.code 全图重复：{code}', { at, code: scene.code }))
       else seen.add(scene.code)
-      if (!scene?.name || typeof scene.name !== 'string') errors.push(`${at}.name 必填`)
-      if (scene?.type !== '主场景' && scene?.type !== '细分场景') errors.push(`${at}.type 非法（主场景/细分场景）`)
-      if (!Number.isInteger(scene?.s) || scene.s < 1 || scene.s > 5) errors.push(`${at}.s 现状评级须为 1-5 整数`)
+      if (!scene?.name || typeof scene.name !== 'string') errors.push(t('{at}.name 必填', { at }))
+      if (scene?.type !== '主场景' && scene?.type !== '细分场景') errors.push(t('{at}.type 非法（主场景/细分场景）', { at }))
+      if (!Number.isInteger(scene?.s) || scene.s < 1 || scene.s > 5) errors.push(t('{at}.s 现状评级须为 1-5 整数', { at }))
       // tags 可为空数组（交接 F 清单 M 节，2026-09-11）：原文相当比例场景未显式标注价值标签
       // （实测 807 场景中 504 个无标注）——此前唯一合规做法是虚构标签，违反「不造假数据」红线；
       // 放宽后按原文如实装载，按标签筛选的场景视图自然排除无标注场景
       if (!Array.isArray(scene?.tags) || scene.tags.some((tag) => !SCENE_TAGS.includes(tag))) {
-        errors.push(`${at}.tags 非法（应为 ${SCENE_TAGS.join('/')} 的子集，可为空数组）`)
+        errors.push(t('{at}.tags 非法（应为 {expected} 的子集，可为空数组）', { at, expected: SCENE_TAGS.join('/') }))
       }
-      if (!scene?.pain || typeof scene.pain !== 'string') errors.push(`${at}.pain 必填`)
+      if (!scene?.pain || typeof scene.pain !== 'string') errors.push(t('{at}.pain 必填', { at }))
       for (const list of ['tools', 'models', 'data', 'talent'] as const) {
         if (!Array.isArray(scene?.[list]) || scene[list].length === 0) {
-          errors.push(`${at}.${list} 必填且非空（四清单缺一不可）`)
+          errors.push(t('{at}.{field} 必填且非空（四清单缺一不可）', { at, field: list }))
         }
       }
     })
   }
-  if (total === 0) errors.push(`${source}: 图谱至少要有一个场景`)
+  if (total === 0) errors.push(t('{source}: 图谱至少要有一个场景', { source }))
   return errors
 }
 
@@ -149,7 +150,7 @@ export class ScenegraphService extends Service {
     try {
       entries = await readdir(dir, { withFileTypes: true })
     } catch {
-      this.loadErrors = [`${dir} 不可读（无场景图谱包）`]
+      this.loadErrors = [t('{dir} 不可读（无场景图谱包）', { dir })]
       return
     }
     for (const entry of entries) {
@@ -163,7 +164,7 @@ export class ScenegraphService extends Service {
         }
         packs.push(parsed as ScenegraphPack)
       } catch (error) {
-        errors.push(`${entry.name}: JSON 解析失败（${error instanceof Error ? error.message : String(error)}）`)
+        errors.push(t('{name}: JSON 解析失败（{message}）', { name: entry.name, message: error instanceof Error ? error.message : String(error) }))
       }
     }
     this.packs = packs

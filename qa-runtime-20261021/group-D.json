@@ -1,0 +1,889 @@
+{
+  "group": "D",
+  "base": "http://127.0.0.1:7344",
+  "stub": "http://127.0.0.1:7444",
+  "dataDir": "/Users/ybkk/ybkkasi/data-qa-gD-20261021",
+  "log": "/Users/ybkk/ybkkasi/qa-runtime-20261021/group-D.log",
+  "adminToken": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3FiaWRtZnlpeGQiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiIyNWJiMjMxNS02YThiLTQ4MTYtOTk2My1kZWFlOTlhN2EzMWEiLCJpYXQiOjE3OTI1MTIwMTAsImV4cCI6MTc5MjUxMzgxMCwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRiaW5nejU3aG16cCJ9.FJiQwMl2ZWAepb7wH9WAtQruMG8N64WYuClIf2JdJQU",
+  "accounts": {
+    "admin": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3FiaWRtZnlpeGQiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiJkMjgzMWZmMi04YmQzLTQ1MGYtOTgzMC04NWMyZDIxNjBmNzAiLCJpYXQiOjE3OTI1MTIwMTAsImV4cCI6MTc5MjUxMzgxMCwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRiamVnejVleWZ2eSJ9.JbNzfFsXNcizEdEVfxKFyo4eYNu0QzV7lMLqDEEhXEM",
+      "user": {
+        "id": "usr_mvg65e9midmcih9e",
+        "username": "admin",
+        "displayName": "平台管理员",
+        "orgId": "org_mvg65e9lidmbgujd",
+        "roleIds": [
+          "rol_mvg65e9lidm5hzhq"
+        ],
+        "roles": [
+          "平台超级管理员"
+        ],
+        "permissions": [
+          "*"
+        ]
+      }
+    },
+    "qa-ops": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3JuaWRuNmpibHgiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiI2NDQzZWQ4YS1hNTI5LTRiNGItYTI3Mi0xYTIyYWYzZWNiODEiLCJpYXQiOjE3OTI1MTIwMTAsImV4cCI6MTc5MjUxMzgxMCwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRianlnejVoeDVycSJ9.aMmL4ZySxeVOzGzUGZ3LIFV-WfQMwa4hlS3dSB2o5eU",
+      "user": {
+        "id": "usr_mvg65wqpidn417cg",
+        "username": "qa-ops",
+        "displayName": "平台资源管理员",
+        "orgId": "org_mvg65e9lidmbgujd",
+        "roleIds": [
+          "rol_mvg65wqkidmqcvda"
+        ],
+        "roles": [
+          "QA资源管理员"
+        ],
+        "permissions": [
+          "agent.read",
+          "agent.write",
+          "agent.approve",
+          "agent.offline",
+          "iam.org.read",
+          "iam.org.write",
+          "iam.user.read",
+          "iam.user.write",
+          "modelgw.read",
+          "modelgw.admin",
+          "usage.read",
+          "audit.read",
+          "approval.read",
+          "approval.decide",
+          "a2a.directory.read",
+          "uhp.read",
+          "mcp.service.read",
+          "skill.read",
+          "console.login",
+          "console.read"
+        ]
+      }
+    },
+    "qa-approver": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3NtaWRuYzU1OXQiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiJmM2Q3YjZmOC1hZDMzLTRjNDQtYjdlZC1kMTRlZGIzM2VmYWUiLCJpYXQiOjE3OTI1MTIwMTAsImV4cCI6MTc5MjUxMzgxMCwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRia2xnejVrcDdzMiJ9.I1JUwvBimVuDUq4hlYqsij2OtBGlcMkL1vEYusm38rs",
+      "user": {
+        "id": "usr_mvg65wroidna0rra",
+        "username": "qa-approver",
+        "displayName": "审批人（异人审批）",
+        "orgId": "org_mvg65e9lidmbgujd",
+        "roleIds": [
+          "rol_mvg65wqlidms4r7g"
+        ],
+        "roles": [
+          "QA审批人"
+        ],
+        "permissions": [
+          "agent.read",
+          "approval.read",
+          "approval.decide",
+          "audit.read",
+          "iam.org.read",
+          "iam.user.read"
+        ]
+      }
+    },
+    "qa-collab": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3RraWRuaWkza3YiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiI4MTBjYjgwMS00YTc2LTRiY2YtYThiYy02MmI4YjE3NTg4NjAiLCJpYXQiOjE3OTI1MTIwMTAsImV4cCI6MTc5MjUxMzgxMCwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRibDVnejVuc3p1bCJ9.KsVnP3r1-dczDpGXK0mw-j0T6vP-wowK_EBVnYKokGE",
+      "user": {
+        "id": "usr_mvg65wsmidng74se",
+        "username": "qa-collab",
+        "displayName": "协作观察员（只读协作面）",
+        "orgId": "org_mvg65wqiidmm0h3x",
+        "roleIds": [
+          "rol_mvg65wqmidmuj6hp"
+        ],
+        "roles": [
+          "QA协作观察员"
+        ],
+        "permissions": [
+          "agent.read",
+          "a2a.directory.read",
+          "uhp.read",
+          "usage.read",
+          "console.login",
+          "console.read"
+        ]
+      }
+    },
+    "qa-acceptor": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3VqaWRubzNpYW4iLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiJkYmRmODFmNi1iOWMyLTQ0M2UtOGQ5MS0xMTFjNjQ4ZGNjNGUiLCJpYXQiOjE3OTI1MTIwMTEsImV4cCI6MTc5MjUxMzgxMSwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRibHFnejVxNTIwNyJ9.V9rdf86RHxSFAUTF92JkkOPY_inUeic4z-xzcFh6T_s",
+      "user": {
+        "id": "usr_mvg65wtlidnmrmj7",
+        "username": "qa-acceptor",
+        "displayName": "验收员（可交付验收）",
+        "orgId": "org_mvg65e9lidmbgujd",
+        "roleIds": [
+          "rol_mvg65wqnidmw9fm6"
+        ],
+        "roles": [
+          "QA验收员"
+        ],
+        "permissions": [
+          "agent.read",
+          "a2a.directory.read",
+          "a2a.task.accept",
+          "console.login",
+          "console.read"
+        ]
+      }
+    },
+    "qa-a2aadmin": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3ZpaWRudWxhdWwiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiIwY2RjMmY0Zi05NjEzLTQ0N2ItYWIyYi04ZDRiMDA1YWVlYTkiLCJpYXQiOjE3OTI1MTIwMTEsImV4cCI6MTc5MjUxMzgxMSwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRibWFnejV0Mnc4NyJ9.giDvMYoD0P0qg5-nLb9Vj1FhyNCKVlM24CLgaczFZMU",
+      "user": {
+        "id": "usr_mvg65wukidnsk7vg",
+        "username": "qa-a2aadmin",
+        "displayName": "协作管理员（规则/巡检/harness）",
+        "orgId": "org_mvg65e9lidmbgujd",
+        "roleIds": [
+          "rol_mvg65wqnidmysuge"
+        ],
+        "roles": [
+          "QA协作管理员"
+        ],
+        "permissions": [
+          "agent.read",
+          "a2a.directory.read",
+          "a2a.task.accept",
+          "a2a.admin",
+          "uhp.read",
+          "uhp.admin",
+          "console.login",
+          "console.read"
+        ]
+      }
+    },
+    "qa-member": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3dnaWRvMG9oZDIiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiJlYzc1ZWYwNS1iOGE0LTRlNGItOWQ4OC00OTQ0ZmRhMWE4YjIiLCJpYXQiOjE3OTI1MTIwMTEsImV4cCI6MTc5MjUxMzgxMSwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRibXRnejV3MHBzMiJ9.78Eeo_fZ5FEQoPjR-MMAWpUCaaSSOwq3OYht6cHtHr0",
+      "user": {
+        "id": "usr_mvg65wviidnym61w",
+        "username": "qa-member",
+        "displayName": "最小权限普通成员",
+        "orgId": "org_mvg65e9lidmbgujd",
+        "roleIds": [
+          "rol_mvg65wqoidn0ruub"
+        ],
+        "roles": [
+          "QA普通成员"
+        ],
+        "permissions": [
+          "agent.read",
+          "console.login",
+          "console.read"
+        ]
+      }
+    },
+    "qa-ro": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3hkaWRvNmV2aDYiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiIzMmMzMzZmNy1kMDBiLTQ5MTItYjFhMy1kZDE5NGE0NDE3OGIiLCJpYXQiOjE3OTI1MTIwMTEsImV4cCI6MTc5MjUxMzgxMSwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRibmNnejV6em9zdCJ9.wSnUyW5hiU7KR51il-7OcDg5Tt2r9FDsAv7DP69klWE",
+      "user": {
+        "id": "usr_mvg65wwgido4fbwt",
+        "username": "qa-ro",
+        "displayName": "隔离组织只读",
+        "orgId": "org_mvg65wqjidmow2ek",
+        "roleIds": [
+          "rol_mvg65wqoidn2rfy9"
+        ],
+        "roles": [
+          "QA资源只读"
+        ],
+        "permissions": [
+          "agent.read",
+          "a2a.directory.read",
+          "console.login",
+          "console.read"
+        ]
+      }
+    },
+    "qa-outsider": {
+      "token": "dst1.eyJpc3MiOiJkc2gtb3BzLWF1dGhuIiwic3ViIjoicHJpX212ZzY1d3liaWRvY3lpNXYiLCJ0eXAiOiJhY2Nlc3MiLCJqdGkiOiJlZTc4ODEzMC0wYWNiLTQyZjktYWY5Ny0yZDA1ODkyYzZiMjciLCJpYXQiOjE3OTI1MTIwMTEsImV4cCI6MTc5MjUxMzgxMSwic2NvcGUiOltdLCJhY3QiOltdLCJzaWQiOiJzaWRfbXZndmRibnVnejYyY3R2dCJ9.DK1kTpU5IifK7pFfZwrFx0QoEWu-J93EStJBA8olLgU",
+      "user": {
+        "id": "usr_mvg65wxeidoang9r",
+        "username": "qa-outsider",
+        "displayName": "跨组织越权探针",
+        "orgId": "org_mvg65wqjidmow2ek",
+        "roleIds": [
+          "rol_mvg65wqoidn0ruub"
+        ],
+        "roles": [
+          "QA普通成员"
+        ],
+        "permissions": [
+          "agent.read",
+          "console.login",
+          "console.read"
+        ]
+      }
+    }
+  },
+  "agents": [
+    {
+      "id": "agt_mvg65wycidog0wpv",
+      "slug": "qa-a0-tip",
+      "name": "QA-A0提示型员工",
+      "status": "online",
+      "attrs": {
+        "description": "A0 提示型：只做单轮问答",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A0",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "public",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "entryUrl": "https://qa.internal/chat",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-qa-a0-tip"
+      }
+    },
+    {
+      "id": "agt_mvg65xa6idoswiz0",
+      "slug": "qa-a1-exec",
+      "name": "QA-A1执行型员工",
+      "status": "online",
+      "attrs": {
+        "description": "A1 执行型：执行需人在环确认",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A1",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "entryUrl": "https://qa.internal/chat",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-qa-a1-exec"
+      }
+    },
+    {
+      "id": "agt_mvg65xluidp4m49p",
+      "slug": "qa-a2-auto",
+      "name": "QA-A2自主型员工",
+      "status": "online",
+      "attrs": {
+        "description": "A2 自主型：执行后事后报告",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "entryUrl": "https://qa.internal/chat",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-qa-a2-auto"
+      }
+    },
+    {
+      "id": "agt_mvg65xxhidpg6765",
+      "slug": "qa-a3-neg",
+      "name": "QA-A3协商型员工",
+      "status": "online",
+      "attrs": {
+        "description": "A3 协商型：支持要约-还价",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A3",
+        "runtime": "hermes",
+        "a2aDataClassCeiling": "secret",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "entryUrl": "https://qa.internal/chat",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-qa-a3-neg"
+      }
+    },
+    {
+      "id": "agt_mvg65y94idps38ro",
+      "slug": "qa-caller-bot",
+      "name": "QA协作发起方员工",
+      "status": "online",
+      "attrs": {
+        "description": "作为调用方的数字员工（机器凭证）",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "entryUrl": "https://qa.internal/chat",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-qa-caller-bot"
+      }
+    },
+    {
+      "id": "agt_mvg65ykridq44i55",
+      "slug": "qa-a3-caller",
+      "name": "QA-A3发起方员工",
+      "status": "online",
+      "attrs": {
+        "description": "A3 发起方，用于 A3×A3 协商",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A3",
+        "runtime": "hermes",
+        "a2aDataClassCeiling": "secret",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "entryUrl": "https://qa.internal/chat",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-qa-a3-caller"
+      }
+    },
+    {
+      "id": "agt_mvgimrunifgcjrg2",
+      "slug": "qa-a3-neg2",
+      "name": "QA-A3协商型员工(反价stub)",
+      "status": "online",
+      "attrs": {
+        "description": "A3 协商型，被调方模型指向自建反价 stub",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-reasoner",
+        "systemPromptVersion": "v1",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "high",
+        "dataClass": "secret",
+        "autonomy": "A3",
+        "runtime": "hermes",
+        "a2aDataClassCeiling": "secret",
+        "uhpSessionPolicy": "task-bound",
+        "entryUrl": "https://qa.internal/a3neg2"
+      }
+    },
+    {
+      "id": "agt_mvgio9q4ifhihjet",
+      "slug": "d-a0-caller",
+      "name": "D-A0调用方员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D 测试员工 d-a0-caller",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A0",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-a0-caller",
+        "entryUrl": "https://qa.internal/chat"
+      }
+    },
+    {
+      "id": "agt_mvgio9qaifho4e8x",
+      "slug": "d-a1-caller",
+      "name": "D-A1调用方员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D 测试员工 d-a1-caller",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A1",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-a1-caller",
+        "entryUrl": "https://qa.internal/chat"
+      }
+    },
+    {
+      "id": "agt_mvgio9qhifhuhbr9",
+      "slug": "d-a3-counter",
+      "name": "D-A3反价目标员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D 测试员工 d-a3-counter",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-coder",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A3",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "secret",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-a3-counter",
+        "entryUrl": "https://qa.internal/chat"
+      }
+    },
+    {
+      "id": "agt_mvgio9qlifi053v0",
+      "slug": "d-offline",
+      "name": "D-非在线目标员工",
+      "status": "draft",
+      "attrs": {
+        "description": "组D 测试员工 d-offline",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-offline"
+      }
+    },
+    {
+      "id": "agt_mvgio9qnifi6tuw3",
+      "slug": "d-budget",
+      "name": "D-预算熔断目标员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D 测试员工 d-budget",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-budget",
+        "entryUrl": "https://qa.internal/chat"
+      }
+    },
+    {
+      "id": "agt_mvgio9qrific0s4v",
+      "slug": "d-skilldrift",
+      "name": "D-技能漂移员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D 测试员工 d-skilldrift",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [
+          "qa-removed-skill-xyz"
+        ],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-skilldrift",
+        "entryUrl": "https://qa.internal/chat"
+      }
+    },
+    {
+      "id": "agt_mvgio9qvifiifi2f",
+      "slug": "d-harnessdrift",
+      "name": "D-harness漂移员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D 测试员工 d-harnessdrift",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-nonexistent-xyz",
+        "entryUrl": "https://qa.internal/chat"
+      }
+    },
+    {
+      "id": "agt_mvgio9qzifioxb4y",
+      "slug": "d-frozen",
+      "name": "D-冻结目标员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D 测试员工 d-frozen",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-frozen",
+        "entryUrl": "https://qa.internal/chat",
+        "frozenAt": "2026-10-20T10:06:13.923Z",
+        "frozenReason": "执行中枢预算前置熔断：Agent 主体预算（agent:agt_mvgio9qzifioxb4y）已超限，action=block"
+      }
+    },
+    {
+      "id": "agt_mvgiufg6ifyyjrp3",
+      "slug": "d-a2-caller",
+      "name": "D-A2调用方员工",
+      "status": "online",
+      "attrs": {
+        "description": "组D A2 调用方（自持凭证，隔离他人轮换影响）",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound",
+        "systemPromptVersion": "v1",
+        "entryUrl": "https://qa.internal/chat",
+        "dataClass": "internal",
+        "trialGroups": [
+          "QA灰度组"
+        ],
+        "uhpHarnessRef": "h-d-a2-caller"
+      }
+    },
+    {
+      "id": "agt_mvgiujrgifzfkyrp",
+      "slug": "qa-e-offline-target",
+      "name": "QA-E下线态被调方",
+      "status": "draft",
+      "attrs": {
+        "description": "组E治理门禁：非 online 态被点名应被拒",
+        "avatar": "🤖",
+        "tags": [],
+        "model": "deepseek-chat",
+        "skills": [],
+        "mcpPermGroupIds": [],
+        "riskLevel": "low",
+        "dataClass": "internal",
+        "autonomy": "A2",
+        "runtime": "dsh",
+        "a2aDataClassCeiling": "internal",
+        "uhpSessionPolicy": "task-bound"
+      }
+    }
+  ],
+  "harnesses": [
+    {
+      "createdAt": "2026-10-20T04:14:37.551Z",
+      "updatedAt": "2026-10-20T04:14:37.551Z",
+      "id": "h-qa-a0-tip",
+      "agentId": "agt_mvg65wycidog0wpv",
+      "model": "deepseek-chat",
+      "channelGroup": "default",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "public",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "QA-A0提示型员工"
+    },
+    {
+      "createdAt": "2026-10-20T04:14:37.553Z",
+      "updatedAt": "2026-10-20T04:14:37.553Z",
+      "id": "h-qa-a1-exec",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "model": "deepseek-chat",
+      "channelGroup": "default",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "QA-A1执行型员工"
+    },
+    {
+      "createdAt": "2026-10-20T04:14:37.555Z",
+      "updatedAt": "2026-10-20T04:14:37.555Z",
+      "id": "h-qa-a2-auto",
+      "agentId": "agt_mvg65xluidp4m49p",
+      "model": "deepseek-chat",
+      "channelGroup": "default",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "QA-A2自主型员工"
+    },
+    {
+      "createdAt": "2026-10-20T04:14:37.556Z",
+      "updatedAt": "2026-10-20T04:14:37.556Z",
+      "id": "h-qa-a3-neg",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "model": "deepseek-chat",
+      "channelGroup": "default",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "secret",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "QA-A3协商型员工"
+    },
+    {
+      "createdAt": "2026-10-20T04:14:37.558Z",
+      "updatedAt": "2026-10-20T04:14:37.558Z",
+      "id": "h-qa-caller-bot",
+      "agentId": "agt_mvg65y94idps38ro",
+      "model": "deepseek-chat",
+      "channelGroup": "default",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "QA协作发起方员工"
+    },
+    {
+      "createdAt": "2026-10-20T04:14:37.559Z",
+      "updatedAt": "2026-10-20T04:14:37.559Z",
+      "id": "h-qa-a3-caller",
+      "agentId": "agt_mvg65ykridq44i55",
+      "model": "deepseek-chat",
+      "channelGroup": "default",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "secret",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "QA-A3发起方员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.785Z",
+      "updatedAt": "2026-10-20T10:04:46.785Z",
+      "id": "h-d-a0-caller",
+      "agentId": "agt_mvgio9q4ifhihjet",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-A0调用方员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.791Z",
+      "updatedAt": "2026-10-20T10:04:46.791Z",
+      "id": "h-d-a1-caller",
+      "agentId": "agt_mvgio9qaifho4e8x",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-A1调用方员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.796Z",
+      "updatedAt": "2026-10-20T10:04:46.796Z",
+      "id": "h-d-a3-counter",
+      "agentId": "agt_mvgio9qhifhuhbr9",
+      "model": "deepseek-coder",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "secret",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-A3反价目标员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.798Z",
+      "updatedAt": "2026-10-20T10:04:46.798Z",
+      "id": "h-d-offline",
+      "agentId": "agt_mvgio9qlifi053v0",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-非在线目标员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.802Z",
+      "updatedAt": "2026-10-20T10:04:46.802Z",
+      "id": "h-d-budget",
+      "agentId": "agt_mvgio9qnifi6tuw3",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-预算熔断目标员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.806Z",
+      "updatedAt": "2026-10-20T10:04:46.806Z",
+      "id": "h-d-skilldrift",
+      "agentId": "agt_mvgio9qrific0s4v",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-技能漂移员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.810Z",
+      "updatedAt": "2026-10-20T10:04:46.810Z",
+      "id": "h-d-harnessdrift",
+      "agentId": "agt_mvgio9qvifiifi2f",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-harness漂移员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:04:46.816Z",
+      "updatedAt": "2026-10-20T10:04:46.816Z",
+      "id": "h-d-frozen",
+      "agentId": "agt_mvgio9qzifioxb4y",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-冻结目标员工"
+    },
+    {
+      "createdAt": "2026-10-20T10:09:34.653Z",
+      "updatedAt": "2026-10-20T10:09:34.653Z",
+      "id": "h-d-a2-caller",
+      "agentId": "agt_mvgiufg6ifyyjrp3",
+      "model": "deepseek-chat",
+      "systemPromptVersion": "v1",
+      "toolPermGroupIds": [],
+      "stepBudget": 2,
+      "timeBudgetMs": 60000,
+      "dataClassCeiling": "internal",
+      "enabled": true,
+      "createdBy": "usr_mvg65e9midmcih9e",
+      "agentName": "D-A2调用方员工"
+    }
+  ]
+}

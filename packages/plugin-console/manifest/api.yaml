@@ -3,25 +3,30 @@ plugin: dsh-plugin-console
 base: /api
 endpoints:
   - POST /api/tools/execute（工具桥：与 dsh ToolRuntime 同一契约）
-  - GET/POST/DELETE /mcp（平台即 MCP Server：Streamable HTTP，initialize/tools/list/tools/call，Bearer 鉴权 + 工具级权限点；GET=SSE 流、DELETE=会话终结） · GET /docs（控制台文档页）
-  - GET /api/health（存活探针） · GET /api/tools/schemas（工具 schema 目录） · GET /api/platform/route-matrix（路由矩阵自检）
-  - GET /api/platform/info（插件树/工具目录/集合） · GET /api/overview（工作台聚合）
-  - GET /api/assets/inventory（资产台账） · POST /api/assets/healthcheck（健康巡检） · GET /api/assets/report（成本报表）
-  - GET /api/assets/benefit（成本穿透：内部成本参考 + 单位 DAU 成本，零价快照口径） · GET /api/assets/retire-reasons（下架分析：弃用/下线原因聚合）
-  - GET /api/skills/usage-heatmap（技能热力图：skill × 日 使用矩阵）
-  - GET /api/usage/report/monthly（J4 月度用量报表：部门/Agent/Skill tokens 三维聚合；format=csv 自助导出）
+  - GET/POST/DELETE /mcp（平台即 MCP Server：Streamable HTTP，initialize/tools/list/tools/call，Bearer 鉴权 + 工具级权限点；GET=SSE 流、DELETE=会话终结） · GET /docs（控制台文档页） · GET /locales/:locale（UI 全球化词典合并端点，2026-10-16：platform-i18n 服务端文案 + 控制台/面板 SPA 词典三层合并，公开静态文案无鉴权面）
+  - GET /api/health（存活探针） · GET /api/tools/schemas（console.read；工具 schema 目录） · GET /api/platform/route-matrix（路由矩阵自检） · GET /api/openapi.json（authenticated；OpenAPI 3.0.3 接口面文档：由 declaredRoutes 路由台账运行时投影，原始文档不包信封，含 x-auth/x-permission 鉴权声明，供 Agent/第三方客户端发现接口面，2026-10-27）
+  - GET /api/platform/bootstrap（公开；首启状态：仅回 initialPasswordPending 布尔，登录页部署提示用） · GET /api/platform/bootstrap/detail（authenticated；首启状态全量：mode/orgName/seededAt/口令文件路径） · GET /api/platform/demo（公开；DEMO_MODE=1 演示态标记：仅回 {demo,principalId,name,readonlyPermissions}，供前端显示只读横幅；非演示态回 {demo:false}，不含业务数据） · POST /api/panel/auth/demo-entry（公开；DEMO_MODE=1 专用：种子演示账号 ≤120s 一次性自助票，gate01-go.html 免密中转直达 01门面板，非演示实例 404，2026-11-01）
   - GET /api/finops/overview?month=YYYY-MM&window=分钟（usage.read；M2 CFO 视图：成本穿透 org×model+环比 + 空转检测一次取全）
   - GET /api/finops/idle?month=YYYY-MM&window=分钟（usage.read；空转检测独立查询，近似口径「无后续动作调用」）
   - GET /api/finops/report/monthly?month=YYYY-MM[&format=csv]（usage.read；CFO 成本报表，CSV 为 Excel 友好 BOM）
-  - GET /api/platform/bootstrap（公开；首启状态：仅回 initialPasswordPending 布尔，登录页部署提示用）
-  - GET /api/platform/bootstrap/detail（authenticated；首启状态全量：mode/orgName/seededAt/口令文件路径）
+  - GET /api/platform/info（console.read；插件树/工具目录/集合） · GET /api/overview（console.read；工作台聚合） · GET /api/usage/recent（console.read；全员工作台最近调用自见）
+  - GET /api/assets/inventory（资产台账） · POST /api/assets/healthcheck（健康巡检） · GET /api/assets/report（成本报表）
+  - GET /api/assets/benefit（成本穿透：内部成本参考 + 单位 DAU 成本，零价快照口径） · GET /api/assets/retire-reasons（下架分析：弃用/下线原因聚合）
+  - GET /api/skills/usage-heatmap（技能热力图：skill × 日 使用矩阵）
+  - GET /api/fleet/ledger?type=&search=（usage.read；设计适配 5.2 六类资产统一台账：health/lifecycle/grayPercent/calls30d/tokens30d/cost30d/usageReports30d/trend[14]/dau/autonomy——usage 事件真实聚合，无数据 0/空数组）
+  - POST /api/assets/usage-reports（usage.write；资产使用凭证提报：Agent 使用 skill/MCP 后主动上报使用事实，机器主体须已获取该资产——skill install/download、mcp 权限组，幂等键防重，2026-10-31） · GET /api/assets/usage-reports?assetType=&assetKey=&agentId=&from=&to=&limit=（usage.read；凭证流水查询/经营对账）
+  - POST /api/authn/mcp-tokens（console.login；员工自助 MCP 调用配置：签发带备注的个人接入令牌并返回一键复制的 mcpServers JSON，权限与角色实时对齐，明文仅此一次，2026-11-02） · GET /api/authn/mcp-tokens（console.login；本人令牌列表，恒掩码） · DELETE /api/authn/mcp-tokens/:jti（console.login；仅本人自助吊销，非本人按 404）
+  - GET /api/usage/report?days=28&dim=tokens|cost（usage.read；设计适配 5.5 用量与成本报表：日序列/部门分摊占比环比/Top 资产/单位 DAU 成本，全部 usage 事件真实聚合）
+  - GET /api/modelgw/routes-usage（modelgw.read；设计适配 5.4 模型路由 30 天消耗：tokens30d/share/cost30d 按 model 聚合，零消耗路由诚实列 0）
+  - GET /api/usage/collaborations（usage.read；C4 协作链计量：context 单链明细或窗口 Top 协作链，contextId 归集一次跨员工协作总成本）
+  - GET /api/usage/report/monthly（J4 月度用量报表：部门/Agent/Skill tokens 三维聚合；format=csv 自助导出）
   - POST /api/usage/retention/purge（usage.admin；保留策略手动巡检，body.days 可临时收紧窗口，0=跳过）
   - GET /api/usage/summary?window=today|month&org=&subject=（panel.read；IAW 4-1 成本摘要+预算进度，非 usage.read 主体强制收敛自身组织）
   - GET /api/usage/feedback-stats?days=7|30|90|all（panel.read；IAW 4-2 产出采纳率聚合）
-  - GET /api/notifications?since=&limit= · POST /api/notifications/read-cursor（console.login；IAW 8-1 通知中心持久化+已读游标）
+  - GET /api/notifications?since=&limit=（console.read） · POST /api/notifications/read-cursor（console.login；IAW 8-1 通知中心持久化+已读游标）
   - GET /api/modelgw/channel-groups（panel.read）· PUT /api/modelgw/channel-groups（panel.config.write；IAW 1-2 渠道组降级链）
   - GET /api/modelgw/:slug/telemetry?window=7d（panel.read；IAW 1-3 渠道遥测，TTFT 诚实缺列）
-  - GET /api/modelgw/budgets（panel.read）· PUT /api/modelgw/budgets（panel.config.write；IAW 1-4 预算熔断）
+  - GET /api/modelgw/budgets（panel.read）· PUT /api/modelgw/budgets（panel.config.write；IAW 1-4 预算熔断；支持 subject 主体预算 agent:/app: 与 freezeAgent 联动冻结）· DELETE /api/modelgw/budgets/:id（panel.config.write；R4 删除面）
   - PUT /api/iam/scene-policies（iam.scene.write）· GET /api/iam/scene-policies（iam.org.read）· DELETE /:id（IAW 6-1 场景级授权）· POST /api/iam/scene-authz/check（panel.read 自查）
   - GET /api/resource/datasets?scene=（panel.read）· PUT /api/resource/datasets · PUT /api/resource/datasets/:code/quality（resource.dataset.write；IAW 2-1/2-2）
   - GET /api/resource/lineage?dataset=（panel.read）· PUT /api/resource/lineage（resource.dataset.write；IAW 2-3 血缘）

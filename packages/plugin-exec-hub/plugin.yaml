@@ -1,0 +1,12 @@
+# 插件声明：id、版本、依赖与权限点（插件标准解剖结构）
+id: dsh-plugin-exec-hub
+version: 1.5.0
+label: 执行中枢（目标血缘/任务执行锁/心跳唤醒/例行调度）
+depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam', 'dsh-plugin-authn', 'dsh-plugin-audit', 'dsh-plugin-modelgw', 'dsh-plugin-agent', 'dsh-plugin-flow-core', 'dsh-plugin-usage', 'dsh-plugin-mcp', 'dsh-plugin-skillhub', 'dsh-plugin-nas']
+provides:
+  services:
+    - execHub
+permissions:
+  - exec.read
+  - exec.write
+  - exec.admin

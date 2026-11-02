@@ -1,9 +1,11 @@
 /** 登录页：账号密码 / 三方扫码（按平台连接器配置显隐）/ 票据免登（?ticket= 一次性参数）。 */
-import { api, session, entryTicketSession, BASE, CONNECTION_NAME, IS_LOCAL_HOST } from '../api.js'
+import { api, session, entryTicketSession, CONNECTION_NAME, IS_LOCAL_HOST } from '../api.js'
 import { resolveLanding, LANDING_PREF_KEY } from '../landing.js'
+import { resolvePanels } from '../connections.js'
 import { consumeNextSources, exitWithNext } from '../next-redirect.js'
 import { icon } from '../icons.js'
 import { h, $, esc, toast } from '../ui.js'
+import rqI18n from '../i18n.js'
 
 export function renderLogin(app) {
   app.innerHTML = `
@@ -53,8 +55,7 @@ export function renderLogin(app) {
         <div class="sub" id="login-sub">使用钉钉扫码或平台账号登录</div>
         <div id="login-bootstrap-hint" class="muted-box mb-14" style="display:none;gap:8px;border-color:#fcd34d;background:#fffbeb">
           ${icon('info', 15)}
-          <span class="fs-12">首次部署提示：平台管理员 <b>admin</b> 的初始口令在服务器 <b>data/admin-initial-password.txt</b> 文件中。
-          登录后请<b>立即修改口令并删除该文件</b>（操作指引见 docs/deploy-enterprise.md 部署清单）。</span>
+          <span class="fs-12">首次部署提示：平台管理员 <b>admin</b> 的初始口令在服务器 <b>data/admin-initial-password.txt</b> 文件中。登录后请<b>立即修改口令并删除该文件</b>（操作指引见 docs/deploy-enterprise.md 部署清单）。</span>
         </div>
         <div class="segmented" style="margin-bottom:24px" id="login-tabs">
           <span class="segmented-item" data-tab="dingtalk">钉钉扫码</span>
@@ -124,6 +125,9 @@ export function renderLogin(app) {
           <span>宿主服务：${esc(CONNECTION_NAME)}${IS_LOCAL_HOST ? '' : '（远程）'}</span>
           <a id="login-conn-link" style="color:var(--brand-500);cursor:pointer">更换</a>
         </div>
+        <div style="margin-top:14px;text-align:center">
+          <a href="#/home" style="color:var(--text-3);font-size:var(--fs-12-5)">← 返回产品首页</a>
+        </div>
       </div>
     </div>`
 
@@ -150,13 +154,21 @@ export function renderLogin(app) {
   // 登录成功的统一出口：有回跳目的地整页跳转；无目的地时按落地分诊（与 app.js boot 同规则，
   // docs/entry-switching.md）——纯业务身份直达部门面板，其余进控制台工作台
   const finishLogin = async (welcomeName) => {
-    toast(`欢迎回来，${welcomeName}`)
+    toast(rqI18n.t('欢迎回来，{name}', { name: welcomeName }))
     // 跨源：签一次性自助票（TTL ≤120s）随 fragment 回跳，签票失败仍回跳（dsh 侧走
     // 「我已完成扫码」回导校验诚实降级）；同源：直接跳转——规则在 next-redirect.js 共享面
     if (await exitWithNext({ sameOrigin: nextDestination, crossOrigin: crossNextDestination, api })) return
     if (resolveLanding(session.user) === 'panel') {
       try { localStorage.setItem(LANDING_PREF_KEY, 'panel') } catch { /* 忽略 */ }
-      location.assign(`${BASE}/panel/`)
+      // 面板入口以「宿主 × 部门」登记为准（#/panels）：有登记直达首个已登记面板，
+      // 没登记停在登记页引导（与 app.js 启动分诊同规则）。
+      // 挂载前缀取页面自身路径，不用 api.js 的 BASE——BASE 在远程宿主连接下是完整
+      // 远端地址（http://host:port/rq），当成本机前缀会把「本机登记」拼成坏 URL。
+      const mountBase = new URL('.', document.baseURI).pathname.replace(/\/$/, '')
+      const registered = resolvePanels(localStorage, mountBase).find((panel) => panel.available)
+      if (registered) { location.assign(registered.url); return }
+      location.hash = '#/panels'
+      window.dispatchEvent(new Event('hashchange'))
       return
     }
     location.hash = '#/dashboard'
@@ -172,7 +184,7 @@ export function renderLogin(app) {
       entryTicketSession(urlTicket).then((user) => {
         finishLogin(user.displayName)
       }).catch((error) => {
-        toast(`免登失败：${error.message}，请常规登录`, 'error')
+        toast(rqI18n.t('免登失败：{msg}，请常规登录', { msg: error.message }), 'error')
       })
     }
   }
@@ -181,11 +193,42 @@ export function renderLogin(app) {
   const LAST_SSO_CONFIG_KEY = 'heng_ops_last_sso_config'
   let preferredConfigId = ''
   try { preferredConfigId = localStorage.getItem(LAST_SSO_CONFIG_KEY) ?? '' } catch { /* 忽略 */ }
+  // 三方登录入口按平台配置显隐：未启用任何登录连接器时仅展示账号密码
+  // 钉钉扫码为平台默认登录方式：连接器可用即默认选中（用户已手动切换则不覆盖）
+  let loginTabTouched = false
+  const switchLoginTab = (name) => {
+    app.querySelectorAll('#login-tabs .segmented-item').forEach((item) => item.classList.toggle('active', item.dataset.tab === name))
+    const isPassword = name === 'password'
+    tabPassword.style.display = isPassword ? '' : 'none'
+    tabDing.style.display = isPassword ? 'none' : ''
+  }
   // 发起整页跳转授权：单一主入口，不再要求在平台侧预选企业主体
+  // blocked=授权页侧应用级拒绝（钉钉 900103「应用不存在」）：跳到该地址只会看到错误页，
+  // 这里直接就地给出「去开发者后台开哪一项」的指引，并切回账号密码兜底，不让登录彻底走死。
+  const dingBlockedNotice = (message) => {
+    // 幂等：重复点击「扫码」不应把同一条提示堆叠多份
+    const previous = $('#ding-blocked-notice')
+    if (previous) previous.remove()
+    $('#ding-step-authorize').insertAdjacentHTML('afterbegin', `
+      <div class="muted-box mb-14" id="ding-blocked-notice" style="display:flex;gap:8px;border-color:#fcd34d;background:#fffbeb">
+        ${icon('alert', 15)}
+        <span class="fs-12">钉钉扫码登录未就绪${message ? `：${esc(message)}` : ''}。<br>
+        请管理员在<b>钉钉开发者后台 → 该企业内部应用 → 登录与分享</b>中补充回调域名 <code class="mono">${esc(location.host)}</code>，
+        并确认 <b>AppKey</b> 与「登录应用」一致；配好后刷新本页即可扫码。当前可先用<b>账号密码</b>登录。</span>
+      </div>`)
+  }
   const startDingOauth = async (btn, configId) => {
     btn.classList.add('btn-loading')
     try {
       const auth = await api.post('/api/auth/sso/authorize', { provider: 'dingtalk', scene: 'web_qr', ...(configId ? { configId } : {}) })
+      if (auth.blocked) {
+        dingBlockedNotice(auth.blocked.message)
+        // 用户手动切回账号密码：置 touched，避免 providers 回来后再把 tab 拨回扫码
+        loginTabTouched = true
+        switchLoginTab('password')
+        toast(rqI18n.t('钉钉扫码登录未就绪，已切换到账号密码登录'), 'error')
+        return
+      }
       if (!auth.authorizeUrl) throw new Error('身份源未返回授权地址（可能为 mock 模式），请改用手动输入授权码')
       try { localStorage.setItem(LAST_SSO_CONFIG_KEY, configId ?? '') } catch { /* 忽略 */ }
       // 跨源自举回跳（G1）：整页跳转会离开本页，跨源目的地暂存给 SSO 回调脚本消费
@@ -215,15 +258,7 @@ export function renderLogin(app) {
       el.onclick = () => void startDingOauth($('#ding-oauth-go'), el.dataset.configId || undefined)
     })
   }
-  // 三方登录入口按平台配置显隐：未启用任何登录连接器时仅展示账号密码
-  // 钉钉扫码为平台默认登录方式：连接器可用即默认选中（用户已手动切换则不覆盖）
-  let loginTabTouched = false
-  const switchLoginTab = (name) => {
-    app.querySelectorAll('#login-tabs .segmented-item').forEach((item) => item.classList.toggle('active', item.dataset.tab === name))
-    const isPassword = name === 'password'
-    tabPassword.style.display = isPassword ? '' : 'none'
-    tabDing.style.display = isPassword ? 'none' : ''
-  }
+  // 三方登录入口按平台配置显隐 → 见上方 switchLoginTab/loginTabTouched 声明
   void api.get('/api/auth/providers').then((data) => {
     const dingtalkProviders = (data?.providers ?? []).filter((item) => item.provider === 'dingtalk')
     if (!dingtalkProviders.length) {
@@ -285,7 +320,7 @@ export function renderLogin(app) {
     btn.classList.add('btn-loading')
     try {
       const code = $('#login-ding-code').value.trim()
-      if (!code) return toast('请输入钉钉授权码（演示环境为工号，如 DD0002）', 'error')
+      if (!code) return toast(rqI18n.t('请输入钉钉授权码（演示环境为工号，如 DD0002）'), 'error')
       const auth = await api.post('/api/auth/sso/authorize', { provider: 'dingtalk', scene: 'web_qr' })
       const result = await api.post('/api/auth/sso', { provider: 'dingtalk', code, state: auth.state })
       if (result.kind === 'pending') {

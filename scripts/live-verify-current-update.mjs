@@ -127,7 +127,7 @@ check('名册通道 iam.roster.read：dev（无权限点）→ 403', rosterDev.s
 const uniq = Date.now() % 100000
 const agentCreate = await api('POST', '/api/agents', { token: admin, body: {
   name: `核查-门禁验证Agent-${uniq}`,
-  attrs: { description: '当前更新核查用', model: 'deepseek-chat', riskLevel: 'low', systemPromptVersion: 'prompt-v1', dataClass: 'internal' },
+  attrs: { description: '当前更新核查用', model: 'deepseek-chat', riskLevel: 'low', dataClass: 'internal' },
 } })
 check('创建 Agent 资产（含必填属性）', agentCreate.status === 200, `status=${agentCreate.status} ${JSON.stringify(agentCreate.json?.error)}`)
 const agentId = agentCreate.json?.data?.agent?.id ?? agentCreate.json?.data?.id

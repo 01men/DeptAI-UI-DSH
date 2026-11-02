@@ -19,6 +19,7 @@
  * 按默认 200 处理并断言信封 success:true。
  */
 import { OcError, OcUnavailableError } from './errors.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 
 export const OC_VERSION_PIN = 'v1.4.0'
 const DEFAULT_TIMEOUT_MS = 15_000
@@ -135,8 +136,8 @@ export class OcClient {
         signal: controller.signal,
       })
     } catch (error) {
-      const message = error instanceof Error ? (error.name === 'AbortError' ? `open-connector 响应超时（${init.timeoutMs ?? this.timeoutMs}ms）` : error.message) : String(error)
-      throw new OcUnavailableError(`连接器网关不可达：${message}`)
+      const message = error instanceof Error ? (error.name === 'AbortError' ? t('open-connector 响应超时（{timeout}ms）', { timeout: init.timeoutMs ?? this.timeoutMs }) : error.message) : String(error)
+      throw new OcUnavailableError(t('连接器网关不可达：{reason}', { reason: message }))
     } finally {
       clearTimeout(timer)
     }
@@ -149,7 +150,7 @@ export class OcClient {
       try {
         json = JSON.parse(text) as Record<string, unknown>
       } catch {
-        throw new OcUnavailableError(`open-connector 响应不是合法 JSON（HTTP ${response.status}）：${text.slice(0, 120)}`)
+        throw new OcUnavailableError(t('open-connector 响应不是合法 JSON（HTTP {status}）：{body}', { status: response.status, body: text.slice(0, 120) }))
       }
     }
     return { status: response.status, json, text }
@@ -159,11 +160,11 @@ export class OcClient {
   private async envelope(path: string, init: Parameters<OcClient['request']>[1] = {}): Promise<{ data: unknown; meta: Record<string, unknown> }> {
     const { status, json, text } = await this.request(path, init)
     if (json === null) {
-      throw new OcUnavailableError(`open-connector 响应缺少 JSON 信封（HTTP ${status}）：${path}`)
+      throw new OcUnavailableError(t('open-connector 响应缺少 JSON 信封（HTTP {status}）：{path}', { status, path }))
     }
     if (json.success === false || status >= 400) {
       const code = String(json.errorCode ?? (json.error as Record<string, unknown> | undefined)?.code ?? `http_${status}`)
-      throw new OcError(code, typeof json.message === 'string' ? json.message : `${path} 失败：HTTP ${status} ${text.slice(0, 160)}`, undefined, undefined)
+      throw new OcError(code, typeof json.message === 'string' ? json.message : t('{path} 失败：HTTP {status} {body}', { path, status, body: text.slice(0, 160) }), undefined, undefined)
     }
     return { data: json.data ?? null, meta: (json.meta && typeof json.meta === 'object' ? json.meta : {}) as Record<string, unknown> }
   }
@@ -173,7 +174,7 @@ export class OcClient {
   async health(): Promise<{ ok: boolean; runtime?: string }> {
     const { json, status } = await this.request('/v1/health')
     if (status >= 400 || !json || json.success === false) {
-      throw new OcUnavailableError(`健康检查失败：HTTP ${status}`)
+      throw new OcUnavailableError(t('健康检查失败：HTTP {status}', { status }))
     }
     const data = (json.data && typeof json.data === 'object' ? json.data : {}) as Record<string, unknown>
     return { ok: data.ok === true, runtime: typeof data.runtime === 'string' ? data.runtime : undefined }
@@ -198,7 +199,7 @@ export class OcClient {
   /** 连接向导指南代理展示（admin 接口返回 markdown 文本）。 */
   async getActionGuide(actionId: string): Promise<string> {
     const { text, status } = await this.request(`/api/actions/${encodeURIComponent(actionId)}/agent.md`, { acceptText: true })
-    if (status >= 400) throw new OcError(`http_${status}`, `agent.md 获取失败（HTTP ${status}）`)
+    if (status >= 400) throw new OcError(`http_${status}`, t('agent.md 获取失败（HTTP {status}）', { status }))
     return text
   }
 
@@ -271,7 +272,7 @@ export class OcClient {
     )
     if (json && (json.success === false || status >= 400)) {
       const code = String(json.errorCode ?? `http_${status}`)
-      throw new OcError(code, typeof json.message === 'string' ? json.message : `action ${actionId} 执行失败（HTTP ${status}）`)
+      throw new OcError(code, typeof json.message === 'string' ? json.message : t('action {action} 执行失败（HTTP {status}）', { action: actionId, status }))
     }
     return {
       data: json?.data ?? null,
@@ -299,13 +300,13 @@ export class OcClient {
       try {
         json = text.trim() ? JSON.parse(text) as Record<string, unknown> : null
       } catch {
-        throw new OcUnavailableError(`执行响应不是合法 JSON（HTTP ${response.status}）：${text.slice(0, 120)}`)
+        throw new OcUnavailableError(t('执行响应不是合法 JSON（HTTP {status}）：{body}', { status: response.status, body: text.slice(0, 120) }))
       }
       return { status: response.status, json, text }
     } catch (error) {
       if (error instanceof OcError || error instanceof OcUnavailableError) throw error
-      const message = error instanceof Error ? (error.name === 'AbortError' ? `执行超时（${this.timeoutMs}ms）` : error.message) : String(error)
-      throw new OcUnavailableError(`连接器网关不可达：${message}`)
+      const message = error instanceof Error ? (error.name === 'AbortError' ? t('执行超时（{timeout}ms）', { timeout: this.timeoutMs }) : error.message) : String(error)
+      throw new OcUnavailableError(t('连接器网关不可达：{reason}', { reason: message }))
     } finally {
       clearTimeout(timer)
     }

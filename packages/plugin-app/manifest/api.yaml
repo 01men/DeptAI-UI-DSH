@@ -5,19 +5,26 @@ endpoints:
   - GET/POST /api/apps · GET /api/apps/:id · PATCH /api/apps/:id
   - POST /api/apps/:id/transition（发布/下架为 L4 审批）
   - POST /api/apps/:id/metrics-report（应用指标主动上报：PV/UV/DAU/会话/留存，可 --date 补录）
-  - GET /api/apps/:id/org-sync（组织架构同步快照：组织树+在职成员，?ifNoneMatch= 零载荷变更轮询；应用自助复用平台组织模块，经 console 暴露）
   - POST /api/apps/:id/entry-ticket（平台授权直达：一次性入场票据，#entry_ticket 打开应用）
   - GET /api/apps/:id（含 topology/cost/impact） · DELETE /api/apps/:id（下架移除）
   - POST /api/apps/:id/sso-client · PATCH /api/apps/:id/sso-client · POST /api/apps/:id/sso-client/rotate（应用 SSO 客户端治理） · POST /api/apps/:id/onboarding-prompt（接入提示词重生成）
   - GET /api/apps/developer-options（开发者接入选项）
+  - GET/POST /api/apps/:id/capabilities · DELETE /api/apps/:id/capabilities/:serviceId（应用 MCP 能力绑定）
+  - GET /api/apps/:id/credentials · PUT /api/apps/:id/credentials/:key · DELETE /api/apps/:id/credentials/:key · GET /api/apps/:id/credentials/self-check · GET /api/apps/:id/credentials/:key/value（应用外部凭证托管：AES-256-GCM 静态加密，取值独立权限点 app.credential.fetch + 逐次审计，#19）
+  - GET /api/apps/:id/org-sync（组织架构同步快照：组织树+在职成员，?ifNoneMatch= 零载荷变更轮询；应用自助复用平台组织模块，经 console 暴露）
   - # 平台侧自动折算：entry-ticket 兑换 / OIDC 发码 → DAU；浏览器 beacon → PV/UV（端点经 console 聚合暴露）
 tools:
+  - app_cost_breakdown
   - app_list
-  - app_topology
   - app_metrics
   - app_metrics_report
-  - app_cost_breakdown
+  - app_offline
+  - app_register
+  - app_topology
 services:
   - key: appRegistry
     access: ctx.appRegistry
-    description: 应用注册/编排依赖图（拓扑）/应用层指标/成本穿透/生命周期/组织架构同步快照
+    description: 应用注册/编排依赖图（拓扑）/应用层指标/成本穿透/生命周期
+  - key: appCredentials
+    access: ctx.appCredentials
+    description: 应用外部凭证托管（AES-256-GCM 加密存取/轮换/逐次审计，#19）

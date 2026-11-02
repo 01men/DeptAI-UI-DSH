@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-14",
+  "topic": "模型目录登记能力核查（专项）",
+  "source_evidence": {
+    "frontend_calls_of_api_modelgw": 0,
+    "register_page_copy": "pages/register.js:16 「模型接入：模型由管理员经 modelgw 统一接入（非自助登记），这里仅查看已接入模型」badge=管理员通道 href=#/assets perm=usage.read",
+    "permission_catalog": ["modelgw.read 查看模型网关", "modelgw.invoke 调用模型网关", "modelgw.admin 管理模型目录"],
+    "builtin_roles_granting_modelgw": "无（仅 super_admin '*' 通配；BuiltinRoles 与 BUILTIN_ROLE_MIGRATION 零命中 modelgw.*）",
+    "routes": {
+      "GET /api/modelgw/models": "modelgw.read",
+      "POST /api/modelgw/models": "modelgw.admin",
+      "DELETE /api/modelgw/models/:id": "modelgw.admin",
+      "POST /api/modelgw/invoke": "modelgw.invoke",
+      "GET /api/modelgw/channel-groups": "panel.read",
+      "GET /api/modelgw/budgets": "panel.read",
+      "PUT /api/modelgw/budgets": "panel.config.write"
+    }
+  },
+  "live_probes": [
+    { "who": "dev01", "call": "POST /api/modelgw/models", "status": 403, "error": "缺少权限点 modelgw.admin" },
+    { "who": "ops01", "call": "POST /api/modelgw/models", "status": 403, "error": "缺少权限点 modelgw.admin" },
+    { "who": "hr01", "call": "POST /api/modelgw/models", "status": 403, "error": "缺少权限点 modelgw.admin" },
+    { "who": "dev01", "call": "GET /api/modelgw/models", "status": 403, "error": "缺少权限点 modelgw.read" },
+    { "who": "dev01", "call": "GET /api/modelgw/channel-groups", "status": 200, "data": { "groups": [] } },
+    { "who": "ops01", "call": "GET /api/assets/inventory?days=30", "status": 403, "error": "缺少权限点 usage.read" }
+  ],
+  "conclusion": "平台当前没有模型目录登记的交互功能（UI）。设计定位为『管理员通道，非自助登记』，但管理端同样无界面，唯一登记途径为 super_admin 调 POST /api/modelgw/models。线上模型网关整体未初始化：模型 0 / 渠道组 0 / 预算 0。",
+  "remediation": "R2-A admin API runbook 立即登记；R2-B 补管理 UI（modelgw.read/admin 门控）并把 modelgw.read 补入 resource_admin；R2-C 登记后复验清单。"
+}

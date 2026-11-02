@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path'
 import { hostname } from 'node:os'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
+import { t } from '../../platform-i18n/src/index.ts'
 
 /** 本机持久化的宿主连接配置（机器凭证等价于口令，文件权限收紧到 0600）。 */
 export interface ConnectClientConfig {
@@ -76,7 +77,7 @@ export class ConnectClientService extends Service {
       meta: { hostname: hostname(), platform: process.platform, node: process.version },
     })
     const credential = payload as { clientId: string; clientSecret: string; principalId: string; template: string }
-    if (!credential?.clientId || !credential?.clientSecret) throw new Error('宿主返回的接入凭证不完整')
+    if (!credential?.clientId || !credential?.clientSecret) throw new Error(t('宿主返回的接入凭证不完整'))
     this.config = {
       hubUrl,
       clientId: credential.clientId,
@@ -94,7 +95,7 @@ export class ConnectClientService extends Service {
   /** 直接配置已有机器凭证（管理员在宿主控制台手工签发后分发）。 */
   async loginWithCredential(input: { hubUrl: string; clientId: string; clientSecret: string; clientName?: string }): Promise<ConnectClientConfig> {
     const hubUrl = normalizeBaseUrl(input.hubUrl)
-    if (!input.clientId || !input.clientSecret) throw new Error('clientId 与 clientSecret 必填')
+    if (!input.clientId || !input.clientSecret) throw new Error(t('clientId 与 clientSecret 必填'))
     this.config = {
       hubUrl,
       clientId: input.clientId.trim(),
@@ -131,20 +132,20 @@ export class ConnectClientService extends Service {
   /** 获取机器令牌（缓存 + 提前 60s 过期；失效自动走 client-credentials 重换）。 */
   async machineToken(): Promise<string> {
     if (this.cached && this.cached.expiresAt > Date.now() + 60_000) return this.cached.token
-    if (!this.config) throw new Error('尚未配置宿主服务，请先完成接入（connect_setup 或本地配置页）')
+    if (!this.config) throw new Error(t('尚未配置宿主服务，请先完成接入（connect_setup 或本地配置页）'))
     const config = this.config
     try {
       const payload = await this.hubCall(config.hubUrl, 'POST', '/api/auth/client-credentials', {
         clientId: config.clientId,
         clientSecret: config.clientSecret,
       }) as { token: string; expiresAt: string }
-      if (!payload?.token) throw new Error('宿主未返回机器令牌')
+      if (!payload?.token) throw new Error(t('宿主未返回机器令牌'))
       this.cached = { token: payload.token, expiresAt: new Date(payload.expiresAt).getTime() || Date.now() + 110 * 60_000 }
       return this.cached.token
     } catch (error) {
       if (error instanceof HubUnauthorizedError) {
         // 机器凭证被吊销/禁用：重换无意义，直接给出可行动的诊断
-        throw new Error('机器凭证无效或已在宿主侧吊销，请重新接入（connect_setup）或联系宿主管理员')
+        throw new Error(t('机器凭证无效或已在宿主侧吊销，请重新接入（connect_setup）或联系宿主管理员'))
       }
       throw error
     }
@@ -156,11 +157,27 @@ export class ConnectClientService extends Service {
    * 401（机器令牌过期/宿主密钥轮换）时重换令牌重试一次；凭证级失败不重试。
    */
   async forward(toolName: string, args: Record<string, unknown>, exec?: { signal?: AbortSignal }): Promise<unknown> {
-    if (!this.config) throw new Error('尚未配置宿主服务，本工具需要远程执行，请先完成接入')
+    if (!this.config) throw new Error(t('尚未配置宿主服务，本工具需要远程执行，请先完成接入'))
     const hubUrl = this.config.hubUrl
     const executeOnce = async (): Promise<{ isError?: boolean; value?: unknown; error?: { message?: string } }> => {
       const token = await this.machineToken()
-      return await this.hubCall(hubUrl, 'POST', '/api/tools/execute', { name: toolName, args }, {
+      return await this.hubCall(hubUrl, 'POST', '/api/tools/execute', {
+        name: toolName,
+        args,
+        // 节点身份 ≠ 员工执行身份（D13/§10.4）：转发请求 additive 携带自身已验证主体绑定信封，
+        // 仅供宿主工具桥侧（/api/tools/execute）日志/归因观测。硬性边界：
+        //   1. 信封只随转发透传自身凭证绑定，不含任何可提升权限的声明；
+        //   2. 宿主鉴权仍以 Bearer 机器令牌独立验证，本字段绝不参与授权判定；
+        //   3. 不携带也不接受任何「平台内部请求」免验标记（§10.5：内部动作必须由受信任内部路径发起）。
+        meta: {
+          principal: {
+            kind: 'machine' as const,
+            principalId: this.config.principalId,
+            clientId: this.config.clientId,
+            clientName: this.config.clientName,
+          },
+        },
+      }, {
         authorization: `Bearer ${token}`,
         signal: exec?.signal ?? AbortSignal.timeout(60_000),
       }) as { isError?: boolean; value?: unknown; error?: { message?: string } }
@@ -182,7 +199,7 @@ export class ConnectClientService extends Service {
         void _cleared
         this.config = rest as ConnectClientConfig
       }
-      if (result && result.isError) throw new Error(result.error?.message ?? '宿主工具执行失败')
+      if (result && result.isError) throw new Error(result.error?.message ?? t('宿主工具执行失败'))
       return result?.value
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -231,7 +248,7 @@ export class ConnectClientService extends Service {
   /** 连通性探测（不要求已配置凭证）：宿主健康 + 平台信息。 */
   async probeHub(hubUrl?: string): Promise<{ reachable: boolean; health?: unknown; platform?: { name: string; version: string; tools: number }; error?: string }> {
     const base = normalizeBaseUrl(hubUrl ?? this.config?.hubUrl ?? '')
-    if (!base) return { reachable: false, error: '未指定宿主地址' }
+    if (!base) return { reachable: false, error: t('未指定宿主地址') }
     try {
       const health = await this.hubCall(base, 'GET', '/api/health') as { status?: string }
       const token = await this.machineToken().catch(() => null)
@@ -251,23 +268,23 @@ export class ConnectClientService extends Service {
     const config = this.config
     const base = {
       configured: config !== null,
-      toolProxy: config ? 'remote（转发宿主执行）' : 'local（本地数据）',
+      toolProxy: config ? t('remote（转发宿主执行）') : t('local（本地数据）'),
       ...(this.degradedReason ? { proxyDegraded: this.degradedReason, ...(this.degradedDetail ? { degradedDetail: this.degradedDetail } : {}) } : {}),
     }
-    if (!config) return { ...base, hint: '尚未接入宿主服务：调用 connect_setup（接入码）或 connect_login（已有凭证）完成配置' }
+    if (!config) return { ...base, hint: t('尚未接入宿主服务：调用 connect_setup（接入码）或 connect_login（已有凭证）完成配置') }
     const probe = await this.probeHub().catch((error: unknown) => ({ reachable: false, error: error instanceof Error ? error.message : String(error) }))
-    let tokenState = '未知'
+    let tokenState = t('未知')
     try {
       await this.machineToken()
-      tokenState = '有效'
+      tokenState = t('有效')
     } catch (error) {
-      tokenState = `异常：${error instanceof Error ? error.message : String(error)}`
+      tokenState = t('异常：{reason}', { reason: error instanceof Error ? error.message : String(error) })
     }
     return {
       ...base,
       hubUrl: config.hubUrl,
       clientName: config.clientName,
-      template: config.template || '（手工配置凭证，未走接入码）',
+      template: config.template || t('（手工配置凭证，未走接入码）'),
       principalId: config.principalId,
       enrolledAt: config.enrolledAt,
       hubReachable: (probe as { reachable?: boolean }).reachable === true,
@@ -318,12 +335,12 @@ export class ConnectClientService extends Service {
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: extra?.signal ?? AbortSignal.timeout(15_000),
     }).catch((error: unknown) => {
-      throw new Error(`宿主服务不可达（${base}）：${error instanceof Error ? error.message : String(error)}`)
+      throw new Error(t('宿主服务不可达（{url}）：{reason}', { url: base, reason: error instanceof Error ? error.message : String(error) }))
     })
     const payload = await response.json().catch(() => null) as { ok?: boolean; data?: unknown; error?: { code?: string; message?: string } } | null
-    if (response.status === 401) throw new HubUnauthorizedError(payload?.error?.message ?? '令牌无效或已过期')
+    if (response.status === 401) throw new HubUnauthorizedError(payload?.error?.message ?? t('令牌无效或已过期'))
     if (!response.ok || payload?.ok === false) {
-      throw new Error(payload?.error?.message ?? `宿主请求失败：HTTP ${response.status}`)
+      throw new Error(payload?.error?.message ?? t('宿主请求失败：HTTP {status}', { status: response.status }))
     }
     return payload?.data
   }

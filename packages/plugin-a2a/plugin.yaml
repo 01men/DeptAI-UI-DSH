@@ -1,0 +1,24 @@
+id: dsh-plugin-a2a
+version: 1.3.1
+label: A2A 协作
+depends:
+  - dsh-plugin-platform-core
+  - dsh-plugin-resource-core
+  - dsh-plugin-authn
+  - dsh-plugin-iam
+  - dsh-plugin-audit
+  - dsh-plugin-usage
+  - dsh-plugin-modelgw
+  - dsh-plugin-skillhub
+  - dsh-plugin-mcp
+  - dsh-plugin-agent
+  - dsh-plugin-uhp
+  - dsh-plugin-workforce
+provides:
+  services:
+    - a2aCollab
+permissions:
+  - a2a.directory.read
+  - a2a.task.accept
+  - a2a.admin
+  - agent.a2a.invoke

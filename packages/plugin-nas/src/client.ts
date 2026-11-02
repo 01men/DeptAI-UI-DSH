@@ -6,6 +6,7 @@
  * initialize 握手缓存 mcp-session-id（TTL 5 分钟，无状态服务缓存空串避免重复握手）；
  * AbortController 超时控制。
  */
+import { t } from '../../platform-i18n/src/index.ts'
 
 export interface McpToolInfo {
   name: string
@@ -36,7 +37,7 @@ export class NasMcpClient {
       method: 'initialize',
       params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'dsh-nas-gateway', version: '1.0' } },
     }, PROBE_TIMEOUT_MS)
-    if (payload?.error) throw new Error(`网关 initialize 失败：${payload.error.message ?? '未知错误'}`)
+    if (payload?.error) throw new Error(t('网关 initialize 失败：{reason}', { reason: payload.error.message ?? t('未知错误') }))
     return { serverInfo: payload?.result?.serverInfo }
   }
 
@@ -48,7 +49,7 @@ export class NasMcpClient {
       method: 'tools/list',
       params: {},
     }, PROBE_TIMEOUT_MS, sessionId)
-    if (payload?.error) throw new Error(`网关 tools/list 失败：${payload.error.message ?? '未知错误'}`)
+    if (payload?.error) throw new Error(t('网关 tools/list 失败：{reason}', { reason: payload.error.message ?? t('未知错误') }))
     return Array.isArray(payload?.result?.tools) ? payload.result.tools : []
   }
 
@@ -69,13 +70,13 @@ export class NasMcpClient {
       const renewed = await this.ensureSession().catch(() => undefined)
       ;({ payload } = await send(renewed))
     }
-    if (payload?.error) throw new Error(`网关返回错误：${payload.error.message ?? JSON.stringify(payload.error).slice(0, 200)}`)
+    if (payload?.error) throw new Error(t('网关返回错误：{reason}', { reason: payload.error.message ?? JSON.stringify(payload.error).slice(0, 200) }))
     const result = payload?.result
     if (result?.isError) {
       const text = Array.isArray(result.content)
         ? result.content.map((block: any) => block?.text ?? '').join(' ')
         : String(result.content ?? '')
-      throw new Error(`网关工具 ${tool} 执行失败：${text || 'isError=true'}`)
+      throw new Error(t('网关工具 {tool} 执行失败：{reason}', { tool, reason: text || 'isError=true' }))
     }
     if (Array.isArray(result?.content)) {
       // 单一文本块直接返回文本，多块返回数组（调用方按需 JSON.parse）
@@ -93,7 +94,7 @@ export class NasMcpClient {
       method: 'initialize',
       params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'dsh-nas-gateway', version: '1.0' } },
     }, PROBE_TIMEOUT_MS)
-    if (payload?.error) throw new Error(`网关 initialize 失败：${payload.error.message ?? '未知错误'}`)
+    if (payload?.error) throw new Error(t('网关 initialize 失败：{reason}', { reason: payload.error.message ?? t('未知错误') }))
     const effective = sessionId ?? ''
     this.sessionId = effective
     this.sessionExpiresAt = Date.now() + SESSION_TTL_MS
@@ -120,7 +121,7 @@ export class NasMcpClient {
         signal: controller.signal,
       })
       if (!response.ok) {
-        throw new Error(`网关 HTTP ${response.status}：${(await response.text().catch(() => '')).slice(0, 200)}`)
+        throw new Error(t('网关 HTTP {status}：{body}', { status: response.status, body: (await response.text().catch(() => '')).slice(0, 200) }))
       }
       const sessionIdHeader = response.headers.get('mcp-session-id') ?? undefined
       const contentType = String(response.headers.get('content-type') ?? '')
@@ -132,16 +133,16 @@ export class NasMcpClient {
           if (!frame || frame === '[DONE]') continue
           try { return { payload: JSON.parse(frame), sessionId: sessionIdHeader } } catch { /* 跳过非 JSON 帧 */ }
         }
-        throw new Error('网关 SSE 响应中未找到 JSON-RPC 帧')
+        throw new Error(t('网关 SSE 响应中未找到 JSON-RPC 帧'))
       }
       if (!text) return { payload: null, sessionId: sessionIdHeader }
       try {
         return { payload: JSON.parse(text), sessionId: sessionIdHeader }
       } catch {
-        throw new Error(`网关响应不是合法 JSON：${text.slice(0, 200)}`)
+        throw new Error(t('网关响应不是合法 JSON：{body}', { body: text.slice(0, 200) }))
       }
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') throw new Error(`网关请求超时（${timeoutMs}ms）`)
+      if (error instanceof Error && error.name === 'AbortError') throw new Error(t('网关请求超时（{timeout}ms）', { timeout: timeoutMs }))
       throw error
     } finally {
       clearTimeout(timer)

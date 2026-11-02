@@ -1,0 +1,22 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:10.829Z",
+    "updatedAt": "2026-10-20T04:14:10.829Z",
+    "id": "act_mvg65ea5idmdfkw3",
+    "code": "QB01",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "active",
+    "activatedAt": "2026-10-20T04:14:10.829Z",
+    "activatedBy": "seed（内置资产包默认授权）"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.829Z",
+    "updatedAt": "2026-10-20T04:14:10.829Z",
+    "id": "act_mvg65ea5idme9338",
+    "code": "GCJX",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "active",
+    "activatedAt": "2026-10-20T04:14:10.829Z",
+    "activatedBy": "seed（内置资产包默认授权）"
+  }
+]

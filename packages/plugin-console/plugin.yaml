@@ -1,6 +1,6 @@
 # 插件声明：id、版本、依赖与权限点（插件标准解剖结构）
 id: dsh-plugin-console
-version: 1.1.0
+version: 1.5.0
 label: 管理控制台（接入层）
 depends: ['dsh-plugin-platform-core', '全部业务插件']
 provides:
@@ -8,3 +8,4 @@ provides:
     []
 permissions:
   - console.login
+  - console.read

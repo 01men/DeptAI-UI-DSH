@@ -1,0 +1,101 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:41.522Z",
+    "updatedAt": "2026-10-20T10:22:32.357Z",
+    "id": "cost_mvg661yqidreajw7",
+    "date": "2026-10-20",
+    "agentId": "agt_mvg65xluidp4m49p",
+    "llmTokens": 53164,
+    "toolCalls": 181,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T04:14:41.524Z",
+    "updatedAt": "2026-10-20T10:09:45.861Z",
+    "id": "cost_mvg661ysidrl1k15",
+    "date": "2026-10-20",
+    "agentId": "agt_mvg65y94idps38ro",
+    "llmTokens": 9750,
+    "toolCalls": 57,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T04:16:55.924Z",
+    "updatedAt": "2026-10-20T10:22:32.359Z",
+    "id": "cost_mvg68xo4idwnva9y",
+    "date": "2026-10-20",
+    "llmTokens": 1050,
+    "toolCalls": 0,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T04:21:30.854Z",
+    "updatedAt": "2026-10-20T10:20:14.831Z",
+    "id": "cost_mvg6ett2ieu3koxx",
+    "date": "2026-10-20",
+    "agentId": "agt_mvg65xxhidpg6765",
+    "llmTokens": 4200,
+    "toolCalls": 14,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T04:21:31.505Z",
+    "updatedAt": "2026-10-20T10:20:14.833Z",
+    "id": "cost_mvg6eub5ievfpcxy",
+    "date": "2026-10-20",
+    "agentId": "agt_mvg65ykridq44i55",
+    "llmTokens": 1650,
+    "toolCalls": 11,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T10:05:03.901Z",
+    "updatedAt": "2026-10-20T10:07:27.573Z",
+    "id": "cost_mvgiomxpifl9q70b",
+    "date": "2026-10-20",
+    "agentId": "agt_mvgimrunifgcjrg2",
+    "llmTokens": 200,
+    "toolCalls": 5,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T10:07:18.925Z",
+    "updatedAt": "2026-10-20T10:17:12.029Z",
+    "id": "cost_mvgirj4difmpap70",
+    "date": "2026-10-20",
+    "agentId": "agt_mvgio9qhifhuhbr9",
+    "llmTokens": 12900,
+    "toolCalls": 43,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T10:08:59.309Z",
+    "updatedAt": "2026-10-20T10:10:05.439Z",
+    "id": "cost_mvgitoktiftywxly",
+    "date": "2026-10-20",
+    "agentId": "agt_mvgio9q4ifhihjet",
+    "llmTokens": 3600,
+    "toolCalls": 16,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T10:09:03.387Z",
+    "updatedAt": "2026-10-20T10:10:09.705Z",
+    "id": "cost_mvgitrq3ifvl3p3k",
+    "date": "2026-10-20",
+    "agentId": "agt_mvgio9qaifho4e8x",
+    "llmTokens": 600,
+    "toolCalls": 4,
+    "costYuan": 0
+  },
+  {
+    "createdAt": "2026-10-20T10:09:43.244Z",
+    "updatedAt": "2026-10-20T10:19:14.553Z",
+    "id": "cost_mvgiumh8ifzy05vc",
+    "date": "2026-10-20",
+    "agentId": "agt_mvgiufg6ifyyjrp3",
+    "llmTokens": 4950,
+    "toolCalls": 33,
+    "costYuan": 0
+  }
+]

@@ -11,6 +11,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '../../platform-core/src/index.ts'
+import { t as translate } from '../../platform-i18n/src/index.ts'
 import { ConnectClientService, isProxiedTool } from './client.ts'
 import { ConnectConfigServer } from './config-page.ts'
 import { connectHostApi, connectHostTools } from './host.ts'
@@ -91,6 +92,7 @@ function applyClient(ctx: Context, config: ConnectConfig): void {
   t.register(defineTool({
     name: 'connect_status',
     description: '查看当前与宿主平台的接入状态（是否已配置、宿主可达性、机器令牌状态、工具执行模式 local/remote、最近错误）。',
+    permission: 'console.login',
     parameters: {},
     output: { type: 'object', additionalProperties: true },
     async execute() {
@@ -106,6 +108,7 @@ function applyClient(ctx: Context, config: ConnectConfig): void {
       enrollmentCode: { type: 'string', required: true, description: '宿主管理员在控制台「平台接入」创建的一次性接入码（enr_ 开头）' },
       clientName: { type: 'string', description: '本机名称（默认 dsh-主机名，宿主侧便于识别）' },
     },
+    permission: 'console.login',
     output: { type: 'object', additionalProperties: true },
     async execute(args) {
       const result = await client.enroll({
@@ -120,7 +123,7 @@ function applyClient(ctx: Context, config: ConnectConfig): void {
         clientName: result.clientName,
         template: result.template,
         hubReachable: probe?.reachable === true,
-        notice: '机器凭证已保存到本机；平台运维工具已切换为远程执行（宿主侧执行、按模板权限收敛、全程审计）',
+        notice: translate('机器凭证已保存到本机；平台运维工具已切换为远程执行（宿主侧执行、按模板权限收敛、全程审计）'),
       }
     },
   }))
@@ -134,6 +137,7 @@ function applyClient(ctx: Context, config: ConnectConfig): void {
       clientSecret: { type: 'string', required: true, description: '机器凭证 ClientSecret' },
       clientName: { type: 'string', description: '本机名称（可选）' },
     },
+    permission: 'console.login',
     output: { type: 'object', additionalProperties: true },
     async execute(args) {
       const result = await client.loginWithCredential({
@@ -142,18 +146,19 @@ function applyClient(ctx: Context, config: ConnectConfig): void {
         clientSecret: String(args.clientSecret),
         clientName: args.clientName === undefined || args.clientName === '' ? undefined : String(args.clientName),
       })
-      return { ok: true, hubUrl: result.hubUrl, clientName: result.clientName, notice: '凭证已验证并保存，工具切换为远程执行' }
+      return { ok: true, hubUrl: result.hubUrl, clientName: result.clientName, notice: translate('凭证已验证并保存，工具切换为远程执行') }
     },
   }))
 
   t.register(defineTool({
     name: 'connect_test',
     description: '体检宿主连接：健康检查 + 机器令牌换发 + 一次真实只读调用（agent_list）。',
+    permission: 'console.login',
     parameters: {},
     output: { type: 'object', additionalProperties: true },
     async execute() {
       const status = await client.status()
-      if (!client.hasHub()) return { ...status, note: '尚未接入，先执行 connect_setup' }
+      if (!client.hasHub()) return { ...status, note: translate('尚未接入，先执行 connect_setup') }
       let sample: Record<string, unknown> = {}
       try {
         const value = await client.forward('agent_list', {})
@@ -168,6 +173,7 @@ function applyClient(ctx: Context, config: ConnectConfig): void {
   t.register(defineTool({
     name: 'connect_reset',
     description: '断开宿主连接：清除本机保存的机器凭证与令牌缓存，工具回到本地执行（宿主侧凭证不受影响，回收请在宿主控制台禁用）。',
+    permission: 'console.login',
     parameters: {
       reason: { type: 'string', description: '断开原因（记录到本机日志）' },
     },
@@ -176,7 +182,7 @@ function applyClient(ctx: Context, config: ConnectConfig): void {
       const was = client.getConfig()
       client.reset()
       ctx.logger('connect').info(`已断开宿主连接${args.reason ? `：${String(args.reason)}` : ''}${was ? `（原 ${was.hubUrl}）` : ''}`)
-      return { ok: true, configured: false, notice: '本机凭证已清除，工具回到本地执行模式' }
+      return { ok: true, configured: false, notice: translate('本机凭证已清除，工具回到本地执行模式') }
     },
   }))
 }
@@ -197,8 +203,8 @@ export function installToolProxy(ctx: Context, client: ConnectClientService): bo
   } | undefined
   if (!tools || typeof tools.intercept !== 'function' || typeof tools.decorate !== 'function') {
     ctx.logger('connect').error('运行时缺少 tools.intercept/decorate 扩展点：远程转发不可用，已显式降级为本地执行（connect.degraded 已发事件）')
-    client.noteDegraded('tool_runtime_contract_missing', 'ctx.tools 未提供 intercept/decorate 扩展点（非 ToolRuntime-lite 形态）')
-    try { ctx.platformBus?.emit('connect.degraded', { reason: 'tool_runtime_contract_missing', detail: 'ctx.tools 未提供 intercept/decorate 扩展点（非 ToolRuntime-lite 形态）', at: new Date().toISOString() }) } catch { /* 总线未就绪：状态已记 client */ }
+    client.noteDegraded('tool_runtime_contract_missing', translate('ctx.tools 未提供 intercept/decorate 扩展点（非 ToolRuntime-lite 形态）'))
+    try { ctx.platformBus?.emit('connect.degraded', { reason: 'tool_runtime_contract_missing', detail: translate('ctx.tools 未提供 intercept/decorate 扩展点（非 ToolRuntime-lite 形态）'), at: new Date().toISOString() }) } catch { /* 总线未就绪：状态已记 client */ }
     return false
   }
 

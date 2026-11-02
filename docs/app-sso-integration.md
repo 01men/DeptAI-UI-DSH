@@ -110,13 +110,17 @@ const user = await mgr.signinRedirectCallback()     // 回调处，id_token 已�
 | 吊销 | `POST /oauth/revoke`（RFC 7009，恒 200） |
 | 登出 | `GET /oauth/end_session`（`id_token_hint` + `post_logout_redirect_uri`） |
 
-**`OIDC_ISSUER` 与内网 / HTTPS 反代**：默认 issuer 为 `http://127.0.0.1:<port>`，仅供本机调试。生产/内网部署时必须显式声明对外地址（反代场景取 `x-forwarded-host` 语义对应的对外域名）：
+**`OIDC_ISSUER` 与内网 / HTTPS 反代**：issuer 解析优先级（2026-10-29 起，issue #15）——
+1. `OIDC_ISSUER` 显式声明（**多域名 / 严格部署的推荐锚点**，最高优先）；
+2. 未声明时按请求派生：`x-forwarded-proto` + `x-forwarded-host`/`Host` 头（反代语义，与平台其余对外地址推导同口径）——公网域名反代部署**开箱可用**，discovery/签发/校验自动对齐同一对外 origin；
+3. 无 Host 头（进程内调用）回落 `http://127.0.0.1:<port>`。
 
 ```bash
+# 可选：固定 issuer 锚点（多域名接入、或要求 issuer 与部署域名解耦时声明）
 OIDC_ISSUER=https://sso.yourcompany.com   # discovery/JWKS/端点全部按此拼址
 ```
 
-应用与用户浏览器都必须能访问该地址；反向代理需放行 `/oauth/*`、`/.well-known/*` 与 SPA 路由 `/#/oauth/*`。注意：更换 issuer 会使存量令牌 `iss` 校验失败，属预期（令牌生命周期短）。
+应用与用户浏览器都必须能访问该地址；反向代理需放行 `/oauth/*`、`/.well-known/*` 与 SPA 路由 `/#/oauth/*` 并透传 `Host` / `X-Forwarded-*` 头（或显式声明 `OIDC_ISSUER`，则无需依赖转发头）。注意：更换 issuer 会使存量令牌 `iss` 校验失败，属预期（令牌生命周期短）；令牌校验同时接受「静态声明 issuer」与「同请求面派生 issuer」，跨域名混用令牌仍会被拒（正确行为，多域名请固定 `OIDC_ISSUER`）。
 
 ## 四、claims 契约
 

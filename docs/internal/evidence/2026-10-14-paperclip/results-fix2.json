@@ -1,0 +1,157 @@
+[
+  {
+    "id": "R0",
+    "name": "状态复位：qa_verify=usr_mv7jqo56aoxd3hu9 org=org_mv7jqn89aoxbir6h role=rol_mv7jqmryaox9ilzo root=org_mv6i8r1kgkshhnl2",
+    "pass": true
+  },
+  {
+    "id": "R1a",
+    "name": "Goal：全路由 336+ 条中 0 个 goal/mission/okr 端点（能力未实现·权威）",
+    "pass": true,
+    "detail": "全集=369 命中=[]"
+  },
+  {
+    "id": "R1b",
+    "name": "Heartbeat：唯一心跳=POST /api/connect/heartbeat（接入资产存活语义），无 Agent 唤醒调度",
+    "pass": true,
+    "detail": "[\"AUTH POST /api/connect/heartbeat\"]"
+  },
+  {
+    "id": "R2a",
+    "name": "Gate：qa_verify 注册 Agent",
+    "pass": true,
+    "detail": "id=agt_mv7jz9oraozwyize"
+  },
+  {
+    "id": "R2b",
+    "name": "Gate：submit_trial → trial",
+    "pass": true,
+    "detail": "state=trial"
+  },
+  {
+    "id": "R2c",
+    "name": "Gate 反向：无 SSO/entryUrl 上线 → 400 身份纳管门禁拦截",
+    "pass": true,
+    "detail": "status=400 err={\"code\":\"BAD_REQUEST\",\"message\":\"上线门禁：Agent 上线前必须完成身份纳管——签发 OIDC 客户端，或登记交互界面地址 entryUrl（免登通道）后重试\"}"
+  },
+  {
+    "id": "R2d",
+    "name": "Gate：登记 entryUrl（免登通道）后满足门禁",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "R2e",
+    "name": "Gate 正向：online → L4 审批单（riskLevel=high，不落地）",
+    "pass": true,
+    "detail": "approval=apr_mv7jzc8yap02cghe risk=high"
+  },
+  {
+    "id": "R2f",
+    "name": "Gate：审计员可见 pending L4 单",
+    "pass": true,
+    "detail": "state=pending"
+  },
+  {
+    "id": "R2g",
+    "name": "Gate：审计员（无 approval.decide）决定 → 403",
+    "pass": true,
+    "detail": "status=403"
+  },
+  {
+    "id": "R2h",
+    "name": "Gate：L4 缺 confirmed → 400（二次确认闸）",
+    "pass": true,
+    "detail": "status=400"
+  },
+  {
+    "id": "R2i",
+    "name": "Gate：confirmed + 终审 → 审批 executed",
+    "pass": true,
+    "detail": "state=executed"
+  },
+  {
+    "id": "R2j",
+    "name": "Gate：执行后 Agent 实际 online（闭环）",
+    "pass": true,
+    "detail": "state=online"
+  },
+  {
+    "id": "R3a",
+    "name": "Budget 前置：模型目录取得 online 模型",
+    "pass": false,
+    "detail": "slug=undefined total=0"
+  },
+  {
+    "id": "R3b",
+    "name": "Budget：QA 组织级 0 元 block 预算（无 modelSlug=全模型）",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "R3c",
+    "name": "Budget：invoke 被预算熔断拦截（供应商零触达）",
+    "pass": false,
+    "detail": "status=400 err={\"ok\":false,\"error\":{\"code\":\"BAD_REQUEST\",\"message\":\"模型不存在：undefined（请先在模型目录登记）\"}}"
+  },
+  {
+    "id": "R3d",
+    "name": "Budget：summary.budget 带 breached=true 进度面",
+    "pass": true,
+    "detail": "budget={\"orgId\":\"org_mv7jqn89aoxbir6h\",\"daily\":{\"limitCents\":0,\"usedCents\":0,\"ratio\":1,\"warn\":true,\"breached\":true},\"monthly\":{\"limitCents\":0,\"usedCents\":0,\"ratio\":1,\"warn\":true,\"breached\":true}}"
+  },
+  {
+    "id": "R3e",
+    "name": "Budget 边界：dev/ops/audit 403；hr(org_admin)=200 属设计内（迁移已授 panel.config.write）",
+    "pass": true,
+    "detail": "dev01=403 ops01=403 audit01=403 hr01=200"
+  },
+  {
+    "id": "R3f",
+    "name": "Budget 清理：预算停用",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "R4a",
+    "name": "清理：下线审批通过",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "R4b",
+    "name": "清理：归档并删除 QA Agent",
+    "pass": true,
+    "detail": "archive=200 delete=200"
+  },
+  {
+    "id": "R4c",
+    "name": "清理：qa_verify 移回根组织",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "R4d",
+    "name": "清理：停用 qa_verify（带原因）",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "R4e",
+    "name": "清理确认：停用后登录被拒",
+    "pass": true,
+    "detail": "status=401 body={\"code\":\"LOGIN_FAILED\",\"message\":\"账号已注销\"}"
+  },
+  {
+    "id": "R4f",
+    "name": "清理：删除 QA 组织（body cascade）",
+    "pass": true,
+    "detail": "status=200 res={\"deleted\":true,\"removedOrgs\":1,\"movedUsers\":0,\"fallbackOrgId\":\"org_mv6i8r1kgksh"
+  },
+  {
+    "id": "R4g",
+    "name": "清理：删除 QA 角色（无删除路由则记 404，角色保留无权限风险）",
+    "pass": true,
+    "detail": "status=404"
+  }
+]

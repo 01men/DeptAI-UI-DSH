@@ -1,0 +1,19 @@
+id: dsh-plugin-uhp
+version: 1.3.1
+label: UHP 执行驱动
+depends:
+  - dsh-plugin-platform-core
+  - dsh-plugin-resource-core
+  - dsh-plugin-authn
+  - dsh-plugin-iam
+  - dsh-plugin-audit
+  - dsh-plugin-usage
+  - dsh-plugin-modelgw
+  - dsh-plugin-agent
+provides:
+  services:
+    - uhpGateway
+permissions:
+  - uhp.read
+  - uhp.admin
+  - uhp.invoke

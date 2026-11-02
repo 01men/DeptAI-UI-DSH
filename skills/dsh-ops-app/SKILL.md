@@ -1,3 +1,8 @@
+---
+name: dsh-ops-app
+description: 管理 AI 应用的登记、拓扑和用量成本。
+---
+
 # Skill: dsh-ops-app
 
 ## 何时使用

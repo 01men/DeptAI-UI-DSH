@@ -18,7 +18,16 @@
  *     （meter_key=calls），是否计费由运营调价决定；
  *   - D2 非计费事件统一零价快照：零费率规则产出 charge_cents=0 且 rate.nonbillable=true；
  *     UsageRecordInput.nonbillable=true 为便捷构造入口（非计费反馈/知识事件），仅允许配零费率规则，
- *     防止「标了非计费却按计费规则入账」的口径漂移。
+ *     防止「标了非计费却按计费规则入账」的口径漂移；
+ *   - D3（数字员工整改组7，2026-10-15）工作调用关联（§11.3 additive-only）：UsageRecordInput /
+ *     UsageEvent 增可选 invocationId，落库列 invocation_id TEXT NOT NULL DEFAULT ''（存量库启动时
+ *     pragma 探测 + ALTER TABLE 幂等迁移）。语义：把本次消费事实关联到 workforce_invocations 的一条
+ *     工作调用账（workforce_usage_links 的伴随索引），聚合/对账口径不变、不双计；幂等键机制与历史
+ *     resource 键一字不动。
+ *   - C4（企业数字员工内网协作 A2A/UHP，2026-10-20）协作链归集（additive-only，同 D3 口径）：
+ *     UsageRecordInput / UsageEvent 增可选 contextId，落库列 context_id TEXT NOT NULL DEFAULT ''。
+ *     语义：同一 A2A contextId（跨员工协作链）下多 Task 的全部计量按链归集——
+ *     collaborationEvents() / collaborationSummary() 提供「一次协作总成本」聚合，幂等键机制不变。
  *
  * 商业模式收敛（元冰可开发计划 M0，2026-09-09）：平台商业口径为「私有化年费 + 治理包」，
  * usage 管道定位为**用量透明计量与内部成本参考**——价格簿 list 侧统一零价快照（charge_cents=0，
@@ -27,7 +36,9 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
-import { newId, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { newId, PlatformEvents, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
+import { AssetUsageError, reportFingerprint, type AssetUsageReportRecord } from './asset-reports.ts'
 import * as usageTools from './tools.ts'
 
 // ---------------------------------------------------------------------------
@@ -44,6 +55,19 @@ export interface UsageMeter {
   unit: string
 }
 
+/**
+ * 组合计价行（#14，2026-10-29，additive-only）：一次事件按多个计量键分别计价再求和
+ * （模型 token 双米计价：input_tokens × 输入费率 + output_tokens × 输出费率）。
+ * 仅平台内部可信生产方（modelgw）使用；费率仍取自价格簿（modelgw 在调用时点读取），
+ * 快照 rate.line_items 原样留痕，对账/审计可复算。
+ */
+export interface UsageCostLineItem {
+  meter_key: string
+  value: number
+  cost_cents_per_unit: number
+  units_per_step: number
+}
+
 /** 价格快照（计费时点冻结，历史可复算）。 */
 export interface UsagePricingSnapshot {
   currency: string
@@ -51,8 +75,13 @@ export interface UsagePricingSnapshot {
   charge_cents: number
   /** 本事件平台成本（口径：L1 采购成本）。 */
   cost_cents: number
-  /** 计价明细快照（费率 + 计量键），分账/审计复算依据。 */
-  rate: { pattern: string; meter_key: string; list_cents_per_unit: number; cost_cents_per_unit: number; units_per_step: number; tax_rate: number; nonbillable?: boolean }
+  /**
+   * 成本语义标注（#14 additive）：'not_priced' = 费率未配置/全零费率导致的 0——
+   * 「未知」不与「真零成本」混读；缺省 = priced（含费率非零但量小取整为 0 的诚实零）。
+   */
+  cost_status?: 'priced' | 'not_priced'
+  /** 计价明细快照（费率 + 计量键），分账/审计复算依据；组合计价行 additive（#14）。 */
+  rate: { pattern: string; meter_key: string; list_cents_per_unit: number; cost_cents_per_unit: number; units_per_step: number; tax_rate: number; nonbillable?: boolean; line_items?: UsageCostLineItem[] }
 }
 
 /** usage.recorded v1 事件（只追加，禁改版；扩展仅允许新增可选字段）。 */
@@ -62,6 +91,10 @@ export interface UsageEvent {
   event_id: string
   idempotency_key: string
   trace_id?: string
+  /** D3（additive）：关联的数字员工工作调用账 ID（workforce_invocations.id）；非工作调用事件不下发该键。 */
+  invocationId?: string
+  /** C4（additive，A2A/UHP 协作面）：跨员工协作链 ID（A2A contextId）——同链多 Task 的全部计量按此归集；非协作事件不下发该键。 */
+  contextId?: string
   occurred_at: string
   tenant_id: string
   org: string
@@ -84,6 +117,10 @@ export interface UsageRecordInput {
   meters: UsageMeter[]
   tenant_id?: string
   trace_id?: string
+  /** D3（additive，可选）：数字员工工作调用账 ID（invocation_id 列）；缺省空串，聚合口径不变。 */
+  invocationId?: string
+  /** C4（additive，可选）：A2A 协作链 ID（context_id 列）；缺省空串，聚合口径不变。 */
+  contextId?: string
   /** 幂等键：调用方自带（推荐，如 <producer>:<业务单号>）；缺省按主体+资源+窗口+序号生成。 */
   idempotency_key?: string
   occurred_at?: string
@@ -92,6 +129,12 @@ export interface UsageRecordInput {
    * 事件按 charge_cents=0 + rate.nonbillable=true 入账（反馈/知识等观测事件不污染计费口径）。
    */
   nonbillable?: boolean
+  /**
+   * 组合计价行（#14 additive，可选）：提供时事件成本 = 各行 (value/step)×rate 之和——
+   * 模型 token 双米计价（input/output 分别计价）的唯一入口；费率由生产方从价格簿读取后传入，
+   * 快照 rate.line_items 原样留痕。缺省走价格簿单米计价（历史行为不变）。
+   */
+  costLineItems?: UsageCostLineItem[]
 }
 
 /**
@@ -166,7 +209,23 @@ export class UsageService extends Service {
       meters_json: 'TEXT NOT NULL',
       pricing_json: 'TEXT NOT NULL',
       trace_id: "TEXT NOT NULL DEFAULT ''",
+      // D3（组7 additive）：数字员工工作调用关联列——新库直接建齐；存量库由下方 pragma 探测迁移
+      invocation_id: "TEXT NOT NULL DEFAULT ''",
+      // C4（A2A/UHP 协作面 additive）：跨员工协作链关联列——同上 additive-only 口径
+      context_id: "TEXT NOT NULL DEFAULT ''",
     }, { uniques: [['idempotency_key']], indexes: [['occurred_at'], ['principal'], ['tenant_id']] })
+    // 存量库增量迁移（D3，幂等守护）：pragma table_info 探测无列才 ALTER——
+    // 只 additive（NOT NULL 带默认值），不改既有列、不动索引与幂等键
+    const usageColumns = this.ctx.txnStore.sql<{ name: string }>('pragma table_info(usage_events)')
+    if (!usageColumns.some((column) => column.name === 'invocation_id')) {
+      this.ctx.txnStore.run("ALTER TABLE usage_events ADD COLUMN invocation_id TEXT NOT NULL DEFAULT ''")
+      this.ctx.logger('usage').info('usage_events 增量迁移：已补 invocation_id 列（数字员工工作调用关联，D3 additive）')
+    }
+    // C4 存量库增量迁移（与 D3 同款幂等守护）：A2A 协作链关联列
+    if (!usageColumns.some((column) => column.name === 'context_id')) {
+      this.ctx.txnStore.run("ALTER TABLE usage_events ADD COLUMN context_id TEXT NOT NULL DEFAULT ''")
+      this.ctx.logger('usage').info('usage_events 增量迁移：已补 context_id 列（A2A 跨员工协作链关联，C4 additive）')
+    }
     // 消费水位（引擎级幂等）：同一消费方对同一事件只产生一次副作用——
     // replay()/死信重投不会造成 billing/audit 投影双计（评审实证缺陷的修复点）。
     ctx.txnStore.ensureTable('usage_consumptions', {
@@ -183,7 +242,7 @@ export class UsageService extends Service {
       ctx.effect(() => () => clearTimeout(first))
       this.retentionTimer = setInterval(() => void this.sweepRetention(), 6 * 3_600_000)
       this.retentionTimer.unref?.() // OPT-P3-02
-      ctx.effect(() => {
+      ctx.effect(() => () => {
         if (this.retentionTimer) clearInterval(this.retentionTimer)
       })
     }
@@ -236,16 +295,33 @@ export class UsageService extends Service {
     const price = this.priceOf(input.resource)
     // D2 非计费便捷构造：nonbillable 标记只允许配零费率规则（防「标了非计费却按计费规则入账」）
     if (input.nonbillable === true && !(price.list_cents_per_unit === 0 && price.cost_cents_per_unit === 0)) {
-      throw new Error(`非计费事件只允许命中零费率价格簿规则：资源 ${input.resource} 命中 ${price.pattern}（非零费率），请去掉 nonbillable 或先调零费率`)
+      throw new Error(t('非计费事件只允许命中零费率价格簿规则：资源 {resource} 命中 {pattern}（非零费率），请去掉 nonbillable 或先调零费率', { resource: input.resource, pattern: price.pattern }))
     }
     // 零费率规则产出的即非计费事件（统一零价快照口径）：charge_cents=0 + rate.nonbillable=true
-    const nonbillable = input.nonbillable === true || (price.list_cents_per_unit === 0 && price.cost_cents_per_unit === 0)
+    // #14：组合计价行在场时，非计费判定看各行费率（价格簿单米口径只是主键示意，不再独裁）
+    const lineItems = (input.costLineItems ?? []).map((item) => {
+      for (const [field, value, min] of [
+        ['value', item.value, 0], ['cost_cents_per_unit', item.cost_cents_per_unit, 0], ['units_per_step', item.units_per_step, 1],
+      ] as Array<[string, number, number]>) {
+        if (!Number.isFinite(value) || value < min) {
+          throw new Error(t('组合计价行字段 {field} 必须为有限数值且 ≥{min}，收到：{value}', { field, min, value: String(value) }))
+        }
+      }
+      if (!input.meters.some((meter) => meter.key === item.meter_key)) {
+        throw new Error(t('组合计价行引用了事件未携带的计量键：{key}（事件携带 [{received}]）', { key: item.meter_key, received: input.meters.map((m) => m.key).join(', ') }))
+      }
+      return { ...item }
+    })
+    const nonbillable = input.nonbillable === true
+      || (lineItems.length > 0
+        ? price.list_cents_per_unit === 0 && lineItems.every((item) => item.cost_cents_per_unit === 0)
+        : price.list_cents_per_unit === 0 && price.cost_cents_per_unit === 0)
     // 硬校验：事件必须携带价格簿计价键（宁可拒绝不可静默 0 计费——
     // 价格簿对调用方不可见（usage.admin），错误信息直接携带期望键供自纠）
     if (!input.meters.some((item) => item.key === price.meter_key)) {
       throw new Error(
-        `计量键不匹配：资源 ${input.resource} 按价格簿 ${price.pattern} 以「${price.meter_key}」计价，` +
-        `收到 [${input.meters.map((m) => m.key).join(', ')}]。请按 ${price.meter_key} 重报，不要编造计量键`,
+        t('计量键不匹配：资源 {resource} 按价格簿 {pattern} 以「{key}」计价，收到 [{received}]。请按 {key} 重报，不要编造计量键',
+          { resource: input.resource, pattern: price.pattern, key: price.meter_key, received: input.meters.map((m) => m.key).join(', ') }),
       )
     }
     const meter = input.meters.find((item) => item.key === price.meter_key)!
@@ -253,21 +329,28 @@ export class UsageService extends Service {
     // 合法数值走原值，计价结果不变。快照记录实际采用的修正值（非有限值 JSON 序列化为 null 会继续污染对账）
     const listRate = Number.isFinite(price.list_cents_per_unit) && price.list_cents_per_unit >= 0
       ? price.list_cents_per_unit
-      : this.warnDirtyData(`pricebook:${price.pattern}:list`, `价格簿 ${price.pattern} 的 list_cents_per_unit=${String(price.list_cents_per_unit)} 为非法数值，本次计价按 0 处理；请尽快修正价格簿（REL-11）`)
+      : this.warnDirtyData(`pricebook:${price.pattern}:list`, t('价格簿 {pattern} 的 list_cents_per_unit={value} 为非法数值，本次计价按 0 处理；请尽快修正价格簿（REL-11）', { pattern: price.pattern, value: String(price.list_cents_per_unit) }))
     const costRate = Number.isFinite(price.cost_cents_per_unit) && price.cost_cents_per_unit >= 0
       ? price.cost_cents_per_unit
-      : this.warnDirtyData(`pricebook:${price.pattern}:cost`, `价格簿 ${price.pattern} 的 cost_cents_per_unit=${String(price.cost_cents_per_unit)} 为非法数值，本次计价按 0 处理；请尽快修正价格簿（REL-11）`)
+      : this.warnDirtyData(`pricebook:${price.pattern}:cost`, t('价格簿 {pattern} 的 cost_cents_per_unit={value} 为非法数值，本次计价按 0 处理；请尽快修正价格簿（REL-11）', { pattern: price.pattern, value: String(price.cost_cents_per_unit) }))
     const step = Number.isFinite(price.units_per_step) && price.units_per_step > 0
       ? price.units_per_step
-      : this.warnDirtyData(`pricebook:${price.pattern}:step`, `价格簿 ${price.pattern} 的 units_per_step=${String(price.units_per_step)} 为非法数值（须为正数），本次计价按 0 处理；请尽快修正价格簿（REL-11）`)
+      : this.warnDirtyData(`pricebook:${price.pattern}:step`, t('价格簿 {pattern} 的 units_per_step={value} 为非法数值（须为正数），本次计价按 0 处理；请尽快修正价格簿（REL-11）', { pattern: price.pattern, value: String(price.units_per_step) }))
     const charge = step > 0 ? Math.round((meter.value / step) * listRate) : 0
-    const cost = step > 0 ? Math.round((meter.value / step) * costRate) : 0
+    // #14：组合计价行在场 → 成本 = Σ 行计价（input/output 双米）；否则走价格簿单米（历史口径不变）
+    const cost = lineItems.length > 0
+      ? lineItems.reduce((sum, item) => sum + Math.round((item.value / item.units_per_step) * item.cost_cents_per_unit), 0)
+      : (step > 0 ? Math.round((meter.value / step) * costRate) : 0)
     const event: UsageEvent = {
       schema: USAGE_SCHEMA,
       schema_version: USAGE_SCHEMA_VERSION,
       event_id: newId('uevt'),
       idempotency_key: input.idempotency_key ?? this.autoIdempotencyKey(input),
       ...(input.trace_id !== undefined ? { trace_id: input.trace_id } : {}),
+      // D3（additive）：仅调用方显式携带时下发该键（schema 前向兼容：消费端容忍缺省）
+      ...(input.invocationId !== undefined ? { invocationId: input.invocationId } : {}),
+      // C4（additive）：A2A 协作链 ID，仅显式携带时下发
+      ...(input.contextId !== undefined ? { contextId: input.contextId } : {}),
       occurred_at: input.occurred_at ?? new Date().toISOString(),
       tenant_id: tenant,
       org: input.org,
@@ -279,6 +362,8 @@ export class UsageService extends Service {
         currency: price.currency,
         charge_cents: charge,
         cost_cents: cost,
+        // #14：not_priced 标注「费率未配置/全零导致的 0」——下游不得把未知读成零成本
+        ...(cost === 0 && nonbillable ? { cost_status: 'not_priced' as const } : {}),
         rate: {
           pattern: price.pattern,
           meter_key: price.meter_key,
@@ -288,20 +373,23 @@ export class UsageService extends Service {
           units_per_step: step,
           tax_rate: price.tax_rate,
           ...(nonbillable ? { nonbillable: true } : {}),
+          ...(lineItems.length > 0 ? { line_items: lineItems } : {}),
         },
       },
     }
     const inserted = this.ctx.txnStore.insertOrIgnore('usage_events', usageRow(event))
     if (!inserted) {
       const existing = this.ctx.txnStore.one<UsageRow>('usage_events', { idempotency_key: event.idempotency_key })
-      if (!existing) throw new Error(`幂等键异常：${event.idempotency_key} 已占用但记录缺失`)
+      if (!existing) throw new Error(t('幂等键异常：{key} 已占用但记录缺失', { key: event.idempotency_key }))
+      // feedback 幂等口径（组4：同 messageId 改评分不双计）：键不含 score 段，score 随 meter unit
+      // 落在内容里——同键改评属预期重放（first-write-wins，保留首次评分），不按内容冲突拒绝
       const sameContent = existing.org === event.org
         && existing.subject === event.subject
         && existing.principal === event.principal
         && existing.resource === event.resource
-        && existing.meters_json === JSON.stringify(event.meters)
+        && (existing.meters_json === JSON.stringify(event.meters) || event.idempotency_key.startsWith('feedback:'))
       if (!sameContent) {
-        throw new Error(`幂等键冲突：${event.idempotency_key} 已绑定事件 ${existing.id}，同键不同内容被拒绝`)
+        throw new Error(t('幂等键冲突：{key} 已绑定事件 {id}，同键不同内容被拒绝', { key: event.idempotency_key, id: existing.id }))
       }
       // 幂等重放：返回既有事件（计价快照以首次登记为准，不随费率变动重算）
       return rowToEvent(existing)
@@ -345,8 +433,8 @@ export class UsageService extends Service {
             error: error instanceof Error ? error.message : String(error), attempts: attempt,
           })
           this.ctx.platformBus.emit('audit.alert.fired', {
-            id: newId('alt'), severity: 'critical', title: 'usage 消费死信',
-            message: `消费方 ${consumerId} 处理事件 ${event.event_id} 连续失败 ${attempt} 次（含即时重试），已入死信，可通过 usage_deadletter_retry 重投`,
+            id: newId('alt'), severity: 'critical', title: t('usage 消费死信'),
+            message: t('消费方 {consumer} 处理事件 {id} 连续失败 {attempts} 次（含即时重试），已入死信，可通过 usage_deadletter_retry 重投', { consumer: consumerId, id: event.event_id, attempts: attempt }),
           })
         }
       }
@@ -389,7 +477,7 @@ export class UsageService extends Service {
       } catch (error) {
         this.deadLetters().insert({
           id: newId('dlq'), event_id: letter.event_id, consumer: letter.consumer,
-          error: `重投仍失败：${error instanceof Error ? error.message : String(error)}`, attempts: letter.attempts + 1,
+          error: t('重投仍失败：{message}', { message: error instanceof Error ? error.message : String(error) }), attempts: letter.attempts + 1,
         })
       }
     }
@@ -466,13 +554,102 @@ export class UsageService extends Service {
   }
 
   /**
+   * 协作链聚合（C4 A2A/UHP 协作面 additive）：按 context_id（A2A contextId）归集「一次跨员工
+   * 协作的总成本」。单链查询返回链上全部事件（时间正序）；窗口汇总返回 Top 协作链。
+   * 金额口径与 usageReport 相同：tokens=键名含 tokens 的米值和，cost=内部成本参考。
+   */
+  collaborationEvents(contextId: string): UsageEvent[] {
+    if (!contextId) return []
+    const rows = this.ctx.txnStore.sql<UsageRow>(
+      'SELECT * FROM usage_events WHERE context_id = ? ORDER BY occurred_at ASC',
+      [contextId],
+    )
+    return rows.map(rowToEvent)
+  }
+
+  collaborationSummary(fromIso: string, limit = 20): Array<{ contextId: string; events: number; tokens: number; cost_cents: number; charge_cents: number; firstAt: string; lastAt: string }> {
+    return this.ctx.txnStore.sql<{
+      context_id: string
+      events: number
+      tokens: number
+      cost_cents: number
+      charge_cents: number
+      firstAt: string
+      lastAt: string
+    }>(
+      "SELECT context_id, COUNT(*) AS events, COALESCE(SUM((SELECT SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)) FROM json_each(e.meters_json) m WHERE json_extract(m.value, '$.key') LIKE '%tokens%')), 0) AS tokens, COALESCE(SUM(CAST(json_extract(e.pricing_json, '$.cost_cents') AS INTEGER)), 0) AS cost_cents, COALESCE(SUM(CAST(json_extract(e.pricing_json, '$.charge_cents') AS INTEGER)), 0) AS charge_cents, MIN(e.occurred_at) AS firstAt, MAX(e.occurred_at) AS lastAt FROM usage_events e WHERE e.occurred_at >= ? AND e.context_id != '' GROUP BY e.context_id ORDER BY tokens DESC, cost_cents DESC, events DESC, lastAt DESC, context_id ASC LIMIT ?",
+      [fromIso, Math.min(Math.max(limit, 1), 100)],
+    ).map((row) => ({
+      contextId: row.context_id,
+      events: Number(row.events),
+      tokens: Number(row.tokens) || 0,
+      cost_cents: Number(row.cost_cents) || 0,
+      charge_cents: Number(row.charge_cents) || 0,
+      firstAt: String(row.firstAt),
+      lastAt: String(row.lastAt),
+    }))
+  }
+
+  /**
+   * 资产台账/用量报表聚合（设计适配 2026-10-14，只读 additive）：
+   * 窗口 [from, to) 内按 资源/部门/日 三维分组的 调用数+tokens+内部成本 聚合。
+   *
+   * calls 口径：事件 meters 中键为 calls 的米值求和（批量计量一事件可代表多次调用），
+   * 无 calls 米的事件（如 mcp:/model: 按 tokens 计价的历史事件）按 1 次计——
+   * 「一次登记 = 一次调用批次」。tokens 口径与 summary/monthlyReport 一致（键名含 tokens 全累加）。
+   */
+  usageReport(fromIso: string, toIso?: string): {
+    byResource: Array<{ resource: string; events: number; calls: number; tokens: number; cost_cents: number }>
+    byOrg: Array<{ org: string; events: number; calls: number; tokens: number; cost_cents: number }>
+    byDay: Array<{ day: string; events: number; calls: number; tokens: number; cost_cents: number }>
+  } {
+    const tokensExpr = "COALESCE(SUM((SELECT SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)) FROM json_each(e.meters_json) m WHERE json_extract(m.value, '$.key') LIKE '%tokens%')), 0)"
+    const callsExpr = "COALESCE(SUM(COALESCE((SELECT SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)) FROM json_each(e.meters_json) m WHERE json_extract(m.value, '$.key') = 'calls'), 1)), 0)"
+    const costExpr = "COALESCE(SUM(CAST(json_extract(e.pricing_json, '$.cost_cents') AS INTEGER)), 0)"
+    const window = toIso === undefined ? ' WHERE e.occurred_at >= ?' : ' WHERE e.occurred_at >= ? AND e.occurred_at < ?'
+    const params = toIso === undefined ? [fromIso] : [fromIso, toIso]
+    const run = <T extends Record<string, unknown>>(dimension: string): T[] =>
+      this.ctx.txnStore.sql<T>(`SELECT ${dimension} AS dimension, COUNT(*) AS events, ${callsExpr} AS calls, ${tokensExpr} AS tokens, ${costExpr} AS cost_cents FROM usage_events e${window} GROUP BY ${dimension}`, params)
+    const num = (value: unknown): number => Number(value) || 0
+    return {
+      byResource: run<{ dimension: string; events: number; calls: number; tokens: number; cost_cents: number }>('e.resource')
+        .map((row) => ({ resource: String(row.dimension), events: num(row.events), calls: num(row.calls), tokens: num(row.tokens), cost_cents: num(row.cost_cents) }))
+        .sort((a, b) => b.cost_cents - a.cost_cents || b.calls - a.calls),
+      byOrg: run<{ dimension: string; events: number; calls: number; tokens: number; cost_cents: number }>('e.org')
+        .map((row) => ({ org: String(row.dimension), events: num(row.events), calls: num(row.calls), tokens: num(row.tokens), cost_cents: num(row.cost_cents) }))
+        .sort((a, b) => b.cost_cents - a.cost_cents || b.calls - a.calls),
+      byDay: run<{ dimension: string; events: number; calls: number; tokens: number; cost_cents: number }>("substr(e.occurred_at, 1, 10)")
+        .map((row) => ({ day: String(row.dimension), events: num(row.events), calls: num(row.calls), tokens: num(row.tokens), cost_cents: num(row.cost_cents) }))
+        .sort((a, b) => a.day.localeCompare(b.day)),
+    }
+  }
+
+  /**
+   * 资源×日 调用数趋势（设计适配 2026-10-14，只读 additive）：
+   * 台账 trend[14] / 市场热力 heat[30] 的数据源；calls 口径与 usageReport 一致
+   * （calls 米求和，无该米的事件按 1 计）。prefix 由调用方以代码字面量传入（同 matrix），
+   * 缺省全资源。
+   */
+  callsTrend(fromIso: string, prefix?: string): Array<{ resource: string; day: string; calls: number }> {
+    const conditions = ['e.occurred_at >= ?']
+    const params: Array<string | number> = [fromIso]
+    if (prefix !== undefined) { conditions.push('e.resource LIKE ?'); params.push(`${prefix}%`) }
+    return this.ctx.txnStore.sql<{ resource: string; day: string; calls: number }>(
+      "SELECT e.resource AS resource, substr(e.occurred_at, 1, 10) AS day," +
+      " COALESCE(SUM(COALESCE((SELECT SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)) FROM json_each(e.meters_json) m WHERE json_extract(m.value, '$.key') = 'calls'), 1)), 0) AS calls" +
+      ` FROM usage_events e WHERE ${conditions.join(' AND ')} GROUP BY e.resource, substr(e.occurred_at, 1, 10)`,
+      params,
+    ).map((row) => ({ resource: String(row.resource), day: String(row.day), calls: Number(row.calls) || 0 }))
+  }
+
+  /**
    * 成本/用量摘要（IAW 交接 4-1：面板侧成本查询的最小接口）。
    * 窗口 [from, to) 内按 org / subject 过滤的聚合：事件数、内部成本（cost_cents 口径，
    * charge_cents 零价快照恒 0）、tokens 三分（input/output/其他）与按资源分项。
    * 权限分层由 HTTP 层负责：usage.read 可查任意主体，panel.read 只读自身组织（scope 收敛在端点做）。
    */
   summary(filter: { from: string; to: string; org?: string; subject?: string }): UsageSummary {
-    if (!filter.from || !filter.to) throw new Error('summary 需要 from/to 窗口')
+    if (!filter.from || !filter.to) throw new Error(t('summary 需要 from/to 窗口'))
     const conditions = ['e.occurred_at >= ?', 'e.occurred_at < ?']
     const params: Array<string | number> = [filter.from, filter.to]
     if (filter.org) { conditions.push('e.org = ?'); params.push(filter.org) }
@@ -483,13 +660,20 @@ export class UsageService extends Service {
     // 裸关联子查询只对组内某一行求值，tokens 因此只统计到每组任意一条事件（J4 报表小 176 倍）。
     // SUM((SELECT …)) 语义 = 逐行求子查询值再求和，与 json_each JOIN 口径一致且三维自洽。
     const tokensExpr = "COALESCE(SUM((SELECT SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)) FROM json_each(e.meters_json) m WHERE json_extract(m.value, '$.key') LIKE '%tokens%')), 0)"
-    const byResource = this.ctx.txnStore.sql<{ resource: string; events: number; tokens: number; cost_cents: number; charge_cents: number }>(
+    // #14：not_priced = cost 为 0 且（显式标注 或 零费率快照）——「未知」与「真零成本」读侧分开。
+    // 零费率快照判定同时覆盖两类事件：修复后事件带 nonbillable/cost_status 标注；存量事件
+    //（标注字段引入前入账）无标注，但 rate 快照恒记录实际采用的费率——list=0 且 cost=0 即
+    // 全零费率，语义与标注等价，读侧直接识别免一次性迁移。费率在配但量小取整为 0
+    //（rate.cost>0）不匹配，仍算 priced；rate 缺失（极端老数据）无法判定，保守计 priced。
+    const notPricedExpr = "COALESCE(SUM(CASE WHEN CAST(json_extract(e.pricing_json, '$.cost_cents') AS INTEGER) = 0 AND (json_extract(e.pricing_json, '$.rate.nonbillable') = 1 OR json_extract(e.pricing_json, '$.cost_status') = 'not_priced' OR (json_extract(e.pricing_json, '$.rate.list_cents_per_unit') = 0 AND json_extract(e.pricing_json, '$.rate.cost_cents_per_unit') = 0)) THEN 1 ELSE 0 END), 0)"
+    const byResource = this.ctx.txnStore.sql<{ resource: string; events: number; tokens: number; cost_cents: number; charge_cents: number; not_priced_events: number }>(
       `SELECT e.resource AS resource, COUNT(*) AS events, ${tokensExpr} AS tokens,` +
       " COALESCE(SUM(CAST(json_extract(e.pricing_json, '$.cost_cents') AS INTEGER)), 0) AS cost_cents," +
-      " COALESCE(SUM(CAST(json_extract(e.pricing_json, '$.charge_cents') AS INTEGER)), 0) AS charge_cents" +
+      " COALESCE(SUM(CAST(json_extract(e.pricing_json, '$.charge_cents') AS INTEGER)), 0) AS charge_cents," +
+      ` ${notPricedExpr} AS not_priced_events` +
       ` FROM usage_events e${where} GROUP BY e.resource ORDER BY cost_cents DESC, events DESC`,
       params,
-    ).map((row) => ({ resource: row.resource, events: Number(row.events), tokens: Number(row.tokens), cost_cents: Number(row.cost_cents), charge_cents: Number(row.charge_cents) }))
+    ).map((row) => ({ resource: row.resource, events: Number(row.events), tokens: Number(row.tokens), cost_cents: Number(row.cost_cents), charge_cents: Number(row.charge_cents), not_priced_events: Number(row.not_priced_events) }))
     const tokenSplit = (key: string): number => Number((this.ctx.txnStore.sql<{ n: number }>(
       "SELECT COALESCE(SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)), 0) AS n FROM usage_events e, json_each(e.meters_json) m" +
       ` WHERE json_extract(m.value, '$.key') = ?${whereAnd}`,
@@ -503,6 +687,8 @@ export class UsageService extends Service {
       charge_cents: byResource.reduce((sum, row) => sum + row.charge_cents, 0),
       input_tokens: tokenSplit('input_tokens'),
       output_tokens: tokenSplit('output_tokens'),
+      // #14：成本覆盖率（priced = events − not_priced），门禁据此判断「成本是否可归集」
+      not_priced_events: byResource.reduce((sum, row) => sum + row.not_priced_events, 0),
       byResource,
     }
   }
@@ -523,10 +709,20 @@ export class UsageService extends Service {
     if (filter.from) { conditions.push('occurred_at >= ?'); params.push(filter.from) }
     if (filter.to) { conditions.push('occurred_at < ?'); params.push(filter.to) }
     if (filter.org) { conditions.push('org = ?'); params.push(filter.org) }
-    const rows = this.ctx.txnStore.sql<{ resource: string; subject: string; org: string; day: string; idempotency_key: string }>(
-      `SELECT resource, subject, org, substr(occurred_at, 1, 10) AS day, idempotency_key FROM usage_events WHERE ${conditions.join(' AND ')}`,
+    // 评分来源（组4：幂等键去 score 段后）——新格式评分随事件内容（meter unit=up/down）；
+    // 存量行键尾仍带 score 段，按键尾回退解析（两代格式并存期间聚合口径不变）
+    const rows = this.ctx.txnStore.sql<{ resource: string; subject: string; org: string; day: string; idempotency_key: string; meters_json: string }>(
+      `SELECT resource, subject, org, substr(occurred_at, 1, 10) AS day, idempotency_key, meters_json FROM usage_events WHERE ${conditions.join(' AND ')}`,
       params,
-    ).map((row) => ({ ...row, score: row.idempotency_key.slice(row.idempotency_key.lastIndexOf(':') + 1) }))
+    ).map((row) => {
+      let score = ''
+      try {
+        const unit = JSON.parse(row.meters_json)?.[0]?.unit
+        if (unit === 'up' || unit === 'down') score = unit
+      } catch { /* 内容损坏回落键尾解析 */ }
+      if (score !== 'up' && score !== 'down') score = row.idempotency_key.slice(row.idempotency_key.lastIndexOf(':') + 1)
+      return { ...row, score }
+    })
     const count = (score: string) => rows.filter((row) => row.score === score).length
     const rate = (up: number, total: number): number | null => (total === 0 ? null : Math.round((up / total) * 1000) / 1000)
     const resources = new Map<string, { up: number; down: number }>()
@@ -565,7 +761,7 @@ export class UsageService extends Service {
    */
   monthlyReport(month?: string): MonthlyUsageReport {
     const period = month ?? new Date().toISOString().slice(0, 7)
-    if (!/^\d{4}-\d{2}$/.test(period)) throw new Error('报表月份格式应为 YYYY-MM')
+    if (!/^\d{4}-\d{2}$/.test(period)) throw new Error(t('报表月份格式应为 YYYY-MM'))
     const [from, to] = periodBoundsIso(period)
     // QA B-01：同 summary——子查询必须包进 SUM()，否则 GROUP BY 下每组只统计任意一行
     const tokensExpr = "COALESCE(SUM((SELECT SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)) FROM json_each(e.meters_json) m WHERE json_extract(m.value, '$.key') LIKE '%tokens%')), 0)"
@@ -608,7 +804,7 @@ export class UsageService extends Service {
    */
   costPenetration(month?: string): FinOpsCostPenetration {
     const period = month ?? new Date().toISOString().slice(0, 7)
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) throw new Error('报表月份格式应为 YYYY-MM（月份 01-12）')
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) throw new Error(t('报表月份格式应为 YYYY-MM（月份 01-12）'))
     const [from, to] = periodBoundsIso(period)
     const [prevFrom, prevTo] = month === undefined ? currentPrevMonthBoundsIso() : prevMonthBoundsIso(period)
     const tokensExpr = "COALESCE(SUM((SELECT SUM(CAST(json_extract(m.value, '$.value') AS INTEGER)) FROM json_each(e.meters_json) m WHERE json_extract(m.value, '$.key') LIKE '%tokens%')), 0)"
@@ -742,7 +938,7 @@ export class UsageService extends Service {
     let month = filter.month
     if (!from || !to) {
       month = month ?? new Date().toISOString().slice(0, 7)
-      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('报表月份格式应为 YYYY-MM（月份 01-12）')
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error(t('报表月份格式应为 YYYY-MM（月份 01-12）'))
       ;[from, to] = periodBoundsIso(month)
     }
     const idleWindowMs = Math.min(Math.max(Number(filter.idleWindowMinutes ?? 30), 1), 24 * 60) * 60_000
@@ -852,12 +1048,24 @@ export class UsageService extends Service {
       ['units_per_step', entry.units_per_step, 1], // 计价除数：0 会产出 Infinity，负数会产出负金额
     ] as Array<[string, number, number]>) {
       if (!Number.isFinite(value) || value < min) {
-        throw new Error(`价格簿字段 ${field} 必须为有限数值且 ≥${min}，收到：${String(value)}`)
+        throw new Error(t('价格簿字段 {field} 必须为有限数值且 ≥{min}，收到：{value}', { field, min, value: String(value) }))
       }
     }
     const existing = this.priceBook().findOne((item) => item.pattern === entry.pattern)
     if (existing) return this.priceBook().update(existing.id, { ...entry })
     return this.priceBook().insert({ id: newId('rate'), ...entry })
+  }
+
+  /**
+   * 价格簿只读查询（#14，供可信生产方在调用时点取费率组装组合计价行；未登记返回 undefined 不抛）。
+   * 匹配口径与 record() 内部 priceOf 一致：精确 → 前缀通配。
+   */
+  priceOfResource(resource: string): PriceBookEntry | undefined {
+    try {
+      return this.priceOf(resource)
+    } catch {
+      return undefined
+    }
   }
 
   private priceOf(resource: string): PriceBookEntry {
@@ -867,7 +1075,7 @@ export class UsageService extends Service {
     const prefix = book.filter((item) => item.pattern.endsWith(':*')).sort((a, b) => b.pattern.length - a.pattern.length)
       .find((item) => resource.startsWith(item.pattern.slice(0, -1)))
     if (prefix) return prefix
-    throw new Error(`资源 ${resource} 无计价规则：请先在价格簿登记（usage 价格簿）`)
+    throw new Error(t('资源 {resource} 无计价规则：请先在价格簿登记（usage 价格簿）', { resource }))
   }
 
   private ensureDefaultPriceBook(): void {
@@ -921,7 +1129,7 @@ export class UsageService extends Service {
       const count = rows.reduce((sum, row) => sum + row.count, 0)
       // REL-11 读侧加固：投影集合中的存量脏行（非有限 charge_cents）按 0 计入对账，不再恒 mismatch 反复告警
       const charge = rows.reduce((sum, row) => sum + (Number.isFinite(row.charge_cents) ? row.charge_cents
-        : this.warnDirtyData(`projection-row:${consumerId}:${row.id}`, `usage 投影 ${consumerId} 窗口 ${row.window} 的 charge_cents 非有限（存量脏数据），对账按 0 计入（REL-11）`)), 0)
+        : this.warnDirtyData(`projection-row:${consumerId}:${row.id}`, t('usage 投影 {consumer} 窗口 {window} 的 charge_cents 非有限（存量脏数据），对账按 0 计入（REL-11）', { consumer: consumerId, window: row.window }))), 0)
       projections.push({
         consumer: consumerId,
         count,
@@ -932,8 +1140,8 @@ export class UsageService extends Service {
     const mismatch = projections.some((item) => item.mismatch)
     if (mismatch) {
       this.ctx.platformBus.emit('audit.alert.fired', {
-        id: newId('alt'), severity: 'critical', title: 'usage 对账不平',
-        message: `usage 口径 count=${usageTotals.count} charge=${usageTotals.charge_cents} 分；消费方投影存在偏差：${JSON.stringify(projections)}`,
+        id: newId('alt'), severity: 'critical', title: t('usage 对账不平'),
+        message: t('usage 口径 count={count} charge={charge} 分；消费方投影存在偏差：{detail}', { count: usageTotals.count, charge: usageTotals.charge_cents, detail: JSON.stringify(projections) }),
       })
     }
     return { usage: { count: usageTotals.count, charge_cents: usageTotals.charge_cents }, projections, mismatch }
@@ -946,7 +1154,7 @@ export class UsageService extends Service {
     // REL-11 读侧加固：存量脏事件的 charge_cents 非有限时按 0 投影（防对账口径持续失真），按事件去重告警
     const rawCharge = event.pricing.charge_cents
     const charge = Number.isFinite(rawCharge) ? rawCharge
-      : this.warnDirtyData(`projection:${event.event_id}`, `usage 事件 ${event.event_id} 的 pricing.charge_cents=${String(rawCharge)} 非有限（存量脏数据），本次投影按 0 计入（REL-11）`)
+      : this.warnDirtyData(`projection:${event.event_id}`, t('usage 事件 {id} 的 pricing.charge_cents={value} 非有限（存量脏数据），本次投影按 0 计入（REL-11）', { id: event.event_id, value: String(rawCharge) }))
     const existing = collection.findOne((row) => row.window === day)
     if (existing) {
       collection.update(existing.id, { count: existing.count + 1, charge_cents: existing.charge_cents + charge })
@@ -986,8 +1194,8 @@ export class UsageService extends Service {
       if (ungranted.length > 0) {
         drift.push({ principal, consumed: [...consumedSet], granted, ungranted })
         this.ctx.platformBus.emit('audit.alert.fired', {
-          id: newId('alt'), severity: 'critical', title: 'usage 能力漂移',
-          message: `主体 ${principal} 实际消耗了未声明授权的资源：${ungranted.join(', ')}（运行时对账 M5）`,
+          id: newId('alt'), severity: 'critical', title: t('usage 能力漂移'),
+          message: t('主体 {principal} 实际消耗了未声明授权的资源：{resources}（运行时对账 M5）', { principal, resources: ungranted.join(', ') }),
           resourceType: 'usage_capability', resourceId: principal,
         })
       }
@@ -997,6 +1205,63 @@ export class UsageService extends Service {
 
   deadLetters(): Collection<DeadLetterRecord> {
     return this.ctx.opsStorage.collection<DeadLetterRecord>('usage:deadLetters')
+  }
+
+  // -- 资产使用凭证（2026-10-31）---------------------------------------------
+  // 与 usage_events 计费管道的关系见 asset-reports.ts 头注：凭证是使用事实（skill 本地执行等
+  // 平台无感知的使用由 Agent 主动提报），不进价格簿/成本口径；授权闭环校验在 prepareAssetUsageReport
+  // （REST 路由与 MCP 工具共用编排，本服务只管存储/幂等/查询/聚合）。
+
+  /** 凭证流水集合（幂等键引擎级唯一，防并发重复入账）。 */
+  assetReports(): Collection<AssetUsageReportRecord> {
+    const collection = this.ctx.opsStorage.collection<AssetUsageReportRecord>('usage:assetReports')
+    collection.uniqueOn('idempotencyKey', (record) => record.idempotencyKey)
+    return collection
+  }
+
+  /** 落库（幂等）：同键同内容返回原凭证 deduped=true；同键异容 409；仅首次落库发总线事件（审计逐次留痕不因重放膨胀）。 */
+  submitAssetUsageReport(prepared: Omit<AssetUsageReportRecord, 'id' | 'createdAt' | 'updatedAt'>): { report: AssetUsageReportRecord; deduped: boolean } {
+    const existing = this.assetReports().findOne((item) => item.idempotencyKey === prepared.idempotencyKey)
+    if (existing) {
+      if (reportFingerprint(existing) !== reportFingerprint(prepared)) {
+        throw new AssetUsageError(409, 'IDEMPOTENCY_CONFLICT', t('幂等键冲突：{key} 已被不同内容的凭证占用（同键必须同内容，换业务单号）', { key: prepared.idempotencyKey }))
+      }
+      return { report: existing, deduped: true }
+    }
+    const report = this.assetReports().insert({ id: newId('aur'), ...prepared })
+    this.ctx.platformBus.emit(PlatformEvents.UsageAssetReported, {
+      actorType: report.reporterType,
+      actor: report.agentId ?? report.userId ?? report.reporterPrincipalId,
+      actorName: report.reporterName,
+      type: report.assetType,
+      id: report.assetKey,
+      name: report.assetName,
+      reason: `action=${report.action} outcome=${report.outcome} occurredAt=${report.occurredAt}${report.taskId ? ` taskId=${report.taskId}` : ''}${report.note ? ` note=${report.note}` : ''}`,
+    })
+    return { report, deduped: false }
+  }
+
+  /** 凭证查询（经营对账/审计出口）：assetType/assetKey/agentId/from/to 过滤，occurredAt 倒序。 */
+  assetUsageReports(filters: { assetType?: string; assetKey?: string; agentId?: string; from?: string; to?: string; limit?: number } = {}): AssetUsageReportRecord[] {
+    let rows = this.assetReports().all()
+    if (filters.assetType) rows = rows.filter((row) => row.assetType === filters.assetType)
+    if (filters.assetKey) rows = rows.filter((row) => row.assetKey === filters.assetKey)
+    if (filters.agentId) rows = rows.filter((row) => row.agentId === filters.agentId)
+    if (filters.from) rows = rows.filter((row) => row.occurredAt >= filters.from!)
+    if (filters.to) rows = rows.filter((row) => row.occurredAt <= filters.to!)
+    rows.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+    const limit = Math.min(Math.max(filters.limit ?? 100, 1), 500)
+    return rows.slice(0, limit)
+  }
+
+  /** 按 assetKey 聚合凭证数（台账 usageReports30d 口径：occurredAt ≥ fromISO）。 */
+  assetUsageReportCounts(fromISO: string): Map<string, number> {
+    const counts = new Map<string, number>()
+    for (const row of this.assetReports().all()) {
+      if (row.occurredAt < fromISO) continue
+      counts.set(row.assetKey, (counts.get(row.assetKey) ?? 0) + 1)
+    }
+    return counts
   }
 
   // -- 内部 -----------------------------------------------------------------
@@ -1009,7 +1274,7 @@ export class UsageService extends Service {
     if (!this.warnedDirtyKeys.has(key)) {
       this.warnedDirtyKeys.add(key)
       this.ctx.platformBus.emit('audit.alert.fired', {
-        id: newId('alt'), severity: 'warning', title: 'usage 脏数据按 0 兜底（REL-11）',
+        id: newId('alt'), severity: 'warning', title: t('usage 脏数据按 0 兜底（REL-11）'),
         message,
       })
     }
@@ -1017,16 +1282,16 @@ export class UsageService extends Service {
   }
 
   private validate(input: UsageRecordInput): void {
-    if (!input.org?.trim()) throw new Error('usage 事件 org 必填')
-    if (!input.subject?.trim()) throw new Error('usage 事件 subject 必填（user:<id> / agent:<id>）')
-    if (!input.principal?.trim()) throw new Error('usage 事件 principal 必填（org:<id> / plugin:<id> / platform）')
+    if (!input.org?.trim()) throw new Error(t('usage 事件 org 必填'))
+    if (!input.subject?.trim()) throw new Error(t('usage 事件 subject 必填（user:<id> / agent:<id>）'))
+    if (!input.principal?.trim()) throw new Error(t('usage 事件 principal 必填（org:<id> / plugin:<id> / platform）'))
     if (!input.resource?.trim() || !/^[a-z]+:[A-Za-z0-9._-]+$/.test(input.resource)) {
-      throw new Error(`usage 事件 resource 格式非法：${input.resource}（应为 model:<slug> / mcp:<slug> / plugin:<id> / skill:<id> / nas:<id> / app:<id> / kb:<orgId>）`)
+      throw new Error(t('usage 事件 resource 格式非法：{value}（应为 model:<slug> / mcp:<slug> / plugin:<id> / skill:<id> / nas:<id> / app:<id> / kb:<orgId>）', { value: String(input.resource) }))
     }
-    if (!Array.isArray(input.meters) || input.meters.length === 0) throw new Error('usage 事件 meters 至少一项')
+    if (!Array.isArray(input.meters) || input.meters.length === 0) throw new Error(t('usage 事件 meters 至少一项'))
     for (const meter of input.meters) {
-      if (!meter.key || !/^[a-z][a-z0-9_.]*$/.test(meter.key)) throw new Error(`计量键非法：${meter.key}（^[a-z][a-z0-9_.]*$）`)
-      if (!Number.isFinite(meter.value) || meter.value < 0) throw new Error(`计量值非法：${meter.key}=${meter.value}`)
+      if (!meter.key || !/^[a-z][a-z0-9_.]*$/.test(meter.key)) throw new Error(t('计量键非法：{key}（^[a-z][a-z0-9_.]*$）', { key: meter.key }))
+      if (!Number.isFinite(meter.value) || meter.value < 0) throw new Error(t('计量值非法：{key}={value}', { key: meter.key, value: meter.value }))
     }
   }
 
@@ -1083,7 +1348,12 @@ export interface UsageSummary {
   charge_cents: number
   input_tokens: number
   output_tokens: number
-  byResource: Array<{ resource: string; events: number; tokens: number; cost_cents: number; charge_cents: number }>
+  /**
+   * 未定价事件数（#14 additive）：cost_cents=0 且由「费率未配置/全零费率」导致——
+   * 覆盖率口径：priced_events = events − not_priced_events；0 成本 ≠ 无消耗。
+   */
+  not_priced_events: number
+  byResource: Array<{ resource: string; events: number; tokens: number; cost_cents: number; charge_cents: number; not_priced_events: number }>
 }
 
 interface ReportRow {
@@ -1171,6 +1441,10 @@ interface UsageRow {
   meters_json: string
   pricing_json: string
   trace_id: string
+  /** D3（组7 additive）：存量库迁移前该列不存在，读侧按 undefined 容忍。 */
+  invocation_id?: string
+  /** C4（additive）：存量库迁移前该列不存在，读侧按 undefined 容忍。 */
+  context_id?: string
 }
 
 function usageRow(event: UsageEvent): Record<string, string | number> {
@@ -1187,6 +1461,8 @@ function usageRow(event: UsageEvent): Record<string, string | number> {
     meters_json: JSON.stringify(event.meters),
     pricing_json: JSON.stringify(event.pricing),
     trace_id: event.trace_id ?? '',
+    invocation_id: event.invocationId ?? '',
+    context_id: event.contextId ?? '',
   }
 }
 
@@ -1197,6 +1473,10 @@ function rowToEvent(row: UsageRow): UsageEvent {
     event_id: row.id,
     idempotency_key: row.idempotency_key,
     ...(row.trace_id !== '' ? { trace_id: row.trace_id } : {}),
+    // D3 读路径同步：存量行（迁移前列缺省 ''）不下发该键，新行原样带回（重放/消费方不丢关联）
+    ...(row.invocation_id !== undefined && row.invocation_id !== '' ? { invocationId: row.invocation_id } : {}),
+    // C4 读路径同步：存量行（迁移前列缺省 ''）不下发该键，新行原样带回
+    ...(row.context_id !== undefined && row.context_id !== '' ? { contextId: row.context_id } : {}),
     occurred_at: row.occurred_at,
     tenant_id: row.tenant_id,
     org: row.org,

@@ -12,6 +12,8 @@ import { $, esc, toast } from '../ui.js'
 import {
   loadConnections, upsertConnection, removeConnection, activeConnection, setActiveId, LOCAL_ID,
 } from '../connections.js'
+import { loadPanelDepts, renderPanelRegistry, openPanelEditor } from './panels.js'
+import rqI18n from '../i18n.js'
 
 /** 本机连接的展示地址（页面源 + 部署前缀）。 */
 const PAGE_BASE = location.origin + new URL('.', document.baseURI).pathname.replace(/\/$/, '')
@@ -19,6 +21,8 @@ const PAGE_BASE = location.origin + new URL('.', document.baseURI).pathname.repl
 export function renderConnections(content, params, { standalone = false } = {}) {
   const mount = () => loadConnections(localStorage)
   const active = () => activeConnection(localStorage, new URL('.', document.baseURI).pathname.replace(/\/$/, ''))
+  // 面板部门目录：登记弹窗的部门下拉（面板服务不可用时退化为手工填标识）
+  let panelDepts = []
 
   const switchTo = (id) => {
     setActiveId(localStorage, id)
@@ -44,8 +48,9 @@ export function renderConnections(content, params, { standalone = false } = {}) 
           <div class="card" style="width:100%;max-width:720px" id="conn-card">` : `
         <div class="page-head">
           <div>
+            <div class="micro-label">HOST CONNECTIONS</div>
             <div class="page-title">宿主服务连接</div>
-            <div class="page-desc">控制台默认连接本机宿主服务；可手动配置其他宿主（如 http://192.168.0.7:7300），配置过即可一键切换，切换后页面自动刷新生效。</div>
+            <div class="page-sub">控制台默认连接本机宿主服务；可手动配置其他宿主（如 http://192.168.0.7:7300），配置过即可一键切换，切换后页面自动刷新生效。</div>
           </div>
         </div>
         <div class="card mb-20" id="conn-card">`}
@@ -67,6 +72,8 @@ export function renderConnections(content, params, { standalone = false } = {}) 
             </div>
             <div class="form-hint" style="margin-top:8px">目标宿主需与本控台同代版本（数据面默认放行跨域）；登录账号、组织与权限均为目标宿主侧数据，切换后需按目标宿主重新登录。</div>
           </div>
+          ${standalone ? '' : `
+          <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px" id="conn-panels"></div>`}
         </div>
       </div>
       ${standalone ? '<div style="margin-top:16px"><a class="fs-13" style="color:var(--brand-500);cursor:pointer" id="conn-back">← 返回登录</a></div></div>' : ''}
@@ -78,9 +85,17 @@ export function renderConnections(content, params, { standalone = false } = {}) 
       const base = $('#conn-new-base').value
       const result = upsertConnection(localStorage, { name, base })
       if (!result.ok) return toast(result.error, 'error')
-      toast(`已保存连接「${result.connection.name}」，点击其「切换」启用`)
+      toast(rqI18n.t('已保存连接「{name}」，点击其「切换」启用', { name: result.connection.name }))
       render()
     })
+
+    // 面板登记区（宿主 × 部门）：只有在这里登记过的面板，控制台「部门面板」才有一键入口。
+    // 独立登录形态（无会话）不渲染——登记是登录后的管理动作。
+    const panelsHost = $('#conn-panels')
+    if (panelsHost) {
+      panelsHost.innerHTML = '<div class="fs-12 text-4">正在读取面板部门目录…</div>'
+      renderPanelRegistry(panelsHost, { depts: panelDepts, onChange: render })
+    }
 
     wireRows(render)
   }
@@ -118,9 +133,9 @@ export function renderConnections(content, params, { standalone = false } = {}) 
       row.querySelector('[data-act="probe"]')?.addEventListener('click', async (event) => {
         event.currentTarget.disabled = true
         const cell = row.querySelector('.conn-probe')
-        cell.textContent = '测活中…'
+        cell.textContent = rqI18n.t('测活中…')
         const result = await probeHostBase(item.base)
-        cell.innerHTML = `${result.ok ? '<span style="color:#067647">● 可达 ' : '<span style="color:#b42318">● 不可达：'}${esc(result.message)}</span>`
+        cell.innerHTML = `${result.ok ? `<span style="color:#067647">● ${esc(rqI18n.t('可达'))} ` : `<span style="color:#b42318">● ${esc(rqI18n.t('不可达：'))}`}${esc(result.message)}</span>`
         event.currentTarget.disabled = false
       })
       row.querySelector('[data-act="switch"]')?.addEventListener('click', () => {
@@ -132,14 +147,14 @@ export function renderConnections(content, params, { standalone = false } = {}) 
       row.querySelector('[data-act="remove"]')?.addEventListener('click', (event) => {
         if (!armed) {
           armed = true
-          event.currentTarget.title = '再次点击确认删除'
+          event.currentTarget.title = rqI18n.t('再次点击确认删除')
           event.currentTarget.style.color = '#d0342c'
-          toast('再点一次确认删除该连接')
+          toast(rqI18n.t('再点一次确认删除该连接'))
           return
         }
         const result = removeConnection(localStorage, id)
         if (result.removedActive) switchTo(LOCAL_ID) // 删的是活动连接：回落本机并刷新
-        else { toast('已删除'); render() }
+        else { toast(rqI18n.t('已删除')); render() }
       })
     })
   }
@@ -168,10 +183,18 @@ export function renderConnections(content, params, { standalone = false } = {}) 
         base: row.querySelector('[data-edit="base"]').value,
       })
       if (!result.ok) return toast(result.error, 'error')
-      toast(active().id === item.id ? '已保存。点击「重新应用」以生效' : '已保存')
+      toast(active().id === item.id ? rqI18n.t('已保存。点击「重新应用」以生效') : rqI18n.t('已保存'))
       render()
     })
   }
 
+  // 部门目录（面板服务）异步取回后重渲染一次：登记弹窗的部门下拉才有内容，取不到按手工输入降级
+  if (!standalone) {
+    void loadPanelDepts().then((depts) => {
+      if (!depts.length) return
+      panelDepts = depts
+      render()
+    })
+  }
   render()
 }

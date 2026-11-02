@@ -1,5 +1,6 @@
 /** 接入指引生成器：手动注册 Agent / AI 应用成功后，按平台接入规范自动生成可执行指引（附刚颁发的凭证）。 */
 import { esc, openModal, copyText } from './ui.js'
+import rqI18n from './i18n.js'
 
 const base = () => location.origin
 
@@ -39,8 +40,10 @@ curl -s -X POST ${origin}/api/agents/${agent.id}/metrics-report \\
 【第 4 步 · NAS 文件能力与数据权限（需文件能力时必读）】
 NAS 文件操作经文件网关（MCP：url=<网关地址>/mcp + Authorization: Bearer <管理员签发的网关令牌>）统一执法，
 按组织位置 + 角色层级 RBAC 判定，全链 fail-closed：
-- 身份红线（P0-2）：真实用户身份一律经请求头 X-On-Behalf-User: <平台或钉钉 userId> 透传，禁止进工具参数；
-  令牌须由管理员标记 allowedOnBehalf 才允许携带该头，否则一律 403 FORGED_ON_BEHALF（伪造留痕）；
+- 身份归因（MCP 治理 W1 降级表述，原 P0-2）：请求头 X-On-Behalf-User: <平台或钉钉 userId> 仅作调用
+  归因（审计口径），不是授权事实——授权一律以令牌及其委托链为准；该头仍禁止进工具参数，
+  且令牌须由管理员标记 allowedOnBehalf 才允许携带，否则一律 403 FORGED_ON_BEHALF（伪造留痕）；
+  需要代用户操作时改用委托令牌（POST ${origin}/api/authn/token/exchange）；
   无用户上下文的机器调用可不带头，由令牌绑定身份判定。
 - 越权返回 JSON-RPC -32403「数据权限拒绝：<reasons>」，前缀可归因：path.out-of-scope（超作用域）/
   matrix.deny（角色无权）/ org.* / account.* / degraded.*（平台不可达已降级）——原文透传给用户，不要变形重试。
@@ -49,6 +52,32 @@ NAS 文件操作经文件网关（MCP：url=<网关地址>/mcp + Authorization: 
   → 审批单自动路由用户组织链最近负责人（兜底 resource_admin），通过后自动写 7 天例外，到期自动失效。
 - PDP 不可达时网关按「作用域快照只读 → 全局只读 → 拒绝」降级：收到 degraded.* 理由提示用户稍后重试，
   不要连续重试。observeOnly 观察期越权放行但留痕告警，不代表越权合法。
+
+【第 5 步 · 服务级 MCP 数据面（调用平台已纳管 MCP 服务时的标准路径）】
+Agent 标准默认路径是 POST ${origin}/mcp/services/<服务slug>（/api/mcp/invoke 仅为兼容层，行为不变）：
+1. 用第 1 步令牌换服务级委托令牌（audience 绑定目标服务，短时令牌替代长期令牌出域）：
+   curl -s -X POST ${origin}/api/authn/token/exchange \\
+     -H "Authorization: Bearer <token>" -H 'content-type: application/json' \\
+     -d '{"audience":"mcp:service:<服务slug>"}'
+   → 取响应 data.access_token（默认 15 分钟有效，可带 ttlSeconds≤3600；可调用范围由管理员配置的
+   MCP 权限组决定，需要新工具授权时向管理员申请，不要用长期令牌硬闯）。
+2. initialize 握手（标准 JSON-RPC 2.0，回 mcp-session-id）：
+   curl -s -X POST ${origin}/mcp/services/<服务slug> \\
+     -H "Authorization: Bearer <access_token>" -H 'content-type: application/json' \\
+     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"${agent.slug ?? 'my-agent'}","version":"1.0"}}}'
+3. tools/list 拉取可调用工具（平台按本 Agent 权限过滤，未授权工具不出现在列表；列表即边界，
+   不在列表中的工具调用同样被拒）：
+   curl -s -X POST ${origin}/mcp/services/<服务slug> -H "Authorization: Bearer <access_token>" \\
+     -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+4. tools/call 调用工具（统一走网关链：鉴权/限流/熔断/审计/计量；params.arguments 传业务参数）：
+   curl -s -X POST ${origin}/mcp/services/<服务slug> -H "Authorization: Bearer <access_token>" \\
+     -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"<工具名>","arguments":{}}}'
+   → 成功回 result.content[0].text（工具结果 JSON 串）；拒绝一律 JSON-RPC error，按 error.data.code
+   处理、不要变形重试：-32001 未认证（重新换牌一次再试）/ -32003 拒绝（AUDIENCE_MISMATCH 受众不符 /
+   TOOL_NOT_VISIBLE_OR_DENIED 工具不可见或未授权 / BREAKER_OPEN 熔断 / SERVICE_OFFLINE 已下线 /
+   SERVICE_NOT_PUBLISHED 未发布）/ -32004 RATE_LIMITED 限流 / -32000 服务错误（SERVICE_NOT_FOUND 等）。
+   别名形态 POST ${origin}/mcp/s/<服务ID> 等价；无 audience 的平台令牌也可直连（可调用面同样以
+   权限组为准），但长期令牌不得写进客户端配置出域。
 
 【注意】
 1. client_secret 等价口令：只在注册响应出现一次，平台不可再查询，请务必妥善保存；如不慎丢失请联系平台管理员处理，无须自行轮换。
@@ -124,7 +153,12 @@ ${origin}/docs/app-rbac-guide.md
 - 接入文档索引：GET ${origin}/docs（app-sso-integration.md、app-rbac-guide.md、app-onboarding.md 等）
 - 自身资料与指标复核：GET / PATCH ${origin}/api/apps/${app.id}（app.read/app.write）
 - 上线申请：POST ${origin}/api/apps/${app.id}/transition（进入审批流，禁止绕过审批改状态）
-- MCP 工具网关：mcp.invoke 调用平台已部署 MCP 服务；Skill/Agent 目录：skill.read / agent.read 浏览
+- MCP 服务级数据面（调用平台已部署 MCP 服务的标准路径，MCP 治理 W2）：先用机器凭证换服务级委托令牌
+  POST ${origin}/api/authn/token/exchange -d '{"audience":"mcp:service:<服务slug>"}' 取 access_token，
+  再 POST ${origin}/mcp/services/<服务slug>（标准 JSON-RPC：initialize / tools/list / tools/call；
+  tools/list 按本应用权限过滤，未授权工具不出现；错误按 error.data.code 处理）；
+  别名 POST ${origin}/mcp/s/<服务ID> 等价；mcp_invoke（/api/mcp/invoke）仅为兼容层，行为不变
+- Skill/Agent 目录：skill.read / agent.read 浏览
 - 全员名册（组织数据通道，人事/绩效类应用）：GET ${origin}/api/iam/roster
   （users[].id=sub 同一关联键、orgs[].leaderUserIds=部门负责人；默认凭证不含，需管理员为凭证追加 iam.roster.read scope）
 - 模型网关：应用默认凭证不含 modelgw.invoke，需直连大模型时请管理员追加授权（经网关调用自动计量）
@@ -133,9 +167,11 @@ ${origin}/docs/app-rbac-guide.md
 1. client_secret 等价口令：只在注册响应出现一次，平台不可再查询，请务必妥善保存；如不慎丢失请联系平台管理员处理，无须自行轮换（SSO 的 OIDC client_secret 同理）。
 2. 幂等：重名注册返回 400「已存在」时，按名称查列表复用既有资源。
 3. 失败锁定：换牌连续失败 5 次锁来源 IP 15 分钟，重试前先核对凭证。
-4. 数据权限红线：应用代用户操作 NAS 文件等平台数据面接口时，用户身份一律经
-   X-On-Behalf-User 请求头透传（禁止进参数/路径）；越权响应（-32403 数据权限拒绝）原文透传给用户，
-   degraded.* 前缀表示平台短暂不可达已降级，提示稍后重试。`
+4. 数据权限归因（MCP 治理 W1 降级表述，原「数据权限红线」）：应用代用户操作 NAS 文件等平台
+   数据面接口时，请求头 X-On-Behalf-User: <平台 userId 或钉钉 userId> 仅作调用归因（审计口径），
+   不是授权事实——授权一律以令牌及其委托链为准；该头仍禁止进参数/路径，未授权令牌携带一律
+   403 FORGED_ON_BEHALF（防伪造，留痕）；需要代用户操作时改用委托令牌（POST ${origin}/api/authn/token/exchange）。
+   越权响应（-32403 数据权限拒绝）原文透传给用户，degraded.* 前缀表示平台短暂不可达已降级，提示稍后重试。`
 }
 
 /**
@@ -161,8 +197,8 @@ export function openOnboardingModal({ title, resource, credential, metaRows, gui
         <button class="btn btn-primary btn-sm" id="onboard-copy-all">${esc('⧉ 一键复制全部指引')}</button>
       </div>
       <pre class="mono fs-12" id="onboard-guide" style="white-space:pre-wrap;background:var(--bg-2);padding:12px;border-radius:8px;max-height:380px;overflow:auto;line-height:1.7">${esc(guideText)}</pre>
-      <div class="form-hint mt-8">整段复制后发给执行 Agent（或开发者）照做：换牌 → 接入验证，${esc(resourceLabel)}即可自主完成接入与提报闭环。</div>`,
-    foot: '<button class="btn btn-primary" data-ok>我已保存凭证并已把指引发给 Agent，关闭</button>',
+      <div class="form-hint mt-8">${esc(rqI18n.t('整段复制后发给执行 Agent（或开发者）照做：换牌 → 接入验证，{resource}即可自主完成接入与提报闭环。', { resource: resourceLabel }))}</div>`,
+    foot: `<button class="btn btn-primary" data-ok>${esc(rqI18n.t('我已保存凭证并已把指引发给 Agent，关闭'))}</button>`,
   })
   modal.el.querySelector('#onboard-copy-all').onclick = () => {
     const result = copyText(guideText)

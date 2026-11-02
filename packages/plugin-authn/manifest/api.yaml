@@ -5,7 +5,9 @@ endpoints:
   - POST /api/auth/login · POST /api/auth/sso · POST /api/auth/client-credentials
   - GET /api/auth/me · POST /api/auth/logout（主动登出：sid 全链吊销）
   - GET /api/auth/providers · GET /api/auth/sso · GET /api/auth/sso/callback · POST /api/auth/sso/authorize · POST /api/auth/sso/register · POST /api/auth/sso/bind · POST /api/auth/sso/bind/authorize（SSO 注册/绑定面，console 承载）
+  - POST /api/auth/sso/unbind（本人自助解绑三方身份；操作对象恒为会话本人，需 6 位二次验证码）
   - POST /api/auth/refresh（刷新票换新访问令牌） · POST /api/auth/entry-ticket-session（票据免登建立控制台会话） · POST /api/auth/entry-tickets/self（面板自领票据）
+  - POST /api/panel/auth/login（面板自持登录面，公开白名单） · POST /api/panel/auth/refresh（与 /api/auth/* 同一 authn 后端同响应形状，2026-10-29 补齐欠账）
   - POST /api/authn/entry-tickets/redeem（公开：平台授权直达换身份） · POST /api/authn/verify-audience（受众校验） · GET /api/authn/bindable-resources（可绑定资源清单）
   - GET/POST /api/authn/oidc/clients · PATCH /api/authn/oidc/clients/:id · POST /api/authn/oidc/clients/:id/rotate（OIDC 客户端治理）
   - GET /api/authn/oidc/discovery · POST /api/authn/oidc/keys/rotate（发现文档/签名密钥轮换）
@@ -15,6 +17,7 @@ endpoints:
   - GET/POST /api/authn/principals · PATCH /api/authn/principals/:id（scopes 调整，联动吊销令牌）
   - POST /api/authn/principals/:id/disable|enable|rotate-secret（轮换：旧值即废，新值仅一次返回）
   - GET/POST /api/authn/tokens · DELETE /api/authn/tokens/:jti · POST /api/authn/rotate-secret
+  - POST /api/authn/token/exchange（委托令牌交换：audience 绑定 mcp:service:<slug> 或 plugin:<id>）
 tools:
   - authn_token_issue
   - authn_token_revoke

@@ -1,0 +1,9 @@
+{
+  "httpStatus": 200,
+  "contentType": "text/event-stream",
+  "eventsSeen": [
+    "response.created"
+  ],
+  "executionStatus": "completed",
+  "verdict": "FAIL（SSE 未完成，执行实际状态=completed）"
+}

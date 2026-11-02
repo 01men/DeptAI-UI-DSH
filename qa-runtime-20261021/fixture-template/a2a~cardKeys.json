@@ -1,0 +1,10 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:41.515Z",
+    "updatedAt": "2026-10-20T04:14:41.515Z",
+    "id": "key_mvg661yjidr5p2yn",
+    "keyId": "a2a-card-key-1",
+    "publicKeyBase64": "MCowBQYDK2VwAyEAxlZzg4WMCZZ+74AY3dC/F1K8Oe6vkRNj3Hfp+2xbnto=",
+    "algorithm": "Ed25519"
+  }
+]

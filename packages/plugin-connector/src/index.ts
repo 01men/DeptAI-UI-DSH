@@ -13,11 +13,19 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
-import { PlatformEvents, newId, sha256Hex, scanSensitiveKeys, type Collection, type RecordBase, type ToolPrincipal } from '../../platform-core/src/index.ts'
+import { PlatformEvents, newId, sha256Hex, scanSensitiveKeys, wrapPolicyDecision, type Collection, type RecordBase, type ToolPrincipal } from '../../platform-core/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 import { OcClient, OC_VERSION_PIN, type OcConnectionSummary, type OcRunLog, type OcTokenPolicy } from './client.ts'
 import { OcError } from './errors.ts'
-import { heuristicRiskLevel, rankOf, type RiskLevel } from './risk.ts'
+import { rankOf, resolveRiskLevel, riskTierOf, type RiskLevel, type RiskTier } from './risk.ts'
 import { inOdd, normalizeOdd, type OddDeclaration } from './odd.ts'
+import {
+  WORK_DENY_CODE_LABELS,
+  gateManagedWork,
+  type WorkCallerRef,
+  type WorkRefIndex,
+  type WorkforcePolicyRegistry,
+} from '../../platform-core/src/workforce-port.ts'
 import * as connectorTools from './tools.ts'
 
 // ---------------------------------------------------------------------------
@@ -45,6 +53,8 @@ export interface CatalogActionRecord {
   name?: string
   description?: string
   riskLevel: RiskLevel
+  /** R6 声明式风险目录的 provider 分层（S1=低风险常规 / S2=高敏）；无声明时缺省，仅展示、审批联动后续迭代。 */
+  riskTier?: RiskTier
   requiredScopes: string[]
   providerPermissions: string[]
   inputSchema: Record<string, unknown>
@@ -112,6 +122,8 @@ export interface InvokeCaller {
   id: string
   name: string
   actChain?: Array<{ name: string; type: string }>
+  /** additive（D10）：入口侧已验证的 principal ID（工具面来自 exec.principal）；缺省时按 id 反查。 */
+  principalId?: string
 }
 
 export type ConnectorInvokeStatus =
@@ -139,6 +151,37 @@ const PROCESSED_RUN_CAP = 4000
 
 function nowIso(): string {
   return new Date().toISOString()
+}
+
+/**
+ * 规范化参数序列化（§11.5）：对象键名字典序稳定排序、剔除 undefined，保证
+ * 「同参数不同键序/瞬态字段」得到同一摘要——稳定幂等键与 gate argsHash 共用本口径。
+ */
+function canonicalArgsJson(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value ?? null)
+  if (Array.isArray(value)) return `[${value.map(canonicalArgsJson).join(',')}]`
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, item]) => item !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalArgsJson(item)}`).join(',')}}`
+}
+
+/**
+ * InvokeCaller → 已验证工作调用者引用（D10/附录 D.5）：只携带服务端已核验字段；
+ * 受管判定由 workforce 端口按 refType/refId（agent/app 资源）或 userId 反查，与请求参数无关。
+ */
+function workCallerOf(caller: InvokeCaller): WorkCallerRef {
+  if (caller.type === 'user') {
+    const principalId = caller.principalId ?? caller.id
+    return { kind: 'human', principalId, userId: caller.id, name: caller.name }
+  }
+  return {
+    kind: 'machine',
+    principalId: caller.principalId ?? caller.id,
+    refType: caller.type === 'agent' ? 'agent' : 'app',
+    refId: caller.id,
+    name: caller.name,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -222,11 +265,11 @@ export class ConnectorHubService extends Service {
    * 身份上下文缺失直接抛错，不降级。
    */
   orgScopeFor(principal?: ToolPrincipal): string | null | undefined {
-    if (!principal) throw new Error('工具执行缺少身份上下文（fail-closed）')
+    if (!principal) throw new Error(t('工具执行缺少身份上下文（fail-closed）'))
     if (principal.permissions.includes('*')) return undefined
     if (principal.kind === 'human' && principal.userId) {
       const user = this.ctx.iam.users().get(principal.userId)
-      if (!user) throw new Error(`账号不存在：${principal.userId}`)
+      if (!user) throw new Error(t('账号不存在：{id}', { id: principal.userId }))
       return user.orgId
     }
     return this.boundResourceOrg(principal.principalId) ?? null
@@ -234,13 +277,14 @@ export class ConnectorHubService extends Service {
 
   /** 从执行上下文身份解析 InvokeCaller（与 REST /api/connector/execute 同规则），透传 actChain。 */
   callerFromPrincipal(principal?: ToolPrincipal): InvokeCaller {
-    if (!principal) throw new Error('工具执行缺少身份上下文（fail-closed）')
+    if (!principal) throw new Error(t('工具执行缺少身份上下文（fail-closed）'))
     const act = principal.actChain?.length ? { actChain: principal.actChain } : {}
-    if (principal.kind === 'human') return { type: 'user', id: principal.userId ?? principal.principalId, name: principal.name, ...act }
+    const verified = { principalId: principal.principalId, ...act }
+    if (principal.kind === 'human') return { type: 'user', id: principal.userId ?? principal.principalId, name: principal.name, ...verified }
     const record = this.ctx.authn.principals().get(principal.principalId)
-    if (record?.refType === 'agent' && record.refId) return { type: 'agent', id: record.refId, name: principal.name, ...act }
-    if (record?.refType === 'app' && record.refId) return { type: 'app', id: record.refId, name: principal.name, ...act }
-    return { type: 'app', id: principal.principalId, name: principal.name, ...act }
+    if (record?.refType === 'agent' && record.refId) return { type: 'agent', id: record.refId, name: principal.name, ...verified }
+    if (record?.refType === 'app' && record.refId) return { type: 'app', id: record.refId, name: principal.name, ...verified }
+    return { type: 'app', id: principal.principalId, name: principal.name, ...verified }
   }
 
   private boundResourceOrg(principalId: string): string | undefined {
@@ -309,20 +353,20 @@ export class ConnectorHubService extends Service {
       OOMOL_CONNECT_ADMIN_TOKEN: envOf('OOMOL_CONNECT_ADMIN_TOKEN'),
     }
     if (!record || !record.baseUrl.trim()) {
-      return { available: false, reason: 'connector:gateway 未配置（baseUrl/adminToken）', envChecks, status: 'unconfigured' }
+      return { available: false, reason: t('connector:gateway 未配置（baseUrl/adminToken）'), envChecks, status: 'unconfigured' }
     }
     const hasLiteralToken = this.resolveAdminToken(record, envProbe) !== undefined
     if (!hasLiteralToken && (!envChecks.OOMOL_CONNECT_ADMIN_TOKEN)) {
-      return { available: false, reason: '管理口令未解析（adminToken 需为 env: 引用且 OOMOL_CONNECT_ADMIN_TOKEN 已设置）', envChecks, ...(record ? { status: record.status, lastProbeAt: record.health.lastProbeAt } : {}) }
+      return { available: false, reason: t('管理口令未解析（adminToken 需为 env: 引用且 OOMOL_CONNECT_ADMIN_TOKEN 已设置）'), envChecks, ...(record ? { status: record.status, lastProbeAt: record.health.lastProbeAt } : {}) }
     }
     if (!envChecks.OOMOL_CONNECT_ENCRYPTION_KEY) {
-      return { available: false, reason: 'OOMOL_CONNECT_ENCRYPTION_KEY 未设置：sidecar 将凭证明文落盘，平台 fail-closed 拒绝一切 invoke', envChecks, ...(record ? { status: record.status, lastProbeAt: record.health.lastProbeAt } : {}) }
+      return { available: false, reason: t('OOMOL_CONNECT_ENCRYPTION_KEY 未设置：sidecar 将凭证明文落盘，平台 fail-closed 拒绝一切 invoke'), envChecks, ...(record ? { status: record.status, lastProbeAt: record.health.lastProbeAt } : {}) }
     }
     if (record.status === 'unconfigured') {
-      return { available: false, reason: '网关尚未探活', envChecks, status: record.status }
+      return { available: false, reason: t('网关尚未探活'), envChecks, status: record.status }
     }
     if (record.status !== 'healthy') {
-      return { available: false, reason: record.unavailableReason ?? '网关探活失败（fail-closed）', envChecks, status: record.status, lastProbeAt: record.health.lastProbeAt }
+      return { available: false, reason: record.unavailableReason ?? t('网关探活失败（fail-closed）'), envChecks, status: record.status, lastProbeAt: record.health.lastProbeAt }
     }
     return {
       available: true,
@@ -338,8 +382,8 @@ export class ConnectorHubService extends Service {
   requireClient(): { client: OcClient; record: GatewayRecord } {
     const status = this.gatewayStatus()
     if (!status.available || !status.baseUrl) {
-      this.noteFailureSignal(status.reason ?? '网关不可用')
-      throw new OcError('gateway_unavailable', status.reason ?? '连接器网关不可用（fail-closed）', undefined, 503)
+      this.noteFailureSignal(status.reason ?? t('网关不可用'))
+      throw new OcError('gateway_unavailable', status.reason ?? t('连接器网关不可用（fail-closed）'), undefined, 503)
     }
     const record = this.gateways().all()[0]!
     const client = new OcClient(status.baseUrl, this.resolveAdminToken(record)!, OC_DEFAULT_TIMEOUT)
@@ -348,7 +392,7 @@ export class ConnectorHubService extends Service {
 
   async configureGateway(input: { baseUrl: string; adminToken?: string; autoCatalogSyncMinutes?: number }, actor: string): Promise<GatewayRecord> {
     const baseUrl = input.baseUrl.replace(/\/$/, '')
-    if (!baseUrl) throw new Error('baseUrl 必填')
+    if (!baseUrl) throw new Error(t('baseUrl 必填'))
     const existing = this.gateways().all()[0]
     const next: Partial<GatewayRecord> = {
       baseUrl,
@@ -379,11 +423,11 @@ export class ConnectorHubService extends Service {
   /** 探活：连续失败即整体 unavailable（invoke 拒绝）；恢复自动半闭合。 */
   async probeGateway(): Promise<{ ok: boolean; latencyMs: number; reason?: string }> {
     const record = this.gateways().all()[0]
-    if (!record) return { ok: false, latencyMs: 0, reason: '未配置' }
+    if (!record) return { ok: false, latencyMs: 0, reason: t('未配置') }
     if (record.maintOffline) {
       // 维护下线态：探活直接跳过（定时器不复活），仅刷新时间戳
       this.gateways().update(record.id, { health: { ...record.health, lastProbeAt: nowIso() } })
-      return { ok: false, latencyMs: 0, reason: record.unavailableReason ?? '审批下线（维护态，探活跳过）' }
+      return { ok: false, latencyMs: 0, reason: record.unavailableReason ?? t('审批下线（维护态，探活跳过）') }
     }
     // 强制 env 门禁先于网络探测（P0 修正①）：加密钥缺失或管理口令不可解析即 unavailable +
     // 告警计数——这两个是部署期硬问题；而「尚未探活」属于正常过渡态，必须继续真实探测。
@@ -392,7 +436,7 @@ export class ConnectorHubService extends Service {
     if (encryptionMissing || adminUnresolvable) {
       const fails = record.health.consecutiveFails + 1
       const rawReason = this.gatewayStatus().reason
-      const reason = rawReason && /(OOMOL|管理口令)/.test(rawReason) ? rawReason : '强制配置缺失：无法安全访问连接器网关（fail-closed）'
+      const reason = rawReason && /(OOMOL|管理口令)/.test(rawReason) ? rawReason : t('强制配置缺失：无法安全访问连接器网关（fail-closed）')
       this.gateways().update(record.id, {
         status: 'unavailable', unavailableReason: reason,
         health: { lastProbeAt: nowIso(), consecutiveFails: fails },
@@ -472,11 +516,11 @@ export class ConnectorHubService extends Service {
     const updated = this.gateways().update(record.id, {
       maintOffline: true,
       status: 'unavailable',
-      unavailableReason: `审批下线：${reason}`,
+      unavailableReason: t('审批下线：{reason}', { reason }),
     })
     this.ctx.platformBus.emit(PlatformEvents.ConnectorGatewayChanged, { baseUrl: updated.baseUrl, action: 'gateway_offline', reason })
     this.ctx.audit.record({
-      type: 'change', actorType: 'system', actorId: 'connector-offline', actorName: '审批执行',
+      type: 'change', actorType: 'system', actorId: 'connector-offline', actorName: t('审批执行'),
       action: 'connector.gateway.offline', resourceType: 'connector_gateway', resourceId: updated.id,
       resourceName: updated.baseUrl, result: 'ok', detail: reason,
     })
@@ -495,14 +539,14 @@ export class ConnectorHubService extends Service {
   /** connector.offline 执行器语义②：连接引用下线（平台侧拒绝经由它的调用；sidecar 凭证不受影响）。 */
   async offlineConnection(id: string, options: { actorName: string; reason: string }): Promise<ConnectionReferenceRecord> {
     const ref = this.connections().get(id)
-    if (!ref) throw new Error(`连接引用不存在：${id}`)
+    if (!ref) throw new Error(t('连接引用不存在：{id}', { id }))
     if (ref.status === 'offlined') return ref
     const updated = this.connections().update(id, {
       offlinedStatusFrom: ref.status,
       status: 'offlined',
       offlinedAt: nowIso(),
       offlinedBy: options.actorName,
-      errorReason: `审批下线：${options.reason}`,
+      errorReason: t('审批下线：{reason}', { reason: options.reason }),
     } as Partial<ConnectionReferenceRecord>)
     this.ctx.platformBus.emit(PlatformEvents.ConnectorDisconnected, {
       connectionId: id, alias: ref.alias, provider: ref.provider, orgId: ref.ownerOrgId,
@@ -514,7 +558,7 @@ export class ConnectorHubService extends Service {
   /** 连接恢复：清下线标记并回查 sidecar 状态（网关不可达时停留 pending 待下次轮询收敛）。 */
   async onlineConnection(id: string): Promise<ConnectionReferenceRecord> {
     const ref = this.connections().get(id)
-    if (!ref) throw new Error(`连接引用不存在：${id}`)
+    if (!ref) throw new Error(t('连接引用不存在：{id}', { id }))
     this.connections().update(id, {
       offlinedStatusFrom: undefined, offlinedAt: undefined, offlinedBy: undefined,
       errorReason: undefined, status: ref.offlinedStatusFrom === 'pending' ? 'pending' : 'active',
@@ -540,7 +584,7 @@ export class ConnectorHubService extends Service {
   requireAction(actionId: string): CatalogActionRecord {
     const entry = this.catalogs().all()[0]?.actions.find((item) => item.id === actionId)
     if (!entry) {
-      throw new OcError('unknown_action', `action 不在纳管目录中：${actionId}（先执行目录同步）`, undefined, 404)
+      throw new OcError('unknown_action', t('action 不在纳管目录中：{action}（先执行目录同步）', { action: actionId }), undefined, 404)
     }
     return entry
   }
@@ -556,7 +600,7 @@ export class ConnectorHubService extends Service {
       if (!service) continue
       // usage resource 正则约束（P2 修正⑮）：provider 段必须满足 /^[a-z]+:[A-Za-z0-9._-]+$/
       if (!RESOURCE_PATTERN.test(`connector:${service}`)) {
-        skipped.push({ service, reason: `service 标识不满足计量资源正则 ${RESOURCE_PATTERN.source}` })
+        skipped.push({ service, reason: t('service 标识不满足计量资源正则 {pattern}', { pattern: RESOURCE_PATTERN.source }) })
         continue
       }
       validServices.add(service)
@@ -568,12 +612,16 @@ export class ConnectorHubService extends Service {
       if (!service || !validServices.has(service)) continue
       const scopes = (Array.isArray(action.requiredScopes) ? action.requiredScopes : []).map(String)
       const perms = (Array.isArray(action.providerPermissions) ? action.providerPermissions : []).map(String)
+      // R6：风险级走声明目录（resolveRiskLevel：显式 > 声明 actions > 声明 defaultRisk > 启发式），
+      // 有 provider 声明时随记录带上 riskTier（S1/S2，仅展示、审批联动后续迭代）。
+      const riskTier = riskTierOf(service)
       mapped.push({
         id: action.id,
         service,
         ...(action.name !== undefined ? { name: String(action.name) } : {}),
         ...(action.description !== undefined ? { description: String(action.description) } : {}),
-        riskLevel: heuristicRiskLevel(action),
+        riskLevel: resolveRiskLevel(action, service),
+        ...(riskTier ? { riskTier } : {}),
         requiredScopes: scopes,
         providerPermissions: perms,
         inputSchema: action.inputSchema && typeof action.inputSchema === 'object' ? action.inputSchema : { type: 'object', properties: {} },
@@ -623,14 +671,14 @@ export class ConnectorHubService extends Service {
   assertAliasPrefix(alias: string, orgId: string): string {
     const prefix = `org:${orgId}:`
     if (!alias.startsWith(prefix) || alias.length <= prefix.length) {
-      throw new OcError('invalid_alias_prefix', `连接别名必须以 ${prefix} 开头（org 隔离三件套①）`, undefined, 400)
+      throw new OcError('invalid_alias_prefix', t('连接别名必须以 {prefix} 开头（org 隔离三件套①）', { prefix }), undefined, 400)
     }
     return alias
   }
 
   buildAlias(orgId: string, suffix: string): string {
     const clean = suffix.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-|-$/g, '')
-    if (!clean) throw new Error('连接别名后缀不能为空')
+    if (!clean) throw new Error(t('连接别名后缀不能为空'))
     return this.assertAliasPrefix(`org:${orgId}:${clean}`, orgId)
   }
 
@@ -689,7 +737,7 @@ export class ConnectorHubService extends Service {
     }
     const { client } = this.requireClient()
     if (!RESOURCE_PATTERN.test(`connector:${input.provider}`)) {
-      throw new OcError('invalid_service', `provider 标识不满足计量资源正则：${input.provider}`, undefined, 400)
+      throw new OcError('invalid_service', t('provider 标识不满足计量资源正则：{provider}', { provider: input.provider }), undefined, 400)
     }
     const needsApproval = input.requireApproval === true
     if (needsApproval && !approvalDecided) {
@@ -697,7 +745,7 @@ export class ConnectorHubService extends Service {
         kind: 'connector.connect',
         // WP-10/L1（QA A-06）：L4 高危统一高风险——通过需二次确认 + 公司级终审标记
         riskLevel: 'high',
-        title: `新建 SaaS 连接：${input.provider}`,
+        title: t('新建 SaaS 连接：{provider}', { provider: input.provider }),
         payload: {
           // 审批负载禁止携带凭证字段（红线一）：只有 provider/org/alias 与发起人
           provider: input.provider, orgId: input.orgId, alias, authType: input.authType,
@@ -709,7 +757,7 @@ export class ConnectorHubService extends Service {
       return { approvalRequired: true, approvalId: approval.id }
     }
     if (input.approvalId && !approvalDecided) {
-      throw new OcError('approval_required', '该 provider 配置了连接审批：请先提交审批并通过后再携带 approvalId 创建连接', undefined, 403)
+      throw new OcError('approval_required', t('该 provider 配置了连接审批：请先提交审批并通过后再携带 approvalId 创建连接'), undefined, 403)
     }
     const existingRef = this.connections().findOne((item) => item.alias === alias)
     if (input.authType === 'oauth') {
@@ -725,8 +773,8 @@ export class ConnectorHubService extends Service {
           // P1 修正⑩：自备 App 成本透传给向导（企业需先在 provider 侧注册 client 并写入 sidecar）
           throw new OcError(
             'oauth_client_config_required',
-            `${input.provider} 的 OAuth 需要「自备 App」：请先在企业侧注册 OAuth App，并把 client 配置写入连接器网关（PUT /api/oauth/configs/:service），再重试`,
-            `向导提示：在 ${input.provider} 开发者后台创建 OAuth App；回调地址使用 OOMOL_CONNECT_ORIGIN 对应的 /oauth/callback；随后由管理员保存 client 配置。指南详见 docs/connector-integration.md`,
+            t('{provider} 的 OAuth 需要「自备 App」：请先在企业侧注册 OAuth App，并把 client 配置写入连接器网关（PUT /api/oauth/configs/:service），再重试', { provider: input.provider }),
+            t('向导提示：在 {provider} 开发者后台创建 OAuth App；回调地址使用 OOMOL_CONNECT_ORIGIN 对应的 /oauth/callback；随后由管理员保存 client 配置。指南详见 docs/connector-integration.md', { provider: input.provider }),
           )
         }
         throw error
@@ -774,17 +822,17 @@ export class ConnectorHubService extends Service {
   /** 两段式审批的第二段：验证审批单已通过且主体/provider/org 匹配后才放行实际凭证提交。 */
   verifyConnectApproval(approvalId: string, provider: string, orgId: string, requesterId: string): boolean {
     const approval = this.ctx.audit.approvals().get(approvalId) as ApprovalLike | undefined
-    if (!approval) throw new OcError('approval_invalid', `审批单不存在：${approvalId}`, undefined, 400)
-    if (approval.kind !== 'connector.connect') throw new OcError('approval_invalid', `审批单类型不符：${approval.kind}`, undefined, 400)
+    if (!approval) throw new OcError('approval_invalid', t('审批单不存在：{id}', { id: approvalId }), undefined, 400)
+    if (approval.kind !== 'connector.connect') throw new OcError('approval_invalid', t('审批单类型不符：{kind}', { kind: approval.kind }), undefined, 400)
     const payload = approval.payload as Record<string, unknown>
     if (String(payload.requesterId ?? '') !== String(requesterId)) {
-      throw new OcError('approval_actor_mismatch', '审批单发起人与当前操作人不一致，拒绝以此单放行', undefined, 403)
+      throw new OcError('approval_actor_mismatch', t('审批单发起人与当前操作人不一致，拒绝以此单放行'), undefined, 403)
     }
     if (String(payload.provider ?? '') !== provider || String(payload.orgId ?? '') !== orgId) {
-      throw new OcError('approval_target_mismatch', '审批单的 provider/org 与本次创建不一致', undefined, 403)
+      throw new OcError('approval_target_mismatch', t('审批单的 provider/org 与本次创建不一致'), undefined, 403)
     }
     if (!['approved', 'executed'].includes(approval.status)) {
-      throw new OcError('approval_pending', `审批单未通过（${approval.status}）`, undefined, 403)
+      throw new OcError('approval_pending', t('审批单未通过（{status}）', { status: approval.status }), undefined, 403)
     }
     return true
   }
@@ -818,11 +866,11 @@ export class ConnectorHubService extends Service {
   async deleteConnection(id: string, options: { actor: string; force?: boolean }): Promise<{ deleted: boolean; releasedGroups: string[] }> {
     const { client } = this.requireClient()
     const ref = this.connections().get(id)
-    if (!ref) throw new Error(`连接引用不存在：${id}`)
+    if (!ref) throw new Error(t('连接引用不存在：{id}', { id }))
     const referencingGroups = this.permGroups().find((group) =>
       group.orgId === ref.ownerOrgId && Object.values(group.policies).some((policy) => (policy.connections ?? []).includes(ref.alias)))
     if (referencingGroups.length > 0 && !options.force) {
-      throw new OcError('connection_in_use', `连接仍被 ${referencingGroups.map((group) => group.name).join('、')} 权限组引用，请先解绑或携带 force 解除`, undefined, 409)
+      throw new OcError('connection_in_use', t('连接仍被 {groups} 权限组引用，请先解绑或携带 force 解除', { groups: referencingGroups.map((group) => group.name).join('、') }), undefined, 409)
     }
     if (ref.authType !== 'no_auth') {
       try {
@@ -876,9 +924,9 @@ export class ConnectorHubService extends Service {
     rateLimitPerMin?: number
     odd?: OddDeclaration
   }): ConnectorPermGroupRecord {
-    if (!input.name?.trim()) throw new Error('权限组名称不能为空')
-    if (this.permGroups().findOne((group) => group.name === input.name)) throw new Error(`权限组已存在：${input.name}`)
-    if (!this.ctx.iam.orgs().get(input.orgId)) throw new Error(`组织不存在：${input.orgId}`)
+    if (!input.name?.trim()) throw new Error(t('权限组名称不能为空'))
+    if (this.permGroups().findOne((group) => group.name === input.name)) throw new Error(t('权限组已存在：{name}', { name: input.name }))
+    if (!this.ctx.iam.orgs().get(input.orgId)) throw new Error(t('组织不存在：{id}', { id: input.orgId }))
     this.validatePolicies(input.orgId, input.policies)
     const group = this.permGroups().insert({
       id: newId('cpg'), name: input.name,
@@ -927,22 +975,22 @@ export class ConnectorHubService extends Service {
 
   private requirePermGroup(id: string): ConnectorPermGroupRecord {
     const group = this.permGroups().get(id)
-    if (!group) throw new Error(`连接器权限组不存在：${id}`)
+    if (!group) throw new Error(t('连接器权限组不存在：{id}', { id }))
     return group
   }
 
   private validatePolicies(orgId: string, policies: Record<string, ProviderPolicy>): void {
     for (const [service, policy] of Object.entries(policies)) {
       if (!RESOURCE_PATTERN.test(`connector:${service}`)) {
-        throw new Error(`provider 段不满足计量资源正则：${service}`)
+        throw new Error(t('provider 段不满足计量资源正则：{service}', { service }))
       }
       if (policy.riskCap && !(policy.riskCap in { read: 1, write: 1, admin: 1 })) {
-        throw new Error(`riskCap 非法：${String(policy.riskCap)}（read|write|admin）`)
+        throw new Error(t('riskCap 非法：{value}（read|write|admin）', { value: String(policy.riskCap) }))
       }
       for (const alias of policy.connections ?? []) {
         this.assertAliasPrefix(alias, orgId)
         if (!this.connections().findOne((item) => item.alias === alias && item.ownerOrgId === orgId)) {
-          throw new Error(`引用的连接不存在或不在本组织：${alias}`)
+          throw new Error(t('引用的连接不存在或不在本组织：{alias}', { alias }))
         }
       }
     }
@@ -1050,7 +1098,7 @@ export class ConnectorHubService extends Service {
         allowedProxies: snapshot.allowedProxies,
         allowedConnections: snapshot.allowedConnections,
       })
-      if (!minted.id) throw new OcError('runtime_token_invalid', 'open-connector 未返回运行时令牌 id', undefined, 502)
+      if (!minted.id) throw new OcError('runtime_token_invalid', t('open-connector 未返回运行时令牌 id'), undefined, 502)
       // OPT-P1-05：并发镜像去重——铸币 await 期间他方镜像可能已建账本，按组 upsert 而非盲目 insert
       const concurrentLedger = this.tokens().findOne((item) => item.permGroupId === group.id)
       if (concurrentLedger) {
@@ -1119,7 +1167,7 @@ export class ConnectorHubService extends Service {
         })
       }
     }
-    if (!minted.token) throw new OcError('runtime_token_invalid', '运行时令牌未返回一次性 token 值', undefined, 502)
+    if (!minted.token) throw new OcError('runtime_token_invalid', t('运行时令牌未返回一次性 token 值'), undefined, 502)
     this.tokenValueCache.set(group.id, minted.token)
     return minted.token
   }
@@ -1137,28 +1185,29 @@ export class ConnectorHubService extends Service {
       }))
   }
 
-  /** 计划书 §2.4：pattern 命中 + riskCap ≥ action.riskLevel + readOnly/denyParams 强制（补齐 mcp 侧缺口）。 */
+  /** 计划书 §2.4：pattern 命中 + riskCap ≥ 风险级（R6：resolveRiskLevel 统一入口，声明目录优先）+ readOnly/denyParams 强制（补齐 mcp 侧缺口）。 */
   authorizeAgainst(group: ConnectorPermGroupRecord, action: CatalogActionRecord, input: Record<string, unknown>): { ok: true; policy: ProviderPolicy } | { ok: false; reason: string } {
     const policy = group.policies[action.service]
-    if (!policy) return { ok: false, reason: `权限组 ${group.name} 未配置 provider ${action.service} 的策略` }
+    if (!policy) return { ok: false, reason: t('权限组 {group} 未配置 provider {service} 的策略', { group: group.name, service: action.service }) }
     // '*' 可为字符串通配或数组元素（schema 允许两形态），归一后统一 pattern 匹配
     const rawAllowed: unknown = policy.allowedActions
     const patterns = rawAllowed === '*' ? ['*'] : Array.isArray(rawAllowed) ? rawAllowed : undefined
     if (!patterns) {
-      return { ok: false, reason: `权限组 ${group.name} 的 allowedActions 形态非法：${JSON.stringify(rawAllowed)?.slice(0, 80)}（应为 '*' 或字符串数组）` }
+      return { ok: false, reason: t('权限组 {group} 的 allowedActions 形态非法：{value}（应为 \'*\' 或字符串数组）', { group: group.name, value: JSON.stringify(rawAllowed)?.slice(0, 80) ?? '' }) }
     }
     const patternHit = patterns.some((pattern) => pattern === '*' || pattern === action.id
       || (pattern.endsWith('.*') && action.service === pattern.slice(0, -2)))
-    if (!patternHit) return { ok: false, reason: `action ${action.id} 不在权限组 ${group.name} 的允许模式内` }
-    if (rankOf(policy.riskCap) < rankOf(action.riskLevel)) {
-      return { ok: false, reason: `action 风险级 ${action.riskLevel} 超出权限组 ${group.name} 的 riskCap ${policy.riskCap}` }
+    if (!patternHit) return { ok: false, reason: t('action {action} 不在权限组 {group} 的允许模式内', { action: action.id, group: group.name }) }
+    const riskLevel = resolveRiskLevel(action, action.service)
+    if (rankOf(policy.riskCap) < rankOf(riskLevel)) {
+      return { ok: false, reason: t('action 风险级 {risk} 超出权限组 {group} 的 riskCap {cap}', { risk: riskLevel, group: group.name, cap: policy.riskCap }) }
     }
-    if (policy.constraints?.readOnly && action.riskLevel !== 'read') {
-      return { ok: false, reason: `权限组 ${group.name} 为只读模式，action ${action.id}（${action.riskLevel}）被拒绝` }
+    if (policy.constraints?.readOnly && riskLevel !== 'read') {
+      return { ok: false, reason: t('权限组 {group} 为只读模式，action {action}（{risk}）被拒绝', { group: group.name, action: action.id, risk: riskLevel }) }
     }
     for (const deniedKey of policy.constraints?.denyParams ?? []) {
       if (hasInputKey(input, deniedKey)) {
-        return { ok: false, reason: `参数 ${deniedKey} 在权限组 ${group.name} 的 denyParams 内，已拦截` }
+        return { ok: false, reason: t('参数 {key} 在权限组 {group} 的 denyParams 内，已拦截', { key: deniedKey, group: group.name }) }
       }
     }
     return { ok: true, policy }
@@ -1173,9 +1222,9 @@ export class ConnectorHubService extends Service {
         return undefined
       }
     })()
-    if (!action) return { ok: false, reason: `action 不在纳管目录中：${actionId}` }
+    if (!action) return { ok: false, reason: t('action 不在纳管目录中：{action}', { action: actionId }) }
     const candidates = groups ?? this.candidateGroups(caller)
-    if (candidates.length === 0) return { ok: false, reason: `主体 ${caller.name} 未被任何连接器权限组授权` }
+    if (candidates.length === 0) return { ok: false, reason: t('主体 {name} 未被任何连接器权限组授权', { name: caller.name }) }
     for (const group of candidates) {
       const verdict = this.authorizeAgainst(group, action, input)
       if (verdict.ok) return { ok: true, group, policy: verdict.policy, action }
@@ -1183,7 +1232,7 @@ export class ConnectorHubService extends Service {
     return { ok: false, reason: candidates
       .map((group) => this.authorizeAgainst(group, action, input))
       .filter((verdict): verdict is Exclude<typeof verdict, { ok: true }> => !verdict.ok)
-      .map((verdict) => verdict.reason)[0] ?? `action ${actionId} 不在任何命中组的授权范围` }
+      .map((verdict) => verdict.reason)[0] ?? t('action {action} 不在任何命中组的授权范围', { action: actionId }) }
   }
 
   // -- 审批执行能力令牌（OPT-P1-02） -------------------------------------------
@@ -1211,7 +1260,7 @@ export class ConnectorHubService extends Service {
         ...(typeof payload['alias'] === 'string' && payload['alias'] ? { alias: payload['alias'] } : {}),
         approvalCapability: approvalCapabilityVault.mint(actionId, caller),
       })
-      if (!result.ok) throw new Error(result.status === 'approval_required' ? '递归审批异常：不应再次生成审批单' : result.error)
+      if (!result.ok) throw new Error(result.status === 'approval_required' ? t('递归审批异常：不应再次生成审批单') : result.error)
       return { runId: result.runId, status: result.status, latencyMs: result.latencyMs }
     })
   }
@@ -1225,9 +1274,45 @@ export class ConnectorHubService extends Service {
     dryRun?: boolean
     /** 审批执行能力令牌（OPT-P1-02）：仅类内部执行器闭包可铸造；REST/工具面不可达，伪造即 fail-closed。 */
     approvalCapability?: ApprovalExecutionCapability
+    /** additive（D10/§10.4）：工作授权引用索引，仅作索引透传；授权事实一律由 workforce 端口服务端回查。 */
+    workRef?: WorkRefIndex
   }): Promise<InvokeOutcome> {
     const started = Date.now()
     const input = params.input ?? {}
+
+    // ②′ 工作级准入（D10/蓝本 §4.3+附录 D.5）：在现有控制链之前追加，不替代、不删除原七步链。
+    // 受管判定只按可信 caller 反查（与是否携带 workRef 无关——员工删除引用不得退回宽松分支）；
+    // 端口未就绪或非受管 caller → legacy 原链照走。动作事实（provider/风险）读现有动作定义，不接受自报。
+    const actionDef = (() => {
+      try {
+        return this.requireAction(params.actionId)
+      } catch {
+        return undefined
+      }
+    })()
+    const argsHash = sha256Hex(canonicalArgsJson(input))
+    const gate = actionDef
+      ? await gateManagedWork(
+          (this.ctx as { workforcePolicy?: WorkforcePolicyRegistry }).workforcePolicy,
+          workCallerOf(caller),
+          {
+            facts: {
+              kind: 'connector',
+              registryId: actionDef.service,
+              action: params.actionId,
+              risk: actionDef.riskLevel === 'read' ? 'read' : 'write',
+            },
+            ...(params.workRef ? { ref: params.workRef } : {}),
+            argsHash,
+          },
+        )
+      : { mode: 'legacy' as const }
+    if (gate.mode === 'denied') {
+      // 拒绝风格与既有 denied 出口一致：中文原因 + 领域 code（§13.3）
+      const reason = `${WORK_DENY_CODE_LABELS[gate.code]}：${gate.message}`
+      this.emitDeniedEvent(caller, params.actionId, reason, started)
+      return { ok: false, status: 'denied', error: reason, latencyMs: Date.now() - started, code: gate.code }
+    }
 
     // ③ 第一层授权（subject 匹配 + policy 校验；orgId 由命中组决定——journal 决策③）
     const verdict = this.authorize(caller, params.actionId, input)
@@ -1246,13 +1331,13 @@ export class ConnectorHubService extends Service {
           groupId: group.id, groupName: group.name, orgId: group.orgId, actionId: action.id,
           callerId: caller.id, reasons: oddVerdict.reasons, at: nowIso(),
         })
-        this.emitDeniedEvent(caller, params.actionId, `ODD 离域：${oddVerdict.reasons.join('；')}`, started)
-        return { ok: false, status: 'denied', error: `调用超出该权限组的运营设计域（ODD）：${oddVerdict.reasons.join('；')}`, latencyMs: Date.now() - started }
+        this.emitDeniedEvent(caller, params.actionId, t('ODD 离域：{reasons}', { reasons: oddVerdict.reasons.join('；') }), started)
+        return { ok: false, status: 'denied', error: t('调用超出该权限组的运营设计域（ODD）：{reasons}', { reasons: oddVerdict.reasons.join('；') }), latencyMs: Date.now() - started }
       }
     }
     // 组级 fail-closed（OPT-P1-05）：镜像失败期间旧授权面不可用，直至镜像成功
     if (this.mirrorFailureGroups.has(group.id)) {
-      const reason = '该权限组 oct_ 令牌策略镜像失败，fail-closed 直至镜像成功（connector.policy_mirror_failed 已告警）'
+      const reason = t('该权限组 oct_ 令牌策略镜像失败，fail-closed 直至镜像成功（connector.policy_mirror_failed 已告警）')
       this.emitDeniedEvent(caller, params.actionId, reason, started)
       return { ok: false, status: 'denied', error: reason, latencyMs: Date.now() - started }
     }
@@ -1266,7 +1351,7 @@ export class ConnectorHubService extends Service {
           permGroup: group.name, orgId: group.orgId,
           connections: policy.connections ?? [],
           readOnlyConstraint: Boolean(policy.constraints?.readOnly),
-          note: '授权链前五步全部通过，dry-run 不执行真实调用',
+          note: t('授权链前五步全部通过，dry-run 不执行真实调用'),
         },
       }
     }
@@ -1279,19 +1364,19 @@ export class ConnectorHubService extends Service {
       // 故携带敏感键的调用直接拒绝（fail-closed），提示调整入参。
       const sensitivePaths = scanSensitiveKeys(input)
       if (sensitivePaths.length > 0) {
-        const reason = `入参携带敏感命名参数（${sensitivePaths.join('、')}）：admin 审批通道禁止敏感值入审批存储，请调整入参后重试（OPT-P2-02）`
+        const reason = t('入参携带敏感命名参数（{keys}）：admin 审批通道禁止敏感值入审批存储，请调整入参后重试（OPT-P2-02）', { keys: sensitivePaths.join('、') })
         this.emitDeniedEvent(caller, params.actionId, reason, started)
         return { ok: false, status: 'denied', error: reason, latencyMs: Date.now() - started }
       }
       const reused = this.dedupeAdminApproval(group, action, caller, input)
       if (reused) {
-        return { ok: false, status: 'approval_required', approvalId: reused.id, actionId: action.id, message: `已有待审的高危调用单：${reused.id}（批准后自动完成调用）` }
+        return { ok: false, status: 'approval_required', approvalId: reused.id, actionId: action.id, message: t('已有待审的高危调用单：{id}（批准后自动完成调用）', { id: reused.id }) }
       }
       const approval = this.ctx.audit.createApproval({
         kind: 'connector.action.admin',
         // WP-10/L1（QA A-06）：L4 高危统一高风险——通过需二次确认 + 公司级终审标记
         riskLevel: 'high',
-        title: `高危调用：${action.service}/${action.id}`,
+        title: t('高危调用：{service}/{action}', { service: action.service, action: action.id }),
         payload: {
           // 操作数据（action 入参）可入审批负载；provider 凭证绝不入——两段式连接审批同理
           actionId: action.id, service: action.service,
@@ -1306,7 +1391,7 @@ export class ConnectorHubService extends Service {
       })
       return {
         ok: false, status: 'approval_required', approvalId: approval.id, actionId: action.id,
-        message: `action ${action.id} 为 admin 风险级，已生成审批单，批准后自动完成调用`,
+        message: t('action {action} 为 admin 风险级，已生成审批单，批准后自动完成调用', { action: action.id }),
       }
     }
 
@@ -1317,7 +1402,7 @@ export class ConnectorHubService extends Service {
     if (bucket.length >= group.rateLimitPerMin) {
       this.rateBuckets.set(bucketKey, bucket)
       this.countErrors(`限流触发：${bucketKey}`)
-      return { ok: false, status: 'rate_limited', error: `触发限流：${group.rateLimitPerMin} 次/分钟`, latencyMs: Date.now() - started }
+      return { ok: false, status: 'rate_limited', error: t('触发限流：{limit} 次/分钟', { limit: group.rateLimitPerMin }), latencyMs: Date.now() - started }
     }
     bucket.push(minuteMark)
     this.rateBuckets.set(bucketKey, bucket)
@@ -1327,12 +1412,12 @@ export class ConnectorHubService extends Service {
     if (effectiveAlias) {
       const boundRef = this.connections().findOne((item) => item.alias === effectiveAlias && item.ownerOrgId === group.orgId)
       if (!boundRef) {
-        this.emitDeniedEvent(caller, params.actionId, `连接不存在或不属于本组织：${effectiveAlias}`, started)
-        return { ok: false, status: 'denied', error: `连接不存在或不属于本组织：${effectiveAlias}`, latencyMs: Date.now() - started }
+        this.emitDeniedEvent(caller, params.actionId, t('连接不存在或不属于本组织：{alias}', { alias: effectiveAlias }), started)
+        return { ok: false, status: 'denied', error: t('连接不存在或不属于本组织：{alias}', { alias: effectiveAlias }), latencyMs: Date.now() - started }
       }
       if (boundRef.offlinedAt) {
-        this.emitDeniedEvent(caller, params.actionId, `连接已下线：${effectiveAlias}（${boundRef.errorReason ?? ''}）`, started)
-        return { ok: false, status: 'denied', error: `连接已下线：${effectiveAlias}`, latencyMs: Date.now() - started }
+        this.emitDeniedEvent(caller, params.actionId, t('连接已下线：{alias}（{reason}）', { alias: effectiveAlias, reason: boundRef.errorReason ?? '' }), started)
+        return { ok: false, status: 'denied', error: t('连接已下线：{alias}', { alias: effectiveAlias }), latencyMs: Date.now() - started }
       }
     }
 
@@ -1349,10 +1434,18 @@ export class ConnectorHubService extends Service {
           groupId: group.id, groupName: group.name, actionId: action.id,
           authorizedHash, currentHash, ledgerHash, callerId: caller.id, at: nowIso(),
         })
-        this.emitDeniedEvent(caller, params.actionId, `权限组策略在授权后变更（快照漂移 ${authorizedHash.slice(0, 8)}→${currentHash ? currentHash.slice(0, 8) : 'deleted'}），拒绝按旧快照执行`, started)
-        return { ok: false, status: 'denied', error: '权限组策略在授权后发生变更（快照漂移），已拒绝执行：请重试以按最新策略重新授权', latencyMs: Date.now() - started }
+        this.emitDeniedEvent(caller, params.actionId, t('权限组策略在授权后变更（快照漂移 {from}→{to}），拒绝按旧快照执行', { from: authorizedHash.slice(0, 8), to: currentHash ? currentHash.slice(0, 8) : 'deleted' }), started)
+        return { ok: false, status: 'denied', error: t('权限组策略在授权后发生变更（快照漂移），已拒绝执行：请重试以按最新策略重新授权'), latencyMs: Date.now() - started }
       }
-      const idempotencyKey = action.riskLevel === 'read' ? undefined : crypto.randomUUID()
+      // 稳定业务幂等键（§4.3/§11.5，V19/V20）：受管放行且 run 已绑定时改用稳定键
+      // sha256(`wf:<runId>:<stepKey>:<actionId>:<参数摘要>`)（截断 48 位安全长度），跨请求复用——
+      // 同一步骤重投不再生成第二次业务写入；非受管路径保持原随机键（现状不变）。
+      const managedRunId = gate.mode === 'managed' ? (gate.work.runId ?? params.workRef?.runId ?? '') : ''
+      const idempotencyKey = action.riskLevel === 'read'
+        ? undefined
+        : gate.mode === 'managed' && managedRunId
+          ? sha256Hex(`wf:${managedRunId}:${params.workRef?.stepKey ?? ''}:${action.id}:${argsHash}`).slice(0, 48)
+          : crypto.randomUUID()
       const chosenAlias = effectiveAlias
       const outcome = await this.executeWithRecovery(group, action, {
         input, alias: chosenAlias, idempotencyKey,
@@ -1391,7 +1484,7 @@ export class ConnectorHubService extends Service {
           action: 'connector.invoke.recovered-audit', resourceType: 'connector_action',
           resourceId: runId, resourceName: `${action.service}/${action.id}`,
           result: 'ok',
-          detail: `sidecar 报 auditPersisted=false，结果有效但上游审计未落库——平台补记本条（runId=${runId}）`,
+          detail: t('sidecar 报 auditPersisted=false，结果有效但上游审计未落库——平台补记本条（runId={runId}）', { runId }),
           ...(caller.actChain?.length ? { actChain: caller.actChain } : {}),
         })
         this.countErrors(`auditPersisted=false 补记：${runId}`)
@@ -1399,12 +1492,15 @@ export class ConnectorHubService extends Service {
 
       // invoke 审计事件（audit 插件订阅落 invoke 日志，透传 actChain + runId）
       const finalLatencyMs = Date.now() - started
+      // 统一决策表达（W3-T5 契约 §11）：既有放行出口经 wrapPolicyDecision 包装，决策 id 随事件落账
+      const allowDecision = wrapPolicyDecision(true, [`权限组 ${group.name} 授权命中（${action.service}/${action.id}）`])
       this.ctx.platformBus.emit(PlatformEvents.ConnectorInvoked, {
         ok: true, service: action.service, actionId: action.id, runId,
         serviceRisk: action.riskLevel, permGroupId: group.id,
         callerType: caller.type, callerId: caller.id, callerName: caller.name,
         latencyMs: finalLatencyMs, actChain: caller.actChain,
         auditPersisted, metered,
+        decisionId: allowDecision.decisionId, decisionReasons: allowDecision.reasons,
       })
       // 延迟告警口径：单次耗时直评（规则播种见 seedConnectorDemo 的 connector_latency 条目）
       this.ctx.audit.evaluateAlerts('connector_latency', {
@@ -1473,10 +1569,14 @@ export class ConnectorHubService extends Service {
   }
 
   private emitDeniedEvent(caller: InvokeCaller, actionId: string, reason: string, startedAt: number, isError = false): void {
+    // 统一决策表达（W3-T5 契约 §11）：既有拒绝出口经 wrapPolicyDecision 包装，decisionId/reasons
+    // additive 附进 connector.invoked 审计事件（audit 订阅对未知字段零感知）——决策可回查，引擎不重写
+    const policyDecision = wrapPolicyDecision(false, [reason])
     this.ctx.platformBus.emit(PlatformEvents.ConnectorInvoked, {
       ok: false, actionId, service: actionId.split('.')[0] ?? '',
       callerType: caller.type, callerId: caller.id, callerName: caller.name,
       error: reason, latencyMs: Date.now() - startedAt, actChain: caller.actChain, failed: isError,
+      decisionId: policyDecision.decisionId, decisionReasons: policyDecision.reasons,
     })
   }
 
@@ -1546,8 +1646,8 @@ export class ConnectorHubService extends Service {
       })
       this.ctx.audit.fire({
         severity: 'warning',
-        title: '[连接器 org 巡检] 令牌绑定越界',
-        message: `发现 ${groupViolations.length} 处「令牌绑定连接 ∉ 组内 org」不一致：${JSON.stringify(groupViolations).slice(0, 220)}`,
+        title: t('[连接器 org 巡检] 令牌绑定越界'),
+        message: t('发现 {count} 处「令牌绑定连接 ∉ 组内 org」不一致：{detail}', { count: groupViolations.length, detail: JSON.stringify(groupViolations).slice(0, 220) }),
         resourceType: 'connector_gateway',
       })
     }
@@ -1607,8 +1707,8 @@ export class ConnectorHubService extends Service {
     if (bypassRuns.length > 0) {
       this.ctx.audit.fire({
         severity: 'critical',
-        title: '[连接器对账] 绕行调用（有 run 无 meter）',
-        message: `检测到 ${bypassRuns.length} 条经平台铸造令牌的 sidecar run 无对应 usage 计量：${bypassRuns.slice(0, 20).join(', ')}`,
+        title: t('[连接器对账] 绕行调用（有 run 无 meter）'),
+        message: t('检测到 {count} 条经平台铸造令牌的 sidecar run 无对应 usage 计量：{runs}', { count: bypassRuns.length, runs: bypassRuns.slice(0, 20).join(', ') }),
         resourceType: 'connector_reconcile',
       })
     }
@@ -1665,7 +1765,7 @@ declare module '@deepseek-ai/cordis' {
 }
 
 export const name = 'connector'
-export const inject = ['opsStorage', 'platformBus', 'iam', 'audit', 'usage', 'txnStore', 'authn', 'resourceCore']
+export const inject = ['opsStorage', 'platformBus', 'iam', 'audit', 'usage', 'txnStore', 'authn', 'resourceCore', 'workforcePolicy']
 
 export function apply(ctx: Context) {
   // 与 plugin-mcp 相同的装配形态：构造即注册（provide='connectorHub'），
@@ -1681,7 +1781,7 @@ export function apply(ctx: Context) {
   ctx.effect(() => ctx.audit.registerExecutor('connector.offline', async (payload) => {
     // 计划书 §2.7：连接/网关下线走 L4 审批，通过后 executor 落地
     const scope = String(payload['scope'] ?? 'gateway')
-    const reason = String(payload['reason'] ?? '审批通过下线')
+    const reason = String(payload['reason'] ?? t('审批通过下线'))
     if (scope === 'connection') {
       const ref = await hub.offlineConnection(String(payload['connectionId'] ?? ''), { actorName: 'approval-center', reason })
       return { scope, connectionId: ref.id, alias: ref.alias, status: ref.status }
@@ -1691,7 +1791,7 @@ export function apply(ctx: Context) {
   }))
   ctx.effect(() => ctx.audit.registerExecutor('connector.connect', async (payload) => {
     // 两段式设计（journal 决策②）：凭证绝不入审批负载——通过即登记，实际创建由发起人携 approvalId 完成
-    return { acknowledged: true, note: '审批通过：发起人现在可以提交实际连接凭证（POST /api/connector/connections/* 带 approvalId）', provider: payload['provider'] ?? '' }
+    return { acknowledged: true, note: t('审批通过：发起人现在可以提交实际连接凭证（POST /api/connector/connections/* 带 approvalId）'), provider: payload['provider'] ?? '' }
   }))
   // admin 高危审批执行器（OPT-P1-02）：注册收敛进类内部 bindAdminActionExecutor，
   // 能力令牌铸造 #私有化——外部插件不可达（原布尔旁路参数已删除，全仓 grep 0 命中为验收口径）

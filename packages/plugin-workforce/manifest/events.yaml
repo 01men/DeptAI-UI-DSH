@@ -1,0 +1,33 @@
+# 事件声明（发布/订阅）——跨插件联动只许通过事件或扩展点
+plugin: dsh-plugin-workforce
+events:
+  - name: workforce.port.ready
+    mode: emit
+    description: 工作策略端口已登记（platform-core 登记器发出，观测用）
+  - name: workforce.employee.changed
+    mode: emit
+    description: 员工创建/状态变更（停职与离岗联动撤 permit、释放租约）
+  - name: workforce.appointment.changed
+    mode: emit
+    description: 任用创建/激活/撤销（版本化边界变更）
+  - name: workforce.claim.succeeded
+    mode: emit
+    description: 幂等认领成功（员工/任务/run/租约证据）
+  - name: workforce.permit.revoked
+    mode: emit
+    description: 工作授权撤销（停职/调岗/过期）
+  - name: workforce.gray.denied
+    mode: emit
+    description: 灰度关闭组织的工作路径拒绝事件（W7/D-② 组织级灰度：认领/续租/受控调用入口显式拒绝，surface=port/admission 区分收口面）
+  - name: workforce.invocation.settled
+    mode: emit
+    description: 受控调用落账（含 denied/approval_required/outcome_unknown 全状态）
+  - name: workforce.deliverable.submitted
+    mode: emit
+    description: 交付提交（任务转审阅）
+  - name: workforce.acceptance.decided
+    mode: emit
+    description: 真人验收/退回决定
+  - name: agent.frozen
+    mode: subscribe
+    description: Agent 冻结联动：撤销该 Agent 绑定员工的全部有效 permit

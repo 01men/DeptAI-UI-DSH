@@ -1,0 +1,19 @@
+# OpenAPI 摘要（REST + 工具 + 服务键）—— CLI/Skill/Web 三端对齐的唯一事实源
+plugin: dsh-plugin-exec-hub
+base: /api
+endpoints:
+  - GET /api/exec/overview（exec.read；总览：唤醒、锁、健康度；设计适配 5.1 增量并入工作台驾驶舱字段 insight 与 kpis——洞察文案由 goals 完成度加告警真实派生、异常清单、六类资产计数、今日调用与消耗、风险分级，2026-10-14 additive）· GET /api/exec/goals · POST /api/exec/goals · PATCH /api/exec/goals/:id · DELETE /api/exec/goals/:id（exec.write；有子目标/项目 409）
+  - GET /api/exec/projects（issueProgress 随行）· POST /api/exec/projects · PATCH /api/exec/projects/:id · DELETE /api/exec/projects/:id（exec.write；有任务 409）
+  - GET /api/exec/issues?status=&agentId=&projectId= · POST /api/exec/issues（assign 触发唤醒）· PATCH /api/exec/issues/:id（改派触发唤醒+血缘重物化）· POST /api/exec/issues/:id/transition · POST /api/exec/issues/:id/wake · DELETE /api/exec/issues/:id（exec.write）· GET /api/exec/lineage/:issueId（exec.read）
+  - GET /api/exec/wakes?status=（exec.read）· GET /api/exec/runs?status= · POST /api/exec/wakeup（exec.write；API 触发源）
+  - GET/POST /api/exec/routines · PATCH/DELETE /api/exec/routines/:id（exec.write；interval/cron/webhook 三源）· POST /api/exec/tick（exec.admin；手动调度）
+  - POST /api/exec/webhook/:path（public selfValidated；路径即凭证，未登记/停用一律 404 fail-closed）
+tools:
+  - exec_wakeup_status
+  - exec_claim
+  - exec_complete
+  - exec_lineage
+services:
+  - key: execHub
+    access: ctx.execHub
+    description: 执行中枢：目标/项目/任务三层血缘 + CAS 任务执行锁 + 心跳唤醒队列（预算前置/权限校验/P0 审批门禁）+ 例行调度（interval/cron/webhook）+ Agent 健康度（R8/R9/R10，2026-10-14）

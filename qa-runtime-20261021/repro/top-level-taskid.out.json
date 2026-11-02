@@ -1,0 +1,18 @@
+{
+  "metadataVariant": {
+    "http": 400,
+    "code": "TASK_BINDING_FORBIDDEN",
+    "bound": false
+  },
+  "topSnake": {
+    "http": 200,
+    "bound": false,
+    "ignored": []
+  },
+  "topCamel": {
+    "http": 200,
+    "bound": false,
+    "ignored": []
+  },
+  "verdict": "FAIL（顶层注入静默忽略，无拒绝无留痕——与修复批次声明的「拒绝而非忽略」不一致）"
+}

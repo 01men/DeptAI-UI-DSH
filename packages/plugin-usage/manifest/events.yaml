@@ -4,3 +4,6 @@ events:
   - name: audit.alert.fired
     mode: emit
     description: 计量对账异常触发告警（跨域发布，audit 域命名空间）
+  - name: usage.asset.reported
+    mode: emit
+    description: 资产使用凭证提报（Agent 主动上报 skill/MCP 使用事实；audit 订阅逐次落 asset.usage.report）

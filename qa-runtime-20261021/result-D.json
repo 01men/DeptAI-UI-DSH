@@ -1,0 +1,172 @@
+{
+  "group": "D",
+  "total": 26,
+  "passed": 25,
+  "failed": 1,
+  "failures": [
+    {
+      "group": "D",
+      "name": "D8【缺陷】UHP 外部直调 SSE 不闭合（执行已 completed，却只下发 response.created；证据 repro/uhp-sse-direct.mjs）",
+      "pass": false,
+      "detail": "eventsSeen=[response.created]，executionStatus=completed，verdict=FAIL"
+    }
+  ],
+  "rows": [
+    {
+      "group": "D",
+      "name": "D0 夹具：A2 目标上线",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D1 非 online 目标拒绝（TARGET_NOT_ONLINE）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D1 密级越级拒绝（DATA_CLASS_EXCEEDED）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D1 冻结目标拒绝（TARGET_FROZEN）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D1 审批规则命中 → auth_required 且挂审批工单",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D1 预算熔断（block）拒绝或放行口径可解释（记录实际行为）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D1 workforce permit 探测面可用（治理第 2 项非空操作的前置）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D2 同步等待窗超时返回在途任务（working/submitted）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D2 在途取消即时生效（canceled）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D2 取消后模型返回不交付（终态仍 canceled，无 artifact）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D2 取消任务不计入协作链计量",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D3 审批通过幂等恢复（completed + attempts=1）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D3 恢复执行只产生 1 条 UHP 执行记录（无重复执行）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D4 发起人自验收被拒（职责分离）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D4 第三方验收通过并回写 acceptance",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D4 履约视图聚合完成率/验收通过率/P95",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D4 履约视图 P95 非负且时间口径合理（>=0）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D5 并发独立请求全部成功（无 5xx）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D5 同幂等键并发仅产生 1 个 response（幂等收敛）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D5 并发派发产生独立 taskId（5 条互不覆盖）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D6 task-bound 会话续接继承 session_id",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D6 跨主体续接他人会话被拒（403）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D7 巡检捕获 Skill 下架 + harness 幽灵引用（多类漂移）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D8 SSE 建立并推送历史快照（首帧含 event/data）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D8 UHP stream=true 返回 text/event-stream（协议头正确）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "D",
+      "name": "D8【缺陷】UHP 外部直调 SSE 不闭合（执行已 completed，却只下发 response.created；证据 repro/uhp-sse-direct.mjs）",
+      "pass": false,
+      "detail": "eventsSeen=[response.created]，executionStatus=completed，verdict=FAIL"
+    }
+  ]
+}

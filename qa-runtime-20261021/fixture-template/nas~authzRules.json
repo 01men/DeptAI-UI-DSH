@@ -1,0 +1,19 @@
+[
+  {
+    "createdAt": "2026-10-20T04:20:50.248Z",
+    "updatedAt": "2026-10-20T04:20:50.248Z",
+    "id": "singleton",
+    "version": 1,
+    "tenantId": "t_default",
+    "exceptions": [],
+    "cGroups": [],
+    "externalReadPaths": [],
+    "observeOnly": true,
+    "degradeAllToReadonly": false,
+    "shareLinkPolicy": {
+      "maxTtlSec": 2592000,
+      "allowPermanent": false,
+      "permanentPermission": "nas.authz.write"
+    }
+  }
+]

@@ -6,15 +6,20 @@
 
 ## 1. 升级指引：AGENT_SSO_ENFORCE 默认 '1'（Agent 上线身份纳管门禁）
 
-升级后，Agent 申请上线（挂单与审批执行**双点**校验）前必须完成「身份纳管」，二选一：
+升级后，Agent 申请上线（挂单与审批执行**双点**校验）前必须完成「身份纳管」，三选一
+（2026-10-31 起新增第 3 条 headless 通道）：
 
 - **签发 OIDC 客户端**：控制台「Agent 本体 → 详情 → SSO 配置」自助签发（owner 或持 `authn.oidc.write`）；
 - **登记 entryUrl**（零成本逃生门）：任何有交互界面的存量 Agent，在属性中登记
-  `entryUrl`（如 `PATCH /api/agents/:id {"attrs":{"entryUrl":"https://…"}}`）即满足门禁。
+  `entryUrl`（如 `PATCH /api/agents/:id {"attrs":{"entryUrl":"https://…"}}`）即满足门禁；
+  控制台 SSO 配置页现支持负责人直接登记（此前仅 Agent 侧自助提报）；
+- **声明 headless**（无交互界面）：Work Body 等纯后台执行体没有任何界面与回调，由负责人声明
+  `PATCH /api/agents/:id {"attrs":{"headless":true}}` 后凭已颁发的机器凭证放行；
+  未颁发凭证不放行，`oidc` 严格模式下不适用。
 
-存量影响面：门禁只拦「新增上线申请」，**已在线 Agent 不会被强制下线**；被拒文案自带两条指路。
+存量影响面：门禁只拦「新增上线申请」，**已在线 Agent 不会被强制下线**；被拒文案自带三条指路。
 开发环境确需跳过时显式设 `AGENT_SSO_ENFORCE=0`（仅建议开发环境）。最严档位 `oidc`：必须签发
-OIDC 客户端，entryUrl 不再放行。
+OIDC 客户端，entryUrl / headless 均不再放行。
 
 ## 2. CORS 行为说明（数据面跨域放行）
 

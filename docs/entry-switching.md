@@ -2,7 +2,7 @@
 
 > 回答一个问题：**dsh 宿主端，管理员和业务员各自用哪个界面、怎么互切？**
 > 本文件定版切换规则，并记录本次优化的修复清单与测试位置。
-> 关联：`docs/dev-plan-agent-host-unification.md`（单进程单入口）、`docs/panel-implementation.md`（部门面板）、`docs/action-plan-dsh-frontend.md`（WP-02 票据免登）。
+> 关联：`docs/internal/dev-plan-agent-host-unification.md`（单进程单入口）、`docs/panel-implementation.md`（部门面板）、`docs/internal/action-plan-dsh-frontend.md`（WP-02 票据免登）。
 
 ---
 
@@ -92,3 +92,87 @@
 - 「dsh 宿主单入口挂载」节：`/rq/panel` → `/rq/panel/`（externalBase 感知）。
 - `packages/plugin-console/public/js/landing.test.mjs`：五内置角色决议、`iam.*` 通配展开、
   `*` 全量、面板不可达回落、裸落地判定、open redirect 白名单。
+
+---
+
+## 五、2026-10-22 IA 收敛：部门面板改为「宿主 × 部门」登记制
+
+**问题**：控制台 NAV「部门面板」是硬编码外链 `${BASE}/panel/`，与「宿主服务连接」清单没有事实关联。
+换宿主后进哪个部门、看哪份看板，由目标宿主自己的 `localStorage['panel_dept']` 记忆决定——
+控制台无法回答「这台宿主的哪个部门可访问」，也没有任何东西保证登记与入口一致。
+
+**定版规则**（本节覆盖 §2.1/§2.2 中与面板入口相关的表述）：
+
+1. **面板入口 = 登记项**。面板登记绑定「宿主（来自宿主服务连接清单）+ 部门标识」，
+   存储键 `heng_ops_panels`（浏览器侧，与连接清单同域同生命期，无服务端状态）。
+2. **未登记即无入口**。`#/panels` 只列已登记项；没有登记时展示引导，不硬跳裸 `/panel/`。
+   登记面在「宿主服务连接」页（`#/connections`）的「部门面板」区块，也可在 `#/panels` 直接登记。
+3. **一跳直达部门**。跳转地址由登记项推导为 `<宿主 base>/panel/?dept=<部门标识>`；
+   面板侧 `?dept=` 深链优先于本地记忆，越权/不存在的部门静默回落（`js/dept.js` 纯函数，
+   口径与 panel-core 的 `DEPT_RE` 一致）。
+4. **不留悬空入口**。删除宿主连接时，指向它的面板登记一并清理；脏数据（宿主已被绕过删除）
+   在清单里标注「宿主已删除」且禁用进入按钮。
+5. **落地分诊改用登记项**。`app.js boot()` 与 `login.js finishLogin()` 的纯业务身份落地：
+   有已登记且可达的面板 → 直达该面板；无登记 → 落 `#/panels` 引导。不再硬编码 `/panel/`。
+
+**测试位置**：`connections.test.mjs`（登记增改删/去重/宿主删除联动/地址推导，7 例）+
+`plugin-panel-core/public/js/dept.test.mjs`（深链优先/越权回落/脏参数忽略，5 例）+
+selftest「前端接线」节的 NAV 与分诊断言。
+
+---
+
+## 六、2026-10-22：三方账号身份支持解绑与更换
+
+**问题**：后端 `iam.unlinkIdentity` 与 `DELETE /api/iam/users/:id/bindings/:provider` 早已存在，
+但控制台无任何入口；且既有实现即使手工调用也**不生效**——解绑后的下一次连接器同步
+（默认 60 分钟）会按工号把身份链接补回来，用户看到的是「点了没反应」。
+
+### 6.1 链路角色区分（本批次的根本修正）
+
+同一 (provider, corpId, userId) 下可能并存两条身份链，用途不同：
+
+| 链 | providerUserId | 用途 | 解绑是否影响 |
+|---|---|---|---|
+| 登录链（`kind='login'`） | unionId（`dd_uXXX`） | 「这个人是谁」+ SSO 登录 | 是——解绑即解除登录方式 |
+| 任职链（`kind='staff'`） | userid（`staff_XXX`） | 通讯录任职、**部门负责人反查**、NAS 数据权限身份反查 | 否——岗位事实不因解绑登录方式而消失 |
+
+解绑只动登录链。实测回归：早期版本把两条链一并删除，导致「AI 平台部」的负责人反查断链，
+NAS share 审批的审批人路由从「AI 平台部」回退到父部门「技术中心」——已修复并由 selftest 守住。
+
+### 6.2 同步豁免（解绑不被静默撤销）
+
+解绑写入 `user.bindingExemptions`（键 `provider|corpId`）：该主体的**登录链**不再被同步自动补回。
+任职链不受豁免约束（组织事实照常同步）。重新扫码/手工绑定成功即自动清除该主体的豁免
+——人工绑定的意图覆盖此前的解绑决定。
+
+### 6.3 反锁定护栏
+
+三方身份是 SSO 自注册/通讯录同步账号**唯一已知**的登录凭据（创建时口令随机生成、从未下发给人，
+账号记录里没有 `passwordKnown` 标记）。解绑最后一个登录方式会让账号永久无法登录且管理员无从补救
+（口令是随机值）。护栏先判后删：拦下并提示「请先为账号设置口令」。
+
+`passwordKnown` 标记口径：创建时显式指定口令、管理员重置口令、本人改密 → true；
+SSO 自注册与通讯录同步创建 → 缺省 false。存量账号由 `backfillPasswordKnown()` 幂等回填
+（无任何三方绑定者视为口令已知，否则解绑对既有账号全程被拒）。
+
+### 6.4 接口与权限
+
+| 端点 | 权限 | 用途 |
+|---|---|---|
+| `DELETE /api/iam/users/:id/bindings/:provider?corpId=` | `iam.user.write` | 管理员解绑（按主体粒度） |
+| `POST /api/iam/users/:id/bindings/:provider/replace` | `iam.user.write` | 管理员「更换」前置：解绑 + 返回绑定入口 |
+| `POST /api/auth/sso/unbind` | 仅需登录 | **本人自助解绑**（面板侧入口；只作用于调用者自己） |
+
+`replace` 不在服务端一次做完「先解后绑」：绑定必须由 IdP 授权拿到 unionId，提前解绑会让用户
+在授权失败/取消时白丢已有绑定。前端顺序是「解绑 → 跳转授权 → 授权成功建立新链」。
+
+### 6.5 界面
+
+- 控制台「组织与账号」账号详情抽屉的三方绑定行：每行带「更换」「解绑」两个动作，
+  解绑需 6 位二次验证码确认；多主体部署下每行按 corpId 独立。
+- 部门面板的钉钉绑定向导：已绑定状态展示「更换绑定」「解除绑定」（走自助端点，无需账号管理权限）。
+- 解绑后该主体不再出现在绑定清单（`bindingExemptions` 过滤），但任职事实与负责人映射不受影响。
+
+**测试位置**：selftest「解绑 / 更换」节（7 例：解绑落事实源 + 豁免、多主体粒度、重绑清豁免、
+反锁定拦截、设口令后可解、同步不补回、自助解绑免管理权限）+
+`packages/plugin-console/public/js/connections.test.mjs` 无关（本能力不涉及宿主连接）。

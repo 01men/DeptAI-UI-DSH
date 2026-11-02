@@ -1,0 +1,215 @@
+/* ============================================================
+   元冰可 · 设计 token 单一声明源（R7：吸收 paperclip DESIGN.md 单 token 源模式，
+   以原生 CSS 自定义属性实现，兼容零构建原生 ES 模块前端）。
+
+   三端消费方式：
+     · plugin-console   —— base.css 头部 `@import "./tokens.css";`（本文件与其同目录）
+     · plugin-panel-core—— panel.css 头部 `@import "../../css/tokens.css";`
+                           （相对解析：独立形态 → /css/tokens.css；dsh 挂载形态 →
+                           /rq/panel/css/panel.css 上溯两级 → /rq/css/tokens.css；
+                           两种形态都落在 console 的 serveStatic('/') 根目录上）
+     · plugin-rq-card   —— 浏览器半由 dsh 宿主另行伺服（/plugins/<id>/client.js），
+                           渲染文档内加载不到本文件（变量不可达）——其内联样式采用
+                           `var(--rq-*, 本地 fallback)` 双层结构：fallback 值与文末
+                           「rq-card 内联变量」一节单源对齐，宿主页面可覆写换肤。
+
+   取值原则：token 值 = 三端现值的众数/主值，本次是收敛声明源，不改任何视觉。
+
+   ── 主题（CIO 仪表盘 · 暖纸 + 深青蓝，2026-10-14 设计适配） ────────
+   品牌主色 = 深青蓝 #0a5f87（hsl(201 88% 31%)，设计稿 --primary），点缀色 =
+   青/湖青 #38a8c8/#22b8cf（数据高亮/渐变端点，承接 sky-700→cyan-500 渐变语汇），
+   辅色 = 微信绿 #07C160（语义「通过/安全/验证」，原语见 --wx-*，保留）。
+   中性系切暖纸（hsl 30-45 低饱和）；侧栏深色→浅暖色（--sidebar-* 组）。
+   定制轨覆写示例：:root { --brand-primary: #1E3A5F; --brand-accent: #07C160; }
+   覆写只动别名层，不动原语层——控制台五平台主题 data-platform 覆写仍优先生效。
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌色（深青蓝阶，主色 #0a5f87 = hsl(201 88% 31%)） ---------- */
+  --brand-50: #f0f7fa;
+  --brand-100: #dceef5;
+  --brand-200: #b6e0ee;
+  --brand-300: #7fcbe0;
+  --brand-400: #38a8c8;
+  --brand-500: #0a5f87;
+  --brand-600: #084d70;
+  --brand-700: #063d59;
+  --brand-gradient: linear-gradient(135deg, #075985 0%, #0e7490 55%, #22b8cf 100%);
+
+  /* ---------- 品牌别名层（定制轨换肤的唯一切入点） ----------
+     --brand-primary 承接高频主色（链接/主按钮/选中态）：默认指向主品牌阶，
+     五平台主题（base.css 的 data-platform 块）覆写 --brand-500 时别名随之联动。 */
+  --brand-primary: var(--brand-500);
+  --brand-primary-deep: var(--brand-600);
+  /* --brand-accent：品牌辅色别名，默认=微信绿原语（语义「通过/安全/验证」）。
+     默认视觉尚未消费它——是定制轨与后续新组件的辅色入口。 */
+  --brand-accent: var(--wx-500);
+
+  /* ---------- 品牌原语 · 深蓝系（#1E3A5F，定制轨主色备选，默认未被消费） ---------- */
+  --ink-50: #f0f4fa;
+  --ink-100: #dce6f2;
+  --ink-200: #bcd0e6;
+  --ink-300: #93b2d2;
+  --ink-400: #6489b6;
+  --ink-500: #3e618c;
+  --ink-600: #1E3A5F;
+  --ink-700: #18304f;
+  --ink-800: #12253d;
+  --ink-900: #0d1b2c;
+
+  /* ---------- 品牌原语 · 微信绿系（#07C160，hover/浅底取自 产品.html 定版） ---------- */
+  --wx-100: #e7f8ee;
+  --wx-500: #07C160;
+  --wx-600: #06ad56;
+  --wx-soft: rgba(7, 193, 96, 0.10);
+  --wx-border: rgba(7, 193, 96, 0.30);
+
+  /* ---------- 功能/语义色（success / info / warn / danger，对齐设计稿 emerald/sky/amber/red） ---------- */
+  --ok: #059669;
+  --ok-bg: #ecfdf5;
+  --ok-border: #a7f3d0;
+  --info: #0284c7;
+  --info-bg: #f0f9ff;
+  --info-border: #bae6fd;
+  --warn: #f59e0b;
+  --warn-bg: #fffbeb;
+  --warn-border: #fde68a;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --purple: #8b5cf6;
+  --purple-bg: #f5f3ff;
+  /* 语义阶扩展（徽章深文字/悬停深色/亮色图标，console+panel 现值） */
+  --success-strong: #047857;
+  --success-bright: #34d399;
+  --info-strong: #0369a1;
+  --warn-strong: #b45309;
+  --warn-hover: #d97706;
+  --danger-strong: #b91c1c;
+  --danger-bright: #f87171;
+  --danger-hover: #b91c1c;
+  --purple-strong: #6d28d9;
+  --purple-border: #ddd6fe;
+
+  /* ---------- 中性色（暖纸系：hsl(30-45°) 低饱和，对齐设计稿 stone/暖灰） ---------- */
+  --bg: #f8f6f3;
+  --surface: #ffffff;
+  --surface-2: #f0eeea;
+  --surface-dark: #1c1f26;
+  --code-fg: #d6dae3;
+  --border: #e0ddd8;
+  --border-strong: #d1cdc6;
+  --text-1: #231f1d;
+  --text-2: #4d4643;
+  --text-3: #706864;
+  --text-4: #a39c96;
+  --white: #ffffff;
+
+  /* ---------- 中性灰阶（部门面板现值，与面板 --line/--txt 等同源） ---------- */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* ---------- 侧边栏（浅暖色，2026-10-14 设计适配：深色侧栏→浅色） ---------- */
+  --sidebar-bg: #f2f0ec;
+  --sidebar-bg-2: #eae7e1;
+  --sidebar-text: #706864;
+  --sidebar-text-active: #231f1d;
+  --sidebar-hover: #eae7e1;
+  --sidebar-active: rgba(10, 95, 135, 0.10);
+  --sidebar-border: #e0ddd8;
+
+  /* ---------- 布局尺寸（对齐设计稿 w-[218px] / h-14 顶栏体系） ---------- */
+  --sidebar-w: 218px;
+  --topbar-h: 56px;
+
+  /* ---------- 间距（4px 步进） ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+
+  /* ---------- 字号（对齐现有 fs-11/fs-13 工具类；半步进用连字符，如 --fs-12-5） ---------- */
+  --fs-9-5: 9.5px;
+  --fs-10: 10px;
+  --fs-10-5: 10.5px;
+  --fs-11: 11px;
+  --fs-11-5: 11.5px;
+  --fs-12: 12px;
+  --fs-12-5: 12.5px;
+  --fs-13: 13px;
+  --fs-13-5: 13.5px;
+  --fs-14: 14px;
+  --fs-14-5: 14.5px;
+  --fs-15: 15px;
+  --fs-16: 16px;
+  --fs-17: 17px;
+  --fs-18: 18px;
+  --fs-19: 19px;
+  --fs-20: 20px;
+  --fs-21: 21px;
+  --fs-22: 22px;
+  --fs-26: 26px;
+  --fs-34: 34px;
+
+  /* ---------- 圆角（--radius-md 对齐设计稿 --radius 0.5rem = 8px） ---------- */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  /* 兼容别名（console 既有 --radius-s/--radius/--radius-l 消费面零改动） */
+  --radius-s: var(--radius-sm);
+  --radius: var(--radius-md);
+  --radius-l: var(--radius-lg);
+
+  /* ---------- 阴影 ---------- */
+  --shadow-s: 0 1px 2px rgba(16, 19, 29, 0.05);
+  --shadow: 0 4px 16px rgba(16, 19, 29, 0.08);
+  --shadow-l: 0 12px 40px rgba(16, 19, 29, 0.16);
+  /* 分段控件（tabbar/segmented）选中滑块的轻投影：只给一丝浮动层次，不压脏浅灰轨道 */
+  --shadow-seg: 0 1px 3px rgba(16, 19, 29, 0.08);
+
+  /* ---------- z-index 层级 ---------- */
+  --z-topbar: 20;
+  --z-sidebar: 30;
+  --z-dropdown: 50;
+  --z-popover: 60;
+  --z-drawer-mask: 90;
+  --z-drawer: 100;
+  --z-modal: 110;
+  --z-toast: 200;
+  --z-cmdk: 300;
+
+  /* ---------- 字体（Inter 前缀：系统无该字体时自然回退，不引外部字体文件） ---------- */
+  --font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  /* ---------- rq-card 内联变量（单源对照表） ----------
+     rq-card 浏览器半渲染在 dsh 宿主文档内，加载不到本文件——其内联样式用
+     `var(--rq-*, fallback)` 引用：fallback 必须与本节值一字不差（改色双处同步）。
+     dsh 宿主页面（或定制轨）在 :root 覆写任一 --rq-* 即可换卡片皮肤。 */
+  --rq-edge: #e2e6ee;        /* 卡片描边 */
+  --rq-surface: #fff;        /* 卡片/按钮底与反白文字 */
+  --rq-muted-bg: #eef1f6;    /* 弱化底（chip/骨架/悬停） */
+  --rq-muted-fg: #5b6472;    /* 弱化文字（chip/参数/取消钮）与灰底徽标 */
+  --rq-info-bg: #e8f1fd;     /* 进行中浅底 */
+  --rq-info-fg: #2563c4;     /* 主行动蓝（链接/进行中） */
+  --rq-ok-bg: #e6f5ee;       /* 完成/成功浅底 */
+  --rq-ok-fg: #177a4c;       /* 完成/成功深字 */
+  --rq-danger: #e5484d;      /* 阻断主红（描边/内嵌条） */
+  --rq-danger-bg: #fdebec;   /* 阻断浅底 */
+  --rq-danger-fg: #c62a2f;   /* 阻断深字/终止按钮 */
+  --rq-warn-fg: #9a6700;     /* 降级提示金字 */
+  --rq-text: #252b35;        /* 结果正文 */
+  --rq-line: #c9cfda;        /* 次级描边（取消钮） */
+  --rq-faint: #8a92a0;       /* 已反馈灰字 */
+}

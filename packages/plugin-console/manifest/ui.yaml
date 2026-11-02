@@ -3,7 +3,6 @@ plugin: dsh-plugin-console
 routes:
   - #/dashboard
   - #/assets
-  - #/finops（M2 CFO 财务视图：成本穿透 + 空转检测）
   - #/platform
   - （业务页面由各插件 ui.yaml 声明）
 menus:
@@ -15,7 +14,6 @@ menus:
   group: 治理与运营
   items:
     - 资产运营
-    - 财务视图
 -
   group: 平台
   items:

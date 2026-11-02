@@ -1,0 +1,16 @@
+[
+  {
+    "createdAt": "2026-10-20T10:05:03.621Z",
+    "updatedAt": "2026-10-20T10:05:03.621Z",
+    "id": "iss_mvgiompxifky33hy",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "blockerIds": [],
+    "title": "D-冻结触发任务",
+    "detail": "触发预算联动冻结",
+    "assigneeAgentId": "agt_mvgio9qzifioxb4y",
+    "status": "todo",
+    "priority": "P2",
+    "goalAncestry": [],
+    "createdBy": "usr_mvg65e9midmcih9e"
+  }
+]

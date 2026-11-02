@@ -19,6 +19,7 @@ import { join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
 import { generateSecret, newId, sha256Hex, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 import { NasAuthzService, type ShareLinkPolicy } from './authz.ts'
 import { normalizePath } from './authz/engine.ts'
 
@@ -111,7 +112,7 @@ export class NasShareLinkService extends Service {
     // 过期记录滚动清理（参照 authn：过期 7 天后物理删除；永久/未过期记录不动）
     this.cleanupTimer = setInterval(() => this.cleanupExpired(), 3600_000)
     this.cleanupTimer.unref?.() // lint-timers：测试/嵌入形态允许进程自然退出
-    ctx.effect(() => {
+    ctx.effect(() => () => {
       if (this.cleanupTimer) clearInterval(this.cleanupTimer)
     })
   }
@@ -144,7 +145,7 @@ export class NasShareLinkService extends Service {
     try {
       if (existsSync(file)) {
         const secret = readFileSync(file, 'utf8').trim()
-        if (!secret) throw new Error('密钥文件为空')
+        if (!secret) throw new Error(t('密钥文件为空'))
         this.currentSecret = secret
         this.currentKeyId = this.keyIdOf(secret)
         return
@@ -189,7 +190,7 @@ export class NasShareLinkService extends Service {
     try {
       writeFileSync(this.keyFilePath(), secret, { encoding: 'utf8', mode: 0o600 })
     } catch (error) {
-      throw new ShareLinkError('KEY_ROTATE_FAILED', `新密钥落盘失败（保持旧密钥不变）：${error instanceof Error ? error.message : String(error)}`, 500)
+      throw new ShareLinkError('KEY_ROTATE_FAILED', t('新密钥落盘失败（保持旧密钥不变）：{reason}', { reason: error instanceof Error ? error.message : String(error) }), 500)
     }
     const retiredKeyId = this.currentKeyId
     if (this.currentSecret && retiredKeyId) {
@@ -218,7 +219,7 @@ export class NasShareLinkService extends Service {
   private ensureKey(): void {
     if (!this.currentSecret || !this.currentKeyId || this.keyError) {
       throw new ShareLinkError('SHARE_LINK_KEY_UNAVAILABLE',
-        `分享链接签名密钥不可用（fail-closed 拒绝签发）：${this.keyError ?? '密钥未加载'}——请修复密钥文件后重启，或用 rotate 端点重建`, 500)
+        t('分享链接签名密钥不可用（fail-closed 拒绝签发）：{reason}——请修复密钥文件后重启，或用 rotate 端点重建', { reason: this.keyError ?? t('密钥未加载') }), 500)
     }
   }
 
@@ -246,7 +247,7 @@ export class NasShareLinkService extends Service {
   /** 更新策略（经 AuthzRules 乐观锁；ifVersion 缺省取当前版本，末写者胜——策略低频且有审计留痕）。 */
   updatePolicy(patch: Partial<ShareLinkPolicy>, ifVersion: number | undefined, actor: string): ShareLinkPolicy {
     if (patch.maxTtlSec !== undefined && (!Number.isInteger(patch.maxTtlSec) || patch.maxTtlSec <= 0)) {
-      throw new ShareLinkError('INVALID_POLICY', `maxTtlSec 须为正整数，收到 ${patch.maxTtlSec}`)
+      throw new ShareLinkError('INVALID_POLICY', t('maxTtlSec 须为正整数，收到 {value}', { value: patch.maxTtlSec }))
     }
     const current = this.policy()
     const merged: ShareLinkPolicy = {
@@ -275,16 +276,16 @@ export class NasShareLinkService extends Service {
     hasPermanentPermission: boolean
   }): { record: ShareLinkRecord; exp: number; sub: string; sig: string; tier: ShareLinkTier; ttlLabel: string; ttlSec: number | null } {
     if (!input.issuer.userId) {
-      throw new ShareLinkError('MACHINE_ISSUANCE_UNSUPPORTED', '签名分享链接仅支持人工身份签发（机器链路请用一次性下载票据）', 403)
+      throw new ShareLinkError('MACHINE_ISSUANCE_UNSUPPORTED', t('签名分享链接仅支持人工身份签发（机器链路请用一次性下载票据）'), 403)
     }
     let path: string
     try {
       path = normalizePath(input.path)
     } catch (error) {
-      throw new ShareLinkError('INVALID_PATH', `path 非法：${error instanceof Error ? error.message : String(error)}`)
+      throw new ShareLinkError('INVALID_PATH', t('path 非法：{reason}', { reason: error instanceof Error ? error.message : String(error) }))
     }
     if (input.permanent === true && input.ttlSec !== undefined) {
-      throw new ShareLinkError('PERMANENT_TTL_CONFLICT', 'permanent 与 ttlSec 互斥（语义歧义不猜测）：要永久请只传 permanent:true')
+      throw new ShareLinkError('PERMANENT_TTL_CONFLICT', t('permanent 与 ttlSec 互斥（语义歧义不猜测）：要永久请只传 permanent:true'))
     }
     const policy = this.policy()
     let expiresAt: string | null
@@ -295,29 +296,29 @@ export class NasShareLinkService extends Service {
     if (input.permanent === true) {
       // 决策 ③：策略开关优先于权限点——默认形态（allowPermanent=false）下不存在永久链接
       if (!policy.allowPermanent) {
-        throw new ShareLinkError('PERMANENT_DISABLED_BY_POLICY', '永久链接档位未开启（share-link-policy.allowPermanent=false，策略开关优先于权限点）', 403)
+        throw new ShareLinkError('PERMANENT_DISABLED_BY_POLICY', t('永久链接档位未开启（share-link-policy.allowPermanent=false，策略开关优先于权限点）'), 403)
       }
       if (!input.hasPermanentPermission) {
-        throw new ShareLinkError('PERMANENT_REQUIRES_AUTHZ_WRITE', `签发永久链接需要权限点 ${policy.permanentPermission}`, 403)
+        throw new ShareLinkError('PERMANENT_REQUIRES_AUTHZ_WRITE', t('签发永久链接需要权限点 {permission}', { permission: policy.permanentPermission }), 403)
       }
       expiresAt = null
       exp = 0
       tier = 'permanent'
-      ttlLabel = '永久'
+      ttlLabel = t('永久')
       ttlSec = null
     } else {
       ttlSec = input.ttlSec ?? 86400 // 决策 ②：缺省 24 小时
       if (!Number.isInteger(ttlSec) || ttlSec <= 0) {
-        throw new ShareLinkError('INVALID_TTL', `ttlSec 须为正整数（秒），收到 ${input.ttlSec}`)
+        throw new ShareLinkError('INVALID_TTL', t('ttlSec 须为正整数（秒），收到 {value}', { value: String(input.ttlSec) }))
       }
       if (ttlSec > policy.maxTtlSec) {
-        throw new ShareLinkError('TTL_EXCEEDS_POLICY', `TTL_EXCEEDS_POLICY：ttlSec ${ttlSec} 超过策略上限 ${policy.maxTtlSec}（明确拒绝，不回落到上限）`)
+        throw new ShareLinkError('TTL_EXCEEDS_POLICY', t('TTL_EXCEEDS_POLICY：ttlSec {value} 超过策略上限 {max}（明确拒绝，不回落到上限）', { value: ttlSec, max: policy.maxTtlSec }))
       }
       expiresAt = new Date(Date.now() + ttlSec * 1000).toISOString()
       exp = Math.floor(Date.now() / 1000) + ttlSec
       const preset = SHARE_LINK_TTL_PRESETS.find((item) => item.ttlSec === ttlSec)
       tier = preset?.tier ?? 'custom'
-      ttlLabel = preset?.label ?? (ttlSec % 3600 === 0 ? `${ttlSec / 3600} 小时` : `${Math.round(ttlSec / 60)} 分钟`)
+      ttlLabel = preset ? t(preset.label) : (ttlSec % 3600 === 0 ? t('{n} 小时', { n: ttlSec / 3600 }) : t('{n} 分钟', { n: Math.round(ttlSec / 60) }))
     }
     this.ensureKey()
     const jti = newId('nsl')
@@ -373,7 +374,7 @@ export class NasShareLinkService extends Service {
   /** 吊销单条（幂等：已吊销再调返回既有状态，不报错）。 */
   revoke(jti: string, by: string, reason: string): { record: ShareLinkRecord; alreadyRevoked: boolean } {
     const record = this.links().get(jti)
-    if (!record) throw new ShareLinkError('SHARE_LINK_NOT_FOUND', `分享链接不存在：${jti}`, 404)
+    if (!record) throw new ShareLinkError('SHARE_LINK_NOT_FOUND', t('分享链接不存在：{id}', { id: jti }), 404)
     if (record.revokedAt) return { record, alreadyRevoked: true }
     const updated = this.links().update(jti, {
       revokedAt: new Date().toISOString(),
@@ -386,7 +387,7 @@ export class NasShareLinkService extends Service {
   /** 批量吊销（按人/按路径/全部；「某人离职 → 一次性吊销其全部链接」是最高频场景）。 */
   revokeBatch(filter: { nasId?: string; userId?: string; path?: string; all?: boolean }, by: string, reason: string): { count: number } {
     if (!filter.userId && !filter.path && filter.all !== true) {
-      throw new ShareLinkError('REVOKE_CRITERIA_REQUIRED', '批量吊销须至少给出 userId、path 之一，或显式 all:true（防误伤全量）')
+      throw new ShareLinkError('REVOKE_CRITERIA_REQUIRED', t('批量吊销须至少给出 userId、path 之一，或显式 all:true（防误伤全量）'))
     }
     let count = 0
     for (const item of this.links().find((link) => {
@@ -416,20 +417,20 @@ export class NasShareLinkService extends Service {
 
   verifyStreamAccess(input: { nasId: string; path: string; exp: string; sub: string; jti: string; sig: string }): ShareLinkVerdict {
     const invalid = (reason: string): ShareLinkVerdict => ({ outcome: 'invalid', reason })
-    if (!input.path || !input.exp || !input.sub || !input.jti || !input.sig) return invalid('参数缺失')
-    if (!/^\d+$/.test(input.exp)) return invalid('exp 非法')
+    if (!input.path || !input.exp || !input.sub || !input.jti || !input.sig) return invalid(t('参数缺失'))
+    if (!/^\d+$/.test(input.exp)) return invalid(t('exp 非法'))
     const exp = Number(input.exp)
     // 关 1：签名（独立长期密钥，重启不失效）+ 过期判定（exp=0 为永久，跳过）
     if (!this.signatureMatches(`${input.path}|${input.nasId}|${input.exp}|${input.sub}|${input.jti}`, input.sig)) {
-      return invalid('签名校验失败（链接被篡改或密钥不匹配）')
+      return invalid(t('签名校验失败（链接被篡改或密钥不匹配）'))
     }
-    if (exp !== 0 && exp * 1000 < Date.now()) return invalid('链接已过期')
+    if (exp !== 0 && exp * 1000 < Date.now()) return invalid(t('链接已过期'))
     // 关 2：吊销（jti 指向签发记录；记录不存在/已吊销/与载荷不一致 → 拒绝）
     const record = this.links().get(input.jti)
-    if (!record) return invalid('链接记录不存在（伪造或已清理）')
-    if (record.revokedAt) return invalid(`链接已被吊销（${record.revokedBy ?? '-'}）`)
-    if (record.nasId !== input.nasId || record.path !== input.path || record.userId !== input.sub) return invalid('链接记录与载荷不一致')
-    if (record.expiresAt !== null && Date.parse(record.expiresAt) < Date.now()) return invalid('链接已过期')
+    if (!record) return invalid(t('链接记录不存在（伪造或已清理）'))
+    if (record.revokedAt) return invalid(t('链接已被吊销（{by}）', { by: record.revokedBy ?? '-' }))
+    if (record.nasId !== input.nasId || record.path !== input.path || record.userId !== input.sub) return invalid(t('链接记录与载荷不一致'))
+    if (record.expiresAt !== null && Date.parse(record.expiresAt) < Date.now()) return invalid(t('链接已过期'))
     // 关 3：权限复核（核心增量）：以签发者身份实时判定，票据只是「身份+文件」的封装
     const decision = this.nasAuthz.check({
       nasId: input.nasId,
@@ -439,7 +440,7 @@ export class NasShareLinkService extends Service {
       caller: 'nas.share-link',
     })
     if (decision.decision !== 'allow') {
-      return { outcome: 'forbidden', reasons: decision.reasons.length > 0 ? decision.reasons : ['数据权限判定未放行'] }
+      return { outcome: 'forbidden', reasons: decision.reasons.length > 0 ? decision.reasons : [t('数据权限判定未放行')] }
     }
     return { outcome: 'ok', record }
   }

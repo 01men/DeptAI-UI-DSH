@@ -3,6 +3,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '../../platform-core/src/index.ts'
+import { t as translate } from '../../platform-i18n/src/index.ts'
 
 export const name = 'authn-tools'
 export const inject = ['tools', 'authn']
@@ -49,6 +50,7 @@ export function apply(ctx: Context) {
   t.register(defineTool({
     name: 'authn_token_list',
     description: '查询主体令牌列表（含吊销状态）。',
+    permission: 'authn.principal.read',
     parameters: {
       principalId: { type: 'string', description: '按主体过滤' },
       activeOnly: { type: 'boolean', description: '仅未吊销' },
@@ -65,6 +67,7 @@ export function apply(ctx: Context) {
         tokens: tokens.map((token) => ({
           jti: token.jti, kind: token.kind, issuedAt: token.issuedAt,
           expiresAt: token.expiresAt, revokedAt: token.revokedAt ?? null, issuedBy: token.issuedBy,
+          ...(token.label !== undefined ? { label: token.label } : {}),
         })),
       }
     },
@@ -92,7 +95,7 @@ export function apply(ctx: Context) {
         principalId: created.principal.id,
         clientId: created.clientId,
         clientSecret: created.clientSecret,
-        note: 'clientSecret 仅此一次返回，请妥善保管',
+        note: translate('clientSecret 仅此一次返回，请妥善保管'),
       }
     },
   }))
@@ -110,7 +113,7 @@ export function apply(ctx: Context) {
       const principal = ctx.authn.updateMachineScopes(args.principalId, { scopes: args.scopes })
       const { clientSecretHash, ...safe } = principal
       void clientSecretHash
-      return { ...safe, note: '存量令牌已全部吊销，机器侧需用凭证重新换牌' }
+      return { ...safe, note: translate('存量令牌已全部吊销，机器侧需用凭证重新换牌') }
     },
   }))
 
@@ -127,7 +130,7 @@ export function apply(ctx: Context) {
       return {
         clientId: rotated.principal.clientId,
         clientSecret: rotated.clientSecret,
-        note: '新 clientSecret 仅此一次返回，旧值立即失效，存量令牌已全部吊销',
+        note: translate('新 clientSecret 仅此一次返回，旧值立即失效，存量令牌已全部吊销'),
       }
     },
   }))

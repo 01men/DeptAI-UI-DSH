@@ -8,7 +8,8 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
-import { PlatformEvents, newId, scanSensitiveKeys, maskSensitivePayload, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { PlatformEvents, newId, sha256Hex, scanSensitiveKeys, maskSensitivePayload, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 import * as auditTools from './tools.ts'
 
 // ---------------------------------------------------------------------------
@@ -51,6 +52,19 @@ export interface AuditLogRecord extends RecordBase {
   /** 证据锚点（IAW 交接 5-1，additive）：直接内联（invoke 类结论事件）或引用证据登记 id。 */
   evidence?: EvidenceAnchor[]
   evidenceIds?: string[]
+  // -- 冷热分层与哈希链（W3-T5，契约 §14，additive） --
+  /** 全链 trace id（可选）：MCP 网关调用等带 trace 的事件随记录落此维度，GET /api/audit/logs?traceId= 精确检索。 */
+  traceId?: string
+  /** 哈希链前驱（record() 单点计算）：链首记录为空串。 */
+  prevHash?: string
+  /** 本记录哈希：sha256(prevHash + canonicalJSON(本记录业务字段))——canonicalJSON 键序稳定，
+   *  且排除 createdAt/updatedAt（insert 期注入，非业务事实）与 prevHash/hash 自身；校验口径见 record()。 */
+  hash?: string
+  /** 策略决策 id（W3-T5 契约 §11/§16，additive）：PDP 裁决 id（pd_ 前缀）——回答「为什么被允许」。
+   *  与 mcp:calls 的热数据同源；热数据滚动清理后审计侧仍可回查决策依据。 */
+  decisionId?: string
+  /** 策略决策原因（结构化文本，additive）：deny 原因可检索（如 ORG_SCOPE_DENIED / RISK_UNREGISTERED）。 */
+  decisionReasons?: string[]
 }
 
 /** 证据登记（IAW 交接 5-1）：锚点包独立落库发 id，会话消息/审计事件以 evidenceId 引用。 */
@@ -98,6 +112,19 @@ export interface CostRecord extends RecordBase {
   llmTokens: number
   toolCalls: number
   costYuan: number
+  /**
+   * 计价覆盖率（#14 additive）：priced=费率在配的事件数；notPriced=因费率未配置/全零费率
+   * 而零成本的事件数。下游不得把 0 成本读成「无消耗」——覆盖率是门禁判断「成本是否可归集」的依据。
+   * 存量记录无此两字段（缺省按 0 计，不计入覆盖率分母）。
+   */
+  pricedEvents?: number
+  notPricedEvents?: number
+  /**
+   * 存量未计数标记（#14 复核 additive）：覆盖率字段引入前已聚合的桶，既有 portion 的
+   * priced/notPriced 不可知（事件级权威口径见 /api/usage/summary 的零费率快照识别）。
+   * costReport 据此把行标为 coverage=legacy/mixed，门禁不再把「存量未知」误读成「在档 0」。
+   */
+  legacyUncounted?: boolean
 }
 
 export interface ApprovalRecord extends RecordBase {
@@ -106,20 +133,60 @@ export interface ApprovalRecord extends RecordBase {
   payload: Record<string, unknown>
   requesterId: string
   requesterName: string
-  status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed'
+  /** superseded（2026-11-02 同目标收口）：本单目标已由另一张同目标审批单执行完成，自动收口、无需处理。 */
+  status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed' | 'superseded'
   approverId?: string
   approverName?: string
   opinion?: string
   createdAt: string
   decidedAt?: string
   execution?: { result: string; error?: string; at: string }
+  /** 同目标收口依据：使本单失去意义的那张已执行审批单 id（status=superseded 时必有）。 */
+  supersededBy?: string
   /** 风险级（WP-10/L1）：high 级审批通过需二次确认（服务端强制），且默认落公司级终审标记。 */
   riskLevel?: 'high' | 'medium' | 'low'
   /** 公司级终审标记（WP-10/L1，additive）：终审人与时间在审计可追溯（action=approval.final_review）。 */
   finalReview?: { approverId: string; approverName: string; at: string }
+  /** 组织归属（R11 多公司收口，2026-10-14）：审批单按组织子树过滤的数据源。
+   *  agent.* 类单由 createApproval 从 payload.agentId 自动推导；存量单无此字段对非 `*` 不可见。 */
+  orgId?: string
 }
 
 export type ApprovalExecutor = (payload: Record<string, unknown>, approverId: string) => Promise<unknown>
+
+// ---------------------------------------------------------------------------
+// 哈希链（W3-T5，契约 §14）：canonicalJSON（键序稳定序列化）
+// ---------------------------------------------------------------------------
+
+/**
+ * canonicalJSON：递归键排序的稳定序列化（同一条记录任意时刻重算结果逐字节一致）。
+ * 数组保序；exclude 键（如 hash 自身）在对象层剔除。
+ */
+export function canonicalJson(value: unknown, exclude: string[] = []): string {
+  const skip = new Set(exclude)
+  const walk = (input: unknown): string => {
+    if (input === null) return 'null'
+    if (input === undefined) return 'null'
+    if (typeof input !== 'object') return JSON.stringify(input) ?? 'null'
+    if (Array.isArray(input)) return `[${input.map(walk).join(',')}]`
+    // 键序稳定 + 与 JSON.stringify 语义对齐：值为 undefined 的键直接跳过（JSON 落盘同样丢弃
+    // 该键）。若渲染为 null，则「内存对象重算的哈希」与「落盘记录重算的哈希」分叉——
+    // 哈希链对最关键的 MCP 调用记录将不可校验（W4 安全审计 P0-1 根因）。
+    const keys = Object.keys(input as Record<string, unknown>)
+      .filter((key) => !skip.has(key) && (input as Record<string, unknown>)[key] !== undefined)
+      .sort()
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${walk((input as Record<string, unknown>)[key])}`).join(',')}}`
+  }
+  return walk(value)
+}
+
+/** 审计哈希链记录参与哈希的字段口径：业务字段全量，排除落库期注入的 createdAt/updatedAt 与链字段自身。 */
+const AUDIT_HASH_EXCLUDE = ['createdAt', 'updatedAt', 'prevHash', 'hash']
+
+/** 按记录重算哈希（校验面与写入面单点同源）：sha256(prevHash + canonicalJSON(业务字段))。 */
+export function auditHashOf(record: { prevHash?: string; hash?: string; [key: string]: unknown }, prevHash: string): string {
+  return sha256Hex(prevHash + canonicalJson(record, AUDIT_HASH_EXCLUDE))
+}
 
 // ---------------------------------------------------------------------------
 // 审批负载卫生与独立规则源（OPT-P2-02，2026-09-12）
@@ -159,6 +226,27 @@ const HIGH_RISK_APPROVAL_KINDS = new Set([
   'mcp.offline', 'nas.share', 'panel.card-action', 'industry.activation',
 ])
 
+/**
+ * 同目标在途单收口（2026-11-02）：生命周期类审批对「同一资源 + 同一动作」只应有一张在途单。
+ * 背景：人工提交 Agent 上线单后，治理 Agent 又对同一 agentId 另开一张并批掉——资源已 online，
+ * 人工那张却永久挂在待审批（再点通过会被状态机拒绝而落 failed），控制台看起来像「数据未同步」。
+ * 两道闸：开单命中在途同目标单直接复用（幂等，不再新增，留痕 approval.reuse）；某张执行成功后
+ * 其余同目标在途单自动置 superseded（留痕 approval.superseded）。仅登记「执行效果只取决于资源 id」
+ * 的 kind——connector.action.admin 等带独立入参的动作单不参与（不同入参是不同动作，不能合并）。
+ */
+const APPROVAL_TARGET_FIELD: Record<string, string> = {
+  'agent.online': 'agentId', 'agent.offline': 'agentId', 'agent.unfreeze': 'agentId',
+  'app.online': 'appId', 'app.offline': 'appId',
+  'mcp.offline': 'serviceId',
+}
+
+/** 同目标键：kind + 目标资源 id；未登记 kind 或负载缺目标 id → undefined（不参与收口）。 */
+export function approvalTargetKey(kind: string, payload: Record<string, unknown> | undefined): string | undefined {
+  const field = APPROVAL_TARGET_FIELD[kind]
+  const value = field ? payload?.[field] : undefined
+  return typeof value === 'string' && value ? `${kind}:${value}` : undefined
+}
+
 // ---------------------------------------------------------------------------
 // 服务
 // ---------------------------------------------------------------------------
@@ -172,6 +260,9 @@ export class AuditService extends Service {
   private deniedCounter = new Map<string, number[]>()
   /** REL-11 读侧加固：已发过 warning 的脏成本资源（进程内去重，防告警风暴）。 */
   private warnedDirtyCostResources = new Set<string>()
+  /** 哈希链链首（W3-T5 §14）：启动时取集合最后一条的 hash 续链（重启不破链）。 */
+  private chainTip = ''
+  private chainReady = false
 
   constructor(ctx: Context) {
     super(ctx, 'audit')
@@ -206,6 +297,12 @@ export class AuditService extends Service {
     })
     ctx.platformBus.on(PlatformEvents.McpDeployed, auditOf('change', 'mcp.service.deploy'))
     ctx.platformBus.on(PlatformEvents.McpOfflined, auditOf('change', 'mcp.service.offline'))
+    // W1-T2（MCP 治理 §6）：Secret Broker 凭证读取留痕（payload 仅 serviceId/credentialRef 元数据，零明文）
+    ctx.platformBus.on(PlatformEvents.McpSecretAccess, auditOf('change', 'mcp.credential.access'))
+    // 应用外部凭证托管（issue #19）：取值逐次留痕（payload 仅 appId/key/result 元数据，零明文）
+    ctx.platformBus.on(PlatformEvents.AppSecretAccess, auditOf('change', 'app.credential.access'))
+    // 资产使用凭证（2026-10-31）：Agent 提报使用事实逐次留痕（使用凭证=资产经营侧的重要证据）
+    ctx.platformBus.on(PlatformEvents.UsageAssetReported, auditOf('invoke', 'asset.usage.report'))
     ctx.platformBus.on(PlatformEvents.McpUnhealthy, (payload) => {
       const p = payload as { serviceId: string; name: string; consecutiveFails: number }
       this.record({
@@ -216,13 +313,21 @@ export class AuditService extends Service {
       this.evaluateAlerts('mcp_unhealthy', p)
     })
     ctx.platformBus.on(PlatformEvents.McpInvoked, (payload) => {
-      const p = payload as { ok: boolean; latencyMs: number; serviceId: string; name: string; callerName: string; errorRate?: number }
+      const p = payload as { ok: boolean; latencyMs: number; serviceId: string; name: string; callerName: string; errorRate?: number; traceId?: string; decisionId?: string; decisionReasons?: string[]; status?: string }
+      // 结果分档（W4 安全审计 P0-4）：策略拒绝（denied）与上游故障（error）必须可区分——
+      // 否则「为什么被允许/拒绝」在审计里退化为同一种失败。
+      const result: 'ok' | 'denied' | 'error' = p.ok ? 'ok' : p.status === 'denied' ? 'denied' : 'error'
       this.record({
         type: 'invoke', actorType: p.callerType ?? 'machine', actorId: p.callerId ?? '', actorName: p.callerName ?? '',
         action: 'mcp.gateway.invoke', resourceType: 'mcp_service', resourceId: p.serviceId, resourceName: p.name,
-        result: p.ok ? 'ok' : 'error',
-        detail: `latency=${p.latencyMs}ms${p.ok ? '' : ' 调用失败'}`,
+        result,
+        detail: `latency=${p.latencyMs}ms${p.ok ? '' : result === 'denied' ? ' 策略拒绝' : ' 调用失败'}`,
         actChain: p.actChain,
+        // 全链 trace（W3-T5 §14，可选维度）：随 mcp.invoked payload v2 落审计，支持 ?traceId= 还原调用链
+        ...(p.traceId ? { traceId: p.traceId } : {}),
+        // 决策依据（W3-T5 §11/§16）：allow/deny 均可回查「为什么被允许/拒绝」
+        ...(p.decisionId ? { decisionId: p.decisionId } : {}),
+        ...(p.decisionReasons?.length ? { decisionReasons: p.decisionReasons } : {}),
       })
     })
     // 连接器纳管（open-connector 融合）：invoke 日志透传 actChain + runId（runId 无独立字段，进 resourceId）
@@ -264,8 +369,8 @@ export class AuditService extends Service {
       })
       this.fire({
         severity: 'critical',
-        title: '[连接器] 权限组策略镜像失败',
-        message: `权限组「${p.groupName ?? p.groupId ?? '?'}」策略镜像至网关失败，已 fail-closed 并吊销旧运行时令牌：${p.reason ?? ''}`,
+        title: t('[连接器] 权限组策略镜像失败'),
+        message: t('权限组「{name}」策略镜像至网关失败，已 fail-closed 并吊销旧运行时令牌：{reason}', { name: p.groupName ?? p.groupId ?? '?', reason: p.reason ?? '' }),
         resourceType: 'connector_permgroup', ...(p.groupId !== undefined ? { resourceId: p.groupId } : {}),
       })
     })
@@ -279,8 +384,8 @@ export class AuditService extends Service {
       })
       this.fire({
         severity: 'warning',
-        title: '[连接器] 权限组策略快照漂移',
-        message: `权限组「${p.groupName ?? p.groupId ?? '?'}」调用时检出策略快照漂移，本次调用已拒绝（重试即按新快照走授权）：${p.reason ?? ''}`,
+        title: t('[连接器] 权限组策略快照漂移'),
+        message: t('权限组「{name}」调用时检出策略快照漂移，本次调用已拒绝（重试即按新快照走授权）：{reason}', { name: p.groupName ?? p.groupId ?? '?', reason: p.reason ?? '' }),
         resourceType: 'connector_permgroup', ...(p.groupId !== undefined ? { resourceId: p.groupId } : {}),
       })
     })
@@ -340,7 +445,7 @@ export class AuditService extends Service {
       this.record({
         type: 'authz', actorType: 'human', actorId: p.approverId ?? '', actorName: p.approverName ?? '',
         action: 'approval.decide', resourceType: 'approval', resourceId: p.approvalId, resourceName: p.title,
-        result: 'ok', detail: p.approved ? '审批通过' : '审批驳回',
+        result: 'ok', detail: p.approved ? t('审批通过') : t('审批驳回'),
       })
     })
     ctx.platformBus.on('audit.authz.denied', (payload) => {
@@ -348,7 +453,7 @@ export class AuditService extends Service {
       this.record({
         type: 'authz', actorType: 'human', actorId: p.actorId, actorName: p.actorName,
         action: 'console.authz.denied', resourceType: 'api', resourceId: p.path, resourceName: p.path,
-        result: 'denied', detail: `缺少权限点 ${p.point}`,
+        result: 'denied', detail: t('缺少权限点 {point}', { point: p.point }),
       })
       const key = `denied:${p.actorId}`
       const now = Date.now()
@@ -397,11 +502,15 @@ export class AuditService extends Service {
       if (!Number.isFinite(rawCostCents) && !this.warnedDirtyCostResources.has(event.resource)) {
         this.warnedDirtyCostResources.add(event.resource)
         this.fire({
-          severity: 'warning', title: '[计量] 脏事件成本按 0 归集（REL-11 加固）',
-          message: `资源 ${event.resource} 的事件 ${event.event_id} pricing.cost_cents=${String(rawCostCents)} 为非有限值，成本归集按 0 处理；请修正价格簿后按时间窗重放`,
+          severity: 'warning', title: t('[计量] 脏事件成本按 0 归集（REL-11 加固）'),
+          message: t('资源 {resource} 的事件 {id} pricing.cost_cents={value} 为非有限值，成本归集按 0 处理；请修正价格簿后按时间窗重放', { resource: event.resource, id: event.event_id, value: String(rawCostCents) }),
           resourceType: 'usage_event', resourceId: event.resource,
         })
       }
+      // #14（2026-10-29）：未定价判定——零成本且（零费率快照 或 显式 cost_status='not_priced'）。
+      // 费率在配但量小取整为 0 的事件仍算已定价（priced），不污染覆盖率。
+      const notPricedEvent = safeCostCents === 0
+        && ((event.pricing as { cost_status?: string }).cost_status === 'not_priced' || event.pricing.rate?.nonbillable === true)
       this.addCost({
         date: event.occurred_at.slice(0, 10),
         ...(agentId !== undefined ? { agentId } : {}),
@@ -413,6 +522,8 @@ export class AuditService extends Service {
         // QA B-06：成本口径取 cost_cents（内部成本）——此前取 charge_cents（应收口径）充当成本，
         // 价格簿一旦调非零即以成本名义呈现应收金额（M0 禁止的结算语义残留）；charge 恒 0 仅快照兼容
         costYuan: Math.round(safeCostCents * 100) / 10_000,
+        // #14：计价覆盖率——零成本且（零费率快照 or 显式 not_priced 标注）计为未定价，不与真零成本混读
+        ...(notPricedEvent ? { pricedEvents: 0, notPricedEvents: 1 } : { pricedEvents: 1, notPricedEvents: 0 }),
       })
     })
   }
@@ -445,8 +556,49 @@ export class AuditService extends Service {
 
   // -- 审计日志 -----------------------------------------------------------
 
+  /**
+   * 唯一写入点（append-only）：单点计算哈希链——hash = sha256(prevHash + canonicalJSON(业务字段))，
+   * 链首 prevHash=''。启动续链：首次写入前取集合最后一条的 hash 作链首（重启/换进程不破链，
+   * 集合无清理逻辑，天然全序）。校验口径：对存量记录 strip prevHash/hash 后重算并与 hash 比对
+   * （auditHashOf 导出，W4 验收/外部分析共用同一实现）。
+   */
   record(entry: Omit<AuditLogRecord, 'id' | 'createdAt' | 'updatedAt'>): AuditLogRecord {
-    return this.logs().insert({ id: newId('log'), ...entry })
+    if (!this.chainReady) {
+      const all = this.logs().all()
+      this.chainTip = all.length > 0 ? String(all[all.length - 1]!.hash ?? '') : ''
+      this.chainReady = true
+    }
+    const prevHash = this.chainTip
+    const record = { id: newId('log'), ...entry }
+    const hash = auditHashOf(record, prevHash)
+    this.chainTip = hash
+    return this.logs().insert({ ...record, prevHash, hash } as AuditLogRecord)
+  }
+
+  /** 当前链尾哈希（ndjson 导出附尾行 _chainTip；外部对账入口）。 */
+  chainTipHash(): string {
+    if (!this.chainReady) {
+      const all = this.logs().all()
+      return all.length > 0 ? String(all[all.length - 1]!.hash ?? '') : ''
+    }
+    return this.chainTip
+  }
+
+  /**
+   * ndjson 流式导出（契约 §14，append-only 导出）：行序=时间序（createdAt 升序），
+   * 每行一条完整审计记录（含 prevHash/hash 可校验），尾行 {"_chainTip": "<lastHash>"}。
+   * 直接写响应（Content-Type application/x-ndjson），权限点同既有 audit.read。
+   */
+  exportNdjson(exchange: { res: { writeHead(status: number, headers: Record<string, string>): unknown; end(text?: string): unknown } }, filter: { since?: string; until?: string } = {}): void {
+    const rows = this.logs().find((log) => {
+      if (filter.since && log.createdAt < filter.since) return false
+      if (filter.until && log.createdAt > filter.until) return false
+      return true
+    }).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    const lines = rows.map((row) => JSON.stringify(row))
+    lines.push(JSON.stringify({ _chainTip: this.chainTipHash() }))
+    exchange.res.writeHead(200, { 'content-type': 'application/x-ndjson; charset=utf-8' })
+    exchange.res.end(`${lines.join('\n')}\n`)
   }
 
   // -- 证据锚点（IAW 交接 5-1） ---------------------------------------------
@@ -463,14 +615,14 @@ export class AuditService extends Service {
     subject?: string
     note?: string
   }): EvidenceRecord {
-    if (!Array.isArray(input.anchors) || input.anchors.length === 0) throw new Error('证据锚点至少一项（anchors）')
-    if (input.anchors.length > 20) throw new Error('证据锚点过多（≤20）：结论级证据应引用事实，不是搬运数据')
+    if (!Array.isArray(input.anchors) || input.anchors.length === 0) throw new Error(t('证据锚点至少一项（anchors）'))
+    if (input.anchors.length > 20) throw new Error(t('证据锚点过多（≤20）：结论级证据应引用事实，不是搬运数据'))
     for (const anchor of input.anchors) {
-      if (!['dataset', 'field', 'window', 'query', 'doc'].includes(anchor.kind)) throw new Error(`证据锚点 kind 非法：${anchor.kind}（dataset/field/window/query/doc）`)
-      if (!anchor.id?.trim()) throw new Error('证据锚点 id 必填（数据集编号/字段路径/查询 id 等）')
-      if (anchor.timeWindow && (!anchor.timeWindow.from || !anchor.timeWindow.to)) throw new Error('证据锚点 timeWindow 需要 from/to')
-      if (anchor.hitRows !== undefined && (!Number.isFinite(anchor.hitRows) || anchor.hitRows < 0)) throw new Error('证据锚点 hitRows 应为非负数')
-      if (anchor.qualityScore !== undefined && (!Number.isFinite(anchor.qualityScore) || anchor.qualityScore < 0 || anchor.qualityScore > 100)) throw new Error('证据锚点 qualityScore 应为 0-100')
+      if (!['dataset', 'field', 'window', 'query', 'doc'].includes(anchor.kind)) throw new Error(t('证据锚点 kind 非法：{kind}（dataset/field/window/query/doc）', { kind: anchor.kind }))
+      if (!anchor.id?.trim()) throw new Error(t('证据锚点 id 必填（数据集编号/字段路径/查询 id 等）'))
+      if (anchor.timeWindow && (!anchor.timeWindow.from || !anchor.timeWindow.to)) throw new Error(t('证据锚点 timeWindow 需要 from/to'))
+      if (anchor.hitRows !== undefined && (!Number.isFinite(anchor.hitRows) || anchor.hitRows < 0)) throw new Error(t('证据锚点 hitRows 应为非负数'))
+      if (anchor.qualityScore !== undefined && (!Number.isFinite(anchor.qualityScore) || anchor.qualityScore < 0 || anchor.qualityScore > 100)) throw new Error(t('证据锚点 qualityScore 应为 0-100'))
     }
     return this.evidence().insert({
       id: newId('evd'),
@@ -568,6 +720,8 @@ export class AuditService extends Service {
     q?: string
     since?: string
     sceneCode?: string
+    /** 全链 trace 精确匹配（W3-T5 §14）：与 mcp.invoked 落审计的 traceId 维度对齐。 */
+    traceId?: string
     limit?: number
   }): { total: number; items: AuditLogRecord[] } {
     const all = this.logs().find((log) => {
@@ -578,6 +732,7 @@ export class AuditService extends Service {
       if (filter.result && log.result !== filter.result) return false
       if (filter.since && log.createdAt < filter.since) return false
       if (filter.sceneCode && log.sceneCode !== filter.sceneCode) return false
+      if (filter.traceId && log.traceId !== filter.traceId) return false
       if (filter.q && !`${log.action} ${log.actorName} ${log.resourceName} ${log.detail}`.toLowerCase().includes(filter.q.toLowerCase())) return false
       return true
     })
@@ -601,10 +756,10 @@ export class AuditService extends Service {
   createAlertRule(input: Omit<AlertRuleRecord, 'id' | 'createdAt' | 'updatedAt'>): AlertRuleRecord {
     // REL-12：创建入口入参校验收口——此前缺 name、非有限 threshold 也能 200 建档（无 name 规则
     // 告警不可读，非法阈值使「>阈值」比较语义失真）。非法即抛错（路由 guarded 统一映射 400 BAD_REQUEST）
-    if (typeof input.name !== 'string' || input.name.trim() === '') throw new Error('告警规则 name 必填（非空字符串）')
-    if (typeof input.metric !== 'string' || input.metric.trim() === '') throw new Error('告警规则 metric 必填（非空字符串）')
-    if (!Number.isFinite(input.threshold)) throw new Error(`告警规则 threshold 必须为有限数值，收到：${String(input.threshold)}`)
-    if (input.operator !== undefined && input.operator !== 'gt') throw new Error(`告警规则 operator 非法：${String(input.operator)}（当前仅支持 gt）`)
+    if (typeof input.name !== 'string' || input.name.trim() === '') throw new Error(t('告警规则 name 必填（非空字符串）'))
+    if (typeof input.metric !== 'string' || input.metric.trim() === '') throw new Error(t('告警规则 metric 必填（非空字符串）'))
+    if (!Number.isFinite(input.threshold)) throw new Error(t('告警规则 threshold 必须为有限数值，收到：{value}', { value: String(input.threshold) }))
+    if (input.operator !== undefined && input.operator !== 'gt') throw new Error(t('告警规则 operator 非法：{value}（当前仅支持 gt）', { value: String(input.operator) }))
     return this.alertRules().insert({ id: newId('rule'), ...input })
   }
 
@@ -616,8 +771,8 @@ export class AuditService extends Service {
       this.fire({
         ruleId: rule.id,
         severity: rule.severity,
-        title: `[${rule.name}] 触发`,
-        message: `${rule.metric} = ${value}（阈值 ${rule.threshold}），上下文：${JSON.stringify(context).slice(0, 200)}`,
+        title: t('[{name}] 触发', { name: rule.name }),
+        message: t('{metric} = {value}（阈值 {threshold}），上下文：{context}', { metric: rule.metric, value, threshold: rule.threshold, context: JSON.stringify(context).slice(0, 200) }),
         ...(context.resourceType !== undefined ? { resourceType: String(context.resourceType) } : {}),
         ...(context.resourceId !== undefined ? { resourceId: String(context.resourceId) } : {}),
       })
@@ -656,31 +811,53 @@ export class AuditService extends Service {
         llmTokens: existing.llmTokens + input.llmTokens,
         toolCalls: existing.toolCalls + input.toolCalls,
         costYuan: Math.round((existing.costYuan + input.costYuan) * 1000) / 1000,
+        // #14：覆盖率增量合并（存量桶无字段按 0 起算，additive 不迁移）
+        pricedEvents: (existing.pricedEvents ?? 0) + (input.pricedEvents ?? 0),
+        notPricedEvents: (existing.notPricedEvents ?? 0) + (input.notPricedEvents ?? 0),
+        // #14 复核：覆盖率字段引入前已聚合的桶被新事件合并——既有 portion 的覆盖率不可知，
+        // 标记混合口径，costReport 的 coverage 据此报 mixed 而非谎报 live 100% 覆盖
+        ...(existing.pricedEvents === undefined && existing.notPricedEvents === undefined ? { legacyUncounted: true } : {}),
       })
     } else {
       this.costs().insert({ id: newId('cost'), ...input })
     }
   }
 
-  costReport(groupBy: 'app' | 'agent' | 'org' | 'date', from?: string, to?: string): Array<{ key: string; llmTokens: number; toolCalls: number; costYuan: number }> {
-    const buckets = new Map<string, { key: string; llmTokens: number; toolCalls: number; costYuan: number }>()
+  costReport(groupBy: 'app' | 'agent' | 'org' | 'date', from?: string, to?: string): Array<{ key: string; llmTokens: number; toolCalls: number; costYuan: number; priced: number; notPriced: number; coverage: 'live' | 'legacy' | 'mixed' }> {
+    const buckets = new Map<string, { key: string; llmTokens: number; toolCalls: number; costYuan: number; priced: number; notPriced: number; liveRecords: number; legacyRecords: number }>()
     for (const cost of this.costs().all()) {
       if (from && cost.date < from) continue
       if (to && cost.date > to) continue
       let key = cost.date
-      if (groupBy === 'app') key = cost.appId ? this.ctx.resourceCore?.collection('app').get(cost.appId)?.name ?? cost.appId : '（未归集应用）'
-      if (groupBy === 'agent') key = cost.agentId ? this.ctx.resourceCore?.collection('agent').get(cost.agentId)?.name ?? cost.agentId : '（未归集 Agent）'
+      if (groupBy === 'app') key = cost.appId ? this.ctx.resourceCore?.collection('app').get(cost.appId)?.name ?? cost.appId : t('（未归集应用）')
+      if (groupBy === 'agent') key = cost.agentId ? this.ctx.resourceCore?.collection('agent').get(cost.agentId)?.name ?? cost.agentId : t('（未归集 Agent）')
       if (groupBy === 'org') {
         const entity = cost.agentId ? this.ctx.resourceCore?.collection('agent').get(cost.agentId) : undefined
-        key = entity ? this.ctx.iam?.orgs().get(entity.orgId)?.name ?? entity.orgId : '（未归集组织）'
+        key = entity ? this.ctx.iam?.orgs().get(entity.orgId)?.name ?? entity.orgId : t('（未归集组织）')
       }
-      const bucket = buckets.get(key) ?? { key, llmTokens: 0, toolCalls: 0, costYuan: 0 }
+      const bucket = buckets.get(key) ?? { key, llmTokens: 0, toolCalls: 0, costYuan: 0, priced: 0, notPriced: 0, liveRecords: 0, legacyRecords: 0 }
       bucket.llmTokens += cost.llmTokens
       bucket.toolCalls += cost.toolCalls
       bucket.costYuan += cost.costYuan
+      // #14：覆盖率（存量记录无字段不计入分母——门禁按 priced+notPriced>0 判定归集可信度）
+      bucket.priced += cost.pricedEvents ?? 0
+      bucket.notPriced += cost.notPricedEvents ?? 0
+      // #14 复核：coverage 让门禁区分「在档 0」与「存量未知」——legacy = 全部记录早于覆盖率
+      // 字段（priced/notPriced 恒 0 属不可知而非真 0）；mixed = 部分存量未计数；live = 全量在档
+      const hasCoverage = cost.pricedEvents !== undefined || cost.notPricedEvents !== undefined
+      if (hasCoverage && !cost.legacyUncounted) bucket.liveRecords += 1
+      else bucket.legacyRecords += 1
       buckets.set(key, bucket)
     }
-    return [...buckets.values()].map((bucket) => ({ ...bucket, costYuan: Math.round(bucket.costYuan * 1000) / 1000 }))
+    return [...buckets.values()].map((bucket) => ({
+      key: bucket.key,
+      llmTokens: bucket.llmTokens,
+      toolCalls: bucket.toolCalls,
+      costYuan: Math.round(bucket.costYuan * 1000) / 1000,
+      priced: bucket.priced,
+      notPriced: bucket.notPriced,
+      coverage: bucket.liveRecords > 0 && bucket.legacyRecords === 0 ? 'live' as const : bucket.liveRecords === 0 ? 'legacy' as const : 'mixed' as const,
+    }))
       .sort((a, b) => b.costYuan - a.costYuan)
   }
 
@@ -708,18 +885,43 @@ export class AuditService extends Service {
     requesterId: string
     requesterName: string
     riskLevel?: 'high' | 'medium' | 'low'
+    orgId?: string
   }): ApprovalRecord {
     // OPT-P2-02：入审批存储前的敏感面处置——reject 类 kind 直接拒绝开单；其余深度掩码后入库
     const rule = approvalKindRule(input.kind)
     const sensitivePaths = scanSensitiveKeys(input.payload)
     if (rule.sensitiveInputPolicy === 'reject' && sensitivePaths.length > 0) {
-      throw new Error(`审批拒绝：该类审批以原文入参执行，检出敏感命名入参（${sensitivePaths.join('、')}）。敏感值不得进入审批存储，请调整入参后重试（OPT-P2-02）`)
+      throw new Error(t('审批拒绝：该类审批以原文入参执行，检出敏感命名入参（{paths}）。敏感值不得进入审批存储，请调整入参后重试（OPT-P2-02）', { paths: sensitivePaths.join('、') }))
+    }
+    // 同目标在途单幂等复用（APPROVAL_TARGET_FIELD）：已有 pending 同目标单则直接返回该单、不再新增——
+    // 留痕 approval.reuse 记录第二位申请人的意图；后续 approval_decide 自然收敛到同一张单
+    const targetKey = approvalTargetKey(input.kind, input.payload)
+    const existing = targetKey
+      ? this.approvals().findOne((item) => item.status === 'pending' && approvalTargetKey(item.kind, item.payload) === targetKey)
+      : undefined
+    if (existing) {
+      this.record({
+        type: 'change', actorType: input.requesterId.startsWith('pri_') ? 'machine' : 'human',
+        actorId: input.requesterId, actorName: input.requesterName,
+        action: 'approval.reuse', resourceType: 'approval', resourceId: existing.id, resourceName: existing.title,
+        result: 'ok', detail: `同目标在途审批单复用（${targetKey}）：${input.requesterName} 再次发起，沿用 ${existing.requesterName} 提交的 ${existing.id}，未新增审批单`,
+      })
+      return existing
     }
     const { masked, maskedKeys } = maskSensitivePayload(input.payload)
     const riskLevel = input.riskLevel ?? (HIGH_RISK_APPROVAL_KINDS.has(input.kind) ? 'high' as const : undefined)
+    // R11：组织归属——显式传入优先；agent.* 类单未传时按平台稳定键读 Agent 的 orgId 兜底
+    //（调用方 plugin-agent 零改动即带上归属；entity:agent 跨插件只读与 dashboard 同款惯例）
+    let orgId = input.orgId
+    if (!orgId && input.kind.startsWith('agent.') && input.payload['agentId']) {
+      try {
+        orgId = this.ctx.opsStorage.collection<{ orgId?: string }>('entity:agent').get(String(input.payload['agentId']))?.orgId
+      } catch { /* 推导失败不阻塞开单（无归属单对非 `*` 不可见） */ }
+    }
     const record = this.approvals().insert({
       id: newId('apr'),
       ...input,
+      ...(orgId ? { orgId } : {}),
       ...(riskLevel !== undefined ? { riskLevel } : {}),
       ...(maskedKeys.length > 0 ? { payload: { ...(masked as Record<string, unknown>), maskedKeys } } : {}),
       status: 'pending',
@@ -748,16 +950,20 @@ export class AuditService extends Service {
     // REL-01：decision 入参收口——只接受 approve/reject。此前其余值（如 "maybe"）会被
     // 当作 approve 落入执行器分支真实执行；服务层单点拦截（路由层 guarded 统一转 400）。
     if (decision !== 'approve' && decision !== 'reject') {
-      throw new Error(`非法的审批决策：${String(decision)}（只允许 approve 或 reject）`)
+      throw new Error(t('非法的审批决策：{decision}（只允许 approve 或 reject）', { decision: String(decision) }))
     }
     const approval = this.approvals().get(id)
-    if (!approval) throw new Error(`审批单不存在：${id}`)
-    if (approval.status !== 'pending') throw new Error(`审批单已处理（${approval.status}）`)
+    if (!approval) throw new Error(t('审批单不存在：{id}', { id }))
+    if (approval.status !== 'pending') throw new Error(t('审批单已处理（{status}）', { status: approval.status }))
     // 同人审批放开（原 QA A-05「提交人与审批人不得为同一账号」自审自批拦截已按业务决策取消，
-    // 2026-09-15）：提交人可自行通过/驳回自己的审批单，权限点（approval.decide）校验不变
+    // 2026-09-15）——2026-10-14 R12 复议收窄：仅 agent.online（雇佣语义）恢复职责分离，
+    // 提交人不得自行通过/驳回自己的 Agent 上线单；其余类型维持放开，权限点校验不变。
+    if (approval.kind === 'agent.online' && approverId && approverId === approval.requesterId) {
+      throw new Error(t('职责分离（R12 复议恢复，2026-10-14）：Agent 上线（雇佣语义）审批的提交人与审批人不得为同一账号'))
+    }
     const isHighRisk = approval.riskLevel === 'high'
     if (decision === 'approve' && isHighRisk && options.confirmed !== true) {
-      throw new Error('高风险审批通过需二次确认（confirmed=true），请在前端确认弹窗中复核后提交')
+      throw new Error(t('高风险审批通过需二次确认（confirmed=true），请在前端确认弹窗中复核后提交'))
     }
     if (decision === 'reject') {
       const updated = this.approvals().update(id, {
@@ -778,19 +984,19 @@ export class AuditService extends Service {
         execution = { result: JSON.stringify(result ?? { ok: true }).slice(0, 500), at: new Date().toISOString() }
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error))
-        execution = { result: '执行失败', error: err.message, at: new Date().toISOString() }
+        execution = { result: t('执行失败'), error: err.message, at: new Date().toISOString() }
         // OPT-P2-02：executor 失败不再只有 approval.execution.error——按注册表编排补偿并回写
         const compensation = this.compensations.get(approval.kind)
         if (compensation) {
           try {
             const compResult = await compensation(approval.payload, err)
             execution = {
-              result: `执行失败，已完成补偿：${JSON.stringify(compResult ?? { ok: true }).slice(0, 200)}`,
+              result: t('执行失败，已完成补偿：{result}', { result: JSON.stringify(compResult ?? { ok: true }).slice(0, 200) }),
               error: err.message, at: new Date().toISOString(),
             }
           } catch (compError) {
             const compMessage = compError instanceof Error ? compError.message : String(compError)
-            execution = { result: '执行失败且补偿失败（需人工介入）', error: `${err.message}；补偿失败：${compMessage}`, at: new Date().toISOString() }
+            execution = { result: t('执行失败且补偿失败（需人工介入）'), error: t('{message}；补偿失败：{compensation}', { message: err.message, compensation: compMessage }), at: new Date().toISOString() }
           }
           this.record({
             type: 'change', actorType: 'machine', actorId: 'approval-engine', actorName: '审批引擎',
@@ -800,7 +1006,7 @@ export class AuditService extends Service {
         }
       }
     } else {
-      execution = { result: '（无注册执行器，仅记录审批结果）', at: new Date().toISOString() }
+      execution = { result: t('（无注册执行器，仅记录审批结果）'), at: new Date().toISOString() }
     }
     const status: ApprovalRecord['status'] = execution.error ? 'failed' : 'executed'
     const needsFinalReview = isHighRisk || options.finalReview === true
@@ -819,6 +1025,8 @@ export class AuditService extends Service {
         result: 'ok', detail: `公司级终审标记（风险级 ${approval.riskLevel ?? 'medium'}），审批单 ${id} 终审通过`,
       })
     }
+    // 同目标收口：本单执行成功 → 其余同目标在途单的诉求已被满足，自动置 superseded（失败不收口，保留重试面）
+    if (status === 'executed') this.supersedeSiblings(updated)
     this.ctx.platformBus.emit(PlatformEvents.ApprovalDecided, {
       approvalId: id, title: approval.title, approved: true, approverId, approverName,
     })
@@ -831,11 +1039,58 @@ export class AuditService extends Service {
    */
   deleteApproval(id: string): void {
     const approval = this.approvals().get(id)
-    if (!approval) throw new Error(`审批单不存在：${id}`)
+    if (!approval) throw new Error(t('审批单不存在：{id}', { id }))
     if (approval.status !== 'rejected') {
-      throw new Error(`仅已驳回的审批单可删除，当前状态：${approval.status}`)
+      throw new Error(t('仅已驳回的审批单可删除，当前状态：{status}', { status: approval.status }))
     }
     this.approvals().remove(id)
+  }
+
+  /**
+   * 同目标收口（APPROVAL_TARGET_FIELD）：executed 单执行成功后，其余同目标、且在其决策时刻之前
+   * 发起的 pending 单诉求已被满足（再批会被状态机拒绝而落 failed），自动置 superseded 并留痕。
+   * 不发 ApprovalDecided——收口既非通过也非驳回，避免下游把它当驳回通知申请人。
+   * 「决策时刻之前发起」的边界让启动期自愈可复用本方法：执行之后新开的同目标单是合法新诉求
+   * （如上线→下线→再上线），不得误收。返回收口条数。
+   */
+  supersedeSiblings(executed: Pick<ApprovalRecord, 'id' | 'kind' | 'payload' | 'decidedAt'>): number {
+    const targetKey = approvalTargetKey(executed.kind, executed.payload)
+    if (!targetKey) return 0
+    const bound = executed.decidedAt ?? new Date().toISOString()
+    const siblings = this.approvals().find((item) => item.id !== executed.id && item.status === 'pending'
+      && item.createdAt <= bound && approvalTargetKey(item.kind, item.payload) === targetKey)
+    const now = new Date().toISOString()
+    for (const sibling of siblings) {
+      this.approvals().update(sibling.id, {
+        status: 'superseded', supersededBy: executed.id, decidedAt: now,
+        approverId: 'approval-engine', approverName: '审批引擎',
+        opinion: t('同目标审批单 {id} 已执行，本单诉求已满足，自动收口（无需处理）', { id: executed.id }),
+      })
+      this.record({
+        type: 'change', actorType: 'machine', actorId: 'approval-engine', actorName: '审批引擎',
+        action: 'approval.superseded', resourceType: 'approval', resourceId: sibling.id, resourceName: sibling.title,
+        result: 'ok', detail: `同目标在途单收口（${targetKey}）：${executed.id} 已执行，${sibling.id}（${sibling.requesterName} 提交）自动置 superseded`,
+      })
+    }
+    return siblings.length
+  }
+
+  /**
+   * 启动期存量自愈（2026-11-02）：收口机制上线前已产生的孤儿单——同目标已有 executed 单且本单在其
+   * 决策之前发起、至今仍 pending——按同一口径补置 superseded。每个目标取最晚执行单为依据；幂等
+   * （无孤儿时零写入）。返回收口条数。
+   */
+  reconcileSupersededApprovals(): number {
+    const latestExecuted = new Map<string, ApprovalRecord>()
+    for (const item of this.approvals().find((item) => item.status === 'executed' && Boolean(item.decidedAt))) {
+      const key = approvalTargetKey(item.kind, item.payload)
+      if (!key) continue
+      const prev = latestExecuted.get(key)
+      if (!prev || item.decidedAt! > prev.decidedAt!) latestExecuted.set(key, item)
+    }
+    let count = 0
+    for (const executed of latestExecuted.values()) count += this.supersedeSiblings(executed)
+    return count
   }
 
   /**
@@ -852,8 +1107,9 @@ export class AuditService extends Service {
     calendarNote: string
   } {
     const since = new Date(Date.now() - windowDays * 24 * 3600_000).toISOString()
+    // superseded 为引擎自动收口（非人工决策），不计入 SLA 分母
     const decidedRecords = this.approvals().all()
-      .filter((item) => item.decidedAt && item.decidedAt >= since)
+      .filter((item) => item.decidedAt && item.decidedAt >= since && item.status !== 'superseded')
     const businessDaysBetween = (fromIso: string, toIso: string): number => {
       let days = 0
       const cursor = new Date(fromIso)
@@ -879,7 +1135,7 @@ export class AuditService extends Service {
       withinSla,
       achievementRate: decidedRecords.length === 0 ? 1 : Math.round((withinSla / decidedRecords.length) * 1000) / 1000,
       breached: breached.sort((a, b) => b.businessDays - a.businessDays),
-      calendarNote: '工作日=跳过周六/周日（未扣法定节假日，v1 口径）',
+      calendarNote: t('工作日=跳过周六/周日（未扣法定节假日，v1 口径）'),
     }
   }
 }
@@ -900,4 +1156,14 @@ export const inject = ['opsStorage', 'platformBus', 'resourceCore', 'iam', 'usag
 export function apply(ctx: Context) {
   ctx.plugin(AuditService)
   ctx.plugin(auditTools)
+  // 启动期存量自愈：收口机制上线前产生的同目标孤儿单（2026-11-02）。本插件不能注入自身服务
+  //（循环等待），以子插件声明 inject 等 audit 就绪后执行一次
+  ctx.plugin({
+    name: 'audit-approval-reconcile',
+    inject: ['audit'],
+    apply(child: Context) {
+      const count = child.audit.reconcileSupersededApprovals()
+      if (count > 0) child.logger('audit').info(`存量审批单自愈：${count} 张同目标孤儿单已收口（superseded）`)
+    },
+  })
 }

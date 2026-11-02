@@ -13,6 +13,7 @@ export function apply(ctx: Context) {
   t.register(defineTool({
     name: 'model_list',
     description: '列出模型网关目录（接入模型、内部成本参考与状态）。',
+    permission: 'modelgw.read',
     parameters: {},
     output: { type: 'object', additionalProperties: true },
     async execute() {

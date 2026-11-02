@@ -1,0 +1,51 @@
+# OpenAPI 摘要（REST + 工具 + 服务键）—— CLI/Skill/Web 三端对齐的唯一事实源
+plugin: dsh-plugin-workforce
+base: /api
+endpoints:
+  - GET /api/workforce/overview（workforce.read；员工/任用/permit/调用/交付台账总览）
+  - GET /api/workforce/employees · POST /api/workforce/employees（workforce.write；创建即建立一对一有效绑定）· GET /api/workforce/employees/:id（workforce.read）· POST /api/workforce/employees/:id/status（workforce.write；suspend/reactivate/offboard，联动撤 permit 与租约）
+  - POST /api/workforce/employees/:id/bindings（workforce.write；换绑，旧 active→inactive）
+  - GET /api/workforce/appointments?employeeId=&status=（workforce.read）· POST /api/workforce/appointments（workforce.write；任用版本+期望资源授权）· POST /api/workforce/appointments/:id/activate（workforce.write；授权探针全通过才生效）· POST /api/workforce/appointments/:id/revoke（workforce.write；先提版本撤 permit，再收敛网关）
+  - GET /api/workforce/work-items（workforce.invoke；运行时按机器主体反查员工待办，不接受任意员工过滤）
+  - POST /api/workforce/claims（workforce.invoke；幂等认领：统一准入→租约→permit→能力清单）· POST /api/workforce/leases/:id/renew（workforce.invoke；续租/进度）
+  - POST /api/workforce/invocations（workforce.invoke；受控资源调用：permit+工具句柄+stepKey，§9.3 状态语义）· GET /api/workforce/invocations/:id · GET /api/workforce/invocations?runId=（workforce.invoke；归属校验，结果不跨组织外泄）
+  - POST /api/workforce/artifacts（workforce.invoke；受控上传：内容经 base64 入服务端 staging，禁平台本地路径）· GET /api/workforce/artifacts/:id（workforce.invoke）
+  - POST /api/workforce/deliverables（workforce.invoke；结构化交付→任务入 review）· GET /api/workforce/deliverables?runId=（workforce.invoke）
+  - POST /api/workforce/acceptances（workforce.accept；真人验收/退回：accepted→done，rejected→退回并保留全部调用事实）
+  - POST /api/workforce/admin/employees/status-batch（workforce.admin；批量停职/复岗：逐员工独立事务联动撤 permit 与租约，部分失败不整批回滚）· GET /api/workforce/admin/employees/:id/audit（workforce.admin；任用审计穿透报表：员工/绑定/任用+授权+能力清单/permit/调用/交付一次聚合，跨组织）· GET /api/workforce/admin/invocations?employeeId=&runId=&status=&limit=（workforce.admin；跨组织调用账本穿透查询，createdAt 倒序）· POST /api/workforce/admin/maintenance/run（workforce.admin；台账巡检手动触发：过期 permit 落账+终态 run 盘点封存不删行）
+tools:
+  - workforce_claim
+  - workforce_invoke
+  - workforce_renew
+  - workforce_submit
+services:
+  - key: workforceStore
+    access: ctx.workforceStore
+    description: 数字员工权威存储（SQLite）：员工/绑定/任用/授权/清单/permit/调用账本/usage 关联/artifact/交付/待发事件
+  - key: workforceEmployees
+    access: ctx.workforceEmployees
+    description: 员工档案与一对一技术绑定；停职/离岗联动撤权
+  - key: workforceAppointments
+    access: ctx.workforceAppointments
+    description: 任用版本与资源授权状态机（准备中→生效→撤销中→已撤销/配置失败，D.4）
+  - key: workforceIdentity
+    access: ctx.workforceIdentity
+    description: 可信主体反查员工/绑定/生效任用（防绕行判定唯一入口）
+  - key: workforceAdmission
+    access: ctx.workforceAdmission
+    description: 认领统一准入（幂等认领/续租/permit 校验/run 所有权断言）
+  - key: workforcePermits
+    access: ctx.workforcePermits
+    description: 短期工作授权（permit）签发/校验/撤销
+  - key: workforceCapabilities
+    access: ctx.workforceCapabilities
+    description: 能力清单（工具句柄/技能版本锁定/参数 Schema）
+  - key: workforceInvocations
+    access: ctx.workforceInvocations
+    description: 受控资源调用账本（步骤幂等/参数冲突/outcome 语义/usage 关联）
+  - key: workforceArtifacts
+    access: ctx.workforceArtifacts
+    description: 受控 artifact 上传与读取（staging 隔离，禁任意路径）
+  - key: workforceDelivery
+    access: ctx.workforceDelivery
+    description: 结构化交付与真人验收（提交→review，验收→done/退回）

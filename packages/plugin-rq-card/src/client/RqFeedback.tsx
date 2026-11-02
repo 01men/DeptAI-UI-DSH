@@ -3,12 +3,12 @@
  *
  * 与 dsh 自带的 'feedback' 条目并存（id: 'rq-feedback'，order 20 排在其后）：
  * 自带条目把评价落 dsh 的 messageFeedback Remote；本条目把同一次评价经**同源
- * REST** 打到01门数据面 `POST /gate01/api/usage/feedback`（WP-07 薄端点，落
+ * REST** 打到元冰可数据面 `POST /rq/api/usage/feedback`（WP-07 薄端点，落
  * usage.record 零价快照并按绑定身份归因）——两路并存，互不替代。
  *
  * 【失败静默】端点未上线/网络失败时控制器只 console 留痕，本组件不渲染任何
  * 错误（降级不打扰会话）。提交成功后短暂显示「已记录」确认。
- * @module @ybkk/plugin-rq-card/client/RqFeedback
+ * @module @dsh-ops/plugin-rq-card/client/RqFeedback
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'

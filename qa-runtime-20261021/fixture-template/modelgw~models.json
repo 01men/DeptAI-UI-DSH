@@ -1,0 +1,50 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:34.745Z",
+    "updatedAt": "2026-10-20T04:14:34.745Z",
+    "id": "mdl_mvg65wqhidmjpka9",
+    "slug": "deepseek-chat",
+    "displayName": "QA Stub 模型 (deepseek-chat)",
+    "provider": "deepseek",
+    "endpoint": "http://127.0.0.1:7399/v1",
+    "apiKey": "stub-key",
+    "costCentsPerKTokens": 0,
+    "status": "online"
+  },
+  {
+    "createdAt": "2026-10-20T10:03:22.628Z",
+    "updatedAt": "2026-10-20T10:03:22.628Z",
+    "id": "mdl_mvgimgskifg6ep1v",
+    "slug": "qa-counter-model",
+    "displayName": "QA反价Stub",
+    "provider": "deepseek",
+    "endpoint": "http://127.0.0.1:7401/v1",
+    "apiKey": "stub-key",
+    "costCentsPerKTokens": 0,
+    "status": "online"
+  },
+  {
+    "createdAt": "2026-10-20T10:03:36.953Z",
+    "updatedAt": "2026-10-20T10:03:36.953Z",
+    "id": "mdl_mvgimruhifg9jnil",
+    "slug": "deepseek-reasoner",
+    "displayName": "QA反价Stub(deepseek-reasoner)",
+    "provider": "deepseek",
+    "endpoint": "http://127.0.0.1:7401/v1",
+    "apiKey": "stub-key",
+    "costCentsPerKTokens": 0,
+    "status": "online"
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.778Z",
+    "updatedAt": "2026-10-20T10:04:46.778Z",
+    "id": "mdl_mvgio9q2ifhfxnyq",
+    "slug": "deepseek-coder",
+    "displayName": "D反价Stub(deepseek-coder)",
+    "provider": "deepseek",
+    "endpoint": "http://127.0.0.1:7400/v1",
+    "apiKey": "stub-key",
+    "costCentsPerKTokens": 0,
+    "status": "online"
+  }
+]

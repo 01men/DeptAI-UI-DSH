@@ -1,0 +1,17 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:25.806Z",
+    "updatedAt": "2026-10-20T12:21:57.955Z",
+    "id": "singleton",
+    "autoCheck": true,
+    "intervalHours": 24,
+    "lastCheckedAt": "",
+    "lastError": "版本获取失败：fetch failed；提交对比失败：HTTP 404",
+    "latest": null,
+    "hasUpdate": false,
+    "behindBy": 0,
+    "recentCommits": [],
+    "dismissedVersion": null,
+    "announcedVersion": ""
+  }
+]

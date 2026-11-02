@@ -26,11 +26,20 @@ const TOKEN_KEY = `heng_ops_token${TOKEN_NS}`
 const REFRESH_KEY = `heng_ops_refresh${TOKEN_NS}`
 const USER_KEY = `heng_ops_user${TOKEN_NS}`
 
+/**
+ * 免登演示会话（DEMO_MODE=1，2026-10-17）：内存态 profile，不落任何浏览器存储——
+ * 真登录会话的存储键语义不受污染，刷新页面由 boot 链重新探测。
+ * 服务端权威设计见 plugin-console/src/demo-mode.ts；此处只消费公开标记端点的回显。
+ */
+let demoProfile = null
+
 export const session = {
   get token() { return localStorage.getItem(TOKEN_KEY) ?? '' },
   get refreshToken() { return localStorage.getItem(REFRESH_KEY) ?? '' },
   saveRefresh(token) { localStorage.setItem(REFRESH_KEY, token) },
   get user() {
+    // 演示会话是合成身份：token 优先——一旦存在真令牌（含演示实例上真实登录），演示态即失效
+    if (this.isDemo) return { displayName: demoProfile.name, roles: ['演示访客'], demo: true }
     try { return JSON.parse(localStorage.getItem(USER_KEY) ?? 'null') } catch { return null }
   },
   save(token, user) {
@@ -42,8 +51,35 @@ export const session = {
     localStorage.removeItem(REFRESH_KEY)
     localStorage.removeItem(USER_KEY)
   },
-  get permissions() { return this.user?.permissions ?? [] },
-  can(point) { return this.permissions.includes('*') || this.permissions.includes(point) },
+  /** 演示只读会话是否生效（真令牌存在时恒 false，登录后横幅与访客身份自动消失）。 */
+  get isDemo() { return demoProfile !== null && !this.token },
+  enterDemo(profile) { demoProfile = profile },
+  exitDemo() { demoProfile = null },
+  get permissions() {
+    if (this.isDemo) return demoProfile.readonlyPermissions ?? []
+    return this.user?.permissions ?? []
+  },
+  can(point) {
+    // console.read 蕴含规则的镜像（权威判定面：platform-core rest-gate.ts IMPLIED_POINTS，
+    // 两处须同步改）——真实用户持 console.login 即视为持控制台只读基线，导航不因改点消失
+    if (point === 'console.read' && this.permissions.includes('console.login')) return true
+    return this.permissions.includes('*') || this.permissions.includes(point)
+  },
+}
+
+/**
+ * 演示态探测（公开端点 /api/platform/demo，免鉴权）：远端宿主连接同样按 BASE 发。
+ * 非演示态/异常一律 { demo:false }——演示能力缺失永不阻塞正常启动链。
+ */
+export async function demoStatus() {
+  try {
+    const response = await fetch(`${BASE}/api/platform/demo`)
+    const payload = await response.json().catch(() => null)
+    if (!response.ok || payload?.ok === false) return { demo: false }
+    return payload?.data ?? { demo: false }
+  } catch {
+    return { demo: false }
+  }
 }
 
 export class ApiError extends Error {

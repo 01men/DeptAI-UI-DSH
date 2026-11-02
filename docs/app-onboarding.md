@@ -20,6 +20,9 @@
    developerName/developerId/agentIds，没有 tags 字段）：白名单外字段（含 version）静默丢弃——返回 200
    但不落库；版本号用 publishVersion；icon 填 emoji 或图片 http(s) 地址（展示为应用头像）；
    开发者用 developerId（平台用户 ID，校验存在并自动回填 developerName）或直接给 developerName。
+   调用外部自研服务要用长期凭据（API key / 内部服务 token）时，落平台「外部凭证」托管
+   （登记即 AES-256-GCM 加密；数字员工凭机器身份 + app.credential.fetch 取用，逐次审计；
+   不要把明文写进 attrs、代码或本地文件），端点契约与授权流程见 docs/app-credentials.md。
 
 2. 登录打通：按 http://192.168.0.7:7300/docs/app-sso-integration.md 接入 OIDC
    （授权码 + 强制 PKCE S256，redirect_uri 必须与控制台登记值完全一致），身份以宿主账号体系（sub）为准。
@@ -54,10 +57,17 @@
    403 = 接入码模板权限不足（响应体会指明缺的权限点），向我报告，不要换账号或重试硬闯。
    403 本身不触发锁定；登录/换牌类连续失败才计锁定（按用户名/clientId 或来源 IP 计，5 次起）。
 
-6. 数据权限红线（应用代用户操作平台资源时适用，2026-08-30 起）：
+6. 数据权限红线（应用代用户操作平台资源时适用，2026-08-30 起；2026-10-22 MCP 治理更新归因口径）：
    应用代用户调用 NAS 文件等平台数据面接口时，真实用户身份一律经请求头
    X-On-Behalf-User: <平台 userId 或钉钉 userId> 透传，禁止拼进参数、路径或 body；
    未授权令牌携带该头一律 403 FORGED_ON_BEHALF（防伪造，留痕）。
+   该头自 2026-10-22 起降级为「仅归因」（审计口径），不是授权事实——授权一律以令牌及其委托链为准，
+   代用户操作优先改用委托令牌（POST /api/authn/token/exchange）。
    越权操作返回 JSON-RPC -32403「数据权限拒绝：<reasons>」（前缀 path.out-of-scope / matrix.deny /
    org.* / account.* / degraded.*），把原文透传给用户即可，不要变形重试；
    degraded.* 表示平台判定服务短暂不可达已降级，提示用户稍后重试。
+   服务级 MCP 数据面（应用调平台已部署 MCP 服务的标准路径，2026-10-22 起）：先 POST
+   /api/authn/token/exchange {"audience":"mcp:service:<服务slug>"} 换委托令牌，再 POST
+   /mcp/services/<服务slug> 走标准 MCP 协议（initialize/tools/list/tools/call，tools/list 按
+   应用权限过滤）；mcp_invoke（/api/mcp/invoke）为兼容层，行为不变。curl 示例见
+   docs/agent-onboarding.md §4.6。

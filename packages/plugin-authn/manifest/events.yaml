@@ -10,6 +10,9 @@ events:
   - name: iam.user.frozen
     mode: on
     description: 订阅：吊销该用户全部令牌
+  - name: iam.user.password-reset
+    mode: on
+    description: 订阅：口令重置联动吊销全部既有会话与委托（P1-08）
   - name: agent.offlined / app.offlined
     mode: on
     description: 订阅：禁用对应机器凭证

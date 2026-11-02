@@ -13,6 +13,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
 import { newId } from './ids.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 import type { Collection, RecordBase } from './storage.ts'
 
 export const BEHAVIOR_SCHEMA = 'behavior.recorded'
@@ -145,7 +146,7 @@ export class BehaviorService extends Service {
       at: 'TEXT NOT NULL',
     }, { primaryKey: ['consumer', 'event_id'] })
     this.registerHttpEndpoints(ctx)
-    ctx.effect(() => {
+    ctx.effect(() => () => {
       this.consumers.clear()
     })
   }
@@ -157,7 +158,7 @@ export class BehaviorService extends Service {
       // console 鉴权中间件未挂载（异常装配）时 principal 恒空：拒绝服务而非放行
       const principal = exchange.principal as { permissions?: string[]; userId?: string; kind?: string; principalId?: string } | undefined
       if (!principal || !Array.isArray(principal.permissions)) {
-        exchange.fail(401, 'UNAUTHORIZED', '缺少 Bearer 令牌，请先登录')
+        exchange.fail(401, 'UNAUTHORIZED', t('缺少 Bearer 令牌，请先登录'))
         return
       }
       const input = (exchange.body ?? {}) as BehaviorRecordInput
@@ -173,7 +174,7 @@ export class BehaviorService extends Service {
     http.register('GET', '/api/behavior/events', (exchange) => {
       const principal = exchange.principal as { permissions?: string[] } | undefined
       if (!principal || !Array.isArray(principal.permissions)) {
-        exchange.fail(401, 'UNAUTHORIZED', '缺少 Bearer 令牌，请先登录')
+        exchange.fail(401, 'UNAUTHORIZED', t('缺少 Bearer 令牌，请先登录'))
         return
       }
       if (!principal.permissions.includes('*') && !principal.permissions.includes('audit.read')) {
@@ -182,7 +183,7 @@ export class BehaviorService extends Service {
           point: 'audit.read',
           path: exchange.path,
         })
-        exchange.fail(403, 'FORBIDDEN', '缺少权限点 audit.read，请联系管理员调整角色', { permission: 'audit.read' })
+        exchange.fail(403, 'FORBIDDEN', t('缺少权限点 {point}，请联系管理员调整角色', { point: 'audit.read' }), { permission: 'audit.read' })
         return
       }
       const query = exchange.query
@@ -216,11 +217,11 @@ export class BehaviorService extends Service {
     const inserted = this.ctx.txnStore.insertOrIgnore('behavior_events', behaviorRow(event))
     if (!inserted) {
       const existing = this.ctx.txnStore.one<BehaviorRow>('behavior_events', { idempotency_key: event.idempotency_key })
-      if (!existing) throw new Error(`幂等键异常：${event.idempotency_key} 已占用但记录缺失`)
+      if (!existing) throw new Error(t('幂等键异常：{key} 已占用但记录缺失', { key: event.idempotency_key }))
       const sameContent = existing.subject === event.subject && existing.type === event.type
         && existing.payload_json === JSON.stringify(event.payload ?? {})
       if (!sameContent) {
-        throw new Error(`幂等键冲突：${event.idempotency_key} 已绑定事件 ${existing.id}，同键不同内容被拒绝`)
+        throw new Error(t('幂等键冲突：{key} 已绑定事件 {id}，同键不同内容被拒绝', { key: event.idempotency_key, id: existing.id }))
       }
       return { event: rowToEvent(existing), duplicated: true }
     }
@@ -259,8 +260,8 @@ export class BehaviorService extends Service {
             error: error instanceof Error ? error.message : String(error), attempts: attempt,
           })
           this.ctx.platformBus.emit('audit.alert.fired', {
-            id: newId('alt'), severity: 'critical', title: 'behavior 消费死信',
-            message: `消费方 ${consumerId} 处理行为事件 ${event.event_id} 连续失败 ${attempt} 次，已入死信，可经 behavior 重投恢复`,
+            id: newId('alt'), severity: 'critical', title: t('behavior 消费死信'),
+            message: t('消费方 {consumer} 处理行为事件 {id} 连续失败 {attempts} 次，已入死信，可经 behavior 重投恢复', { consumer: consumerId, id: event.event_id, attempts: attempt }),
           })
         }
       }
@@ -303,7 +304,7 @@ export class BehaviorService extends Service {
       } catch (error) {
         this.deadLetters().insert({
           id: newId('bdl'), event_id: letter.event_id, consumer: letter.consumer,
-          error: `重投仍失败：${error instanceof Error ? error.message : String(error)}`, attempts: letter.attempts + 1,
+          error: t('重投仍失败：{message}', { message: error instanceof Error ? error.message : String(error) }), attempts: letter.attempts + 1,
         })
       }
     }
@@ -332,24 +333,24 @@ export class BehaviorService extends Service {
 
   private validate(input: BehaviorRecordInput): void {
     if (!input.type?.trim() || !/^[a-z][a-z0-9_.]*$/.test(input.type)) {
-      throw new Error(`behavior 事件 type 非法：${input.type}（应为点分小写键，如 card.exposed / funnel.step）`)
+      throw new Error(t('behavior 事件 type 非法：{value}（应为点分小写键，如 card.exposed / funnel.step）', { value: String(input.type) }))
     }
     if (!input.subject?.trim() || !/^[a-z][a-z0-9]*:[A-Za-z0-9._-]+$/.test(input.subject)) {
-      throw new Error(`behavior 事件 subject 非法：${input.subject}（应为 user:<id> / agent:<id> / machine:<principalId>）`)
+      throw new Error(t('behavior 事件 subject 非法：{value}（应为 user:<id> / agent:<id> / machine:<principalId>）', { value: String(input.subject) }))
     }
     if (input.platform !== undefined && !/^[a-z][a-z0-9_-]*$/.test(input.platform)) {
-      throw new Error(`behavior 事件 platform 非法：${input.platform}（小写标识，如 rd / quality / console / dingtalk）`)
+      throw new Error(t('behavior 事件 platform 非法：{value}（小写标识，如 rd / quality / console / dingtalk）', { value: input.platform }))
     }
     if (input.payload !== undefined) {
       if (typeof input.payload !== 'object' || Array.isArray(input.payload) || input.payload === null) {
-        throw new Error('behavior 事件 payload 必须是对象')
+        throw new Error(t('behavior 事件 payload 必须是对象'))
       }
       if (Buffer.byteLength(JSON.stringify(input.payload), 'utf8') > PAYLOAD_MAX_BYTES) {
-        throw new Error(`behavior 事件 payload 超限（>${PAYLOAD_MAX_BYTES} 字节），请精简上下文`)
+        throw new Error(t('behavior 事件 payload 超限（>{max} 字节），请精简上下文', { max: PAYLOAD_MAX_BYTES }))
       }
     }
     if (input.occurred_at !== undefined && Number.isNaN(new Date(input.occurred_at).getTime())) {
-      throw new Error(`behavior 事件 occurred_at 非法：${input.occurred_at}`)
+      throw new Error(t('behavior 事件 occurred_at 非法：{value}', { value: input.occurred_at }))
     }
   }
 }

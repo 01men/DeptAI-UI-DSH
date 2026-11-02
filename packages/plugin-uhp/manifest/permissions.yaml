@@ -1,0 +1,6 @@
+# 权限点声明（注册进统一 RBAC，控制台/CLI/工具共用；启动期幂等补录 PermissionCatalog）
+plugin: dsh-plugin-uhp
+points:
+  - uhp.read
+  - uhp.admin
+  - uhp.invoke

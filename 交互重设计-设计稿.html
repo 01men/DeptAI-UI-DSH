@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>元冰可控制台 · 微信生态式交互重设计</title>
+<style>
+/* ============================================================
+   元冰可控制台 · 交互重设计稿
+   设计语言取自微信生态（微信 / 企业微信）的克制范式：
+   大留白 + 1px 分隔线 + 浅底深字状态 + 半屏面板 + 动作面板
+   ============================================================ */
+:root{
+  /* 语义色：微信生态原生色板，主蓝仅用于主操作，微信绿仅用于「通过/在线」 */
+  --wx-green:#07C160; --wx-green-bg:#E8F9EE; --wx-green-deep:#059748;
+  --wx-red:#FA5151;   --wx-red-bg:#FEF0F0;
+  --wx-orange:#FA9D3B; --wx-orange-bg:#FFF5E8;
+  --wx-blue:#10AEFF;  --wx-blue-bg:#E8F6FF;
+  --brand:#0052D9;    --brand-bg:#EEF4FF; --brand-deep:#003CAB;
+  --purple:#7B5CF0;   --purple-bg:#F1EDFE;
+
+  /* 中性 */
+  --bg:#F2F3F5; --card:#FFFFFF; --card-2:#FAFAFA;
+  --line:#EAEAEA; --line-2:#F2F2F2;
+  --t1:#191919; --t2:#7F7F7F; --t3:#B2B2B2; --t4:#CFCFCF;
+
+  --r-card:12px; --r-btn:8px; --r-pill:100px; --r-sm:6px;
+  --shadow-sheet:0 -8px 32px rgba(0,0,0,.12);
+  --shadow-card:0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  background:#EDEEF0;color:var(--t1);
+  font-size:15px;line-height:1.6;
+  font-feature-settings:"tnum";
+}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* ---------- 文档外框 ---------- */
+.doc{max-width:1180px;margin:0 auto;padding:0 28px 100px}
+.cover{padding:64px 0 40px;border-bottom:1px solid #DEDDDF;margin-bottom:40px}
+.cover h1{font-size:34px;font-weight:600;letter-spacing:-.5px;margin:0 0 14px;line-height:1.3}
+.cover .lede{font-size:17px;color:#555;max-width:760px;margin:0 0 22px}
+.cover .meta{display:flex;gap:8px;flex-wrap:wrap}
+.chip-meta{font-size:12px;color:var(--t2);background:#fff;border:1px solid #DFE0E2;
+  padding:5px 11px;border-radius:var(--r-pill)}
+
+.sec{margin:0 0 64px}
+.sec-hd{display:flex;align-items:baseline;gap:12px;margin:0 0 8px}
+.sec-no{font-size:13px;font-weight:600;color:#fff;background:var(--brand);
+  width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:none;letter-spacing:0}
+.sec-hd h2{font-size:24px;font-weight:600;margin:0;letter-spacing:-.3px}
+.sec-sub{color:#666;font-size:14.5px;margin:0 0 26px;max-width:820px}
+h3.blk{font-size:17px;font-weight:600;margin:34px 0 12px}
+
+/* ---------- 诊断卡 ---------- */
+.diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.dcard{background:#fff;border-radius:var(--r-card);padding:20px 22px;border:1px solid #E4E5E7}
+.dcard .num{font-size:12px;font-weight:600;color:var(--wx-red);background:var(--wx-red-bg);
+  padding:3px 9px;border-radius:var(--r-sm);display:inline-block;margin-bottom:10px}
+.dcard h4{margin:0 0 8px;font-size:15.5px;font-weight:600}
+.dcard p{margin:0;font-size:13.5px;color:#666;line-height:1.75}
+.dcard .quote{margin-top:10px;padding:9px 12px;background:#F7F7F8;border-radius:var(--r-sm);
+  font-size:12.5px;color:#8A8A8E;border-left:2px solid #DEDEE0;line-height:1.7}
+
+/* ---------- 表格 ---------- */
+table.map{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+  border-radius:var(--r-card);overflow:hidden;border:1px solid #E4E5E7;font-size:13.5px}
+table.map th{background:#F7F8F9;color:var(--t2);font-weight:500;text-align:left;
+  padding:11px 14px;font-size:12.5px;border-bottom:1px solid var(--line)}
+table.map td{padding:11px 14px;border-bottom:1px solid var(--line-2);vertical-align:top;line-height:1.65}
+table.map tr:last-child td{border-bottom:none}
+table.map td.old{color:#8B8B8F;text-decoration:line-through;text-decoration-color:#D8D8DA}
+table.map td.arrow{color:var(--t4);width:26px;text-align:center;padding-left:0;padding-right:0}
+table.map td.new{font-weight:500}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:var(--r-sm);
+  white-space:nowrap;font-weight:500}
+.tag-cut{background:var(--wx-red-bg);color:var(--wx-red)}
+.tag-merge{background:var(--wx-orange-bg);color:#B76E15}
+.tag-keep{background:var(--wx-green-bg);color:var(--wx-green-deep)}
+.tag-move{background:var(--brand-bg);color:var(--brand)}
+
+/* ---------- 原则卡 ---------- */
+.prin{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:14px}
+.pcard{background:#fff;border-radius:var(--r-card);padding:20px;border:1px solid #E4E5E7}
+.pcard .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
+  font-size:16px;margin-bottom:12px}
+.pcard h4{margin:0 0 8px;font-size:15px;font-weight:600}
+.pcard p{margin:0 0 10px;font-size:13.5px;color:#666;line-height:1.75}
+.pcard .was{font-size:12.5px;color:#A0A0A4;border-left:2px solid #E4E5E7;padding-left:9px;line-height:1.7}
+
+/* ============================================================
+   原型舞台
+   ============================================================ */
+.stage{background:#DFE0E3;border-radius:16px;padding:22px;overflow:hidden}
+.stage-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.stage-bar .dot{width:11px;height:11px;border-radius:50%;background:#C7C8CC}
+.stage-bar .url{flex:1;min-width:200px;background:#fff;border-radius:8px;padding:7px 14px;
+  font-size:12.5px;color:#8A8A8E;text-align:center;border:1px solid #D2D3D6}
+.stage-switch{display:flex;gap:6px;background:#CDCED2;padding:4px;border-radius:10px}
+.stage-switch button{font-size:13px;padding:7px 16px;border-radius:7px;color:#5A5A5E;font-weight:500}
+.stage-switch button.on{background:#fff;color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* ---------- App 窗口 ---------- */
+.app{display:flex;background:#fff;border-radius:12px;overflow:hidden;height:660px;
+  box-shadow:0 8px 30px rgba(0,0,0,.14);border:1px solid #C9CACD}
+.app.hidden{display:none}
+
+/* 侧边栏 */
+.side{width:212px;flex:none;background:#EDEDEE;border-right:1px solid #E0E0E0;
+  display:flex;flex-direction:column}
+.side-top{padding:14px 14px 10px}
+.brandrow{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-btn);
+  width:100%;text-align:left;position:relative}
+.brandrow:hover{background:#E4E4E6}
+.brandrow .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#0052D9,#00A3FF);
+  flex:none;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:600}
+.brandrow .who{min-width:0;flex:1}
+.brandrow .who b{display:block;font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.brandrow .who span{display:block;font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.brandrow .caret{color:var(--t3);font-size:11px;flex:none}
+.env-pill{margin:2px 10px 0;padding:5px 10px;background:#E4E4E6;border-radius:var(--r-sm);
+  font-size:11.5px;color:#6B6B6F;display:flex;align-items:center;gap:6px}
+.env-pill .live{width:6px;height:6px;border-radius:50%;background:var(--wx-green);flex:none}
+
+.side-nav{flex:1;overflow-y:auto;padding:10px 8px}
+.navlbl{font-size:11px;color:#A5A5A9;padding:10px 12px 6px;letter-spacing:.5px}
+.navitem{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  padding:9px 12px;border-radius:var(--r-btn);font-size:14px;color:#3D3D40;margin-bottom:1px;
+  position:relative}
+.navitem:hover{background:#E4E4E6}
+.navitem.on{background:#fff;color:var(--brand);font-weight:500;box-shadow:var(--shadow-card)}
+.navitem .nico{width:19px;text-align:center;font-size:14.5px;flex:none;opacity:.9}
+.navitem .dot-new{margin-left:auto;min-width:17px;height:17px;padding:0 5px;border-radius:9px;
+  background:var(--wx-red);color:#fff;font-size:10.5px;display:grid;place-items:center;font-weight:600}
+.side-foot{padding:8px;border-top:1px solid #E2E2E4}
+.side-foot button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  padding:8px 12px;border-radius:var(--r-btn);font-size:13.5px;color:#5A5A5E}
+.side-foot button:hover{background:#E4E4E6}
+
+/* 主区 */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:#F2F3F5}
+.top{height:50px;flex:none;background:#EDEDEE;border-bottom:1px solid #E0E0E0;
+  display:flex;align-items:center;gap:12px;padding:0 16px}
+.search{flex:1;max-width:420px;background:#fff;border-radius:var(--r-pill);height:32px;
+  display:flex;align-items:center;gap:7px;padding:0 13px;color:var(--t3);font-size:13.5px;
+  border:1px solid #E0E0E0}
+.search .kb{margin-left:auto;font-size:11px;background:#F2F2F2;border-radius:4px;padding:1px 5px;
+  color:#9A9A9E}
+.topacts{margin-left:auto;display:flex;align-items:center;gap:4px}
+.iconbtn{width:32px;height:32px;border-radius:var(--r-btn);display:grid;place-items:center;
+  font-size:15px;color:#5A5A5E;position:relative}
+.iconbtn:hover{background:#E4E4E6}
+.iconbtn .badge{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;
+  background:var(--wx-red);border:1.5px solid #EDEDEE}
+
+.scroll{flex:1;overflow-y:auto;padding:18px 20px 30px}
+.pghead{margin-bottom:16px}
+.pghead h1{font-size:21px;font-weight:600;margin:0 0 4px;letter-spacing:-.2px}
+.pghead p{margin:0;font-size:13px;color:var(--t2)}
+
+/* ---------- 待办条 ---------- */
+.todo-strip{background:#fff;border-radius:var(--r-card);padding:14px 16px;margin-bottom:14px;
+  display:flex;align-items:center;gap:14px;border-left:3px solid var(--wx-red);
+  box-shadow:var(--shadow-card)}
+.todo-strip .cnt{font-size:26px;font-weight:600;line-height:1;color:var(--wx-red);flex:none}
+.todo-strip .desc{font-size:13.5px;color:#4A4A4E;flex:1;min-width:0}
+.todo-strip .desc b{color:var(--t1);font-weight:600}
+.todo-strip .go{font-size:13px;color:var(--brand);display:flex;align-items:center;gap:3px;flex:none}
+
+/* ---------- 宫格 ---------- */
+.grid9{background:#fff;border-radius:var(--r-card);padding:6px 6px 2px;margin-bottom:14px;
+  box-shadow:var(--shadow-card);display:grid;grid-template-columns:repeat(5,1fr)}
+.gcell{display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 4px 13px;
+  border-radius:var(--r-btn);position:relative}
+.gcell:hover{background:#F7F7F8}
+.gcell .gic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-size:20px}
+.gcell span{font-size:12px;color:#4A4A4E}
+.gcell .gdot{position:absolute;top:10px;right:calc(50% - 26px);min-width:16px;height:16px;
+  padding:0 4px;border-radius:8px;background:var(--wx-red);color:#fff;font-size:10px;
+  display:grid;place-items:center;font-weight:600}
+
+/* ---------- 分组标题 ---------- */
+.grp{display:flex;align-items:baseline;gap:8px;margin:20px 2px 9px}
+.grp h3{font-size:14.5px;font-weight:600;margin:0}
+.grp .more{font-size:13px;color:var(--t2);margin-left:auto;display:flex;align-items:center;gap:2px}
+
+/* ---------- 卡片列表（微信列表） ---------- */
+.list{background:#fff;border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow-card)}
+.li{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;text-align:left;
+  border-bottom:1px solid var(--line-2)}
+.li:last-child{border-bottom:none}
+.li:hover{background:#FAFAFA}
+.li .lic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:18px;flex:none}
+.li .lim{min-width:0;flex:1}
+.li .t1l{font-size:14.5px;color:var(--t1);display:flex;align-items:center;gap:6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .s1l{font-size:12.5px;color:var(--t2);margin-top:2px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+.li .rt{display:flex;align-items:center;gap:6px;flex:none}
+.li .arr{color:#CFCFCF;font-size:15px;flex:none}
+
+/* 状态胶囊：浅底深字，绝不用实心色块 */
+.pill{font-size:11.5px;padding:2.5px 8px;border-radius:var(--r-sm);white-space:nowrap;font-weight:500}
+.p-green{background:var(--wx-green-bg);color:var(--wx-green-deep)}
+.p-red{background:var(--wx-red-bg);color:#D93636}
+.p-orange{background:var(--wx-orange-bg);color:#B76E15}
+.p-blue{background:var(--wx-blue-bg);color:#0B7CB8}
+.p-gray{background:#F2F3F5;color:#8A8A8E}
+.p-brand{background:var(--brand-bg);color:var(--brand)}
+.p-purple{background:var(--purple-bg);color:#5B3FD1}
+
+/* 筛选 chips */
+.chips{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap;align-items:center}
+.chip{font-size:13px;padding:6px 13px;border-radius:var(--r-pill);background:#fff;
+  border:1px solid #E4E5E7;color:#4A4A4E}
+.chip.on{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:500}
+.chip .n{opacity:.65;font-size:12px;margin-left:3px}
+
+/* 指标 2×2 */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:#fff;border-radius:var(--r-card);padding:13px 15px;box-shadow:var(--shadow-card)}
+.kpi .k{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:4px}
+.kpi .v{font-size:23px;font-weight:600;margin-top:5px;letter-spacing:-.5px}
+.kpi .d{font-size:11.5px;color:var(--t3);margin-top:3px}
+
+/* 时间线（微信朋友圈式） */
+.tl{background:#fff;border-radius:var(--r-card);padding:6px 16px 14px;box-shadow:var(--shadow-card)}
+.tlrow{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-2);align-items:flex-start}
+.tlrow:last-child{border-bottom:none}
+.tlrow .tic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:13px;flex:none}
+.tlrow .tb{flex:1;min-width:0}
+.tlrow .tb b{font-size:13.5px;font-weight:500}
+.tlrow .tb p{margin:2px 0 0;font-size:12.5px;color:var(--t2);line-height:1.6}
+.tlrow .tt{font-size:11.5px;color:var(--t3);flex:none;padding-top:2px}
+
+/* FAB */
+.fab{position:absolute;right:22px;bottom:22px;width:50px;height:50px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:25px;display:grid;place-items:center;
+  box-shadow:0 4px 14px rgba(0,56,179,.34);z-index:20}
+.fab:hover{background:var(--brand-deep)}
+.appwrap{position:relative;flex:1;min-width:0;display:flex}
+
+/* 设置页分组 */
+.setgrp{margin-bottom:16px}
+.setgrp .gh{font-size:12.5px;color:var(--t2);padding:0 4px 7px}
+.setgrp .gl{background:#fff;border-radius:var(--r-card);overflow:hidden;box-shadow:var(--shadow-card)}
+.setrow{display:flex;align-items:center;gap:12px;padding:13px 15px;width:100%;text-align:left;
+  border-bottom:1px solid var(--line-2)}
+.setrow:last-child{border-bottom:none}
+.setrow:hover{background:#FAFAFA}
+.setrow .sic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:15px;flex:none}
+.setrow .sl{flex:1;min-width:0}
+.setrow .sl b{display:block;font-size:14.5px;font-weight:400}
+.setrow .sl span{display:block;font-size:12px;color:var(--t2);margin-top:1px}
+.setrow .sr{font-size:13px;color:var(--t2);flex:none;display:flex;align-items:center;gap:6px}
+.setrow .arr{color:#CFCFCF}
+
+/* 表格式数据 → 列表化（节选预览） */
+.bar{height:6px;border-radius:3px;background:#F0F0F2;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+
+/* ---------- 半屏面板 ---------- */
+.mask{position:absolute;inset:0;background:rgba(0,0,0,.38);z-index:40;opacity:0;
+  pointer-events:none;transition:opacity .24s}
+.mask.on{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:100%;background:#F2F3F5;
+  border-radius:16px 16px 0 0;overflow:hidden;
+  z-index:41;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-sheet)}
+.sheet.on{transform:translateY(0)}
+.sheet-hd{padding:14px 18px 12px;flex:none;position:relative}
+.sheet-hd .handle{width:34px;height:4px;border-radius:2px;background:#D6D6D9;margin:0 auto 13px}
+.sheet-hd .hrow{display:flex;align-items:center;gap:11px}
+.sheet-hd h2{margin:0;font-size:17.5px;font-weight:600;flex:1;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet-hd .close{width:28px;height:28px;border-radius:50%;background:#E4E4E6;color:#6B6B6F;
+  display:grid;place-items:center;font-size:15px;flex:none}
+.sheet-hd .close:hover{background:#D8D8DA}
+.sheet-bd{flex:1;overflow-y:auto;padding:0 18px 18px}
+.sheet-ft{flex:none;padding:10px 18px 16px;background:#F2F3F5;display:flex;gap:10px}
+.btn{flex:1;height:44px;border-radius:var(--r-btn);font-size:15px;font-weight:500;
+  display:grid;place-items:center}
+.btn-p{background:var(--brand);color:#fff}
+.btn-p:hover{background:var(--brand-deep)}
+.btn-g{background:#fff;color:var(--t1)}
+.btn-g:hover{background:#F7F7F8}
+.btn-d{background:var(--wx-red);color:#fff}
+
+/* 详情页内的分段 */
+.seg{display:flex;background:#E4E4E6;border-radius:8px;padding:3px;margin-bottom:14px}
+.seg button{flex:1;font-size:13px;padding:7px 0;border-radius:6px;color:#5A5A5E}
+.seg button.on{background:#fff;color:var(--t1);font-weight:500;box-shadow:var(--shadow-card)}
+
+/* 详情键值 */
+.kv{background:#fff;border-radius:var(--r-card);padding:4px 15px;margin-bottom:14px;
+  box-shadow:var(--shadow-card)}
+.kv .k{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--line-2);font-size:13.5px}
+.kv .k:last-child{border-bottom:none}
+.kv .k b{color:var(--t2);font-weight:400;width:88px;flex:none;font-size:13px}
+.kv .k span{color:var(--t1);flex:1;min-width:0;word-break:break-all}
+.kv .k span.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#555}
+
+.secbox{background:#fff;border-radius:var(--r-card);margin-bottom:14px;box-shadow:var(--shadow-card)}
+.secbox .sbh{padding:13px 15px 0;font-size:14px;font-weight:600}
+
+/* 依赖链（穿透） */
+.chain{padding:6px 15px 14px}
+.cnode{display:flex;align-items:center;gap:10px;padding:9px 0;font-size:13.5px}
+.cnode .cdot{width:8px;height:8px;border-radius:50%;background:var(--brand);flex:none}
+.cnode .cline{width:1px;height:12px;background:#DEDEE0;margin-left:3.5px;flex:none}
+
+/* 动作面板 */
+.asheet{position:absolute;left:0;right:0;bottom:0;max-height:100%;overflow-y:auto;z-index:41;
+  transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1)}
+.asheet.on{transform:translateY(0)}
+.asheet .agroup{background:#F7F7F8;border-radius:14px;overflow:hidden;margin:0 8px 8px}
+.asheet .aitem{padding:15px;text-align:center;font-size:16px;color:#191919;border-bottom:1px solid #E4E4E6}
+.asheet .aitem:last-child{border-bottom:none}
+.asheet .aitem:hover{background:#EFEFEF}
+.asheet .aitem.danger{color:var(--wx-red)}
+.asheet .acancel{background:#fff;border-radius:14px;padding:15px;text-align:center;font-size:16px;
+  font-weight:500}
+.asheet .acancel:hover{background:#EFEFEF}
+
+/* 顶部胶囊 Toast */
+.toast{position:absolute;top:20px;left:50%;transform:translateX(-50%) translateY(-24px);z-index:60;
+  background:rgba(20,20,22,.9);color:#fff;font-size:13.5px;padding:9px 17px;border-radius:10px;
+  opacity:0;pointer-events:none;transition:all .24s;backdrop-filter:blur(8px);white-space:nowrap}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- 移动端预览 ---------- */
+.phones{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.phone{width:288px;height:600px;background:#fff;border-radius:34px;border:9px solid #1C1C1E;
+  overflow:hidden;position:relative;box-shadow:0 12px 34px rgba(0,0,0,.2);flex:none}
+.pstatus{height:22px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;font-size:11px;font-weight:600;color:#111;flex:none}
+.pnav{height:40px;display:flex;align-items:center;padding:0 12px;font-size:15px;font-weight:600;
+  flex:none;background:#fff;position:relative}
+.pnav .back{font-size:17px;color:#191919;width:26px}
+.pnav .rt{margin-left:auto;font-size:16px;color:#5A5A5E}
+.pbody{flex:1;overflow-y:auto;background:#F2F3F5;padding:0 0 8px}
+.ptabbar{height:54px;flex:none;background:#F7F7F8;border-top:1px solid #E0E0E0;display:flex;
+  padding-bottom:2px}
+.ptab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:#8A8A8E;font-size:10px}
+.ptab .tic{font-size:20px;line-height:1}
+.ptab.on{color:var(--brand)}
+.ptab .tdot{position:absolute;margin:-22px 0 0 14px;width:7px;height:7px;border-radius:50%;
+  background:var(--wx-red)}
+
+/* ---------- 落地路径 ---------- */
+.path{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.pstep{background:#fff;border-radius:var(--r-card);padding:18px 20px;border:1px solid #E4E5E7}
+.pstep .ph{font-size:12px;color:#fff;background:var(--brand);width:22px;height:22px;border-radius:6px;
+  display:grid;place-items:center;font-weight:600;margin-bottom:11px}
+.pstep h4{margin:0 0 7px;font-size:14.5px;font-weight:600}
+.pstep p{margin:0;font-size:13px;color:#666;line-height:1.75}
+
+.note{background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--r-card);padding:15px 18px;
+  font-size:13.5px;color:#8A6410;line-height:1.75;margin-bottom:18px}
+.note b{color:#6B4E08}
+
+/* 组件演示区 */
+.demo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.demo{background:#fff;border-radius:var(--r-card);padding:20px;border:1px solid #E4E5E7}
+.demo h4{margin:0 0 4px;font-size:14.5px;font-weight:600}
+.demo .dh{font-size:12.5px;color:var(--t2);margin:0 0 15px;line-height:1.65}
+.demo .row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.demo .btns{display:flex;gap:8px;flex-wrap:wrap}
+.mini-btn{font-size:13px;padding:8px 15px;border-radius:var(--r-btn);background:#F2F3F5;color:#3D3D40}
+.mini-btn:hover{background:#E8E8EA}
+.mini-btn.b{background:var(--brand);color:#fff}
+.mini-btn.g{background:var(--wx-green);color:#fff}
+.mini-btn.r{background:var(--wx-red);color:#fff}
+.mini-btn.o{background:#fff;border:1px solid #DCDEE0;color:#3D3D40}
+@media(max-width:900px){
+  .doc{padding:0 18px 70px}
+  .app{height:600px}
+  .side{width:64px}
+  .side .navlbl,.side .brandrow .who,.side .brandrow .caret,.env-pill span,
+  .navitem span.txt,.side-foot span{display:none}
+  .navitem{justify-content:center;padding:10px 0}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .grid9{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<!-- ========== 封面 ========== -->
+<header class="cover">
+  <h1>元冰可控制台 · 微信生态式交互重设计</h1>
+  <p class="lede">
+    现状是 19 个导航入口、5 个分区、11 个业务页面，每个页面开场先讲一段「什么是 X」，
+    用户要在一堆概念里自己拼出心智模型。新版把一级导航砍到 5 项、按「谁来用、在哪用」重排，
+    交互语言换成微信生态那一套：列表即卡片、点开是半屏、轻操作上滑、状态浅底深字。
+    功能一个不丢，只是从菜单里搬到了该在的位置。
+  </p>
+  <div class="meta">
+    <span class="chip-meta">设计稿 · 可点击交互原型</span>
+    <span class="chip-meta">数据取自 ybkkasi.com 线上实测</span>
+    <span class="chip-meta">2026-10-14</span>
+  </div>
+</header>
+
+<!-- ========== 1 诊断 ========== -->
+<section class="sec">
+  <div class="sec-hd"><span class="sec-no">1</span><h2>先说病根：不是不好看，是概念太多</h2></div>
+  <p class="sec-sub">
+    现有界面每页都做得挺完整，但用户拿到手要跨过三道坎才够得着事：
+    分区名要背（「治理与运营」和「组织」的分界在哪）、概念要认（连接器和三方集成到底什么关系）、
+    目标要翻译（「我想看看这个 Agent 谁在用」要先想该点哪个菜单）。
+  </p>
+
+  <div class="diag">
+    <div class="dcard">
+      <span class="num">概念撞车</span>
+      <h4>两个「连接器」</h4>
+      <p>侧边栏同时有「连接器」（给 Agent 用的 SaaS 工具目录）和「三方集成」（组织身份同步），
+        都归在不同的分区、不同的图标，但用户心智里这就是一件事——「接一个外部系统」。</p>
+      <div class="quote">连接器 · 1,000+ SaaS Provider 的数据面纳管<br>三方集成 · 组织账号的三方身份同步</div>
+    </div>
+    <div class="dcard">
+      <span class="num">层级打架</span>
+      <h4>「工作台」和「部门面板」并列</h4>
+      <p>这俩根本不是一类东西：工作台是管理员的控制台，部门面板是给业务同学的独立 SPA。
+        放在同一个导航里，用户点之前要先判断自己「是谁」，这个判断本该由登录身份自动完成。</p>
+      <div class="quote">侧边栏总览 → 工作台 / 部门面板</div>
+    </div>
+    <div class="dcard">
+      <span class="num">僵尸入口</span>
+      <h4>「资产登记」是纯跳转器</h4>
+      <p>这页的全部内容就是七个卡片点一下跳到别的页。它和每个资源页顶上的
+        「注册 Agent / 接入 MCP / 提交 Skill」按钮 100% 重叠，占了一级菜单位却没提供任何新信息。</p>
+      <div class="quote">登记新资产 → 六个卡片 → 跳走</div>
+    </div>
+    <div class="dcard">
+      <span class="num">前置教程化</span>
+      <h4>每页先教你这是什么</h4>
+      <p>Agents、MCP、Skill、应用四个页面首次进入都弹「初次了解 · XX 是什么？」四宫格。
+        对管理员是噪音，对新人又挡路——真需要解释的内容不该占据每次进入的主界面。</p>
+      <div class="quote">初次了解 · Agent 是什么？ → 知道了</div>
+    </div>
+    <div class="dcard">
+      <span class="num">把配置当业务</span>
+      <h4>「宿主服务连接」占了主导航</h4>
+      <p>这是「我这条控制台连的是哪台服务器」，属于环境级配置，99% 的用户一辈子不碰。
+        它该在左上角企业切换器旁边，而不是一个一级菜单。</p>
+      <div class="quote">平台 → 宿主服务连接</div>
+    </div>
+    <div class="dcard">
+      <span class="num">数字都是零</span>
+      <h4>工作台第一屏全是空态</h4>
+      <p>六个 KPI 格里四个是 0，两块「最近调用 / 待我审批 / 平台告警」是空状态占位。
+        管理员进来第一眼得不到任何判断依据，页面沦为装饰。</p>
+      <div class="quote">0 MCP 在线 · 0 Skill 上架 · 0 累计调用 · ¥0.00</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 2 砍法 ========== -->
+<section class="sec">
+  <div class="sec-hd"><span class="sec-no">2</span><h2>砍法：19 个入口 → 5 个</h2></div>
+  <p class="sec-sub">
+    一级导航只回答一个问题：<b>我现在要干什么</b>。所有被砍掉的菜单没有功能丢失，
+    它们分别搬去了「工作台宫格」「资源页的类型筛选」「详情半屏的标签页」「设置分组」四个去处。
+  </p>
+  <table class="map">
+    <thead><tr><th style="width:24%">现状入口</th><th style="width:26%">问题</th><th style="width:14%">处置</th><th>新版落点</th></tr></thead>
+    <tbody>
+      <tr><td class="old">总览 / 工作台</td><td>六格 KPI 全零，无判断价值</td><td><span class="tag tag-keep">重做</span></td><td class="new">工作台 · 改为「今天该我做什么」的待办条 + 我的资产 + 动态时间线</td></tr>
+      <tr><td class="old">总览 / 部门面板</td><td>与工作台不是一类对象</td><td><span class="tag tag-move">搬家</span></td><td class="new">左上角身份切换器旁边，与「管理员 / 业务同学」角色绑定，自动决定落地页</td></tr>
+      <tr><td class="old">AI 资源 / 资产登记</td><td>纯跳转器，与各页注册按钮重复</td><td><span class="tag tag-cut">砍</span></td><td class="new">资源页右下角「+」→ 动作面板选类型，登记流程原地完成</td></tr>
+      <tr><td class="old">AI 资源 / Skill 市场 · Agent 本体 · AI 应用 · MCP 服务 · NAS 存储</td><td>五类资源拆五个菜单，但结构完全同构</td><td><span class="tag tag-merge">合并</span></td><td class="new">资源 · 一张列表管五类，类型做成顶部筛选 chip，详情走半屏</td></tr>
+      <tr><td class="old">AI 资源 / 数据权限（NAS 五步判定）</td><td>672 行重页，混在资源菜单里</td><td><span class="tag tag-move">搬家</span></td><td class="new">设置 · 数据与安全（它是治理规则，不是资源）</td></tr>
+      <tr><td class="old">AI 资源 / 连接器</td><td>与「三方集成」概念撞车</td><td><span class="tag tag-merge">合并</span></td><td class="new">设置 · 接入 · 分为「能力连接（给 Agent 的工具）」和「身份连接（给组织的）」两栏</td></tr>
+      <tr><td class="old">治理 / 资产运营 · 财务视图</td><td>都在讲钱和用量，看不出区别</td><td><span class="tag tag-merge">合并</span></td><td class="new">用量 · 三个标签页：调用明细 / 成本穿透 / 空转线索</td></tr>
+      <tr><td class="old">治理 / 审批中心</td><td>高频待办埋在三级菜单</td><td><span class="tag tag-move">搬家</span></td><td class="new">工作台顶部待办条（红点）+ 移动端「待办」tab + 顶部消息铃铛</td></tr>
+      <tr><td class="old">治理 / 审计与告警</td><td>告警是待办不是目录；日志是明细不是资产</td><td><span class="tag tag-move">搬家</span></td><td class="new">告警进待办条；日志进「用量 · 审计」标签页 + 资源详情内的「记录」标签</td></tr>
+      <tr><td class="old">治理 / 认证与令牌</td><td>147 个令牌 15 个主体的裸表格</td><td><span class="tag tag-move">搬家</span></td><td class="new">设置 · 接入与凭证（按主体聚合，轮换/吊销收进行动面板）</td></tr>
+      <tr><td class="old">组织 / 组织与账号 · 角色权限</td><td>同页三个 tab 却占三个菜单项</td><td><span class="tag tag-merge">合并</span></td><td class="new">组织 · 通讯录式主视图，角色与用户组在半屏里</td></tr>
+      <tr><td class="old">组织 / 三方集成</td><td>与连接器重复</td><td><span class="tag tag-cut">砍</span></td><td class="new">并入 设置 · 接入 · 身份连接</td></tr>
+      <tr><td class="old">平台 / 平台接入</td><td>远程 dsh 接入码，和令牌是一类东西</td><td><span class="tag tag-merge">合并</span></td><td class="new">设置 · 接入 · 远程接入码</td></tr>
+      <tr><td class="old">平台 / 宿主服务连接</td><td>环境配置，非业务</td><td><span class="tag tag-cut">砍</span></td><td class="new">左上角企业切换器（和 WeCom 换企业同一位置同一手势）</td></tr>
+      <tr><td class="old">平台 / 插件与工具</td><td>只有超管看得到</td><td><span class="tag tag-move">降级</span></td><td class="new">设置 · 平台运维（超管才可见该分组）</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ========== 3 设计原则 ========== -->
+<section class="sec">
+  <div class="sec-hd"><span class="sec-no">3</span><h2>交互语言：微信生态的六条规矩</h2></div>
+  <p class="sec-sub">不是抄皮，是抄那套被十亿人验证过的信息密度和操作成本分配。</p>
+  <div class="prin">
+    <div class="pcard">
+      <div class="ic" style="background:#EEF4FF">📋</div>
+      <h4>列表即卡片，字段少而准</h4>
+      <p>一个列表项只回答「这是什么 / 现在什么状态 / 我该点什么」。详情一律点开看，不在列表里堆指标。</p>
+      <div class="was">现状：卡片里塞调用数、成功率、P95 延迟，一行六个信息点，看不出主次。</div>
+    </div>
+    <div class="pcard">
+      <div class="ic" style="background:#E8F9EE">👆</div>
+      <h4>点开是半屏，不是新页面</h4>
+      <p>查看和轻编辑走底部升起的半屏面板（微信半屏菜单范式），关闭后回到原位置、滚动位置不变。
+        只有真正换了个任务才整页跳。</p>
+      <div class="was">现状：看一个 Agent 要跳页 → 看完 → 再点浏览器返回找刚才的位置。</div>
+    </div>
+    <div class="pcard">
+      <div class="ic" style="background:#FFF5E8">↥</div>
+      <h4>轻操作上滑，高危才拦</h4>
+      <p>切换、筛选、启停这类轻操作用顶部胶囊即时反馈（Toast），不打断。
+        只有删除/吊销这类不可逆的才用动作面板或居中确认，且危险项永远是红字。</p>
+      <div class="was">现状：每次操作都弹居中 Modal，按钮还常常是灰的（disabled 状态）。</div>
+    </div>
+    <div class="pcard">
+      <div class="ic" style="background:#F1EDFE">🏷️</div>
+      <h4>状态是浅底深字的小胶囊</h4>
+      <p>微信从不用实心彩色标签。绿=通过/在线、红=失败/待办、橙=需要注意、灰=未开始。
+        颜色只做辅助，文字才是真正的信息。</p>
+      <div class="was">现状：开发中/已上线/已下线混用实心色块、描边、灰底三四种视觉方案。</div>
+    </div>
+    <div class="pcard">
+      <div class="ic" style="background:#E8F6FF">🔍</div>
+      <h4>一个搜索框管所有</h4>
+      <p>⌘K 常驻，搜资源、搜人、搜订单、搜指令，不区分对象类型。
+        分区再多也不影响搜索——这是菜单可以砍的前提。</p>
+      <div class="was">现状：⌘K 存在但覆盖不完整，用户仍需逐页找。</div>
+    </div>
+    <div class="pcard">
+      <div class="ic" style="background:#F2F3F5">🎨</div>
+      <h4>少色、少渐变、少阴影</h4>
+      <p>底色 #F2F3F5，卡片纯白，只用 1px #EAEAEA 分隔。主蓝 #0052D9 只出现在主操作按钮上，
+        微信绿只用在通过态。大面积渐变全部取消。</p>
+      <div class="was">现状：品牌渐变铺卡片头、hero 区、图标底，信息层级靠颜色堆而不是靠留白。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 4 原型 ========== -->
+<section class="sec">
+  <div class="sec-hd"><span class="sec-no">4</span><h2>界面原型（可点）</h2></div>
+  <p class="sec-sub">
+    左侧导航可切换五个界面；点资源列表项会升起半屏详情，点右下角「+」会升起动作面板，
+    点右上角铃铛会弹胶囊提示。数据是线上实测的真实值（4 个 Agent、6 名成员、18 个在线插件）。
+  </p>
+
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="stage-switch" id="sw">
+        <button class="on" data-p="work">工作台</button>
+        <button data-p="asset">资源</button>
+        <button data-p="usage">用量</button>
+        <button data-p="org">组织</button>
+        <button data-p="set">设置</button>
+      </div>
+      <div class="url">ybkkasi.com</div>
+    </div>
+
+    <div class="app">
+      <!-- 侧边栏 -->
+      <div class="side">
+        <div class="side-top">
+          <button class="brandrow">
+            <div class="mark">元</div>
+            <div class="who">
+              <b>平台管理员</b>
+              <span>元冰可集团</span>
+            </div>
+            <div class="caret">▼</div>
+          </button>
+        </div>
+        <div class="env-pill"><i class="live"></i><span>本机宿主服务 · 切换</span></div>
+
+        <nav class="side-nav">
+          <div class="navlbl">导航</div>
+          <button class="navitem on" data-go="work"><i class="nico">🏠</i><span class="txt">工作台</span></button>
+          <button class="navitem" data-go="asset"><i class="nico">📦</i><span class="txt">资源</span></button>
+          <button class="navitem" data-go="usage"><i class="nico">📊</i><span class="txt">用量</span></button>
+          <button class="navitem" data-go="org"><i class="nico">👥</i><span class="txt">组织</span></button>
+          <button class="navitem" data-go="set"><i class="nico">⚙️</i><span class="txt">设置</span></button>
+        </nav>
+
+        <div class="side-foot">
+          <button data-act="panel"><span>🔀</span><span>切换到部门面板</span></button>
+          <button data-act="out"><span>↪️</span><span>退出登录</span></button>
+        </div>
+      </div>
+
+      <!-- 主区 -->
+      <div class="appwrap">
+        <div class="main">
+          <div class="top">
+            <div class="search">🔍 搜索资源、执行操作…<span class="kb">⌘K</span></div>
+            <div class="topacts">
+              <button class="iconbtn" data-act="refresh" title="刷新">⟳</button>
+              <button class="iconbtn" data-act="bell" title="告警">🔔<i class="badge"></i></button>
+            </div>
+          </div>
+
+          <!-- ===== 工作台 ===== -->
+          <div class="scroll" id="pg-work">
+            <div class="pghead">
+              <h1>早上好，平台管理员</h1>
+              <p>今天 3 件事等你处理 · 你的部门有 4 个 Agent 在建设中</p>
+            </div>
+
+            <div class="todo-strip">
+              <div class="cnt">3</div>
+              <div class="desc">
+                <b>件待办</b>：2 个审批待处理 · 1 条高危告警（NAS 令牌即将过期）
+              </div>
+              <div class="go" data-act="todo">去处理 ›</div>
+            </div>
+
+            <div class="grid9">
+              <button class="gcell" data-go="asset"><div class="gic" style="background:#EEF4FF">🤖</div><span>Agent</span><i class="gdot">4</i></button>
+              <button class="gcell" data-go="asset"><div class="gic" style="background:#E8F6FF">📱</div><span>应用</span></button>
+              <button class="gcell" data-go="asset"><div class="gic" style="background:#E8F9EE">🔌</div><span>MCP</span></button>
+              <button class="gcell" data-go="asset"><div class="gic" style="background:#FFF5E8">✨</div><span>Skill</span></button>
+              <button class="gcell" data-go="asset"><div class="gic" style="background:#F1EDFE">🗄️</div><span>存储</span></button>
+              <button class="gcell" data-go="set"><div class="gic" style="background:#EEF4FF">🔑</div><span>凭证</span></button>
+              <button class="gcell" data-go="set"><div class="gic" style="background:#F2F3F5">🔗</div><span>连接器</span></button>
+              <button class="gcell" data-go="usage"><div class="gic" style="background:#FEF0F0">📉</div><span>审计</span></button>
+              <button class="gcell" data-go="set"><div class="gic" style="background:#F2F3F5">🧩</div><span>更多</span></button>
+            </div>
+
+            <div class="grp"><h3>我负责的资源</h3><span class="more" data-go="asset">全部 4 个 ›</span></div>
+            <div class="list">
+              <button class="li" data-asset="zcode">
+                <div class="lic" style="background:#EEF4FF">🧩</div>
+                <div class="lim">
+                  <div class="t1l">ZCode 编码 Agent <span class="pill p-blue">开发中</span></div>
+                  <div class="s1l">元冰可集团 · deepseek-chat · 0 次调用</div>
+                </div>
+                <div class="rt"><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-asset="hermes">
+                <div class="lic" style="background:#E8F6FF">📡</div>
+                <div class="lim">
+                  <div class="t1l">Hermes Agent <span class="pill p-blue">开发中</span></div>
+                  <div class="s1l">元冰可集团 · deepseek-chat · 0 次调用</div>
+                </div>
+                <div class="rt"><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-asset="dsh">
+                <div class="lic" style="background:#E8F9EE">🌀</div>
+                <div class="lim">
+                  <div class="t1l">DSH 宿主 Agent <span class="pill p-blue">开发中</span></div>
+                  <div class="s1l">元冰可集团 · deepseek-chat · 0 次调用</div>
+                </div>
+                <div class="rt"><span class="arr">›</span></div>
+              </button>
+            </div>
+
+            <div class="grp"><h3>平台动态</h3><span class="more" data-go="usage">全部记录 ›</span></div>
+            <div class="tl">
+              <div class="tlrow">
+                <div class="tic" style="background:#FEF0F0">⛔</div>
+                <div class="tb"><b>授权被拒 · 测试·开发者</b><p>访问 /api/modelgw/models，缺少权限点 modelgw.read</p></div>
+                <div class="tt">2 分钟前</div>
+              </div>
+              <div class="tlrow">
+                <div class="tic" style="background:#EEF4FF">🎫</div>
+                <div class="tb"><b>令牌签发 · access</b><p>签发给 agent:zcode-agent，权限范围 8 项</p></div>
+                <div class="tt">刚刚</div>
+              </div>
+              <div class="tlrow">
+                <div class="tic" style="background:#E8F9EE">✅</div>
+                <div class="tb"><b>审批通过 · Agent 上线</b><p>生命周期测试 Agent 归档申请已批准，凭证同步吊销</p></div>
+                <div class="tt">1 小时前</div>
+              </div>
+              <div class="tlrow">
+                <div class="tic" style="background:#FFF5E8">👤</div>
+                <div class="tb"><b>成员入岗 · 测试·审计员</b><p>加入元冰可集团，角色：审计员</p></div>
+                <div class="tt">昨天</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 资源 ===== -->
+          <div class="scroll" id="pg-asset" style="display:none">
+            <div class="pghead">
+              <h1>资源</h1>
+              <p>五类 AI 资产一处盘点 · 点任意一项升起详情，不离开当前列表</p>
+            </div>
+
+            <div class="chips">
+              <button class="chip on">全部<span class="n">4</span></button>
+              <button class="chip">Agent<span class="n">4</span></button>
+              <button class="chip">应用</button>
+              <button class="chip">MCP 服务</button>
+              <button class="chip">Skill</button>
+              <button class="chip">存储</button>
+              <span style="margin-left:auto;display:flex;gap:6px">
+                <button class="chip" data-act="toast2">☰ 列表</button>
+                <button class="chip" data-act="toast2">▦ 表格</button>
+              </span>
+            </div>
+
+            <div class="list">
+              <button class="li" data-asset="zcode">
+                <div class="lic" style="background:#EEF4FF">🧩</div>
+                <div class="lim">
+                  <div class="t1l">ZCode 编码 Agent</div>
+                  <div class="s1l">Agent · 元冰可集团 · deepseek-chat</div>
+                </div>
+                <div class="rt"><span class="pill p-blue">开发中</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-asset="hermes">
+                <div class="lic" style="background:#E8F6FF">📡</div>
+                <div class="lim">
+                  <div class="t1l">Hermes Agent</div>
+                  <div class="s1l">Agent · 元冰可集团 · deepseek-chat</div>
+                </div>
+                <div class="rt"><span class="pill p-blue">开发中</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-asset="dsh">
+                <div class="lic" style="background:#E8F9EE">🌀</div>
+                <div class="lim">
+                  <div class="t1l">DSH 宿主 Agent</div>
+                  <div class="s1l">Agent · 元冰可集团 · deepseek-chat</div>
+                </div>
+                <div class="rt"><span class="pill p-blue">开发中</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-asset="life">
+                <div class="lic" style="background:#F2F3F5">🧪</div>
+                <div class="lim">
+                  <div class="t1l">生命周期测试 Agent</div>
+                  <div class="s1l">Agent · 全生命周期验证专用（将冻结/下架）</div>
+                </div>
+                <div class="rt"><span class="pill p-gray">已归档</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#EAF7F5">📊</div>
+                <div class="lim">
+                  <div class="t1l">报表 MCP</div>
+                  <div class="s1l">MCP 服务 · 未登记</div>
+                </div>
+                <div class="rt"><span class="pill p-orange">待接入</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#F1EDFE">✨</div>
+                <div class="lim">
+                  <div class="t1l">周报生成 Skill</div>
+                  <div class="s1l">Skill · 未上架</div>
+                </div>
+                <div class="rt"><span class="pill p-orange">草稿</span><span class="arr">›</span></div>
+              </button>
+            </div>
+
+            <button class="fab" id="fab" title="登记资源">+</button>
+          </div>
+
+          <!-- ===== 用量 ===== -->
+          <div class="scroll" id="pg-usage" style="display:none">
+            <div class="pghead">
+              <h1>用量</h1>
+              <p>调用明细、成本穿透、空转线索、审计记录 —— 四件事一页看完</p>
+            </div>
+            <div class="seg">
+              <button class="on">调用明细</button><button>成本穿透</button><button>空转线索</button><button>审计记录</button>
+            </div>
+            <div class="kpis">
+              <div class="kpi"><div class="k">30 天调用</div><div class="v">0</div><div class="d">较上期持平</div></div>
+              <div class="kpi"><div class="k">Token 合计</div><div class="v">0</div><div class="d">—</div></div>
+              <div class="kpi"><div class="k">内部成本</div><div class="v">¥0.00</div><div class="d">零价快照口径</div></div>
+              <div class="kpi"><div class="k">疑似空转</div><div class="v">¥0.00</div><div class="d">占模型成本 0%</div></div>
+            </div>
+
+            <div class="grp"><h3>成本穿透 · 部门</h3><span class="more" data-act="toast2">导出 CSV</span></div>
+            <div class="list">
+              <div class="li">
+                <div class="lic" style="background:#EEF4FF">🏢</div>
+                <div class="lim" style="flex:1">
+                  <div class="t1l">元冰可集团</div>
+                  <div class="s1l">6 人 · 4 个 Agent 在建 · 本月无计量数据</div>
+                  <div class="bar" style="margin-top:7px"><i style="width:0%"></i></div>
+                </div>
+                <div class="rt"><span class="arr">›</span></div>
+              </div>
+            </div>
+
+            <div class="grp"><h3>成本穿透 · 资产</h3><span class="more">近 30 天</span></div>
+            <div class="list">
+              <div class="li">
+                <div class="lic" style="background:#EEF4FF">🧩</div>
+                <div class="lim">
+                  <div class="t1l">ZCode 编码 Agent</div>
+                  <div class="s1l">0 次调用 · 0 Token · 内部成本 ¥0.00</div>
+                </div>
+                <div class="rt"><span class="pill p-gray">无消耗</span></div>
+              </div>
+              <div class="li">
+                <div class="lic" style="background:#E8F6FF">📡</div>
+                <div class="lim">
+                  <div class="t1l">Hermes Agent</div>
+                  <div class="s1l">0 次调用 · 0 Token · 内部成本 ¥0.00</div>
+                </div>
+                <div class="rt"><span class="pill p-gray">无消耗</span></div>
+              </div>
+            </div>
+
+            <div class="grp"><h3>最近审计记录（365 条）</h3><span class="more" data-act="toast2">全部 ›</span></div>
+            <div class="tl">
+              <div class="tlrow">
+                <div class="tic" style="background:#E8F6FF">🎫</div>
+                <div class="tb"><b>authn.token.issue</b><p>类型 access · 操作人 system</p></div>
+                <div class="tt">刚刚</div>
+              </div>
+              <div class="tlrow">
+                <div class="tic" style="background:#FEF0F0">🚫</div>
+                <div class="tb"><b>console.authz.denied</b><p>测试·资源管理员 · /api/assets/inventory · 缺少 usage.read</p></div>
+                <div class="tt">2 分钟前</div>
+              </div>
+              <div class="tlrow">
+                <div class="tic" style="background:#FEF0F0">🚫</div>
+                <div class="tb"><b>console.authz.denied</b><p>测试·组织管理员 · /api/modelgw/models · 缺少 modelgw.admin</p></div>
+                <div class="tt">2 分钟前</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 组织 ===== -->
+          <div class="scroll" id="pg-org" style="display:none">
+            <div class="pghead">
+              <h1>组织</h1>
+              <p>元冰可集团 · 6 人 · 人是一切授权的主体</p>
+            </div>
+            <div class="search" style="max-width:none;width:100%;margin-bottom:14px">🔍 搜索成员…</div>
+
+            <div class="grp"><h3>角色权限</h3></div>
+            <div class="chips">
+              <button class="chip">成员</button>
+              <button class="chip">部门负责人</button>
+              <button class="chip">班组负责人</button>
+              <button class="chip on">平台负责人</button>
+              <button class="chip">审计员</button>
+              <button class="chip">用户组</button>
+            </div>
+
+            <div class="grp"><h3>全部成员 <span style="font-weight:400;color:#B2B2B2;font-size:13px">6</span></h3>
+              <span class="more" data-act="toast2">＋ 新建</span></div>
+            <div class="list">
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#0052D9;color:#fff;font-size:14px;font-weight:600">平</div>
+                <div class="lim">
+                  <div class="t1l">平台管理员 <span class="pill p-brand">平台超管</span></div>
+                  <div class="s1l">元冰可集团 · 8 个活跃令牌</div>
+                </div>
+                <div class="rt"><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#EEF4FF">👨‍💻</div>
+                <div class="lim">
+                  <div class="t1l">测试·开发者</div>
+                  <div class="s1l">元冰可集团 · 14 个活跃令牌</div>
+                </div>
+                <div class="rt"><span class="pill p-green">正常</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#E8F9EE">📦</div>
+                <div class="lim">
+                  <div class="t1l">测试·资源管理员</div>
+                  <div class="s1l">元冰可集团 · 12 个活跃令牌</div>
+                </div>
+                <div class="rt"><span class="pill p-green">正常</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#FFF5E8">🔍</div>
+                <div class="lim">
+                  <div class="t1l">测试·审计员</div>
+                  <div class="s1l">元冰可集团 · 10 个活跃令牌</div>
+                </div>
+                <div class="rt"><span class="pill p-green">正常</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#E8F6FF">🏢</div>
+                <div class="lim">
+                  <div class="t1l">测试·组织管理员</div>
+                  <div class="s1l">元冰可集团 · 16 个活跃令牌</div>
+                </div>
+                <div class="rt"><span class="pill p-green">正常</span><span class="arr">›</span></div>
+              </button>
+              <button class="li" data-act="toast2">
+                <div class="lic" style="background:#F2F3F5">🧪</div>
+                <div class="lim">
+                  <div class="t1l">生命周期测试 Agent</div>
+                  <div class="s1l">机器身份 · 0 个活跃令牌</div>
+                </div>
+                <div class="rt"><span class="pill p-gray">已归档</span><span class="arr">›</span></div>
+              </button>
+            </div>
+          </div>
+
+          <!-- ===== 设置 ===== -->
+          <div class="scroll" id="pg-set" style="display:none">
+            <div class="pghead">
+              <h1>设置</h1>
+              <p>从原「治理与运营 / 组织 / 平台」三个分区收拢而来</p>
+            </div>
+
+            <div class="setgrp">
+              <div class="gh">组织与安全</div>
+              <div class="gl">
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#EEF4FF">👥</div>
+                  <div class="sl"><b>成员与部门</b><span>6 人 · 组织架构树</span></div>
+                  <div class="sr"><span class="arr">›</span></div>
+                </button>
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#E8F9EE">🛡️</div>
+                  <div class="sl"><b>角色权限</b><span>P / D / T / M / C 五级 + 用户组</span></div>
+                  <div class="sr"><span class="arr">›</span></div>
+                </button>
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#F1EDFE">🗄️</div>
+                  <div class="sl"><b>数据与存储权限</b><span>NAS 五步判定 · 观察模式已开</span></div>
+                  <div class="sr"><span class="arr">›</span></div>
+                </button>
+              </div>
+            </div>
+
+            <div class="setgrp">
+              <div class="gh">接入与凭证</div>
+              <div class="gl">
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#EEF4FF">🔑</div>
+                  <div class="sl"><b>身份主体与令牌</b><span>15 个主体 · 147 个访问令牌</span></div>
+                  <div class="sr"><span class="arr">›</span></div>
+                </button>
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#E8F6FF">🔗</div>
+                  <div class="sl"><b>连接器</b><span>能力连接（Agent 工具） · 身份连接（组织）</span></div>
+                  <div class="sr"><span class="pill p-orange">网关未配置</span><span class="arr">›</span></div>
+                </button>
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#FFF5E8">📡</div>
+                  <div class="sl"><b>远程接入码</b><span>其他电脑的 dsh / Agent / 应用接入</span></div>
+                  <div class="sr"><span class="arr">›</span></div>
+                </button>
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#F2F3F5">🎫</div>
+                  <div class="sl"><b>OIDC 客户端</b><span>外部应用接入（RS256 / JWKS）</span></div>
+                  <div class="sr"><span style="color:#B2B2B2">0 个</span><span class="arr">›</span></div>
+                </button>
+              </div>
+            </div>
+
+            <div class="setgrp">
+              <div class="gh">平台运维（仅平台超管可见）</div>
+              <div class="gl">
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#EEF4FF">🧩</div>
+                  <div class="sl"><b>插件与工具</b><span>18 个插件在线 · v1.1.0</span></div>
+                  <div class="sr"><span class="arr">›</span></div>
+                </button>
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#F2F3F5">🖧</div>
+                  <div class="sl"><b>宿主服务连接</b><span>当前：本机宿主服务</span></div>
+                  <div class="sr"><span class="pill p-green">正常</span><span class="arr">›</span></div>
+                </button>
+                <button class="setrow" data-act="toast2">
+                  <div class="sic" style="background:#F1EDFE">📈</div>
+                  <div class="sl"><b>告警规则</b><span>声明式订阅</span></div>
+                  <div class="sr"><span class="arr">›</span></div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 半屏详情 -->
+        <div class="mask" id="mask"></div>
+        <div class="sheet" id="sheet">
+          <div class="sheet-hd">
+            <div class="handle"></div>
+            <div class="hrow">
+              <div class="lic" id="shIc" style="width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:18px;background:#EEF4FF">🧩</div>
+              <h2 id="shTitle">ZCode 编码 Agent</h2>
+              <button class="close" data-act="close">✕</button>
+            </div>
+          </div>
+          <div class="sheet-bd">
+            <div class="seg" style="margin-top:2px">
+              <button class="on">概览</button><button>依赖</button><button>权限</button><button>调用</button><button>记录</button>
+            </div>
+            <div class="kv">
+              <div class="k"><b>状态</b><span><span class="pill p-blue">开发中</span></span></div>
+              <div class="k"><b>标识</b><span class="mono">zcode-agent</span></div>
+              <div class="k"><b>ID</b><span class="mono">agt_mv79vuyh69cvgcwp</span></div>
+              <div class="k"><b>归属</b><span>元冰可集团</span></div>
+              <div class="k"><b>模型</b><span>deepseek-chat</span></div>
+              <div class="k"><b>说明</b><span>ZCode 桌面编码智能体（外部接入）</span></div>
+            </div>
+            <div class="secbox">
+              <div class="sbh">依赖穿透</div>
+              <div class="chain">
+                <div class="cnode"><i class="cdot"></i><span>应用层：暂无上层应用</span></div>
+                <div class="cnode"><i class="cline"></i><i class="cdot"></i><span>本 Agent</span></div>
+                <div class="cnode"><i class="cline"></i><i class="cdot" style="background:#07C160"></i><span>MCP · 报表</span></div>
+                <div class="cnode"><i class="cline"></i><i class="cdot" style="background:#FA9D3B"></i><span>Skill · 分析</span></div>
+                <div class="cnode" style="color:#7F7F7F;font-size:12.5px;padding-top:4px">改动本 Agent 会影响上方全部链路</div>
+              </div>
+            </div>
+          </div>
+          <div class="sheet-ft">
+            <button class="btn btn-g" data-act="toast">申请上线</button>
+            <button class="btn btn-p" data-act="toast">编辑</button>
+          </div>
+        </div>
+
+        <!-- 动作面板 -->
+        <div class="asheet" id="asheet">
+          <div class="agroup">
+            <div class="aitem" data-act="toast2">登记 Agent</div>
+            <div class="aitem" data-act="toast2">登记 AI 应用</div>
+            <div class="aitem" data-act="toast2">接入 MCP 服务</div>
+            <div class="aitem" data-act="toast2">提交 Skill</div>
+            <div class="aitem" data-act="toast2">登记 NAS 存储</div>
+            <div class="aitem" data-act="toast2">登记模型</div>
+          </div>
+          <div class="acancel" data-act="close">取消</div>
+        </div>
+
+        <div class="toast" id="toast">已提交</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 5 组件 ========== -->
+<section class="sec">
+  <div class="sec-hd"><span class="sec-no">5</span><h2>交互组件库</h2></div>
+  <p class="sec-sub">上面原型里用到的组件，抽出来单独定规范。点按钮可以直接看效果。</p>
+  <div class="demo-grid">
+    <div class="demo">
+      <h4>状态胶囊</h4>
+      <p class="dh">浅底深字。颜色只做辅助，文字才是信息。同一状态全平台只有一种写法。</p>
+      <div class="row">
+        <span class="pill p-green">已上线</span>
+        <span class="pill p-blue">开发中</span>
+        <span class="pill p-orange">待接入</span>
+        <span class="pill p-red">已冻结</span>
+        <span class="pill p-gray">已归档</span>
+        <span class="pill p-brand">平台超管</span>
+        <span class="pill p-purple">灰度中</span>
+      </div>
+    </div>
+    <div class="demo">
+      <h4>顶部胶囊 Toast</h4>
+      <p class="dh">轻操作即时反馈，不弹窗不打断。2 秒自动消失。</p>
+      <div class="btns"><button class="mini-btn b" data-act="toast">触发 Toast</button></div>
+    </div>
+    <div class="demo">
+      <h4>动作面板 ActionSheet</h4>
+      <p class="dh">一个对象上的 2–5 个轻操作。永远有且只有一个「取消」，且取消永远在最下面。</p>
+      <div class="btns"><button class="mini-btn o" data-act="open-asheet">展开动作面板</button></div>
+    </div>
+    <div class="demo">
+      <h4>按钮层级</h4>
+      <p class="dh">一屏最多一个主按钮。危险操作用红字行，不用红按钮抢注意力。</p>
+      <div class="btns">
+        <button class="mini-btn b">主操作</button>
+        <button class="mini-btn o">次要</button>
+        <button class="mini-btn">弱操作</button>
+        <button class="mini-btn r">危险</button>
+      </div>
+    </div>
+    <div class="demo">
+      <h4>列表项三种密度</h4>
+      <p class="dh">标准 56px（资源/人）、紧凑 44px（设置项）、增强 72px（带副标题与状态）。</p>
+      <div class="list" style="border-radius:8px">
+        <div class="li" style="padding:10px 13px">
+          <div class="lic" style="width:32px;height:32px;border-radius:8px;background:#EEF4FF;font-size:15px">🔑</div>
+          <div class="lim"><div class="t1l" style="font-size:14px">身份主体与令牌</div></div>
+          <div class="rt"><span style="font-size:13px;color:#7F7F7F">15 / 147</span><span class="arr">›</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="demo">
+      <h4>空状态</h4>
+      <p class="dh">空不等于没内容。给一句原因 + 一个动作，而不是一句「暂无数据」。</p>
+      <div class="list" style="border-radius:8px;text-align:center;padding:26px 16px">
+        <div style="font-size:26px;margin-bottom:8px">🗂️</div>
+        <div style="font-size:14px;color:#191919;font-weight:500;margin-bottom:4px">还没有 MCP 服务</div>
+        <div style="font-size:12.5px;color:#7F7F7F;margin-bottom:12px">接入第一个 MCP 服务，为 Agent 提供工具能力</div>
+        <button class="mini-btn b" data-act="open-asheet">接入 MCP 服务</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 6 移动端 ========== -->
+<section class="sec">
+  <div class="sec-hd"><span class="sec-no">6</span><h2>移动端：底栏 5 个 Tab</h2></div>
+  <p class="sec-sub">
+    微信生态的移动端信条：底栏不超过 5 项，图标优先文字从属，首屏只放今天的事。
+    同一个后端，移动端只保留「看」和「批」，所有重表单仍建议在桌面端完成。
+  </p>
+  <div class="phones">
+    <div class="phone">
+      <div class="pstatus"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="pnav">元冰可 <span class="rt">🔔</span></div>
+      <div class="pbody">
+        <div style="background:#fff;margin:0 0 8px;padding:14px 14px 12px;display:flex;align-items:center;gap:12px;
+                    border-left:3px solid #FA5151">
+          <div style="font-size:24px;font-weight:600;color:#FA5151">3</div>
+          <div style="flex:1;font-size:12.5px;color:#4A4A4E;line-height:1.55">
+            <b style="color:#191919">件待办</b><br>2 审批 · 1 高危告警</div>
+          <div style="font-size:12px;color:#0052D9">›</div>
+        </div>
+        <div style="background:#fff;padding:12px 6px 6px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#EEF4FF;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">🤖</div><span style="font-size:10.5px">Agent</span></div>
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#E8F6FF;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">📱</div><span style="font-size:10.5px">应用</span></div>
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#E8F9EE;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">🔌</div><span style="font-size:10.5px">MCP</span></div>
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#FFF5E8;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">✨</div><span style="font-size:10.5px">Skill</span></div>
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#F1EDFE;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">🗄️</div><span style="font-size:10.5px">存储</span></div>
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#EEF4FF;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">🔑</div><span style="font-size:10.5px">凭证</span></div>
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#F2F3F5;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">🔗</div><span style="font-size:10.5px">连接器</span></div>
+            <div style="text-align:center"><div style="width:38px;height:38px;border-radius:10px;background:#F2F3F5;margin:0 auto 5px;display:grid;place-items:center;font-size:18px">🧩</div><span style="font-size:10.5px">更多</span></div>
+          </div>
+        </div>
+        <div style="background:#fff;margin:0 10px 8px;border-radius:10px;overflow:hidden">
+          <div style="padding:11px 13px;border-bottom:1px solid #F2F2F2;display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;border-radius:8px;background:#EEF4FF;display:grid;place-items:center">🧩</div>
+            <div style="flex:1;min-width:0"><div style="font-size:13.5px">ZCode 编码 Agent</div>
+              <div style="font-size:11.5px;color:#7F7F7F">元冰可集团 · 0 次调用</div></div>
+            <span class="pill p-blue">开发中</span>
+          </div>
+          <div style="padding:11px 13px;border-bottom:1px solid #F2F2F2;display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;border-radius:8px;background:#E8F6FF;display:grid;place-items:center">📡</div>
+            <div style="flex:1;min-width:0"><div style="font-size:13.5px">Hermes Agent</div>
+              <div style="font-size:11.5px;color:#7F7F7F">元冰可集团 · 0 次调用</div></div>
+            <span class="pill p-blue">开发中</span>
+          </div>
+          <div style="padding:11px 13px;display:flex;align-items:center;gap:10px">
+            <div style="font-size:13px;color:#7F7F7F">全部 4 个</div>
+            <div style="margin-left:auto;color:#CFCFCF">›</div>
+          </div>
+        </div>
+      </div>
+      <div class="ptabbar">
+        <div class="ptab on"><span class="tic">🏠</span>工作台</div>
+        <div class="ptab"><span class="tic">📦</span>资源</div>
+        <div class="ptab" style="position:relative"><span class="tic">🔔</span>待办<i class="tdot"></i></div>
+        <div class="ptab"><span class="tic">👥</span>组织</div>
+        <div class="ptab"><span class="tic">👤</span>我的</div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="pstatus"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="pnav"><span class="back">‹</span>待办<span class="rt">全部</span></div>
+      <div class="pbody" style="padding:8px 0">
+        <div style="background:#fff;padding:12px 14px 10px;font-size:12px;color:#7F7F7F;border-bottom:1px solid #EAEAEA">
+          近 30 天 SLA 达成率 100% · 已决 5 单
+        </div>
+        <div style="background:#fff;margin-bottom:8px">
+          <div style="padding:12px 14px;border-bottom:1px solid #F2F2F2;display:flex;gap:10px">
+            <div style="width:34px;height:34px;border-radius:8px;background:#FFF5E8;display:grid;place-items:center;flex:none">🤖</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px">Agent 上线申请</div>
+              <div style="font-size:12px;color:#7F7F7F;margin-top:2px">ZCode 编码 Agent · 测试·开发者 提交</div>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button class="mini-btn" style="padding:5px 14px;font-size:12.5px">查看</button>
+                <button class="mini-btn g" style="padding:5px 14px;font-size:12.5px">同意</button>
+              </div>
+            </div>
+          </div>
+          <div style="padding:12px 14px;display:flex;gap:10px">
+            <div style="width:34px;height:34px;border-radius:8px;background:#FEF0F0;display:grid;place-items:center;flex:none">⛔</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px">L4 高危：下线并吊销凭证</div>
+              <div style="font-size:12px;color:#7F7F7F;margin-top:2px">生命周期测试 Agent · 测试·资源管理员 提交</div>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button class="mini-btn" style="padding:5px 14px;font-size:12.5px">查看</button>
+                <button class="mini-btn" style="padding:5px 14px;font-size:12.5px;color:#FA5151">拒绝</button>
+                <button class="mini-btn r" style="padding:5px 14px;font-size:12.5px">同意</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="background:#fff;padding:14px;text-align:center;font-size:12px;color:#B2B2B2">
+          审批与告警在移动端只做「看」和「批」<br>登记、配置类重表单建议在桌面端完成
+        </div>
+      </div>
+      <div class="ptabbar">
+        <div class="ptab"><span class="tic">🏠</span>工作台</div>
+        <div class="ptab"><span class="tic">📦</span>资源</div>
+        <div class="ptab on" style="position:relative"><span class="tic">🔔</span>待办<i class="tdot"></i></div>
+        <div class="ptab"><span class="tic">👥</span>组织</div>
+        <div class="ptab"><span class="tic">👤</span>我的</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 7 落地 ========== -->
+<section class="sec">
+  <div class="sec-hd"><span class="sec-no">7</span><h2>落地路径</h2></div>
+  <p class="sec-sub">
+    前端是零构建原生 ES 模块，不需要重写框架。真正的成本在「一个页面拆成半屏 + 标签页」
+    这类结构调整，以及把现有页面的空态文案改掉。建议分三步走，每步都能独立上线。
+  </p>
+  <div class="path">
+    <div class="pstep">
+      <div class="ph">1</div>
+      <h4>只换壳，不动逻辑</h4>
+      <p>新增 token 层与卡片列表组件，把 app.js 的 NAV 收敛成 5 项，旧页面全部挂到半屏容器里。
+        路由和 API 调用零改动，纯前端呈现层重构，风险最低，先把导航密度降下来。</p>
+    </div>
+    <div class="pstep">
+      <div class="ph">2</div>
+      <h4>拆页与合并</h4>
+      <p>assets+finops 合并为「用量」、agents+apps+mcp+skills+nas 合并为「资源」、iam 三 tab 合并为「组织」，
+        connectors 与 iam?tab=connectors 合并为「接入」。这一阶段要调后端聚合接口，
+        列表从「各查各的」改成一次拿齐。</p>
+    </div>
+    <div class="pstep">
+      <div class="ph">3</div>
+      <h4>填真实内容</h4>
+      <p>现状最大问题不是结构是数据——工作台四个 KPI 全零。新版把「今天该我做什么」放在第一屏，
+        即使没数据也要给出原因和下一步动作。顺带删掉四个页面的「初次了解」弹窗，
+        这些内容收进空状态和帮助入口。</p>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:22px">
+    <b>需要你拍板的两件事：</b>
+    ① <b>部门面板要不要并进来。</b>我的建议是保留为独立 SPA、不进控制台导航，
+    由左上角身份切换器直接跳转；这样业务同学永远看不到管理菜单。
+    ② <b>「审批中心」是否接受从一级菜单降级到工作台待办条。</b>
+    如果贵司审批是日常高频（每天十几单），建议在侧边栏保留一个带红点的「待办」项作为入口，
+    但工作台仍然要首屏露出。
+  </div>
+</section>
+
+<p style="color:#8A8A8E;font-size:12.5px;border-top:1px solid #DEDDDF;padding-top:20px">
+  元冰可 · 企业 AI 资源管理平台 · 交互重设计稿 v1 · 数据取自 ybkkasi.com 线上实测（2026-10-14）
+</p>
+
+</div>
+
+<script>
+(function(){
+  var mask=document.getElementById('mask'),
+      sheet=document.getElementById('sheet'),
+      asheet=document.getElementById('asheet'),
+      toastEl=document.getElementById('toast');
+  var toastTimer;
+
+  function toast(msg){
+    toastEl.textContent=msg||'已提交';
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){toastEl.classList.remove('on');},1900);
+  }
+  function closeAll(){
+    mask.classList.remove('on');
+    sheet.classList.remove('on');
+    asheet.classList.remove('on');
+  }
+  function show(page){
+    ['work','asset','usage','org','set'].forEach(function(p){
+      var el=document.getElementById('pg-'+p);
+      if(el) el.style.display = (p===page)?'':'none';
+    });
+    document.querySelectorAll('.navitem').forEach(function(b){
+      b.classList.toggle('on', b.dataset.go===page);
+    });
+    document.querySelectorAll('#sw button').forEach(function(b){
+      b.classList.toggle('on', b.dataset.p===page);
+    });
+    var sw=document.querySelector('#sw .on');
+    if(sw) sw.scrollIntoView({block:'nearest'});
+    closeAll();
+  }
+
+  // 一级导航
+  document.querySelectorAll('[data-go]').forEach(function(el){
+    el.addEventListener('click', function(){ show(el.dataset.go); });
+  });
+  document.querySelectorAll('#sw button').forEach(function(b){
+    b.addEventListener('click', function(){ show(b.dataset.p); });
+  });
+
+  // 半屏详情
+  var META={
+    zcode:['🧩','ZCode 编码 Agent','#EEF4FF'],
+    hermes:['📡','Hermes Agent','#E8F6FF'],
+    dsh:['🌀','DSH 宿主 Agent','#E8F9EE'],
+    life:['🧪','生命周期测试 Agent','#F2F3F5']
+  };
+  document.querySelectorAll('[data-asset]').forEach(function(el){
+    el.addEventListener('click', function(){
+      var m=META[el.dataset.asset];
+      if(!m){ toast('尚未登记'); return; }
+      document.getElementById('shIc').textContent=m[0];
+      document.getElementById('shIc').style.background=m[2];
+      document.getElementById('shTitle').textContent=m[1];
+      mask.classList.add('on'); sheet.classList.add('on');
+    });
+  });
+
+  // 动作面板
+  function openA(){ mask.classList.add('on'); asheet.classList.add('on'); }
+  document.getElementById('fab').addEventListener('click', openA);
+  document.querySelectorAll('[data-act="open-asheet"]').forEach(function(b){
+    b.addEventListener('click', openA);
+  });
+
+  mask.addEventListener('click', closeAll);
+  document.querySelectorAll('[data-act="close"]').forEach(function(b){
+    b.addEventListener('click', closeAll);
+  });
+  document.querySelectorAll('.asheet [data-act]').forEach(function(b){
+    if(b.dataset.act!=='close') b.addEventListener('click', function(){ closeAll(); toast('已跳转到登记流程'); });
+  });
+
+  // 顶栏 / 通用
+  document.querySelectorAll('[data-act]').forEach(function(b){
+    var a=b.dataset.act;
+    if(a==='toast')  b.addEventListener('click', function(){ toast('操作已提交'); });
+    if(a==='toast2') b.addEventListener('click', function(){ toast('原型演示：该入口已合并到新结构'); });
+    if(a==='bell')   b.addEventListener('click', function(){ toast('1 条高危告警：NAS 令牌 3 天后过期'); });
+    if(a==='refresh')b.addEventListener('click', function(){ toast('已刷新'); });
+    if(a==='todo')   b.addEventListener('click', function(){ toast('待办已收进移动端「待办」Tab'); });
+    if(a==='panel')  b.addEventListener('click', function(){ toast('已切换到部门面板（业务同学视角）'); });
+    if(a==='out')    b.addEventListener('click', function(){ toast('已退出登录'); });
+  });
+
+  // 半屏里的标签
+  document.querySelectorAll('#sheet .seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      b.parentNode.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+    });
+  });
+  // 用量页标签
+  document.querySelectorAll('#pg-usage .seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      b.parentNode.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+      toast('切到「'+b.textContent+'」标签页');
+    });
+  });
+  // 筛选 chip
+  document.querySelectorAll('#pg-asset .chip').forEach(function(b){
+    b.addEventListener('click', function(){
+      b.parentNode.querySelectorAll('.chip').forEach(function(x){x.classList.remove('on');});
+      b.classList.add('on');
+    });
+  });
+  // 企业切换器
+  document.querySelector('.brandrow').addEventListener('click', function(){
+    toast('企业切换：元冰可集团 · 本机宿主服务');
+  });
+  document.querySelector('.env-pill').addEventListener('click', function(){
+    toast('宿主服务连接（原「平台 → 宿主服务连接」）');
+  });
+})();
+</script>
+</body>
+</html>

@@ -3,6 +3,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '../../platform-core/src/index.ts'
+import { t as translate } from '../../platform-i18n/src/index.ts'
 
 export const name = 'skillhub-tools'
 export const inject = ['tools', 'skillHub']
@@ -13,6 +14,7 @@ export function apply(ctx: Context) {
   t.register(defineTool({
     name: 'skill_search',
     description: '搜索 Skill 市场（关键字/分类/标签，按下载量/评分/更新时间排序）。',
+    permission: 'skill.read',
     parameters: {
       q: { type: 'string', description: '关键字' },
       category: { type: 'string', description: '分类' },
@@ -35,6 +37,7 @@ export function apply(ctx: Context) {
   t.register(defineTool({
     name: 'skill_submit',
     description: '提交 Skill 到市场（自动进入静态扫描 → 两级审批流水线）。可选携带 skill.zip 包内容（base64，上架时经存储后端上传 NAS）。',
+    permission: 'skill.submit',
     parameters: {
       name: { type: 'string', required: true, description: 'Skill 名称' },
       content: { type: 'string', required: true, description: 'SKILL.md 全文' },
@@ -106,7 +109,7 @@ export function apply(ctx: Context) {
     output: { type: 'object', additionalProperties: true },
     async execute(args) {
       const skill = ctx.skillHub.install(args.skillId, args.version, args.agentId, 'agent-tool')
-      return { id: skill.id, installs: skill.stats.installs, note: '依赖已登记到资源依赖图' }
+      return { id: skill.id, installs: skill.stats.installs, note: translate('依赖已登记到资源依赖图') }
     },
   }))
 
@@ -125,7 +128,7 @@ export function apply(ctx: Context) {
       return {
         id: result.skill.id, status: result.skill.status,
         referencingAgents: result.referencingAgents,
-        note: '已发布 skill.deprecated 事件并触发存量引用告警',
+        note: translate('已发布 skill.deprecated 事件并触发存量引用告警'),
       }
     },
   }))

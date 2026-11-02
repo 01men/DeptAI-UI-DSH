@@ -1,0 +1,36 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:7343",
+  "stub": "http://127.0.0.1:7443",
+  "out": "/Users/ybkk/ybkkasi/qa-runtime-20261021/group-C.json",
+  "accounts": [
+    "admin",
+    "qa-ops",
+    "qa-approver",
+    "qa-collab",
+    "qa-acceptor",
+    "qa-a2aadmin",
+    "qa-member",
+    "qa-ro",
+    "qa-outsider"
+  ],
+  "agents": [
+    "qa-a0-tip:online:A0",
+    "qa-a1-exec:online:A1",
+    "qa-a2-auto:online:A2",
+    "qa-a3-neg:online:A3",
+    "qa-caller-bot:online:A2",
+    "qa-a3-caller:online:A3",
+    "qa-a3-neg2:online:A3",
+    "d-a0-caller:online:A0",
+    "d-a1-caller:online:A1",
+    "d-a3-counter:online:A3",
+    "d-offline:draft:A2",
+    "d-budget:online:A2",
+    "d-skilldrift:online:A2",
+    "d-harnessdrift:online:A2",
+    "d-frozen:online:A2",
+    "d-a2-caller:online:A2",
+    "qa-e-offline-target:draft:A2"
+  ]
+}

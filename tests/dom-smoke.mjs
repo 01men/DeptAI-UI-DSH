@@ -70,6 +70,18 @@ const login = await raw('/api/auth/login', { method: 'POST', body: { username: '
 session.save(login.token, login.user)
 if (login.refreshToken) session.saveRefresh(login.refreshToken)
 
+// 演示种子在启动后异步落盘（void seedAll），健康检查先亮、Agent 面晚数秒就绪——
+// 不等待会让 T3/T4 间歇拿到空列表（2026-10-14 观测：健康就绪后 0~1.5s 内才可见）。等齐再跑。
+{
+  const deadline = Date.now() + 30_000
+  for (;;) {
+    const agents = await raw('/api/agents', { token: login.token }).then((d) => d.agents, () => [])
+    if (agents.length >= 5) break
+    if (Date.now() > deadline) throw new Error(`演示种子 30s 未就绪（agents=${agents.length}），检查 DEMO_SEED=1 与数据目录`)
+    await new Promise((resolve) => setTimeout(resolve, 300))
+  }
+}
+
 // ================= 场景 =================
 
 await test('T1 工作台渲染 + 快捷入口点击跳转（dashboard.js:79 回归）', async () => {
@@ -229,8 +241,8 @@ await test('T9 MCP 权限组弹窗（mcp.js:519 回归）', async () => {
   $('.drawer-close').click()
 })
 
-await test('T10 IAM 创建账号全流程 + 口令展示弹窗（iam.js:212/229/232 回归）', async () => {
-  const { renderIam } = await P('pages/iam.js')
+await test('T10 IAM 创建账号全流程 + 口令展示弹窗（iam/members.js 回归）', async () => {
+  const { renderIam } = await P('pages/iam/index.js')
   await renderIam(freshContent(), new URLSearchParams('tab=members'), ctxOf())
   $('#user-add').click()
   assert($('.modal [data-ok]'), '创建账号弹窗应打开')
@@ -252,8 +264,8 @@ await test('T10 IAM 创建账号全流程 + 口令展示弹窗（iam.js:212/229/
   assert(users.some((u) => u.username === 'smoke' + RUN_ID), '服务端应真实创建该账号')
 })
 
-await test('T11 IAM 新建组织 / 批量导入弹窗（iam.js:248/267 回归）', async () => {
-  const { renderIam } = await P('pages/iam.js')
+await test('T11 IAM 新建组织 / 批量导入弹窗（iam/groups.js 回归）', async () => {
+  const { renderIam } = await P('pages/iam/index.js')
   await renderIam(freshContent(), new URLSearchParams('tab=members'), ctxOf())
   $('#org-add').click()
   assert(await waitFor(() => $('.modal [data-ok]')), '新建组织弹窗应打开')

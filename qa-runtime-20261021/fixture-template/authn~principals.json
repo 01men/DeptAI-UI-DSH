@@ -1,0 +1,777 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:34.739Z",
+    "updatedAt": "2026-10-20T04:14:34.739Z",
+    "id": "pri_mvg65wqbidmfyixd",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65e9midmcih9e",
+    "name": "平台管理员",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.787Z",
+    "updatedAt": "2026-10-20T04:14:34.787Z",
+    "id": "pri_mvg65wrnidn6jblx",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wqpidn417cg",
+    "name": "平台资源管理员",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.822Z",
+    "updatedAt": "2026-10-20T04:14:34.822Z",
+    "id": "pri_mvg65wsmidnc559t",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wroidna0rra",
+    "name": "审批人（异人审批）",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.856Z",
+    "updatedAt": "2026-10-20T04:14:34.856Z",
+    "id": "pri_mvg65wtkidnii3kv",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wsmidng74se",
+    "name": "协作观察员（只读协作面）",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.891Z",
+    "updatedAt": "2026-10-20T04:14:34.891Z",
+    "id": "pri_mvg65wujidno3ian",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wtlidnmrmj7",
+    "name": "验收员（可交付验收）",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.926Z",
+    "updatedAt": "2026-10-20T04:14:34.926Z",
+    "id": "pri_mvg65wviidnulaul",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wukidnsk7vg",
+    "name": "协作管理员（规则/巡检/harness）",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.960Z",
+    "updatedAt": "2026-10-20T04:14:34.960Z",
+    "id": "pri_mvg65wwgido0ohd2",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wviidnym61w",
+    "name": "最小权限普通成员",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.993Z",
+    "updatedAt": "2026-10-20T04:14:34.993Z",
+    "id": "pri_mvg65wxdido6evh6",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wwgido4fbwt",
+    "name": "隔离组织只读",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.027Z",
+    "updatedAt": "2026-10-20T04:14:35.027Z",
+    "id": "pri_mvg65wybidocyi5v",
+    "type": "human",
+    "refType": "user",
+    "refId": "usr_mvg65wxeidoang9r",
+    "name": "跨组织越权探针",
+    "status": "active",
+    "scopes": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.028Z",
+    "updatedAt": "2026-10-20T04:14:35.028Z",
+    "id": "pri_mvg65wycidoi8dvm",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65wycidog0wpv",
+    "name": "agent:qa-a0-tip",
+    "status": "active",
+    "clientId": "mc-mvg65wycidohvrgm",
+    "clientSecretHash": "b6caff10d5898189a2b6e147d7149aa5eddb78726d4e802faf7d749773916c1b",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.454Z",
+    "updatedAt": "2026-10-20T04:14:35.454Z",
+    "id": "pri_mvg65xa6idoupg4r",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65xa6idoswiz0",
+    "name": "agent:qa-a1-exec",
+    "status": "active",
+    "clientId": "mc-mvg65xa6idoti8pm",
+    "clientSecretHash": "4e43693e98974a08931d1ab5428ffbd60f1120158d235b4b9fe4b8f515dcf569",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.874Z",
+    "updatedAt": "2026-10-20T04:14:35.874Z",
+    "id": "pri_mvg65xluidp63l6n",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65xluidp4m49p",
+    "name": "agent:qa-a2-auto",
+    "status": "active",
+    "clientId": "mc-mvg65xluidp58kks",
+    "clientSecretHash": "af7b4f2ca6912aa2ca5e9e63a4b58e95b5515dd3e45aafc59bf4b98d7245e475",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:36.293Z",
+    "updatedAt": "2026-10-20T04:14:36.293Z",
+    "id": "pri_mvg65xxhidpiwfa1",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65xxhidpg6765",
+    "name": "agent:qa-a3-neg",
+    "status": "active",
+    "clientId": "mc-mvg65xxhidphvot2",
+    "clientSecretHash": "e0ce48f067f4d81bea2d957457820be828b217a914691d9ef80a0e4207ee3e84",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:36.712Z",
+    "updatedAt": "2026-10-20T04:14:36.712Z",
+    "id": "pri_mvg65y94idpu53m2",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65y94idps38ro",
+    "name": "agent:qa-caller-bot",
+    "status": "active",
+    "clientId": "mc-mvg65y94idptmb9s",
+    "clientSecretHash": "939092104f1a1c9a2fd8f7528fd7c2a11a52cddf1383e8a08d1e8a88ac76bb4b",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:37.131Z",
+    "updatedAt": "2026-10-20T04:14:37.131Z",
+    "id": "pri_mvg65ykridq67ojg",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65ykridq44i55",
+    "name": "agent:qa-a3-caller",
+    "status": "active",
+    "clientId": "mc-mvg65ykridq5jqd0",
+    "clientSecretHash": "e0c1886013a1bbab78783771291bf856157ccccc6853faee0c7313e42d24ef65",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:37.561Z",
+    "updatedAt": "2026-10-20T10:08:37.462Z",
+    "id": "pri_mvg65ywpidqn1qme",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65y94idps38ro",
+    "name": "qa-caller-cc",
+    "status": "active",
+    "clientId": "mc-mvg65ywpidqmaidj",
+    "clientSecretHash": "2342680ea20a70df896013e9117a4017580c42a409da07d8343c79d4157423c0",
+    "scopes": [
+      "agent.a2a.invoke",
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:37.564Z",
+    "updatedAt": "2026-10-20T04:14:37.564Z",
+    "id": "pri_mvg65ywsidqrff73",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65ykridq44i55",
+    "name": "qa-a3-cc",
+    "status": "active",
+    "clientId": "mc-mvg65ywsidqqhtmd",
+    "clientSecretHash": "d2d8adfa973f610abefbf41417c3478c4a8e2d1e98477233ca001ea9e07f56fe",
+    "scopes": [
+      "agent.a2a.invoke",
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:37.567Z",
+    "updatedAt": "2026-10-20T04:18:22.939Z",
+    "id": "pri_mvg65ywvidqvvfxg",
+    "type": "machine",
+    "refType": "external",
+    "refId": "qa-uhp-harness",
+    "name": "qa-uhp-cc",
+    "status": "active",
+    "clientId": "mc-mvg65ywvidqu8hoe",
+    "clientSecretHash": "1d473ab202d75abc416d9161eb862772310b5f3786935f516e51ae2400d13a5a",
+    "scopes": [
+      "uhp.invoke",
+      "agent.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:14:37.569Z",
+    "updatedAt": "2026-10-20T04:14:37.569Z",
+    "id": "pri_mvg65ywxidqz5x0d",
+    "type": "machine",
+    "refType": "external",
+    "refId": "qa-weak",
+    "name": "qa-weak-cc",
+    "status": "active",
+    "clientId": "mc-mvg65ywxidqyedmz",
+    "clientSecretHash": "0e5ea202322ddfc986b0fc6720f28560356a2b624ab803755c5878f444943bc2",
+    "scopes": [
+      "agent.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:18:40.732Z",
+    "updatedAt": "2026-10-20T04:18:40.948Z",
+    "id": "pri_mvg6b6jgieagwj3f",
+    "type": "machine",
+    "refType": "external",
+    "name": "qa-b-uhp-owner",
+    "status": "disabled",
+    "clientId": "mc-mvg6b6jgieafvyv2",
+    "clientSecretHash": "f8194bd736980da0c24fa8ca79a632a0a15c4cf246fbac11becca0cda7076381",
+    "scopes": [
+      "uhp.invoke",
+      "agent.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:18:40.736Z",
+    "updatedAt": "2026-10-20T04:18:40.950Z",
+    "id": "pri_mvg6b6jkieakq5xv",
+    "type": "machine",
+    "refType": "external",
+    "name": "qa-b-uhp-attacker",
+    "status": "disabled",
+    "clientId": "mc-mvg6b6jkieajtgu5",
+    "clientSecretHash": "6ad4f2d2c2b507c6a0862bdbf3d2d18a8a8464cf18b26e41051104629a8de9e0",
+    "scopes": [
+      "uhp.invoke",
+      "agent.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:18:40.952Z",
+    "updatedAt": "2026-10-20T04:18:40.959Z",
+    "id": "pri_mvg6b6pkieayr6aw",
+    "type": "machine",
+    "refType": "external",
+    "name": "qa-b-invoke-only",
+    "status": "disabled",
+    "clientId": "mc-mvg6b6pkieaxa9qy",
+    "clientSecretHash": "bef5042bc4fe1db0fe1842717c3da8759e444115d35e09cf95dedca1fcb62c13",
+    "scopes": [
+      "agent.a2a.invoke"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T04:20:42.725Z",
+    "updatedAt": "2026-10-20T04:20:56.266Z",
+    "id": "pri_mvg6dso5ien2ci4r",
+    "type": "machine",
+    "refType": "external",
+    "name": "qa-b-min-uhp",
+    "status": "disabled",
+    "clientId": "mc-mvg6dso5ien1heac",
+    "clientSecretHash": "652f09b4c511fe26ad1f057b35e4f9beabdff41e3080e44c8e0921e546c0694b",
+    "scopes": [
+      "uhp.invoke"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:03:36.959Z",
+    "updatedAt": "2026-10-20T10:03:36.959Z",
+    "id": "pri_mvgimrunifgeh2y4",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgimrunifgcjrg2",
+    "name": "agent:qa-a3-neg2",
+    "status": "active",
+    "clientId": "mc-mvgimrunifgdmd7n",
+    "clientSecretHash": "fb3cc54a816e9fb2da091f20a63b8dbea220a29e49f3d3586705963d4fe53df7",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.781Z",
+    "updatedAt": "2026-10-20T10:04:46.781Z",
+    "id": "pri_mvgio9q5ifhkwa0p",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9q4ifhihjet",
+    "name": "agent:d-a0-caller",
+    "status": "active",
+    "clientId": "mc-mvgio9q4ifhjko4h",
+    "clientSecretHash": "c7c63b785f2d477ad58e3efc58ea56b608622c2a70adb08b28a267d690d6ec77",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.786Z",
+    "updatedAt": "2026-10-20T10:04:46.786Z",
+    "id": "pri_mvgio9qaifhqmabm",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qaifho4e8x",
+    "name": "agent:d-a1-caller",
+    "status": "active",
+    "clientId": "mc-mvgio9qaifhpyt1p",
+    "clientSecretHash": "989663399c190ff4db1487ce1b90047cb19ec915676141b9ddb2dc17e78aceab",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.793Z",
+    "updatedAt": "2026-10-20T10:04:46.793Z",
+    "id": "pri_mvgio9qhifhw8ur4",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qhifhuhbr9",
+    "name": "agent:d-a3-counter",
+    "status": "active",
+    "clientId": "mc-mvgio9qhifhvujo6",
+    "clientSecretHash": "4c0041b5462a448c73855c6498b8de991ee34434d294b5fd9609a040906ac7d6",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.797Z",
+    "updatedAt": "2026-10-20T10:04:46.797Z",
+    "id": "pri_mvgio9qlifi20odd",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qlifi053v0",
+    "name": "agent:d-offline",
+    "status": "active",
+    "clientId": "mc-mvgio9qlifi1od0w",
+    "clientSecretHash": "3c415984dfce8ce1a5f1520662339538e74a1c4ec24e9af51670858586597737",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.799Z",
+    "updatedAt": "2026-10-20T10:04:46.799Z",
+    "id": "pri_mvgio9qnifi8oo1m",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qnifi6tuw3",
+    "name": "agent:d-budget",
+    "status": "active",
+    "clientId": "mc-mvgio9qnifi79ufd",
+    "clientSecretHash": "41f26c979003238247a4836c46ae0ef302b7319a7c6f5f9858351363f238421c",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.803Z",
+    "updatedAt": "2026-10-20T10:04:46.803Z",
+    "id": "pri_mvgio9qrifie5ch2",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qrific0s4v",
+    "name": "agent:d-skilldrift",
+    "status": "active",
+    "clientId": "mc-mvgio9qrifidv5ma",
+    "clientSecretHash": "83946fad674da4e461346ac88b8c21934aad5b95883242d90c1ae8bb317fc49a",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.807Z",
+    "updatedAt": "2026-10-20T10:04:46.807Z",
+    "id": "pri_mvgio9qvifiku7ml",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qvifiifi2f",
+    "name": "agent:d-harnessdrift",
+    "status": "active",
+    "clientId": "mc-mvgio9qvifij43bi",
+    "clientSecretHash": "5c1b6598c4582b2abb5cfd675e670f5d282295e3dd12cb816430a476316f1f6d",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.811Z",
+    "updatedAt": "2026-10-20T10:04:46.811Z",
+    "id": "pri_mvgio9qzifiqit09",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qzifioxb4y",
+    "name": "agent:d-frozen",
+    "status": "active",
+    "clientId": "mc-mvgio9qzifipz4rj",
+    "clientSecretHash": "308b8429d0132a37b239f037cbb59425f093d8054f6b1a4bed6fa5e7e0311d96",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.817Z",
+    "updatedAt": "2026-10-20T10:04:46.817Z",
+    "id": "pri_mvgio9r5ifixfdh3",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9q4ifhihjet",
+    "name": "d-a0cc",
+    "status": "active",
+    "clientId": "mc-mvgio9r5ifiw2w3d",
+    "clientSecretHash": "59022c3de6e8d1cbfa967841ec705481ae713a2f173d45870b9b28a9e0004191",
+    "scopes": [
+      "agent.a2a.invoke",
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.818Z",
+    "updatedAt": "2026-10-20T10:04:46.818Z",
+    "id": "pri_mvgio9r6ifj1n94o",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgio9qaifho4e8x",
+    "name": "d-a1cc",
+    "status": "active",
+    "clientId": "mc-mvgio9r6ifj0zyfa",
+    "clientSecretHash": "fedbb07ad5ad434e87121e9ab66b4cf0c7ea8b8ebaa31237be55732e33cd19f1",
+    "scopes": [
+      "agent.a2a.invoke",
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:04:46.819Z",
+    "updatedAt": "2026-10-20T10:04:46.819Z",
+    "id": "pri_mvgio9r7ifj58ir5",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65xluidp4m49p",
+    "name": "d-usagecc",
+    "status": "active",
+    "clientId": "mc-mvgio9r7ifj4xnpd",
+    "clientSecretHash": "ba5a18e97f4dee8746926ac2c67833b8c92b2f496ba36f1b017e790b7a2dc94d",
+    "scopes": [
+      "usage.write",
+      "agent.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:08:33.327Z",
+    "updatedAt": "2026-10-20T10:08:33.327Z",
+    "id": "pri_mvgit4j3ifsr3rkl",
+    "type": "machine",
+    "refType": "external",
+    "refId": "组E-probe",
+    "name": "组E-probe",
+    "status": "active",
+    "clientId": "mc-mvgit4j3ifsqfq8k",
+    "clientSecretHash": "ccf81a8a78da2f10d71fda0bcebfeaa275f02890bfd5e0b968cc3d1cac213174",
+    "scopes": [
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:08:33.376Z",
+    "updatedAt": "2026-10-20T10:08:33.376Z",
+    "id": "pri_mvgit4kgifsud9d5",
+    "type": "machine",
+    "refType": "external",
+    "refId": "组E-probe2",
+    "name": "组E-probe2",
+    "status": "active",
+    "clientId": "mc-mvgit4kgifst40or",
+    "clientSecretHash": "0298cddfbb93c32c74de47d06e740274650d3c084408bf5603f89effe9e6a567",
+    "scopes": [
+      "agent.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:09:34.134Z",
+    "updatedAt": "2026-10-20T10:09:34.134Z",
+    "id": "pri_mvgiufg6ifz0fm54",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgiufg6ifyyjrp3",
+    "name": "agent:d-a2-caller",
+    "status": "active",
+    "clientId": "mc-mvgiufg6ifyzrl27",
+    "clientSecretHash": "5cd8b2f3ab4b09d7af6d9921d297de26ef861d63fb30efd6e4e6768592ce0923",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:09:34.655Z",
+    "updatedAt": "2026-10-20T10:09:34.655Z",
+    "id": "pri_mvgiufunifzcyvrj",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgiufg6ifyyjrp3",
+    "name": "d-a2cc",
+    "status": "active",
+    "clientId": "mc-mvgiufunifzb7b9a",
+    "clientSecretHash": "820803be6670a301522e34e8357a899a48a80f9034d1710301f47f3d54069bba",
+    "scopes": [
+      "agent.a2a.invoke",
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:09:39.724Z",
+    "updatedAt": "2026-10-20T10:09:39.724Z",
+    "id": "pri_mvgiujrgifzhc4a5",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvgiujrgifzfkyrp",
+    "name": "agent:qa-e-offline-target",
+    "status": "active",
+    "clientId": "mc-mvgiujrgifzge6o3",
+    "clientSecretHash": "072a991ace1e9e0955be4df398ab48b389b27a9c344136f2fe58da85915490d9",
+    "scopes": [
+      "mcp.invoke",
+      "skill.read",
+      "agent.read",
+      "agent.write",
+      "usage.write",
+      "connector.invoke",
+      "modelgw.invoke",
+      "exec.read",
+      "exec.write"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:16:13.461Z",
+    "updatedAt": "2026-10-20T10:16:13.461Z",
+    "id": "pri_mvgj2zkligsp1oe6",
+    "type": "machine",
+    "refType": "external",
+    "refId": "d-invoke-only",
+    "name": "d-invokeonly-cc",
+    "status": "active",
+    "clientId": "mc-mvgj2zkligsox1ha",
+    "clientSecretHash": "a5a7cce7b259a0f7106f1cf2e8e9294d614788ae48b9f891c523a145ab6317b0",
+    "scopes": [
+      "agent.a2a.invoke"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:20:10.760Z",
+    "updatedAt": "2026-10-20T10:20:10.760Z",
+    "id": "pri_mvgj82o8igzay032",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65y94idps38ro",
+    "name": "lead-victim",
+    "status": "active",
+    "clientId": "mc-mvgj82o8igz99yv1",
+    "clientSecretHash": "9b1c8958c495ed7d5c7e16a3704826cff02fad423195a95b211a0a0ae55a0e4d",
+    "scopes": [
+      "agent.a2a.invoke",
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:20:10.764Z",
+    "updatedAt": "2026-10-20T10:20:10.764Z",
+    "id": "pri_mvgj82ocigzel5x3",
+    "type": "machine",
+    "refType": "agent",
+    "refId": "agt_mvg65ykridq44i55",
+    "name": "lead-attacker",
+    "status": "active",
+    "clientId": "mc-mvgj82ocigzdy1d0",
+    "clientSecretHash": "9b861ea8e7b25aaf406aae30d64c566ecea46fcdf34534f0bfc28aab6e55f3b3",
+    "scopes": [
+      "agent.a2a.invoke",
+      "agent.read",
+      "a2a.directory.read"
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:22:32.333Z",
+    "updatedAt": "2026-10-20T10:22:32.333Z",
+    "id": "pri_mvgjb3wt77d90zwr",
+    "type": "machine",
+    "refType": "external",
+    "refId": "lead-untrusted",
+    "name": "lead-attacker-1792491752330",
+    "status": "active",
+    "clientId": "mc-mvgjb3wt77d8hkka",
+    "clientSecretHash": "316dd39d11ca1a0110a689da63645c6d7711ecfce1aa539e1109ab67b84c903b",
+    "scopes": [
+      "uhp.invoke"
+    ]
+  }
+]

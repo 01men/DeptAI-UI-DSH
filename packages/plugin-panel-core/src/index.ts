@@ -29,6 +29,13 @@ import { resolvePanelModelGateway } from './llm-bridge.ts'
 import { DwsCli } from './dws.ts'
 import { applyMfgModule } from './mfg/module.ts'
 
+/**
+ * 面板契约版本（#13，2026-10-29 回植自底座）：面板能力族集合的语义版本——新增能力族/下线路由族时递增。
+ * 底座是契约所有者：/api/health 的 contract.panel 暴露本版本与实时推导的能力清单，
+ * 前台（DeptAI-UI-DSH 等）据此对齐宿主支持面，版本组合偏差 fail-visible 而非静默 404。
+ */
+export const PANEL_CONTRACT_VERSION = 1
+
 export const name = 'panel-core'
 // plan-gate01 Phase 2 瘦身：硬依赖只保留数据面基座 5 键（platform-core / dsh 原生提供）。
 // 其余 9 键（iam/authn/audit/usage/modelGateway/resourceCore/behavior/mcpRegistry/skillHub）
@@ -214,6 +221,27 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
       ?? iam?.orgs().find((org) => org.parentId === null).at(0)?.id
       // 组织目录缺席（01门 装态）→ 演示组织主键（与 seed.ts 的内置激活登记同值，行业面可用）
       ?? DEMO_ORG_ID
+  }
+
+  /**
+   * 场景级授权执行点（A-01 残余收口，回植自底座，与 plugin-flow-core 同构）：任务创建携带
+   * sceneCode 时强制裁决场景策略——deny/fail-closed（有策略无命中）一律 403 并落 audit.authz.denied；
+   * allow 放行；未携带 sceneCode 或场景未配置策略维持存量放行（与 flow 域无策略语义一致，
+   * 守卫不阻断普通任务）。机器主体不入场景域（权限点 RBAC 已覆盖），口径见 release-notes-2026-09-12。
+   */
+  const sceneGuard = (exchange: HttpExchange, sceneCode: string | undefined, action: string): boolean => {
+    if (!sceneCode?.trim()) return true
+    const info = caller(exchange)
+    if (!info.userId) return true
+    const iam = soft(ctx, 'iam')
+    if (!iam) return true
+    const decision = iam.checkScene(info.userId, sceneCode, action)
+    if (decision.decision !== 'deny') return true
+    ctx.platformBus.emit('audit.authz.denied', {
+      actorId: info.userId, actorName: info.name, point: `scene:${sceneCode}#${action}`, path: exchange.path,
+    })
+    exchange.fail(403, 'FORBIDDEN', `场景授权拒绝（${sceneCode} · ${action}）：${decision.reason}`)
+    return false
   }
 
   // -- 部门与总览 -------------------------------------------------------------
@@ -712,7 +740,7 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
       ddSync: false, ...(result.model ? { replyModel: result.model } : {}),
       ...(trace.sceneCode ? { sceneCode: trace.sceneCode } : {}),
     })
-    return { ok: true as const, reply: result.reply, model: result.model, skill: result.skill, message: trace, replyMessage: reply }
+    return { ok: true as const, reply: result.reply, model: result.model, skill: result.skill, message: trace, replyMessage: reply, skillLoad: result.skillLoad }
   })
 
   // -- 任务看板 -----------------------------------------------------------------
@@ -723,9 +751,11 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
 
   guarded('POST', '/api/panel/:dept/tasks', 'panel.task.write', (exchange) => {
     const dept = deptOf(exchange)
-    const input = body<{ title?: string; detail?: string; lane?: string; assigneeName?: string; assigneeType?: string; sceneCode?: string }>(exchange)
+    const input = body<{ title?: string; detail?: string; lane?: string; assigneeName?: string; assigneeType?: string; sceneCode?: string; execIssueId?: string; goalId?: string; evidenceRefs?: string[]; reworkOf?: string }>(exchange)
     if (!input.title?.trim()) throw new Error('任务标题必填')
     if (input.lane !== undefined && !TASK_LANES.includes(input.lane as TaskLane)) throw new Error(`非法泳道：${input.lane}`)
+    // A-01：任务挂场景时按场景策略裁决创建动作（deny/fail-closed → 403），无策略维持放行
+    if (!sceneGuard(exchange, input.sceneCode, 'panel.task.create')) return
     const info = caller(exchange)
     const task = panel.createTask({
       dept: dept.id, title: input.title.trim(),
@@ -734,6 +764,11 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
       ...(input.assigneeType === 'agent' ? { assigneeType: 'agent' as const } : {}),
       ...(input.assigneeName ? { assigneeName: input.assigneeName } : {}),
       ...(input.sceneCode ? { sceneCode: input.sceneCode } : {}),
+      // 执行中枢血缘（DSH issue#3 修订）：携带即投影 exec-hub 权威，缺席/不存在诚实 400
+      ...(input.execIssueId?.trim() ? { execIssueId: input.execIssueId.trim() } : {}),
+      ...(input.goalId?.trim() ? { goalId: input.goalId.trim() } : {}),
+      ...(Array.isArray(input.evidenceRefs) && input.evidenceRefs.length ? { evidenceRefs: input.evidenceRefs.map(String) } : {}),
+      ...(input.reworkOf?.trim() ? { reworkOf: input.reworkOf.trim() } : {}),
       createdBy: info.userId ?? info.principalId,
     })
     return { task }
@@ -744,6 +779,25 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
     if (!lane || !TASK_LANES.includes(lane as TaskLane)) throw new Error(`非法泳道：${lane}`)
     const info = caller(exchange)
     return { task: panel.transitionTask(String(exchange.params.id), lane as TaskLane, info.userId ?? info.principalId) }
+  })
+
+  // -- 执行中枢投影（DSH issue#3/#4 修订，2026-10-29） -----------------------------------------
+  // 面板不复制权威状态：目标/任务读透 exec-hub，泳道迁移与验收结论镜像回写（唯一任务事实源）。
+
+  /** 部门目标投影：目标（metric 基线/目标值）+ 任务（goalAncestry 血缘/执行锁）+ 面板关联任务 ID。 */
+  guarded('GET', '/api/panel/:dept/goals', 'panel.read', (exchange) => {
+    const dept = deptOf(exchange)
+    const projection = panel.deptGoalsProjection(dept)
+    if (!projection) return degraded(exchange, '执行中枢')
+    return projection
+  })
+
+  /** 验收裁决：签认关闭（accepted）/ 打回返工（rework）；有 exec 血缘时镜像回写 exec-hub。 */
+  guarded('POST', '/api/panel/tasks/:id/verdict', 'panel.task.write', (exchange) => {
+    const input = body<{ verdict?: string; opinion?: string }>(exchange)
+    if (input.verdict !== 'accepted' && input.verdict !== 'rework') throw new Error("verdict 必填且只能是 'accepted'（签认关闭）或 'rework'（打回返工）")
+    const info = caller(exchange)
+    return { task: panel.taskVerdict(String(exchange.params.id), input.verdict, { actorId: info.userId ?? info.principalId, ...(input.opinion ? { opinion: input.opinion } : {}) }) }
   })
 
   // -- 部门知识 ------------------------------------------------------------------
@@ -1110,13 +1164,19 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
     // 入向拉取（2026-09-11 用户需求「自动拉取最新消息」）：dws +chat-messages 读绑定群最新消息，
     // 按 messageId 幂等去重落当前频道（senderType=human + ddSync='origin' + uniqueKey 去重键）。
     // 拉取失败以 ok:false + error 回包（HTTP 200，降级是数据不是传输错误），前端可重试。
+    // 部门取向自频道反查（前台只传 channelId；移植修正：原实现按 :dept 路径参数解析，
+    // 平铺路径 /api/panel/ddws/pull 下 params.dept 恒空必 400——收编时修正）。
     guarded('POST', '/api/panel/ddws/pull', 'panel.write', async (exchange) => {
-      const dept = deptOf(exchange)
       const input = body<{ channelId?: string; limit?: number }>(exchange)
-      const channelId = input.channelId || panel.channels().find((item) => item.dept === dept.id).at(0)?.id
-      if (!channelId) throw new Error('部门暂无频道，请先创建')
-      const channel = panel.channels().get(channelId)
-      if (!channel || channel.dept !== dept.id) throw new Error(`频道不存在或不属于该部门：${channelId}`)
+      if (!input.channelId?.trim()) throw new Error('channelId 必填（拉取落入的目标频道）')
+      const channel = panel.channels().get(input.channelId)
+      if (!channel) throw new Error(`频道不存在：${input.channelId}`)
+      const dept = panel.dept(channel.dept)
+      if (!panel.deptScopeAllowed(caller(exchange), dept)) {
+        exchange.fail(403, 'FORBIDDEN', `部门范围受限：${dept.label} 已绑定组织治理，仅该组织子树成员可访问`, { permission: 'panel.read', deptScope: dept.orgId })
+        return
+      }
+      const channelId = channel.id
       const info = caller(exchange)
       try {
         const incoming = await dws.pullLatestMessages(Math.floor(Number(input.limit) || 20))
@@ -1157,10 +1217,12 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
     ctx.logger('panel-core').info(`01门本地钉钉面已挂载：dws CLI 桥（/api/panel/ddws/*，宿主桥${dingtalkBridgePresent ? '在场共存' : '缺席独任'}；ddSync 投递按群桥归属裁决）`)
   }
 
-  // 基线管理员种子（延迟重试）：iam 在场且组织目录为空（01门+authn 首启）→ 与 console seed
-  // 同口径初始化。Loader 并发装载下 iam 可能晚于本插件发布，这里轮询等待直至可用（上限 30s）。
-  // console 在场（全量形态）时由 console seed 负责；本种子幂等（orgs().count()>0 即跳过）。
-  {
+  // 基线管理员种子（延迟重试，仅 01门装态）：iam 在场且组织目录为空（01门+authn 首启）→
+  // 与 console seed 同口径初始化。Loader 并发装载下 iam 可能晚于本插件发布，这里轮询等待直至
+  // 可用（上限 30s）。console 在场（全量形态）时由 console seed 负责——本种子以 demoAuth 门控
+  // （回植自底座 2026-10-29）：全量形态下面板与 console 的装配虽分先后，但 console seed 若存在
+  // 延迟执行，双种子竞态会让组织名/口令策略取决于装载顺序——铁律归一：全量形态种子权归 console。
+  if (demoAuth) {
     let seedTries = 0
     const seedTimer = setInterval(() => {
       seedTries += 1

@@ -1,0 +1,290 @@
+  ✔ B0 夹具：A2/A1 目标上线
+  ✔ B0 夹具：四类机器凭证就绪
+  ✔ B1 治理读端点：无令牌 401（fail-closed）
+  ✔ B1 治理读端点：最小权限成员 403
+  ✔ B1 治理读端点：协作观察员 200（a2a.directory.read + uhp.read）
+  ✔ B1 治理读端点：管理员 200
+  ✔ B1 治理写端点：无令牌 401 / 最小成员 403 / 只读观察员 403
+  ✔ B2 受害任务处于 auth_required（A1 目标人在环审批）
+  ✔ B2 第①层：外部注入 ybk_a2a_task_id → 400 TASK_BINDING_FORBIDDEN
+  ✔ B2 第②层：顶层 task_id 变体不建立任务绑定（fail-closed 不生效）
+  ✘ B2【留痕缺口】顶层 task_id 注入未进 ignored_fields 也未审计（与 metadata 变体 400 口径不一致）  ← {"status":200,"ignored":[]}
+  ✔ B2 注入变体矩阵：metadata.task_id / body.taskId / body.task_id 均不建立任务绑定且受害任务状态不变
+  ✔ B2 第③层：受害任务状态未变且无伪造交付物
+  ✔ B2 第④层：注入尝试成为可观测审计事件（task_binding_denied）
+  ✔ B2 受害任务在合法审批后正常恢复执行（主流程未被破坏）
+  ✔ B3 非发起方（持 a2a.directory.read）取消他人任务 → -32003
+  ✔ B3 被越权取消的任务状态未变
+  ✔ B3 管理员可取消（特权面不受归属限制）
+  ✔ B4 UHP 属主创建执行记录
+  ✔ B4 非属主读他人执行记录 → 404（不泄露存在性）
+  ✔ B4 非属主取消他人执行记录 → 404/403
+  ✔ B4 属主可读自己的执行记录
+  ✔ B5 发起方/管理员可见任务正文
+  ✔ B5 治理读观察员看他人任务 → contentRedacted=true 且正文被省略
+  ✔ B5 脱敏视图保留状态骨架（state/agentSlug 仍可见）
+  ✔ B5 REST 与 RPC tasks/get 脱敏口径一致（Q-29）
+  ✔ B6 夹具：隔离组织账号就绪
+  ✔ B6 隔离组织对跨组织协作数据零可见（目录/任务/履约/harness/执行记录）
+  ✔ B7 发起人本人验收自己任务 → 403（职责分离）
+  ✔ B7 非发起人持 a2a.task.accept 可验收（200）
+  ✔ B7 非 completed 任务拒绝验收（400）
+  ✔ B7 验收理由必填（空理由 400）
+  ✔ B8 OBO 令牌 scope 含 agent.a2a.invoke（Q-6 修复）
+  ✔ B8 人类经 OBO 令牌发起协作成功（不再因 scope 缺失被拒）
+  ✔ B8 外部直调伪造 ybk_on_behalf_user（不存在用户）→ 不采信不入账
+  ✔ B9 异常令牌矩阵：无/坏令牌 401，错作用域 403，零 5xx
+  ✔ B9 异常令牌矩阵无任何放行（200）
+  ✔ B10 拒绝路径审计留痕可回查（authz.denied 或等价事件）
+  ✔ B10 审计日志可用 taskId/responseId 反查（取消留痕 Q-25）
+
+{
+  "group": "B",
+  "total": 39,
+  "passed": 38,
+  "failed": 1,
+  "failures": [
+    {
+      "group": "B",
+      "name": "B2【留痕缺口】顶层 task_id 注入未进 ignored_fields 也未审计（与 metadata 变体 400 口径不一致）",
+      "pass": false,
+      "detail": "{\"status\":200,\"ignored\":[]}"
+    }
+  ],
+  "rows": [
+    {
+      "group": "B",
+      "name": "B0 夹具：A2/A1 目标上线",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B0 夹具：四类机器凭证就绪",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B1 治理读端点：无令牌 401（fail-closed）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B1 治理读端点：最小权限成员 403",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B1 治理读端点：协作观察员 200（a2a.directory.read + uhp.read）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B1 治理读端点：管理员 200",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B1 治理写端点：无令牌 401 / 最小成员 403 / 只读观察员 403",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B2 受害任务处于 auth_required（A1 目标人在环审批）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B2 第①层：外部注入 ybk_a2a_task_id → 400 TASK_BINDING_FORBIDDEN",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B2 第②层：顶层 task_id 变体不建立任务绑定（fail-closed 不生效）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B2【留痕缺口】顶层 task_id 注入未进 ignored_fields 也未审计（与 metadata 变体 400 口径不一致）",
+      "pass": false,
+      "detail": "{\"status\":200,\"ignored\":[]}"
+    },
+    {
+      "group": "B",
+      "name": "B2 注入变体矩阵：metadata.task_id / body.taskId / body.task_id 均不建立任务绑定且受害任务状态不变",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B2 第③层：受害任务状态未变且无伪造交付物",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B2 第④层：注入尝试成为可观测审计事件（task_binding_denied）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B2 受害任务在合法审批后正常恢复执行（主流程未被破坏）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B3 非发起方（持 a2a.directory.read）取消他人任务 → -32003",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B3 被越权取消的任务状态未变",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B3 管理员可取消（特权面不受归属限制）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B4 UHP 属主创建执行记录",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B4 非属主读他人执行记录 → 404（不泄露存在性）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B4 非属主取消他人执行记录 → 404/403",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B4 属主可读自己的执行记录",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B5 发起方/管理员可见任务正文",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B5 治理读观察员看他人任务 → contentRedacted=true 且正文被省略",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B5 脱敏视图保留状态骨架（state/agentSlug 仍可见）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B5 REST 与 RPC tasks/get 脱敏口径一致（Q-29）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B6 夹具：隔离组织账号就绪",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B6 隔离组织对跨组织协作数据零可见（目录/任务/履约/harness/执行记录）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B7 发起人本人验收自己任务 → 403（职责分离）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B7 非发起人持 a2a.task.accept 可验收（200）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B7 非 completed 任务拒绝验收（400）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B7 验收理由必填（空理由 400）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B8 OBO 令牌 scope 含 agent.a2a.invoke（Q-6 修复）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B8 人类经 OBO 令牌发起协作成功（不再因 scope 缺失被拒）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B8 外部直调伪造 ybk_on_behalf_user（不存在用户）→ 不采信不入账",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B9 异常令牌矩阵：无/坏令牌 401，错作用域 403，零 5xx",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B9 异常令牌矩阵无任何放行（200）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B10 拒绝路径审计留痕可回查（authz.denied 或等价事件）",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "group": "B",
+      "name": "B10 审计日志可用 taskId/responseId 反查（取消留痕 Q-25）",
+      "pass": true,
+      "detail": ""
+    }
+  ]
+}

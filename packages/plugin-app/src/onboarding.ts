@@ -105,7 +105,12 @@ curl -s ${origin}/api/apps/${app.id}/org-sync -H "Authorization: Bearer <token>"
 - 接入文档索引：GET ${origin}/docs（app-sso-integration.md、app-org-sync.md、app-rbac-guide.md、app-onboarding.md 等）
 - 自身资料与指标复核：GET / PATCH ${origin}/api/apps/${app.id}（app.read/app.write）
 - 上线申请：POST ${origin}/api/apps/${app.id}/transition（进入审批流，禁止绕过审批改状态）
-- MCP 工具网关：mcp.invoke 调用平台已部署 MCP 服务；Skill/Agent 目录：skill.read / agent.read 浏览
+- MCP 服务级数据面（调用平台已部署 MCP 服务的标准路径，MCP 治理 W2）：先用机器凭证换服务级委托令牌
+  POST ${origin}/api/authn/token/exchange -d '{"audience":"mcp:service:<服务slug>"}' 取 access_token，
+  再 POST ${origin}/mcp/services/<服务slug>（标准 JSON-RPC：initialize / tools/list / tools/call；
+  tools/list 按本应用权限过滤，未授权工具不出现；错误按 error.data.code 处理）；
+  别名 POST ${origin}/mcp/s/<服务ID> 等价；mcp_invoke（/api/mcp/invoke）仅为兼容层，行为不变
+- Skill/Agent 目录：skill.read / agent.read 浏览
 - 组织架构同步（默认自助）：GET ${origin}/api/apps/${app.id}/org-sync（组织树/成员/负责人，见第 3 步·附 2）
 - 全员名册（含 email，人事/绩效类应用）：GET ${origin}/api/iam/roster
   （users[].id=sub 同一关联键、orgs[].leaderUserIds=部门负责人；默认凭证不含，需管理员为凭证追加 iam.roster.read scope）
@@ -115,7 +120,10 @@ curl -s ${origin}/api/apps/${app.id}/org-sync -H "Authorization: Bearer <token>"
 ${secretNote}
 2. 幂等：重名注册返回 400「已存在」时，按名称查列表复用既有资源。
 3. 失败锁定：换牌连续失败 5 次锁来源 IP 15 分钟，重试前先核对凭证。
-4. 数据权限红线：应用代用户操作 NAS 文件等平台数据面接口时，用户身份一律经
-   X-On-Behalf-User 请求头透传（禁止进参数/路径）；越权响应（-32403 数据权限拒绝）原文透传给用户，
-   degraded.* 前缀表示平台短暂不可达已降级，提示稍后重试。`
+4. 数据权限归因（MCP 治理 W1 降级表述，原「数据权限红线」）：应用代用户操作 NAS 文件等平台
+   数据面接口时，请求头 X-On-Behalf-User: <平台 userId 或钉钉 userId> 仅作调用归因（审计口径），
+   不是授权事实——授权一律以令牌及其委托链为准；该头仍禁止进参数/路径，未授权令牌携带一律
+   403 FORGED_ON_BEHALF（防伪造，留痕）；需要代用户操作时改用委托令牌（POST /api/authn/token/exchange）。
+   越权响应（-32403 数据权限拒绝）原文透传给用户，
+   degraded.* 前缀表示平台短暂不可达已降级，提示用户稍后重试。`
 }

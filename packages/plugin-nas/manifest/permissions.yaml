@@ -6,4 +6,3 @@ points:
   - nas.authz.read
   - nas.authz.write
   - nas.authz.check
-  - nas.ownership.write

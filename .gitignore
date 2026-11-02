@@ -9,6 +9,15 @@ service.log
 dsh-run.log
 dev-*.log
 dsh-web-*.log
+logs/
+
+# macOS Finder 元数据文件
+.DS_Store
+**/.DS_Store
+
+# 私钥与证书：一律运行期生成落 data 目录，不入库（QA 夹具签名钥同理）
+*.pem
+
 .zcode/
 .workbuddy/
 cordis.local.yml

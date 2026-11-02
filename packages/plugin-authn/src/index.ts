@@ -15,7 +15,8 @@ import {
   PlatformEvents, generateSecret, newId, sha256Hex,
   type Collection, type RecordBase,
 } from '../../platform-core/src/index.ts'
-import { PermissionCatalog } from '../../plugin-iam/src/index.ts'
+import { PermissionCatalog, SYSTEM_ACTOR } from '../../plugin-iam/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 import * as authnTools from './tools.ts'
 import { OidcService } from './oidc.ts'
 import { EntryTicketService } from './entry-ticket.ts'
@@ -72,6 +73,12 @@ export interface TokenRecord extends RecordBase {
   rotatedAt?: string
   /** 宽限窗口内的兑换次数（多标签页互踩自愈计数，超过上限拒绝且不再签发）。 */
   graceRedemptions?: number
+  /** 委托令牌增量（MCP 治理契约 §3）：被代理用户（sub=该用户的委托链，冻结即联动吊销）。 */
+  delegatedUserId?: string
+  /** 委托令牌增量（MCP 治理契约 §3）：受众快照（mcp:service:<slug> / plugin:<id>）。 */
+  delegationAudience?: string
+  /** 个人接入令牌备注（员工自助 MCP 配置签发，additive；非该通道签发不下发）。 */
+  label?: string
 }
 
 /** OAuth state 记录（防 CSRF，一次性消费）。 */
@@ -122,6 +129,36 @@ const REFRESH_GRACE_MAX_REDEMPTIONS = 10
 /** 旧签名密钥的验签宽限期：轮换后旧令牌在窗口内仍可验证，宽限期后自然失效（评审 S2）。 */
 const SECRET_GRACE_MS = 24 * 3600_000
 
+/** 委托令牌 TTL（MCP 治理契约 §3）：默认 900s，上限 3600s。 */
+const DELEGATION_TTL_DEFAULT_SECONDS = 900
+const DELEGATION_TTL_MAX_SECONDS = 3600
+/** act 链（human 之后）跳数上限：超限拒绝（防委托链无限叠加）。 */
+const DELEGATION_CHAIN_MAX_JUMPS = 4
+
+/**
+ * 委托授权事实校验钩子（fail-closed）：由宿主（console 装配时）注入——
+ * 查 agent bindings / app owner / iam 管理员。未注入时 exchangeDelegatedToken 一律拒绝
+ * （DELEGATION_GUARD_UNAVAILABLE），绝不静默放行。
+ */
+export interface DelegationGuardInput {
+  /** 委托 subject 用户（机器调用者必带；人类调用者缺省为调用者本人） */
+  userId?: string
+  /** 目标 principal（人类调用者为其签发 OBO 委托的 agent/app 主体） */
+  targetPrincipalId?: string
+  caller: { principalId: string; kind: string; refType?: string; refId?: string }
+}
+
+export type DelegationGuardFn = (input: DelegationGuardInput) => Promise<boolean> | boolean
+
+/** 委托交换领域错误（带稳定原因码，REST 面据此映射 HTTP 状态与 extra.reason）。 */
+export class DelegationError extends Error {
+  readonly code: string
+  constructor(code: string, message: string) {
+    super(message)
+    this.code = code
+  }
+}
+
 /** 登录失败锁定策略（评审 S3）：窗口内连续失败达阈值即锁定，时长逐次升级。 */
 const LOGIN_MAX_FAILS = 5
 const LOGIN_WINDOW_MS = 15 * 60_000
@@ -145,7 +182,11 @@ export class AuthnService extends Service {
   /** 已退役但仍在宽限期内的签名密钥（验签兼容旧令牌）。 */
   private retiredSecrets: Array<{ secret: string; retiredAt: number }> = []
   private refreshIndex = new Map<string, string>()
+  /** 授权页预检结果缓存（key=provider|configId|redirectUri；2 分钟）：登录页每次点击不再多打一次 IdP。 */
+  private authorizeProbeCache = new Map<string, { at: number; ok: boolean; code?: string; message?: string }>()
   private cleanupTimer: ReturnType<typeof setInterval> | undefined
+  /** 委托授权事实钩子（宿主注入；缺席=委托交换一律拒绝，fail-closed）。 */
+  private delegationGuard: DelegationGuardFn | undefined
 
   constructor(ctx: Context) {
     super(ctx, 'authn')
@@ -170,25 +211,40 @@ export class AuthnService extends Service {
     this.cleanupExpiredTokens()
     this.cleanupTimer = setInterval(() => this.cleanupExpiredTokens(), 3600_000)
     this.cleanupTimer.unref?.() // OPT-P3-02：嵌入/测试形态允许进程自然退出
-    ctx.effect(() => {
+    ctx.effect(() => () => {
       if (this.cleanupTimer) clearInterval(this.cleanupTimer)
     })
     // 事件联动：账号冻结 → 吊销全部令牌；Agent 下线 → 吊销机器凭证
     ctx.platformBus.on(PlatformEvents.UserFrozen, (payload) => {
       const { userId, reason } = payload as { userId: string; reason: string }
+      // 委托令牌联动（MCP 治理契约 §3）：sub=该用户的全部委托令牌即时失效
+      // （先于主体清扫执行以获得专属 reason；reason 机器可检索，便于审计区分链路）
+      for (const token of this.tokens().find((item) => item.delegatedUserId === userId && !item.revokedAt)) {
+        this.revokeToken(token.jti, 'user-frozen-delegation')
+      }
       const principal = this.humanPrincipal(userId)
-      if (principal) this.revokePrincipalTokens(principal.id, `账号冻结联动：${reason}`)
+      if (principal) this.revokePrincipalTokens(principal.id, t('账号冻结联动：{reason}', { reason }))
+    })
+    // 口令重置联动（安全审查 P1-08，2026-10-31）：重置后既有 access/refresh 全部吊销——
+    // 旧 refresh 不得再换新令牌；sub=该用户的委托令牌同批失效。可审计（吊销原因机器可检索）。
+    ctx.platformBus.on(PlatformEvents.UserPasswordReset, (payload) => {
+      const { userId } = payload as { userId: string }
+      for (const token of this.tokens().find((item) => item.delegatedUserId === userId && !item.revokedAt)) {
+        this.revokeToken(token.jti, 'password-reset-delegation')
+      }
+      const principal = this.humanPrincipal(userId)
+      if (principal) this.revokePrincipalTokens(principal.id, t('口令重置联动：既有会话全部失效，请重新登录'))
     })
     ctx.platformBus.on(PlatformEvents.AgentOfflined, (payload) => {
       const { id } = payload as { id: string }
       for (const principal of this.principals().find((item) => item.refType === 'agent' && item.refId === id)) {
-        this.disablePrincipal(principal.id, 'Agent 下线联动')
+        this.disablePrincipal(principal.id, t('Agent 下线联动'))
       }
     })
     ctx.platformBus.on(PlatformEvents.AppOfflined, (payload) => {
       const { id } = payload as { id: string }
       for (const principal of this.principals().find((item) => item.refType === 'app' && item.refId === id)) {
-        this.disablePrincipal(principal.id, '应用下线联动')
+        this.disablePrincipal(principal.id, t('应用下线联动'))
       }
     })
   }
@@ -249,9 +305,9 @@ export class AuthnService extends Service {
     const hash = sha256Hex(refreshToken)
     const recordId = this.refreshIndex.get(hash)
     const record = recordId ? this.tokens().get(recordId) : undefined
-    if (!record || record.kind !== 'refresh') throw new Error('refresh token 无效')
-    if (record.revokedAt) throw new Error('refresh token 已吊销：' + (record.revokedReason ?? ''))
-    if (new Date(record.expiresAt).getTime() < Date.now()) throw new Error('refresh token 已过期，请重新登录')
+    if (!record || record.kind !== 'refresh') throw new Error(t('refresh token 无效'))
+    if (record.revokedAt) throw new Error(t('refresh token 已吊销：{reason}', { reason: record.revokedReason ?? '' }))
+    if (new Date(record.expiresAt).getTime() < Date.now()) throw new Error(t('refresh token 已过期，请重新登录'))
     if (record.rotatedAt) {
       const rotatedAtMs = new Date(record.rotatedAt).getTime()
       const withinGrace = Date.now() - rotatedAtMs <= REFRESH_GRACE_MS
@@ -267,10 +323,10 @@ export class AuthnService extends Service {
         }
         // 窗口内超限：仅拒绝该次请求（bounded minting 兜底），不牵连整链——多标签风暴的第
         // N+1 个标签退化为重新登录，已签发的兄弟对不受影响。
-        throw new Error(`refresh token 宽限兑换已达上限（${REFRESH_GRACE_MAX_REDEMPTIONS} 次），请重新登录`)
+        throw new Error(t('refresh token 宽限兑换已达上限（{n} 次），请重新登录', { n: REFRESH_GRACE_MAX_REDEMPTIONS }))
       }
-      this.revokeChain(record.chainId ?? '', 'refresh token 重放检测（原轮转于 ' + record.rotatedAt + '）')
-      throw new Error('检测到 refresh token 重放：该会话整链已吊销，请重新登录')
+      this.revokeChain(record.chainId ?? '', t('refresh token 重放检测（原轮转于 {at}）', { at: record.rotatedAt }))
+      throw new Error(t('检测到 refresh token 重放：该会话整链已吊销，请重新登录'))
     }
     this.tokens().update(record.id, { rotatedAt: new Date().toISOString() })
     return this.issueSessionPair(record.principalId, {
@@ -311,13 +367,13 @@ export class AuthnService extends Service {
    * options.configId 指定多主体连接器实例：按其适配器发起授权并记入 state，回调按实例解析。
    * options.promptConsent=true 时强制 IdP 弹授权确认页（刷新老用户授权快照，见 providers.ts）。
    */
-  async beginSso(provider: string, scene: 'web_qr' | 'h5' | 'in_app', origin?: string, options: { purpose?: 'login' | 'bind'; userId?: string; configId?: string; promptConsent?: boolean } = {}): Promise<{ authorizeUrl: string | null; state: string }> {
+  async beginSso(provider: string, scene: 'web_qr' | 'h5' | 'in_app', origin?: string, options: { purpose?: 'login' | 'bind'; userId?: string; configId?: string; promptConsent?: boolean } = {}): Promise<{ authorizeUrl: string | null; state: string; blocked?: { code: string; message: string } }> {
     // 多主体：指定 configId 时按配置实例取适配器并校验平台类型一致，否则取该 provider 第一个（旧行为）
     const adapter = options.configId !== undefined
       ? this.ctx.iam.getAuthProviderByConfig(options.configId)
       : this.ctx.iam.getAuthProvider(provider)
     if (options.configId !== undefined && adapter.type !== provider) {
-      throw new Error(`连接器实例（${options.configId}）平台类型 ${adapter.type} 与请求 provider ${provider} 不一致`)
+      throw new Error(t('连接器实例（{configId}）平台类型 {type} 与请求 provider {provider} 不一致', { configId: options.configId, type: adapter.type, provider }))
     }
     const state = randomUUID().replace(/-/g, '')
     this.oauthStates().insert({
@@ -335,7 +391,20 @@ export class AuthnService extends Service {
       ? this.ctx.iam.connectorConfigById(options.configId)?.callbackUrl
       : this.ctx.iam.connectorConfig(provider)?.callbackUrl)?.trim()
     const redirectUri = configured || (origin ? `${origin.replace(/\/+$/, '')}/api/auth/sso/callback` : '/api/auth/sso/callback')
-    return { authorizeUrl: await adapter.buildAuthorizeUrl(scene, state, redirectUri, { promptConsent: options.promptConsent ?? false }), state }
+    const authorizeUrl = await adapter.buildAuthorizeUrl(scene, state, redirectUri, { promptConsent: options.promptConsent ?? false })
+    // 应用级拒绝预检（钉钉 900103「应用不存在」）：与其把用户整页送到一张只能关掉的错误页，
+    // 不如在登录页给出「去钉钉开发者后台开哪一项」的指引。预检失败不阻断（网络异常按放行处理）。
+    let blocked: { code: string; message: string } | undefined
+    if (authorizeUrl && adapter.probeAuthorize) {
+      const cacheKey = `${provider}|${options.configId ?? ''}|${redirectUri}`
+      const cached = this.authorizeProbeCache.get(cacheKey)
+      const probe = cached && Date.now() - cached.at < 120_000
+        ? cached
+        : { at: Date.now(), ...(await adapter.probeAuthorize(redirectUri).catch(() => ({ ok: true }))) }
+      this.authorizeProbeCache.set(cacheKey, probe)
+      if (!probe.ok) blocked = { code: probe.code ?? 'AUTHORIZE_BLOCKED', message: probe.message ?? '' }
+    }
+    return { authorizeUrl, state, ...(blocked ? { blocked } : {}) }
   }
 
   /**
@@ -344,10 +413,10 @@ export class AuthnService extends Service {
    */
   async completeSso(provider: string, code: string, state: string): Promise<{ kind: 'hit'; session: { token: string; refreshToken: string; access: TokenRecord; sid: string }; userId: string } | { kind: 'pending'; pendingTicket: string; profileName: string }> {
     const stateRecord = this.oauthStates().get(state)
-    if (!stateRecord) throw new Error('state 无效（未发起授权或已消费）')
-    if (stateRecord.consumedAt) throw new Error('state 已被使用（防重放）')
-    if (stateRecord.purpose === 'bind') throw new Error('state 用途为账号绑定，不能用于登录')
-    if (Date.now() - new Date(stateRecord.createdAt).getTime() > 10 * 60_000) throw new Error('state 已过期')
+    if (!stateRecord) throw new Error(t('state 无效（未发起授权或已消费）'))
+    if (stateRecord.consumedAt) throw new Error(t('state 已被使用（防重放）'))
+    if (stateRecord.purpose === 'bind') throw new Error(t('state 用途为账号绑定，不能用于登录'))
+    if (Date.now() - new Date(stateRecord.createdAt).getTime() > 10 * 60_000) throw new Error(t('state 已过期'))
     this.oauthStates().update(state, { consumedAt: new Date().toISOString() })
 
     // 多主体：以 state 记录为准（provider 参数仅兼容旧调用）；configId 命中时按配置实例取适配器
@@ -362,8 +431,8 @@ export class AuthnService extends Service {
     const link = this.ctx.iam.findLinkByProfile(ssoProvider, profile.providerUserId, profile.corpId)
     if (link) {
       const user = this.ctx.iam.users().get(link.userId)
-      if (!user) throw new Error('身份链接指向的账号不存在')
-      if (user.status !== 'active') throw new Error('账号状态异常，无法登录')
+      if (!user) throw new Error(t('身份链接指向的账号不存在'))
+      if (user.status !== 'active') throw new Error(t('账号状态异常，无法登录'))
       const principal = this.ensureHumanPrincipal(user.id, user.displayName)
       const session = this.issueSessionPair(principal.id, { issuedBy: 'sso:' + ssoProvider })
       this.ctx.iam.markLogin(user.id)
@@ -389,7 +458,7 @@ export class AuthnService extends Service {
   /** 读取 state 记录的用途（回调路由分发用；不消费）。 */
   peekOAuthState(state: string): { provider: string; purpose: 'login' | 'bind'; userId?: string; configId?: string } {
     const record = this.oauthStates().get(state)
-    if (!record) throw new Error('state 无效（未发起授权或已消费）')
+    if (!record) throw new Error(t('state 无效（未发起授权或已消费）'))
     return {
       provider: record.provider,
       purpose: record.purpose ?? 'login',
@@ -405,11 +474,11 @@ export class AuthnService extends Service {
    */
   async completeSsoBind(code: string, state: string): Promise<{ userId: string; provider: string; displayName: string; providerUserId: string }> {
     const stateRecord = this.oauthStates().get(state)
-    if (!stateRecord) throw new Error('state 无效（未发起授权或已消费）')
-    if (stateRecord.consumedAt) throw new Error('state 已被使用（防重放）')
-    if ((stateRecord.purpose ?? 'login') !== 'bind') throw new Error('state 用途不是账号绑定')
-    if (!stateRecord.userId) throw new Error('绑定目标账号缺失，请重新发起绑定')
-    if (Date.now() - new Date(stateRecord.createdAt).getTime() > 10 * 60_000) throw new Error('state 已过期')
+    if (!stateRecord) throw new Error(t('state 无效（未发起授权或已消费）'))
+    if (stateRecord.consumedAt) throw new Error(t('state 已被使用（防重放）'))
+    if ((stateRecord.purpose ?? 'login') !== 'bind') throw new Error(t('state 用途不是账号绑定'))
+    if (!stateRecord.userId) throw new Error(t('绑定目标账号缺失，请重新发起绑定'))
+    if (Date.now() - new Date(stateRecord.createdAt).getTime() > 10 * 60_000) throw new Error(t('state 已过期'))
     this.oauthStates().update(state, { consumedAt: new Date().toISOString() })
 
     // 多主体：state 携带 configId 时按配置实例取适配器，否则取该 provider 第一个（旧行为）
@@ -421,14 +490,14 @@ export class AuthnService extends Service {
     const profile = adapter.normalizeProfile(raw)
 
     const user = this.ctx.iam.users().get(stateRecord.userId)
-    if (!user) throw new Error('绑定目标账号不存在')
-    if (user.status === 'deactivated') throw new Error('绑定目标账号已注销')
+    if (!user) throw new Error(t('绑定目标账号不存在'))
+    if (user.status === 'deactivated') throw new Error(t('绑定目标账号已注销'))
     const existing = this.ctx.iam.findLinkByProfile(stateRecord.provider, profile.providerUserId, profile.corpId)
     if (existing && existing.userId !== user.id) {
-      throw new Error('该钉钉身份已绑定其他平台账号（一人一号）')
+      throw new Error(t('该钉钉身份已绑定其他平台账号（一人一号）'))
     }
     if (user.bindings.some((item) => item.provider === stateRecord.provider) && !existing) {
-      throw new Error('该账号已绑定钉钉身份，请先解绑再重新绑定')
+      throw new Error(t('该账号已绑定钉钉身份，请先解绑再重新绑定'))
     }
     if (!existing) {
       this.ctx.iam.linkIdentity(user.id, {
@@ -472,15 +541,15 @@ export class AuthnService extends Service {
     const ticket = this.consumeTicket(pendingTicket)
     void ticket
     const defaultOrg = this.ctx.iam.orgs().all()[0]
-    if (!defaultOrg) throw new Error('平台尚未初始化组织，无法注册')
+    if (!defaultOrg) throw new Error(t('平台尚未初始化组织，无法注册'))
     const username = ticket.provider + '_' + (ticket.profile['providerUserId'] ?? '')
     const { user } = this.ctx.iam.createUser({
       username,
       displayName: ticket.profile['name'] ?? username,
       orgId: defaultOrg.id,
       email: ticket.profile['email'],
-    })
-    this.ctx.iam.activateUser(user.id)
+    }, SYSTEM_ACTOR)
+    this.ctx.iam.activateUser(user.id, SYSTEM_ACTOR)
     this.ctx.iam.linkIdentity(user.id, {
       provider: ticket.provider as 'dingtalk',
       providerUserId: ticket.profile['providerUserId'] ?? '',
@@ -496,17 +565,17 @@ export class AuthnService extends Service {
   /** 读取票据（不消费）。 */
   private peekTicket(pendingTicket: string): { provider: string; profile: Record<string, string> } {
     const ticket = this.ssoTickets().get(pendingTicket)
-    if (!ticket) throw new Error('待绑定票据无效')
-    if (ticket.usedAt) throw new Error('票据已被使用')
-    if (new Date(ticket.expiresAt).getTime() < Date.now()) throw new Error('票据已过期，请重新发起授权')
+    if (!ticket) throw new Error(t('待绑定票据无效'))
+    if (ticket.usedAt) throw new Error(t('票据已被使用'))
+    if (new Date(ticket.expiresAt).getTime() < Date.now()) throw new Error(t('票据已过期，请重新发起授权'))
     return { provider: ticket.provider, profile: ticket.profile }
   }
 
   private consumeTicket(pendingTicket: string): { provider: string; profile: Record<string, string> } {
     const ticket = this.ssoTickets().get(pendingTicket)
-    if (!ticket) throw new Error('待绑定票据无效')
-    if (ticket.usedAt) throw new Error('票据已被使用')
-    if (new Date(ticket.expiresAt).getTime() < Date.now()) throw new Error('票据已过期，请重新发起授权')
+    if (!ticket) throw new Error(t('待绑定票据无效'))
+    if (ticket.usedAt) throw new Error(t('票据已被使用'))
+    if (new Date(ticket.expiresAt).getTime() < Date.now()) throw new Error(t('票据已过期，请重新发起授权'))
     this.ssoTickets().update(pendingTicket, { usedAt: new Date().toISOString() })
     return { provider: ticket.provider, profile: ticket.profile }
   }
@@ -614,7 +683,7 @@ export class AuthnService extends Service {
   }): { principal: PrincipalRecord; clientId: string; clientSecret: string } {
     this.assertMachineScopes(input.scopes)
     this.assertMachineRoles(input.roleIds ?? [])
-    if ((input.roleIds ?? []).length === 0 && input.scopes.length === 0) throw new Error('授权不能为空：至少选择机器角色或附加权限点')
+    if ((input.roleIds ?? []).length === 0 && input.scopes.length === 0) throw new Error(t('授权不能为空：至少选择机器角色或附加权限点'))
     const clientId = `mc-${newId('id').slice(3)}`
     const clientSecret = generateSecret('cs')
     const principal = this.principals().insert({
@@ -634,27 +703,46 @@ export class AuthnService extends Service {
 
   disablePrincipal(id: string, reason: string): PrincipalRecord {
     const principal = this.principals().get(id)
-    if (!principal) throw new Error(`身份不存在：${id}`)
+    if (!principal) throw new Error(t('身份不存在：{id}', { id }))
     this.revokePrincipalTokens(id, reason)
     return this.principals().update(id, { status: 'disabled' })
   }
 
-  /** 校验机器身份附加权限点：恰为 ['*'] 或全部命中权限目录（防拼错，如 usage.wrtie）；可空（授权可全部来自机器角色）。 */
+  /** 校验机器身份附加权限点：恰为 ['*'] 或全部命中权限目录（防拼错，如 usage.wrtie）；可空（授权可全部来自机器角色）。
+   *  W3-T5（契约 §12）增量：接受资源限定 MCP scope 形态——mcp.service:<slug>.invoke / mcp.tool:<slug>:<tool>.invoke，
+   *  校验前缀形态 + （端口已接线时）slug 对应服务存在；其余规则（权限目录命中/'*' 唯一）不变。 */
   private assertMachineScopes(scopes: string[]): void {
     if (scopes.length === 0) return
     if (scopes.includes('*')) {
-      if (scopes.length !== 1) throw new Error("'*' 不可与其他权限点混用")
+      if (scopes.length !== 1) throw new Error(t("'*' 不可与其他权限点混用"))
       return
     }
     const catalog = new Set(PermissionCatalog.map((item) => item.point))
-    const invalid = scopes.filter((scope) => !catalog.has(scope))
-    if (invalid.length > 0) throw new Error(`非法权限点：${invalid.join('、')}（须为权限目录中的点，或仅 '*'）`)
+    const invalid = scopes.filter((scope) => !catalog.has(scope) && !this.validResourceScopedMcpScope(scope))
+    if (invalid.length > 0) throw new Error(t('非法权限点：{points}（须为权限目录中的点、资源限定 mcp.service:/mcp.tool: 形态，或仅 \'*\'）', { points: invalid.join('、') }))
+  }
+
+  /** 资源限定 MCP scope 存在性端口（W3-T5）：宿主（console 装配处）可注入 slug 存在性回调；未接线=仅形态校验（可选端口口径）。 */
+  private mcpServiceExists: ((slug: string) => boolean) | undefined
+
+  /** 注册资源限定 scope 的服务存在性回调（slug → 是否存在）；传 undefined 恢复仅形态校验。 */
+  setMcpServiceExistsCheck(fn: ((slug: string) => boolean) | undefined): void {
+    this.mcpServiceExists = fn
+  }
+
+  /** 资源限定 MCP scope 形态校验（契约 §12）：mcp.service:<slug>.invoke / mcp.tool:<slug>:<tool>.invoke；slug 存在性端口已接线时强校验。 */
+  private validResourceScopedMcpScope(scope: string): boolean {
+    const service = /^mcp\.service:([^:\s]+)\.invoke$/.exec(scope)
+    if (service) return this.mcpServiceExists ? this.mcpServiceExists(service[1]!) : true
+    const tool = /^mcp\.tool:([^:\s]+):([^:\s]+)\.invoke$/.exec(scope)
+    if (tool) return this.mcpServiceExists ? this.mcpServiceExists(tool[1]!) : true
+    return false
   }
 
   /** 校验机器角色引用：角色必须真实存在（共用 iam:roles 存储）。 */
   private assertMachineRoles(roleIds: string[]): void {
     for (const roleId of roleIds) {
-      if (!this.ctx.iam.roles().get(roleId)) throw new Error(`机器角色不存在：${roleId}`)
+      if (!this.ctx.iam.roles().get(roleId)) throw new Error(t('机器角色不存在：{id}', { id: roleId }))
     }
   }
 
@@ -669,29 +757,29 @@ export class AuthnService extends Service {
   /** 调整机器身份授权（机器角色 / 附加权限点）；联动吊销全部存量令牌（收权即时生效，下次换牌按新范围签发）。 */
   updateMachineScopes(id: string, patch: { roleIds?: string[]; scopes?: string[] }): PrincipalRecord {
     const principal = this.principals().get(id)
-    if (!principal) throw new Error(`身份不存在：${id}`)
-    if (principal.type !== 'machine') throw new Error('仅机器身份支持调整权限范围')
+    if (!principal) throw new Error(t('身份不存在：{id}', { id }))
+    if (principal.type !== 'machine') throw new Error(t('仅机器身份支持调整权限范围'))
     const roleIds = patch.roleIds ?? principal.roleIds ?? []
     const scopes = patch.scopes ?? principal.scopes
     this.assertMachineScopes(scopes)
     this.assertMachineRoles(roleIds)
-    if (roleIds.length === 0 && scopes.length === 0) throw new Error('授权不能为空：至少保留机器角色或附加权限点')
+    if (roleIds.length === 0 && scopes.length === 0) throw new Error(t('授权不能为空：至少保留机器角色或附加权限点'))
     const updated = this.principals().update(id, {
       ...(patch.roleIds !== undefined ? { roleIds } : {}),
       ...(patch.scopes !== undefined ? { scopes } : {}),
     })
-    this.revokePrincipalTokens(id, '权限范围调整联动')
+    this.revokePrincipalTokens(id, t('权限范围调整联动'))
     return updated
   }
 
   /** 轮换机器凭证密钥：clientId 不变，旧 secret 立即失效，存量令牌全部吊销；新 secret 仅此一次返回。 */
   rotateMachineCredential(id: string): { principal: PrincipalRecord; clientSecret: string } {
     const principal = this.principals().get(id)
-    if (!principal) throw new Error(`身份不存在：${id}`)
-    if (principal.type !== 'machine' || !principal.clientId) throw new Error('仅机器凭证（clientId/clientSecret）支持轮换')
+    if (!principal) throw new Error(t('身份不存在：{id}', { id }))
+    if (principal.type !== 'machine' || !principal.clientId) throw new Error(t('仅机器凭证（clientId/clientSecret）支持轮换'))
     const clientSecret = generateSecret('cs')
     const updated = this.principals().update(id, { clientSecretHash: sha256Hex(clientSecret) })
-    this.revokePrincipalTokens(id, '凭证轮换联动')
+    this.revokePrincipalTokens(id, t('凭证轮换联动'))
     return { principal: updated, clientSecret }
   }
 
@@ -715,7 +803,7 @@ export class AuthnService extends Service {
     const remainMs = new Date(record.lockedUntil).getTime() - Date.now()
     if (remainMs > 0) {
       const minutes = Math.ceil(remainMs / 60_000)
-      throw new Error(`失败次数过多已锁定：请约 ${minutes} 分钟后重试（或联系管理员重置）`)
+      throw new Error(t('失败次数过多已锁定：请约 {minutes} 分钟后重试（或联系管理员重置）', { minutes }))
     }
   }
 
@@ -741,8 +829,8 @@ export class AuthnService extends Service {
       patch.lockedUntil = new Date(now + lockMs).toISOString()
       patch.fails = 0
       this.ctx.platformBus.emit(PlatformEvents.AlertFired, {
-        id: newId('alt'), severity: 'warning', title: '登录失败锁定触发',
-        message: `主体 ${key} 在 ${LOGIN_WINDOW_MS / 60_000} 分钟内连续失败 ${LOGIN_MAX_FAILS} 次，锁定 ${Math.round(lockMs / 60_000)} 分钟（暴力破解防护）`,
+        id: newId('alt'), severity: 'warning', title: t('登录失败锁定触发'),
+        message: t('主体 {key} 在 {window} 分钟内连续失败 {maxFails} 次，锁定 {lockMinutes} 分钟（暴力破解防护）', { key, window: LOGIN_WINDOW_MS / 60_000, maxFails: LOGIN_MAX_FAILS, lockMinutes: Math.round(lockMs / 60_000) }),
         resourceType: 'authn', resourceId: key,
       })
     }
@@ -779,10 +867,10 @@ export class AuthnService extends Service {
     const principal = this.principals().findOne((item) => item.clientId === clientId)
     if (!principal || principal.clientSecretHash !== sha256Hex(clientSecret)) {
       this.recordLoginFailure(throttleKey)
-      throw new Error('client_id 或 client_secret 错误')
+      throw new Error(t('client_id 或 client_secret 错误'))
     }
     this.recordLoginSuccess(throttleKey)
-    if (principal.status !== 'active') throw new Error('机器身份已禁用')
+    if (principal.status !== 'active') throw new Error(t('机器身份已禁用'))
     const { token, record } = this.issueToken(principal.id, {
       kind: 'machine',
       ttlHours: 2,
@@ -804,16 +892,21 @@ export class AuthnService extends Service {
     issuedBy?: string
     sid?: string
     chainId?: string
+    /** 委托令牌增量（MCP 治理契约 §3）：被代理用户 / 受众快照（缺省不产出，存量行为不变）。 */
+    delegatedUserId?: string
+    delegationAudience?: string
+    /** 个人接入令牌备注（员工自助 MCP 配置通道，落 TokenRecord 供列表自见）。 */
+    label?: string
   }): { token: string; record: TokenRecord } {
     const principal = this.principals().get(principalId)
-    if (!principal) throw new Error(`身份不存在：${principalId}`)
-    if (principal.status !== 'active') throw new Error('身份已禁用，无法签发令牌')
+    if (!principal) throw new Error(t('身份不存在：{id}', { id: principalId }))
+    if (principal.status !== 'active') throw new Error(t('身份已禁用，无法签发令牌'))
     // 插件受众收敛面（v1.2 第 1 步）：aud 为 plugin:<id> 时，scope 必须全部落在该插件命名空间内
     if (options.audience?.startsWith('plugin:')) {
       const namespace = `${options.audience}:`
       const offender = (options.scopes ?? []).find((scope) => scope !== '*' && !scope.startsWith(namespace))
       if (offender !== undefined) {
-        throw new Error(`插件令牌 scope 越界：${offender} 不在命名空间 ${namespace} 内`)
+        throw new Error(t('插件令牌 scope 越界：{scope} 不在命名空间 {namespace} 内', { scope: offender, namespace }))
       }
     }
     const jti = randomUUID()
@@ -847,14 +940,140 @@ export class AuthnService extends Service {
       issuedBy: options.issuedBy ?? 'api',
       ...(options.sid !== undefined ? { sid: options.sid } : {}),
       ...(options.chainId !== undefined ? { chainId: options.chainId } : {}),
+      ...(options.delegatedUserId !== undefined ? { delegatedUserId: options.delegatedUserId } : {}),
+      ...(options.delegationAudience !== undefined ? { delegationAudience: options.delegationAudience } : {}),
+      ...(options.label !== undefined ? { label: options.label } : {}),
     })
     return { token, record }
+  }
+
+  /**
+   * 委托令牌交换（MCP 治理契约 §3，RFC 8693 语义子集）：
+   *   - 人类调用者：可为目标 agent/app principal 签发 OBO 委托令牌（sub=用户，act=调用者+目标）；
+   *   - 机器调用者（agent/app 凭证）：仅可携带 userId 换取 sub=该用户 的委托令牌（act=调用者主体）；
+   *   - 授权事实校验 fail-closed：delegationGuard 未注入一律拒绝（DELEGATION_GUARD_UNAVAILABLE）；
+   *   - audience 强校验：必须 mcp:service:<slug> 或 plugin:<id> 形态（复用 issueToken 既有收敛）；
+   *   - scopes = 请求 ∩ 调用者 scopes ∩ 目标 principal scopes（verify 侧 delegate: 前缀二次夹紧）；
+   *   - TTL 默认 900s 上限 3600s；act 链（human 之后）跳数 ≤ 4。
+   * issueOnBehalfOf 保留不动（旧链路兼容）。
+   */
+  async exchangeDelegatedToken(input: {
+    caller: VerifiedPrincipal
+    userId?: string
+    targetPrincipalId?: string
+    audience: string
+    scopes?: string[]
+    ttlSeconds?: number
+  }): Promise<{ token: string; record: TokenRecord }> {
+    if (!this.delegationGuard) {
+      throw new DelegationError('DELEGATION_GUARD_UNAVAILABLE', t('委托授权钩子未装配（fail-closed），令牌交换被拒绝'))
+    }
+    // audience 形态强校验：仅接受服务级 MCP 与插件命名空间两种形态
+    const audience = String(input.audience ?? '')
+    if (!(audience.startsWith('mcp:service:') && audience.length > 'mcp:service:'.length)
+      && !(audience.startsWith('plugin:') && audience.length > 'plugin:'.length)) {
+      throw new DelegationError('DELEGATION_AUDIENCE_INVALID', t('委托令牌受众必须是 mcp:service:<slug> 或 plugin:<id> 形态'))
+    }
+    const ttlSeconds = Math.min(Math.max(Math.floor(Number(input.ttlSeconds ?? DELEGATION_TTL_DEFAULT_SECONDS)) || DELEGATION_TTL_DEFAULT_SECONDS, 1), DELEGATION_TTL_MAX_SECONDS)
+
+    const caller = input.caller
+    const callerEntry: ActEntry = { principalId: caller.principal.id, name: caller.principal.name, type: caller.principal.type }
+    let subjectPrincipalId: string
+    let subjectUserId: string
+    let actChain: ActEntry[]
+    let targetScopes: string[]
+
+    if (caller.principal.type === 'human') {
+      // 人类调用者：目标 agent/app principal 必填，sub=用户（本人或显式指定的 subject）
+      if (!input.targetPrincipalId) {
+        throw new DelegationError('DELEGATION_TARGET_REQUIRED', t('人类调用者必须指定目标主体（targetPrincipalId，agent/app）'))
+      }
+      const target = this.principals().get(input.targetPrincipalId)
+      if (!target || target.type !== 'machine' || !(target.refType === 'agent' || target.refType === 'app')) {
+        throw new DelegationError('DELEGATION_TARGET_INVALID', t('目标主体不存在或不是 agent/app 机器主体'))
+      }
+      subjectUserId = input.userId ?? caller.principal.refId ?? ''
+      if (!subjectUserId) throw new DelegationError('DELEGATION_USER_REQUIRED', t('调用者令牌缺少用户身份（refId），无法确定委托 subject'))
+      // subject 用户必须真实存在且在册（显式指定他人时校验档案，防拼错主体）
+      const subjectUser = this.ctx.iam.users().get(subjectUserId)
+      if (!subjectUser) throw new DelegationError('DELEGATION_USER_NOT_FOUND', t('委托 subject 用户不存在：{id}', { id: subjectUserId }))
+      if (subjectUser.status !== 'active') throw new DelegationError('DELEGATION_USER_INACTIVE', t('委托 subject 用户状态异常（{status}），拒绝签发', { status: subjectUser.status }))
+      const subjectPrincipal = this.ensureHumanPrincipal(subjectUser.id, subjectUser.displayName)
+      subjectPrincipalId = subjectPrincipal.id
+      actChain = [...caller.actChain, callerEntry, { principalId: target.id, name: target.name, type: target.type }]
+      targetScopes = this.resolveMachineScopes(target)
+    } else {
+      // 机器调用者：两种模式
+      //  ① 自委托（不传 userId/targetPrincipalId）：sub=调用者自身，act 链为空——即计划 §6.2
+      //     「Agent 自身调用」形态（sub=agent:xxx, aud=mcp:service:<slug>）。平台长期机器凭证
+      //     不出域，只换出「短期 + 绑定单一服务受众」的令牌（aud 强校验在数据面强制）。
+      //  ② 代用户委托（传 userId）：sub=该用户，act 链含调用者主体（既有语义不变）。
+      if (input.targetPrincipalId) {
+        throw new DelegationError('DELEGATION_TARGET_NOT_ALLOWED', t('机器调用者仅可携带 userId 换取委托令牌（不可指定 targetPrincipalId）'))
+      }
+      if (!input.userId) {
+        // 自委托：主体即调用者自身，无需用户档案与绑定校验
+        subjectPrincipalId = caller.principal.id
+        actChain = []
+        targetScopes = caller.scopes
+      } else {
+        const user = this.ctx.iam.users().get(input.userId)
+        if (!user) throw new DelegationError('DELEGATION_USER_NOT_FOUND', t('委托 subject 用户不存在：{id}', { id: input.userId }))
+        if (user.status !== 'active') throw new DelegationError('DELEGATION_USER_INACTIVE', t('委托 subject 用户状态异常（{status}），拒绝签发', { status: user.status }))
+        const subjectPrincipal = this.ensureHumanPrincipal(user.id, user.displayName)
+        subjectUserId = user.id
+        subjectPrincipalId = subjectPrincipal.id
+        actChain = [...caller.actChain, callerEntry]
+        targetScopes = this.ctx.iam.userPermissions(user.id)
+      }
+    }
+
+    // act 链跳数：链首为 human 时其自身不计（human 之后 ≤ 4）；链首即机器时全部计（subject 用户为链外 human）
+    const jumps = actChain.length > 0 && actChain[0]!.type === 'human' ? actChain.length - 1 : actChain.length
+    if (jumps > DELEGATION_CHAIN_MAX_JUMPS) {
+      throw new DelegationError('DELEGATION_CHAIN_TOO_LONG', t('委托链过长：human 之后跳数 {jumps} 超过上限 {max}', { jumps, max: DELEGATION_CHAIN_MAX_JUMPS }))
+    }
+
+    // 授权事实校验（fail-closed）：guard 拒绝/不可用即终止
+    const allowed = await this.delegationGuard({
+      userId: subjectUserId,
+      ...(input.targetPrincipalId !== undefined ? { targetPrincipalId: input.targetPrincipalId } : {}),
+      caller: {
+        principalId: caller.principal.id,
+        kind: caller.principal.type,
+        ...(caller.principal.refType !== undefined ? { refType: caller.principal.refType } : {}),
+        ...(caller.principal.refId !== undefined ? { refId: caller.principal.refId } : {}),
+      },
+    })
+    if (!allowed) {
+      throw new DelegationError('DELEGATION_DENIED', t('委托授权校验未通过（绑定关系/归属/管理员白名单均未命中）'))
+    }
+
+    // scopes 三方交集：请求 ∩ 调用者实时 scopes ∩ 目标 principal scopes（'*' 按既有交集语义收敛）
+    const requested = input.scopes ?? caller.scopes
+    const scopes = intersectScopes(intersectScopes(requested, caller.scopes), targetScopes)
+
+    return this.issueToken(subjectPrincipalId, {
+      kind: 'machine',
+      ttlHours: ttlSeconds / 3600,
+      scopes,
+      audience,
+      actChain,
+      issuedBy: `delegate:${caller.principal.id}`,
+      delegatedUserId: subjectUserId,
+      delegationAudience: audience,
+    })
+  }
+
+  /** 注册委托授权事实钩子（宿主装配时注入；传 undefined 恢复 fail-closed 拒绝态）。 */
+  setDelegationGuard(fn: DelegationGuardFn | undefined): void {
+    this.delegationGuard = fn
   }
 
   /** on-behalf-of：以当前主体身份为另一主体签发透传令牌（act 链叠加）。 */
   issueOnBehalfOf(parent: VerifiedPrincipal, targetPrincipalId: string): { token: string; record: TokenRecord } {
     const target = this.principals().get(targetPrincipalId)
-    if (!target) throw new Error(`目标身份不存在：${targetPrincipalId}`)
+    if (!target) throw new Error(t('目标身份不存在：{id}', { id: targetPrincipalId }))
     const actChain: ActEntry[] = [
       ...parent.actChain,
       { principalId: parent.principal.id, name: parent.principal.name, type: parent.principal.type },
@@ -874,26 +1093,26 @@ export class AuthnService extends Service {
    */
   verify(tokenString: string, options: { audience?: string } = {}): VerifiedPrincipal {
     const parts = tokenString.split('.')
-    if (parts.length !== 3 || parts[0] !== 'dst1') throw new Error('令牌格式不合法')
-    if (!this.signatureMatches(parts[1]!, parts[2]!)) throw new Error('令牌签名校验失败')
+    if (parts.length !== 3 || parts[0] !== 'dst1') throw new Error(t('令牌格式不合法'))
+    if (!this.signatureMatches(parts[1]!, parts[2]!)) throw new Error(t('令牌签名校验失败'))
     let payload: any
     try {
       payload = JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf8'))
     } catch {
-      throw new Error('令牌载荷解析失败')
+      throw new Error(t('令牌载荷解析失败'))
     }
-    if (payload.iss !== 'dsh-ops-authn') throw new Error('令牌签发方（iss）不匹配')
-    if (payload.exp * 1000 < Date.now()) throw new Error('令牌已过期')
+    if (payload.iss !== 'dsh-ops-authn') throw new Error(t('令牌签发方（iss）不匹配'))
+    if (payload.exp * 1000 < Date.now()) throw new Error(t('令牌已过期'))
     if (options.audience !== undefined) {
-      if (payload.aud === undefined) throw new Error('令牌未绑定受众（aud），目标服务要求受众校验')
-      if (payload.aud !== options.audience) throw new Error(`令牌受众不匹配：期望 ${options.audience}，实际 ${payload.aud}`)
+      if (payload.aud === undefined) throw new Error(t('令牌未绑定受众（aud），目标服务要求受众校验'))
+      if (payload.aud !== options.audience) throw new Error(t('令牌受众不匹配：期望 {expected}，实际 {actual}', { expected: options.audience, actual: payload.aud }))
     }
     const record = this.tokens().get(payload.jti)
-    if (!record) throw new Error('令牌不存在或已被清理')
-    if (record.revokedAt) throw new Error(`令牌已被吊销：${record.revokedReason ?? '策略吊销'}`)
+    if (!record) throw new Error(t('令牌不存在或已被清理'))
+    if (record.revokedAt) throw new Error(t('令牌已被吊销：{reason}', { reason: record.revokedReason ?? t('策略吊销') }))
     const principal = this.principals().get(record.principalId)
-    if (!principal) throw new Error('令牌主体不存在')
-    if (principal.status !== 'active') throw new Error('令牌主体已禁用')
+    if (!principal) throw new Error(t('令牌主体不存在'))
+    if (principal.status !== 'active') throw new Error(t('令牌主体已禁用'))
     // 人机均实时解析：human 按用户角色、machine 按机器角色+附加权限点，角色变更即时同步到存量令牌
     let scopes = principal.type === 'human'
       ? this.ctx.iam.userPermissions(principal.refId ?? '')
@@ -901,7 +1120,8 @@ export class AuthnService extends Service {
     // QA A-07：OBO 令牌签发时 scopes 取「父链 ∩ 目标」交集——验签若只按主体实时解析，
     // 交集即被丢弃（透传令牌反而拿到目标全量权限）。对 OBO 签发的令牌按签发交集二次夹紧：
     // 实时权限收缩仍然生效（交集），但不再放大出签发时刻授予之外的能力。
-    if (record.issuedBy?.startsWith('obo:')) {
+    // MCP 治理（契约 §3）：delegate: 前缀的委托令牌同口径（签发时已做三方交集，实时只收不放）。
+    if (record.issuedBy?.startsWith('obo:') || record.issuedBy?.startsWith('delegate:')) {
       scopes = intersectScopes(scopes, record.scopes)
     }
     this.tokens().update(record.id, { lastUsedAt: new Date().toISOString() })
@@ -914,7 +1134,7 @@ export class AuthnService extends Service {
 
   revokeToken(jti: string, reason: string): TokenRecord {
     const record = this.tokens().get(jti)
-    if (!record) throw new Error(`令牌不存在：${jti}`)
+    if (!record) throw new Error(t('令牌不存在：{id}', { id: jti }))
     if (record.revokedAt) return record
     const updated = this.tokens().update(record.id, {
       revokedAt: new Date().toISOString(),

@@ -1,0 +1,11 @@
+{
+  "name": "@dsh-ops/plugin-a2a",
+  "version": "1.3.0",
+  "private": true,
+  "type": "module",
+  "description": "A2A 协作平面——数字员工互相发现、派任务、追进度、收交付物（Agent Card / Task 生命周期 / 治理五查 / A0-A3 协商）",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  }
+}

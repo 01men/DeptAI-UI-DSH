@@ -1,0 +1,68 @@
+[
+  {
+    "createdAt": "2026-10-20T10:12:00.785Z",
+    "updatedAt": "2026-10-20T10:12:00.785Z",
+    "id": "alt_mvgixklriggq5k3u",
+    "severity": "warning",
+    "title": "数字员工「QA-A3协商型员工(反价stub)」声明-授权一致性巡检发现 1 项漂移",
+    "message": "密级口径提示：A2A 天花板=secret 且业务密级=secret（绝密禁止 Agent 处理口径），执行面将按渠道锁死拒绝——请确认口径",
+    "resourceType": "agent",
+    "resourceId": "agt_mvgimrunifgcjrg2",
+    "read": false
+  },
+  {
+    "createdAt": "2026-10-20T10:12:00.786Z",
+    "updatedAt": "2026-10-20T10:12:00.786Z",
+    "id": "alt_mvgixklsiggrl613",
+    "severity": "warning",
+    "title": "数字员工「D-技能漂移员工」声明-授权一致性巡检发现 1 项漂移",
+    "message": "声明漂移：引用的 Skill「qa-removed-skill-xyz」已不在架（发布状态 不存在），卡片不会投影（声明≤授权已兜底），请清理 attrs.skills",
+    "resourceType": "agent",
+    "resourceId": "agt_mvgio9qrific0s4v",
+    "read": false
+  },
+  {
+    "createdAt": "2026-10-20T10:12:00.786Z",
+    "updatedAt": "2026-10-20T10:12:00.786Z",
+    "id": "alt_mvgixkltiggsyt0r",
+    "severity": "warning",
+    "title": "数字员工「D-harness漂移员工」声明-授权一致性巡检发现 1 项漂移",
+    "message": "harness 漂移：uhpHarnessRef 指向的 h-nonexistent-xyz 不存在，执行将诚实失败",
+    "resourceType": "agent",
+    "resourceId": "agt_mvgio9qvifiifi2f",
+    "read": false
+  },
+  {
+    "createdAt": "2026-10-20T10:14:20.002Z",
+    "updatedAt": "2026-10-20T10:14:20.002Z",
+    "id": "alt_mvgj0k0xigmjg5hn",
+    "severity": "warning",
+    "title": "数字员工「QA-A3协商型员工(反价stub)」声明-授权一致性巡检发现 1 项漂移",
+    "message": "密级口径提示：A2A 天花板=secret 且业务密级=secret（绝密禁止 Agent 处理口径），执行面将按渠道锁死拒绝——请确认口径",
+    "resourceType": "agent",
+    "resourceId": "agt_mvgimrunifgcjrg2",
+    "read": false
+  },
+  {
+    "createdAt": "2026-10-20T10:14:20.002Z",
+    "updatedAt": "2026-10-20T10:14:20.002Z",
+    "id": "alt_mvgj0k0xigmktiwu",
+    "severity": "warning",
+    "title": "数字员工「D-技能漂移员工」声明-授权一致性巡检发现 1 项漂移",
+    "message": "声明漂移：引用的 Skill「qa-removed-skill-xyz」已不在架（发布状态 不存在），卡片不会投影（声明≤授权已兜底），请清理 attrs.skills",
+    "resourceType": "agent",
+    "resourceId": "agt_mvgio9qrific0s4v",
+    "read": false
+  },
+  {
+    "createdAt": "2026-10-20T10:14:20.002Z",
+    "updatedAt": "2026-10-20T10:14:20.002Z",
+    "id": "alt_mvgj0k0xigml393n",
+    "severity": "warning",
+    "title": "数字员工「D-harness漂移员工」声明-授权一致性巡检发现 1 项漂移",
+    "message": "harness 漂移：uhpHarnessRef 指向的 h-nonexistent-xyz 不存在，执行将诚实失败",
+    "resourceType": "agent",
+    "resourceId": "agt_mvgio9qvifiifi2f",
+    "read": false
+  }
+]

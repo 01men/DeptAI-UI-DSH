@@ -1,12 +1,14 @@
 # 插件声明：id、版本、依赖与权限点（插件标准解剖结构）
 id: dsh-plugin-app
-version: 1.1.0
+version: 1.5.0
 label: AI 应用本体
 depends: ['dsh-plugin-platform-core', 'dsh-plugin-resource-core', 'dsh-plugin-authn', 'dsh-plugin-audit']
 provides:
   services:
     - appRegistry
+    - appCredentials
 permissions:
   - app.read
   - app.write
   - app.offline
+  - app.credential.fetch

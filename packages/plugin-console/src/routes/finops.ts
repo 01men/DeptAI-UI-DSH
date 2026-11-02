@@ -6,6 +6,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import type { HttpExchange } from '../../../platform-core/src/index.ts'
+import { t } from '../../../platform-i18n/src/index.ts'
 
 export interface FinOpsRouteDeps {
   guarded: (method: string, path: string, permission: string, handler: (exchange: HttpExchange) => unknown | Promise<unknown>) => void
@@ -16,7 +17,7 @@ const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 function monthParam(exchange: HttpExchange): string | undefined {
   const value = exchange.query.get('month') ?? ''
   if (value === '') return undefined
-  if (!MONTH_RE.test(value)) throw new Error('月份格式应为 YYYY-MM（如 2026-09）')
+  if (!MONTH_RE.test(value)) throw new Error(t('月份格式应为 YYYY-MM（如 2026-09）'))
   return value
 }
 
@@ -53,19 +54,19 @@ export function registerFinOpsRoutes(ctx: Context, deps: FinOpsRouteDeps): void 
     const idle = ctx.usage.idleAnalysis({ month: report.month })
     if ((exchange.query.get('format') ?? '') !== 'csv') return { penetration: report, idle }
     const lines: string[] = []
-    lines.push(`元冰可 FinOps 成本报表（${report.month}；金额=内部成本参考分，零价快照口径 charge 恒 0）`)
-    lines.push('区块,维度,维度值,事件数,tokens,cost_cents,上月cost_cents,环比%,备注')
+    lines.push(t('元冰可 FinOps 成本报表（{month}；金额=内部成本参考分，零价快照口径 charge 恒 0）', { month: report.month }))
+    lines.push(t('区块,维度,维度值,事件数,tokens,cost_cents,上月cost_cents,环比%,备注'))
     const push = (block: string, dim: string, values: Array<string | number>) => lines.push([block, dim, ...values.map(csvEsc)].join(','))
-    push('total', 'ALL', ['全口径', report.totals.events, report.totals.tokens, report.totals.cost_cents, report.totals.prev_cost_cents, report.totals.delta_pct ?? '—', ''])
+    push('total', 'ALL', [t('全口径'), report.totals.events, report.totals.tokens, report.totals.cost_cents, report.totals.prev_cost_cents, report.totals.delta_pct ?? '—', ''])
     for (const row of report.byOrg) {
-      push('部门穿透', 'org', [row.dimension, row.events, row.tokens, row.cost_cents, row.prev_cost_cents, row.delta_pct ?? '—', (row.topModels ?? []).map((m) => `${m.model} ${(m.share ?? 0)}%`).join(' / ')])
+      push(t('部门穿透'), 'org', [row.dimension, row.events, row.tokens, row.cost_cents, row.prev_cost_cents, row.delta_pct ?? '—', (row.topModels ?? []).map((m) => `${m.model} ${(m.share ?? 0)}%`).join(' / ')])
     }
     for (const row of report.byModel) {
-      push('模型穿透', 'model', [row.dimension, row.events, row.tokens, row.cost_cents, row.prev_cost_cents, row.delta_pct ?? '—', ''])
+      push(t('模型穿透'), 'model', [row.dimension, row.events, row.tokens, row.cost_cents, row.prev_cost_cents, row.delta_pct ?? '—', ''])
     }
-    push('空转检测', '近似口径', [`无后续动作调用（窗口 ${idle.idleWindowMinutes} 分钟，需人工复核）`, idle.idle.events, idle.idle.tokens, idle.idle.cost_cents, '', '', `占模型调用成本 ${idle.idle.share_pct}%`])
+    push(t('空转检测'), t('近似口径'), [t('无后续动作调用（窗口 {minutes} 分钟，需人工复核）', { minutes: idle.idleWindowMinutes }), idle.idle.events, idle.idle.tokens, idle.idle.cost_cents, '', '', t('占模型调用成本 {pct}%', { pct: idle.idle.share_pct })])
     for (const row of idle.byModel) {
-      push('空转-按模型', 'model', [row.model, row.idle_events, '', row.idle_cost_cents, '', '', `全口径 ${row.events} 次事件`])
+      push(t('空转-按模型'), 'model', [row.model, row.idle_events, '', row.idle_cost_cents, '', '', t('全口径 {n} 次事件', { n: row.events })])
     }
     exchange.res.writeHead(200, {
       'content-type': 'text/csv; charset=utf-8',

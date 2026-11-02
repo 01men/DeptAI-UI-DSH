@@ -4,6 +4,9 @@ events:
   - name: app.registered / app.onlined / app.offlined
     mode: emit
     description: 应用生命周期
+  - name: app.secret.access
+    mode: emit
+    description: 外部凭证取值留痕（payload 仅 appId/key/result，绝不带值；audit 订阅落 app.credential.access，#19）
   - name: authn.entryticket.redeemed / oidc.authorize.granted
     mode: on
     description: 订阅：SSO 身份到访自动折算应用 DAU（trackVisit）

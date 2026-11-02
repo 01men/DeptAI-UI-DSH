@@ -68,7 +68,7 @@
     {
       "kind": "route_undeclared",
       "key": "GET /",
-      "reason": "01门根路径重定向（plugin-panel-core http.register GET /）；manifest 摘要语法不支持裸 \"/\" 路径字面量，销账条件：摘要语法支持根路径后改正式声明"
+      "reason": "panel-core 01门装态 landingRedirect 着陆归一路由（config.landingRedirect 条件注册，全量形态不注册、着陆归控制台）；且 contract-lint 根路径展开存在空段边界，清单无法字面登记。销账条件：landingRedirect 改为清单可表达的条件路由或解析器支持根路径后移除（2026-10-29 面板架构统一）"
     }
   ]
 }

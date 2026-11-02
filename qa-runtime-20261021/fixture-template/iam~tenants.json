@@ -1,0 +1,10 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:10.781Z",
+    "updatedAt": "2026-10-20T04:14:10.781Z",
+    "id": "t_default",
+    "name": "默认租户",
+    "status": "active",
+    "plan": "standard"
+  }
+]

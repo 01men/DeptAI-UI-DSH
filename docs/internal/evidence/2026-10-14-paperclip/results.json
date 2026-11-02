@@ -1,0 +1,302 @@
+[
+  {
+    "id": "S0",
+    "name": "登录 dev01（角色 开发者，权限 19 项）",
+    "pass": true,
+    "detail": "{\"roles\":[\"开发者\"],\"permissions\":[\"console.login\",\"iam.user.read\",\"iam.org.read\",\"mcp.service.read\",\"mcp.invoke\",\"skill.read\",\"skill.submit\",\"skill.install\",\"agent.read\",\"agent.write\",\"app.read\",\"app.write\",\"nas.read\",\"connector.catalog.read\",\"connector.connection.read\",\"connector.invoke\",\"panel.read\",\"scenegraph.read\",\"flow.read\"]}"
+  },
+  {
+    "id": "S0",
+    "name": "登录 ops01（角色 资源管理员，权限 42 项）",
+    "pass": true,
+    "detail": "{\"roles\":[\"资源管理员\"],\"permissions\":[\"console.login\",\"mcp.service.read\",\"mcp.service.write\",\"mcp.service.deploy\",\"mcp.service.offline\",\"mcp.permgroup.write\",\"mcp.invoke\",\"skill.read\",\"skill.submit\",\"skill.approve\",\"skill.publish\",\"skill.install\",\"skill.storage.write\",\"agent.read\",\"agent.write\",\"agent.approve\",\"agent.offline\",\"agent.a2a.invoke\",\"app.read\",\"app.write\",\"app.offline\",\"nas.read\",\"nas.write\",\"nas.authz.check\",\"nas.authz.read\",\"nas.authz.write\",\"nas.ownership.write\",\"authn.oidc.read\",\"authn.oidc.write\",\"connector.gateway.write\",\"connector.catalog.read\",\"connector.connection.read\",\"connector.connection.write\",\"connector.invoke\",\"connector.permgroup.write\",\"connector.runs.read\",\"connector.market.publish\",\"resource.dataset.write\",\"approval.read\",\"flow.admin\",\"panel.read\",\"flow.read\"]}"
+  },
+  {
+    "id": "S0",
+    "name": "登录 audit01（角色 审计员（只读），权限 18 项）",
+    "pass": true,
+    "detail": "{\"roles\":[\"审计员（只读）\"],\"permissions\":[\"console.login\",\"iam.org.read\",\"iam.user.read\",\"authn.principal.read\",\"authn.oidc.read\",\"mcp.service.read\",\"skill.read\",\"agent.read\",\"app.read\",\"nas.read\",\"audit.read\",\"approval.read\",\"connector.runs.read\",\"connector.connection.read\",\"nas.authz.read\",\"panel.read\",\"scenegraph.read\",\"flow.read\"]}"
+  },
+  {
+    "id": "S0",
+    "name": "登录 hr01（角色 组织管理员，权限 20 项）",
+    "pass": true,
+    "detail": "{\"roles\":[\"组织管理员\"],\"permissions\":[\"console.login\",\"iam.org.read\",\"iam.org.write\",\"iam.user.read\",\"iam.user.write\",\"iam.user.freeze\",\"iam.role.write\",\"iam.connector.write\",\"iam.scene.write\",\"iam.roster.read\",\"approval.read\",\"panel.read\",\"panel.write\",\"panel.task.write\",\"panel.config.write\",\"scenegraph.read\",\"scenegraph.activate\",\"flow.read\",\"flow.write\",\"flow.admin\"]}"
+  },
+  {
+    "id": "S1a",
+    "name": "QA-03 复验：ops01 可读数据集清单（补 panel.read）",
+    "pass": true,
+    "detail": "status=200 n=0"
+  },
+  {
+    "id": "S1b",
+    "name": "QA-03 复验：ops01 可读事务流模板（补 flow.read）",
+    "pass": true,
+    "detail": "status=200 n=0"
+  },
+  {
+    "id": "S1c",
+    "name": "QA-03 复验：ops01 可读事务流实例",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S1d",
+    "name": "QA-04 前置：dev01 创建 QA Agent（含机器凭证）",
+    "pass": true,
+    "detail": "status=200 id=agt_mv7jqhpnaox3qp1t cred=已签发 clientId=mc-mv7jqhpnaox4655g"
+  },
+  {
+    "id": "S1e",
+    "name": "QA-04 复验：PATCH 清空必填描述被 400 拒绝",
+    "pass": true,
+    "detail": "status=400 err={\"code\":\"BAD_REQUEST\",\"message\":\"属性校验失败：缺少必填字段「描述」(description)\"}"
+  },
+  {
+    "id": "S1f",
+    "name": "QA-04 复验：被拒后描述原样保留",
+    "pass": true,
+    "detail": "desc=\"六大能力验证临时 Agent（结束即删）\""
+  },
+  {
+    "id": "S2a",
+    "name": "Org：hr01 读组织树（节点/层级/负责人）",
+    "pass": true,
+    "detail": "节点=1 最深=0 样例=[{\"id\":\"org_mv6i8r1kgkshhnl2\",\"name\":\"元冰可集团\",\"depth\":0,\"leaders\":0}]"
+  },
+  {
+    "id": "S2b",
+    "name": "Org：用户挂组织 + 职级字段形态（title 自由文本，无 rank/managerId）",
+    "pass": true,
+    "detail": "users=5 字段=createdAt,updatedAt,id,username,displayName,email,phone,orgId,title,status,roleIds,bindings,lastLoginAt,orgName,roles"
+  },
+  {
+    "id": "S2c",
+    "name": "Org 缺口：Agent 无角色/职级/汇报线字段（仅 autonomy/runtime）",
+    "pass": true,
+    "detail": "agent字段=createdAt,updatedAt,id,type,slug,name,attrs,status,ownerId,orgId,lifecycleHistory,metrics,boundUserCount,availableTransitions attrs字段=description,avatar,tags,model,skills,mcpPermGroupIds,riskLevel,autonomy,runtime"
+  },
+  {
+    "id": "S3a",
+    "name": "Goal：全路由矩阵 0 个 goal/mission/okr 端点（能力未实现）",
+    "pass": false,
+    "detail": "总路由=336 命中=[\"GET /api/iam/permissions\",\"GET /api/market/submissions/mine\",\"GET /api/market/submissions\",\"POST /api/market/submissions/:id/approve\",\"POST /api/market/submissions/:id/reject\"]"
+  },
+  {
+    "id": "S3b",
+    "name": "Heartbeat：唯一心跳=connect 客户端存活上报，无 Agent 唤醒调度端点",
+    "pass": false,
+    "detail": "[]"
+  },
+  {
+    "id": "S3c",
+    "name": "Gate：审批路由 × 权限矩阵（approval.read / approval.decide）",
+    "pass": true,
+    "detail": "[\"GET /api/approvals → approval.read\",\"POST /api/approvals/:id/decide → approval.decide\",\"DELETE /api/approvals/:id → approval.decide\",\"GET /api/approvals/sla → approval.read\",\"POST /api/dingtalk/approvals/:id/push → dingtalk.message.send\"]"
+  },
+  {
+    "id": "S4a",
+    "name": "Heartbeat：connect 心跳为接入资产语义（人工令牌探针被拒/受控）",
+    "pass": true,
+    "detail": "status=404 body={\"code\":\"NOT_FOUND\",\"message\":\"该身份未登记为接入客户端（仅远程 dsh 客户端可上报心跳）\"}"
+  },
+  {
+    "id": "S4b",
+    "name": "Heartbeat 缺口：metrics-report 人工提报 200，纯运营指标、无预算/冻结联动",
+    "pass": true,
+    "detail": "status=200 返回字段=sessions,calls,successRate,tokens,avgLatencyMs,lastActiveAt,dau,uniqueUsers,gwCalls,series"
+  },
+  {
+    "id": "S5a",
+    "name": "Multi/Gate 前置：hr01 创建 QA 专用角色",
+    "pass": true,
+    "detail": "status=200 id=rol_mv7jqmryaox9ilzo"
+  },
+  {
+    "id": "S5b",
+    "name": "Multi 前置：hr01 建独立 QA 组织（预算/用量归口的隔离单位）",
+    "pass": true,
+    "detail": "status=200 id=org_mv7jqn89aoxbir6h"
+  },
+  {
+    "id": "S5c",
+    "name": "Multi/Gate 前置：hr01 创建 qa_verify 账号并授权入 QA 组织",
+    "pass": true,
+    "detail": "status=200 id=usr_mv7jqo56aoxd3hu9"
+  },
+  {
+    "id": "S5d",
+    "name": "qa_verify 登录（权限面=专用角色）",
+    "pass": true,
+    "detail": "perms=console.login,agent.read,agent.write,agent.approve,approval.read,approval.decide,usage.read,modelgw.read,modelgw.invoke,market.read,panel.read,panel.config.write,iam.org.read"
+  },
+  {
+    "id": "S6a",
+    "name": "Gate：qa_verify 注册 QA Agent（owner=qa_verify，org=QA 组织）",
+    "pass": true,
+    "detail": "id=agt_mv7jqp26aoxjzl4e"
+  },
+  {
+    "id": "S6b",
+    "name": "Gate：补治理属性",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S6c",
+    "name": "Gate：submit_trial（trialGroups guard 通过）→ trial",
+    "pass": true,
+    "detail": "status=200 state=trial"
+  },
+  {
+    "id": "S6d",
+    "name": "Gate：online → 生成 L4 审批单（不落地，等审批）",
+    "pass": false,
+    "detail": "status=400 approval=undefined risk=undefined"
+  },
+  {
+    "id": "S6e",
+    "name": "Gate：审计员（approval.read）可见该 L4 单",
+    "pass": false,
+    "detail": "seen=false state=undefined"
+  },
+  {
+    "id": "S6f",
+    "name": "Gate：审计员无 approval.decide → 403（决定权收敛）",
+    "pass": true,
+    "detail": "status=403"
+  },
+  {
+    "id": "S6g",
+    "name": "Gate：L4 高危缺 confirmed 二次确认 → 400",
+    "pass": true,
+    "detail": "status=400 err={\"code\":\"BAD_REQUEST\",\"message\":\"审批单不存在：undefined\"}"
+  },
+  {
+    "id": "S6h",
+    "name": "Gate：confirmed 终审通过 → 审批单 executed",
+    "pass": false,
+    "detail": "status=400 state=undefined"
+  },
+  {
+    "id": "S6i",
+    "name": "Gate：审批执行后 Agent 实际 online（闸门闭环）",
+    "pass": false,
+    "detail": "state=trial"
+  },
+  {
+    "id": "S7a",
+    "name": "Budget：qa_verify（panel.config.write）为 QA 组织设 0 元日预算 block",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S7b",
+    "name": "Budget：预算熔断在模型解析前拦截（不触达真实供应商）",
+    "pass": false,
+    "detail": "status=400 err={\"code\":\"BAD_REQUEST\",\"message\":\"模型不存在：qa-nonexistent-model（请先在模型目录登记）\"}"
+  },
+  {
+    "id": "S7c",
+    "name": "Budget：usage summary 携带 budget 进度字段（org 维度）",
+    "pass": true,
+    "detail": "budget=null"
+  },
+  {
+    "id": "S7d",
+    "name": "Budget 清理：预算停用",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S7e",
+    "name": "Budget 边界：四账号均无 panel.config.write → 全 403",
+    "pass": false,
+    "detail": "dev01=403 ops01=403 audit01=403 hr01=200"
+  },
+  {
+    "id": "S8a",
+    "name": "FinOps：usage.read 月报（外部报告受阻项①）",
+    "pass": true,
+    "detail": "status=200 keys=month,from,to,totals,byOrg,byAgent,bySkill,byModel"
+  },
+  {
+    "id": "S8b",
+    "name": "FinOps：modelgw.read 模型目录（外部报告受阻项②）",
+    "pass": true,
+    "detail": "status=200 models=0"
+  },
+  {
+    "id": "S8c",
+    "name": "市场：market.read 插件市场清单（外部报告受阻项③）",
+    "pass": true,
+    "detail": "status=200 plugins=3"
+  },
+  {
+    "id": "S8d",
+    "name": "Multi：usage/totals 按 tenant_id 过滤（租户计量线）",
+    "pass": true,
+    "detail": "status=200 keys=count,charge_cents,cost_cents"
+  },
+  {
+    "id": "S9a",
+    "name": "Multi：租户清单（tenant 模型存在，plan 字段）",
+    "pass": true,
+    "detail": "tenants=[{\"id\":\"t_default\",\"name\":\"默认租户\",\"plan\":\"standard\",\"status\":\"active\"}]"
+  },
+  {
+    "id": "S9b",
+    "name": "Multi 缺口：agents 清单不按组织过滤（任意 org 可见全平台 Agent 台账）",
+    "pass": true,
+    "detail": "分布=元冰可集团:5 / QA-验证公司-2610140324:1"
+  },
+  {
+    "id": "S9c",
+    "name": "Multi：QA 组织内 Agent 可被本组织成员读取（正向）",
+    "pass": true,
+    "detail": "org=org_mv7jqn89aoxbir6h 期望=org_mv7jqn89aoxbir6h"
+  },
+  {
+    "id": "S10a",
+    "name": "清理：QA Agent 下线审批通过",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S10b",
+    "name": "清理：归档",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S10c",
+    "name": "清理：删除 QA Agent（Co）",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S10d",
+    "name": "清理：删除 dev01 QA Agent",
+    "pass": true,
+    "detail": "status=200"
+  },
+  {
+    "id": "S10e",
+    "name": "清理：qa_verify 停用（账号保留审计，不再可登录）",
+    "pass": false,
+    "detail": "status=400"
+  },
+  {
+    "id": "S10f",
+    "name": "清理：删除 QA 角色（无路由则记 404 残留）",
+    "pass": true,
+    "detail": "status=404"
+  },
+  {
+    "id": "S10g",
+    "name": "清理：删除 QA 组织",
+    "pass": false,
+    "detail": "status=400"
+  }
+]

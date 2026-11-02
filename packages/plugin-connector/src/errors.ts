@@ -4,6 +4,8 @@
  */
 
 /** 错误码 → HTTP 状态与平台提示文案（v1.4.0 文档载明的错误码子集 + 上游文档未载项按默认处理）。 */
+import { t } from '../../platform-i18n/src/index.ts'
+
 const OC_ERROR_STATUS: Record<string, number> = {
   connection_not_allowed: 403,
   rate_limited: 429,
@@ -21,7 +23,7 @@ export class OcError extends Error {
   readonly guidance?: string
 
   constructor(code: string, message?: string, guidance?: string, status?: number) {
-    super(message ?? `open-connector 错误：${code}`)
+    super(message ?? t('open-connector 错误：{code}', { code }))
     this.name = 'OcError'
     this.code = code
     this.status = status ?? OC_ERROR_STATUS[code] ?? 502

@@ -10,6 +10,7 @@
 import { session } from '../api.js'
 import { icon } from '../icons.js'
 import { esc } from '../ui.js'
+import rqI18n from '../i18n.js'
 
 const SCOPE_LABEL = {
   openid: '确认你的身份标识（sub，平台内稳定不变）',
@@ -34,7 +35,7 @@ function pageShell(inner) {
         <div class="oauth-brand">
           <img class="brand-mark brand-logo" src="ybk-mark.png" alt="元冰可">
           <div>
-            <div class="oauth-title">元冰可|企业AI资源管理平台</div>
+            <div class="oauth-title">元冰可 · 企业AI资源管理平台</div>
             <div class="oauth-sub">统一身份源 · OIDC 授权</div>
           </div>
         </div>
@@ -237,6 +238,12 @@ function renderLoginPanel(app, reqId, info) {
     btn.classList.add('btn-loading')
     try {
       const auth = unwrap(await rawJson('POST', '/api/auth/sso/authorize', { provider: 'dingtalk', scene: 'web_qr', ...(configId ? { configId } : {}) }), '钉钉登录暂不可用')
+      if (auth.blocked) {
+        // 授权页侧应用级拒绝（钉钉 900103「应用不存在」）：整页跳转只会落到错误页，
+        // 就地提示并展开手动授权码兜底，授权流不中断。
+        showManualFallback(`钉钉扫码登录未就绪${auth.blocked.message ? `：${auth.blocked.message}` : ''}。请管理员在钉钉开发者后台「登录与分享」核对回调域名 ${location.host} 与 AppKey。`)
+        return
+      }
       if (!auth.authorizeUrl) throw new Error('身份源未返回授权地址（可能为 mock 模式），请手动输入授权码')
       try { localStorage.setItem(OIDC_REQ_KEY, JSON.stringify({ req: reqId, ts: Date.now() })) } catch { /* 忽略 */ }
       try { localStorage.setItem('heng_ops_last_sso_config', configId ?? '') } catch { /* 忽略 */ }
@@ -339,16 +346,16 @@ function renderConsent(app, reqId, info) {
       <div class="oauth-app-ic">${info.appRef ? '✨' : '🔗'}</div>
       <div>
         <b>${esc(info.clientName)}</b>
-        <span>${info.appRef ? `平台登记应用 · ${esc(info.appRef.name)}` : '外部登记客户端'}</span>
+        <span>${info.appRef ? esc(rqI18n.t('平台登记应用 · {name}', { name: info.appRef.name })) : esc(rqI18n.t('外部登记客户端'))}</span>
       </div>
     </div>
     <div class="oauth-scopes">
       ${scopes.map((scope) => `
-        <div class="oauth-scope">${icon('check', 15)}<span><b>${esc(scope)}</b> · ${esc(SCOPE_LABEL[scope] ?? '自定义授权范围')}</span></div>`).join('')}
+        <div class="oauth-scope">${icon('check', 15)}<span><b>${esc(scope)}</b>${esc(rqI18n.t(' · {label}', { label: rqI18n.t(SCOPE_LABEL[scope] ?? '自定义授权范围') }))}</span></div>`).join('')}
     </div>
     <div class="oauth-user">
       <div class="avatar sm">${esc((user?.displayName ?? '?').slice(0, 1))}</div>
-      <span>将以 <b>${esc(user?.displayName ?? '当前用户')}</b> 身份授权${info.consentRequired ? '，授权后应用可在此后静默获取你的身份信息' : ''}</span>
+      <span>${esc(rqI18n.t('将以'))} <b>${esc(user?.displayName ?? rqI18n.t('当前用户'))}</b>${esc(rqI18n.t(' 身份授权{consent}', { consent: info.consentRequired ? rqI18n.t('，授权后应用可在此后静默获取你的身份信息') : '' }))}</span>
     </div>
     ${info.consentRequired ? `
     <label class="flex" style="gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer">
@@ -374,7 +381,7 @@ function renderConsent(app, reqId, info) {
         }
         throw new Error(result.payload?.error_description ?? '授权失败，请从应用重新发起')
       }
-      approve.textContent = consent ? '已授权，正在跳转…' : '已拒绝，正在跳转…'
+      approve.textContent = consent ? rqI18n.t('已授权，正在跳转…') : rqI18n.t('已拒绝，正在跳转…')
       window.location.href = result.payload.location
     } catch (error) {
       approve.classList.remove('btn-loading')
@@ -383,7 +390,7 @@ function renderConsent(app, reqId, info) {
   }
   approve.onclick = () => {
     if (info.consentRequired && !app.querySelector('#oauth-consent-check')?.checked) {
-      app.querySelector('#oauth-consent-tip').textContent = '请先勾选同意后再授权'
+      app.querySelector('#oauth-consent-tip').textContent = rqI18n.t('请先勾选同意后再授权')
       return
     }
     void submit(true)
@@ -421,9 +428,9 @@ export async function renderOauthLogout(app, params) {
   const state = params.get('state') ?? ''
   const clientName = params.get('client') ?? '应用'
   app.innerHTML = pageShell(`
-    <div class="oauth-title" style="margin-bottom:8px">正在退出平台会话…</div>
-    <div class="oauth-sub"><b>${esc(clientName)}</b> 发起了登出请求。平台会话清除后将${postLogoutUri ? '跳回应用地址' : '停留在平台'}。</div>
-    <div class="form-hint" id="oauth-logout-state" style="margin-top:14px">处理中…</div>`)
+    <div class="oauth-title" style="margin-bottom:8px">${esc(rqI18n.t('正在退出平台会话…'))}</div>
+    <div class="oauth-sub"><b>${esc(clientName)}</b>${esc(rqI18n.t('{client} 发起了登出请求。平台会话清除后将{dest}。', { client: '', dest: postLogoutUri ? rqI18n.t('跳回应用地址') : rqI18n.t('停留在平台') }))}</div>
+    <div class="form-hint" id="oauth-logout-state" style="margin-top:14px">${esc(rqI18n.t('处理中…'))}</div>`)
   const mark = (text) => { const el = app.querySelector('#oauth-logout-state'); if (el) el.textContent = text }
   try {
     if (session.token) {

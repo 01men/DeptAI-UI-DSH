@@ -1,0 +1,1315 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:35.030Z",
+    "updatedAt": "2026-10-20T04:14:35.031Z",
+    "id": "apr_mvg65wyeidolnvm5",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：QA-A0提示型员工",
+    "payload": {
+      "agentId": "agt_mvg65wycidog0wpv",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "QA 基线批准上线",
+    "decidedAt": "2026-10-20T04:14:35.031Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T04:14:35.028Z\",\"updatedAt\":\"2026-10-20T04:14:35.031Z\",\"id\":\"agt_mvg65wycidog0wpv\",\"type\":\"agent\",\"slug\":\"qa-a0-tip\",\"name\":\"QA-A0提示型员工\",\"attrs\":{\"description\":\"A0 提示型：只做单轮问答\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A0\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"public\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"entryUrl\":\"https://qa.internal/chat\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA",
+      "at": "2026-10-20T04:14:35.031Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T04:14:35.031Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.458Z",
+    "updatedAt": "2026-10-20T04:14:35.460Z",
+    "id": "apr_mvg65xaaidoxnzy9",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：QA-A1执行型员工",
+    "payload": {
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "QA 基线批准上线",
+    "decidedAt": "2026-10-20T04:14:35.460Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T04:14:35.454Z\",\"updatedAt\":\"2026-10-20T04:14:35.460Z\",\"id\":\"agt_mvg65xa6idoswiz0\",\"type\":\"agent\",\"slug\":\"qa-a1-exec\",\"name\":\"QA-A1执行型员工\",\"attrs\":{\"description\":\"A1 执行型：执行需人在环确认\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A1\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"entryUrl\":\"https://qa.internal/chat\",\"dataClass\":\"internal\",\"trialGroups\"",
+      "at": "2026-10-20T04:14:35.460Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T04:14:35.460Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.880Z",
+    "updatedAt": "2026-10-20T04:14:35.884Z",
+    "id": "apr_mvg65xm0idp9o8fu",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：QA-A2自主型员工",
+    "payload": {
+      "agentId": "agt_mvg65xluidp4m49p",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "QA 基线批准上线",
+    "decidedAt": "2026-10-20T04:14:35.884Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T04:14:35.874Z\",\"updatedAt\":\"2026-10-20T04:14:35.882Z\",\"id\":\"agt_mvg65xluidp4m49p\",\"type\":\"agent\",\"slug\":\"qa-a2-auto\",\"name\":\"QA-A2自主型员工\",\"attrs\":{\"description\":\"A2 自主型：执行后事后报告\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A2\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"entryUrl\":\"https://qa.internal/chat\",\"dataClass\":\"internal\",\"trialGroups\":",
+      "at": "2026-10-20T04:14:35.884Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T04:14:35.884Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:36.299Z",
+    "updatedAt": "2026-10-20T04:14:36.302Z",
+    "id": "apr_mvg65xxnidpl18so",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：QA-A3协商型员工",
+    "payload": {
+      "agentId": "agt_mvg65xxhidpg6765",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "QA 基线批准上线",
+    "decidedAt": "2026-10-20T04:14:36.302Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T04:14:36.293Z\",\"updatedAt\":\"2026-10-20T04:14:36.301Z\",\"id\":\"agt_mvg65xxhidpg6765\",\"type\":\"agent\",\"slug\":\"qa-a3-neg\",\"name\":\"QA-A3协商型员工\",\"attrs\":{\"description\":\"A3 协商型：支持要约-还价\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A3\",\"runtime\":\"hermes\",\"a2aDataClassCeiling\":\"secret\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"entryUrl\":\"https://qa.internal/chat\",\"dataClass\":\"internal\",\"trialGroups\":",
+      "at": "2026-10-20T04:14:36.302Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T04:14:36.302Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:36.718Z",
+    "updatedAt": "2026-10-20T04:14:36.721Z",
+    "id": "apr_mvg65y9aidpx0mwc",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：QA协作发起方员工",
+    "payload": {
+      "agentId": "agt_mvg65y94idps38ro",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "QA 基线批准上线",
+    "decidedAt": "2026-10-20T04:14:36.721Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T04:14:36.712Z\",\"updatedAt\":\"2026-10-20T04:14:36.720Z\",\"id\":\"agt_mvg65y94idps38ro\",\"type\":\"agent\",\"slug\":\"qa-caller-bot\",\"name\":\"QA协作发起方员工\",\"attrs\":{\"description\":\"作为调用方的数字员工（机器凭证）\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A2\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"entryUrl\":\"https://qa.internal/chat\",\"dataClass\":\"internal\",\"trialGrou",
+      "at": "2026-10-20T04:14:36.721Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T04:14:36.721Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:37.138Z",
+    "updatedAt": "2026-10-20T04:14:37.141Z",
+    "id": "apr_mvg65ykyidq9xwqm",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：QA-A3发起方员工",
+    "payload": {
+      "agentId": "agt_mvg65ykridq44i55",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "QA 基线批准上线",
+    "decidedAt": "2026-10-20T04:14:37.141Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T04:14:37.131Z\",\"updatedAt\":\"2026-10-20T04:14:37.140Z\",\"id\":\"agt_mvg65ykridq44i55\",\"type\":\"agent\",\"slug\":\"qa-a3-caller\",\"name\":\"QA-A3发起方员工\",\"attrs\":{\"description\":\"A3 发起方，用于 A3×A3 协商\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A3\",\"runtime\":\"hermes\",\"a2aDataClassCeiling\":\"secret\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"entryUrl\":\"https://qa.internal/chat\",\"dataClass\":\"internal\",\"trialG",
+      "at": "2026-10-20T04:14:37.141Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T04:14:37.141Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:18:07.268Z",
+    "updatedAt": "2026-10-20T04:18:07.268Z",
+    "id": "apr_mvg6agpwie6j9u1b",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6agpvie6gowp7（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6agpvie6gowp7",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:18:35.973Z",
+    "updatedAt": "2026-10-20T04:18:35.973Z",
+    "id": "apr_mvg6b2v9ie9c7t69",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6b2v9ie99i6yo（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6b2v9ie99i6yo",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:18:51.065Z",
+    "updatedAt": "2026-10-20T04:18:51.065Z",
+    "id": "apr_mvg6beihiebpx0d1",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6beigiebmor7t（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6beigiebmor7t",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:18:57.210Z",
+    "updatedAt": "2026-10-20T04:18:57.210Z",
+    "id": "apr_mvg6bj96iedqew42",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6bj96iednyzoa（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6bj96iednyzoa",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:19:51.471Z",
+    "updatedAt": "2026-10-20T04:19:51.471Z",
+    "id": "apr_mvg6cp4fieion611",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6cp4fieil24ih（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvg6cp4fieil24ih",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "INJECT-TARGET-8888 待审批任务",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:20:02.515Z",
+    "updatedAt": "2026-10-20T04:20:02.515Z",
+    "id": "apr_mvg6cxn7iekode74",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6cxn6ieklfqho（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvg6cxn6ieklfqho",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "INJECT-TARGET-8888 待审批任务",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:20:42.731Z",
+    "updatedAt": "2026-10-20T04:20:42.731Z",
+    "id": "apr_mvg6dsobien9atkv",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6dsoaien6ldly（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvg6dsoaien6ldly",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "P0-VARIANT-2 待审批",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:20:49.497Z",
+    "updatedAt": "2026-10-20T04:20:49.497Z",
+    "id": "apr_mvg6dxw9ienpibqj",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6dxw9ienm89uu（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvg6dxw9ienm89uu",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "P0-VARIANT-3 待审批",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:01.260Z",
+    "updatedAt": "2026-10-20T04:21:01.260Z",
+    "id": "apr_mvg6e6z0ieo49cs3",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6e6z0ieo104bm（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6e6z0ieo104bm",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZOVERWRITE 非终态任务",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:18.684Z",
+    "updatedAt": "2026-10-20T04:21:18.684Z",
+    "id": "apr_mvg6ekf0ieorcuvh",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6ekf0ieoo6x0q（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6ekf0ieoo6x0q",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:27.735Z",
+    "updatedAt": "2026-10-20T04:21:27.735Z",
+    "id": "apr_mvg6erefietpiddx",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6erefietms244（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6erefietms244",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:37.093Z",
+    "updatedAt": "2026-10-20T04:21:37.093Z",
+    "id": "apr_mvg6eymdif2idbdb",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6eymdif2f9ott（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6eymdif2f9ott",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:40.800Z",
+    "updatedAt": "2026-10-20T04:21:40.800Z",
+    "id": "apr_mvg6f1hcif2t05u0",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6f1hcif2qjq43（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvg6f1hcif2qjq43",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "CANCEL-ESCALATION-PROBE-5555",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:44.854Z",
+    "updatedAt": "2026-10-20T04:21:44.854Z",
+    "id": "apr_mvg6f4lyif7b18wn",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6f4lyif78780h（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvg6f4lyif78780h",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "CANCEL-ESCALATION-PROBE-6666",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:52.033Z",
+    "updatedAt": "2026-10-20T04:21:52.033Z",
+    "id": "apr_mvg6fa5dif8dluqk",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6fa5dif8a2xsh（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6fa5dif8a2xsh",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZCANCELPROBE 取消探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:21:54.330Z",
+    "updatedAt": "2026-10-20T04:21:54.330Z",
+    "id": "apr_mvg6fbx6if8orbg9",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6fbx6if8lksyx（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvg6fbx6if8lksyx",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "OWNER-IS-ADMIN cancel-escalation",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:07.925Z",
+    "updatedAt": "2026-10-20T04:22:07.925Z",
+    "id": "apr_mvg6fmetifaaq3yz",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6fmetifa73nvm（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6fmetifa73nvm",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 续答探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:11.985Z",
+    "updatedAt": "2026-10-20T04:22:11.985Z",
+    "id": "apr_mvg6fpjlifajtgem",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6fpjlifag2yu0（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6fpjlifag2yu0",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 发起方自取消 1792470131983",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:25.695Z",
+    "updatedAt": "2026-10-20T04:22:25.695Z",
+    "id": "apr_mvg6g04fifb5pqmu",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6g04fifb2rrwk（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6g04fifb2rrwk",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 续答探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:29.741Z",
+    "updatedAt": "2026-10-20T04:22:29.741Z",
+    "id": "apr_mvg6g38tifbe7vq1",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6g38sifbb42ho（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6g38sifbb42ho",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 发起方自取消 1792470149740",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:36.359Z",
+    "updatedAt": "2026-10-20T04:22:36.359Z",
+    "id": "apr_mvg6g8cnifbp0wty",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6g8cnifbm0dj8（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6g8cnifbm0dj8",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 续答探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:40.416Z",
+    "updatedAt": "2026-10-20T04:22:40.416Z",
+    "id": "apr_mvg6gbhcifc1wla4",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6gbhcifbyfa3m（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6gbhcifbyfa3m",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 发起方自取消 1792470160414",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:53.954Z",
+    "updatedAt": "2026-10-20T04:22:53.954Z",
+    "id": "apr_mvg6glxeifccr4df",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6glxdifc9rrh9（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6glxdifc9rrh9",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 续答探针",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T04:22:58.014Z",
+    "updatedAt": "2026-10-20T04:22:58.014Z",
+    "id": "apr_mvg6gp26ifclyauc",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvg6gp25ifcigz9j（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvg6gp25ifcigz9j",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "ZZRECONT 发起方自取消 1792470178011",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:04:34.596Z",
+    "updatedAt": "2026-10-20T10:04:52.019Z",
+    "id": "apr_mvgio0boifhc2buk",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：QA-A3协商型员工(反价stub)",
+    "payload": {
+      "agentId": "agt_mvgimrunifgcjrg2",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组E验收",
+    "decidedAt": "2026-10-20T10:04:52.019Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:03:36.959Z\",\"updatedAt\":\"2026-10-20T10:04:52.019Z\",\"id\":\"agt_mvgimrunifgcjrg2\",\"type\":\"agent\",\"slug\":\"qa-a3-neg2\",\"name\":\"QA-A3协商型员工(反价stub)\",\"attrs\":{\"description\":\"A3 协商型，被调方模型指向自建反价 stub\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-reasoner\",\"systemPromptVersion\":\"v1\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"high\",\"dataClass\":\"secret\",\"autonomy\":\"A3\",\"runtime\":\"hermes\",\"a2aDataClassCeiling\":\"secret\",\"uhpSessionPolicy\":\"task-bound\",\"entryUrl\":\"https://qa.internal",
+      "at": "2026-10-20T10:04:52.019Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:52.019Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:54.801Z",
+    "updatedAt": "2026-10-20T10:04:54.803Z",
+    "id": "apr_mvgiofwxifjd4grx",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-A0调用方员工",
+    "payload": {
+      "agentId": "agt_mvgio9q4ifhihjet",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组D 批准上线",
+    "decidedAt": "2026-10-20T10:04:54.803Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:04:46.780Z\",\"updatedAt\":\"2026-10-20T10:04:54.802Z\",\"id\":\"agt_mvgio9q4ifhihjet\",\"type\":\"agent\",\"slug\":\"d-a0-caller\",\"name\":\"D-A0调用方员工\",\"attrs\":{\"description\":\"组D 测试员工 d-a0-caller\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A0\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA灰度组\"],\"uhpHarnessRef\":\"h-d-a0",
+      "at": "2026-10-20T10:04:54.803Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:54.803Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:55.317Z",
+    "updatedAt": "2026-10-20T10:04:55.321Z",
+    "id": "apr_mvgiogb9ifjlwcxf",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-A1调用方员工",
+    "payload": {
+      "agentId": "agt_mvgio9qaifho4e8x",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组D 批准上线",
+    "decidedAt": "2026-10-20T10:04:55.321Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:04:46.786Z\",\"updatedAt\":\"2026-10-20T10:04:55.321Z\",\"id\":\"agt_mvgio9qaifho4e8x\",\"type\":\"agent\",\"slug\":\"d-a1-caller\",\"name\":\"D-A1调用方员工\",\"attrs\":{\"description\":\"组D 测试员工 d-a1-caller\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A1\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA灰度组\"],\"uhpHarnessRef\":\"h-d-a1",
+      "at": "2026-10-20T10:04:55.321Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:55.321Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:55.837Z",
+    "updatedAt": "2026-10-20T10:04:55.844Z",
+    "id": "apr_mvgiogppifjthxo9",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-A3反价目标员工",
+    "payload": {
+      "agentId": "agt_mvgio9qhifhuhbr9",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组D 批准上线",
+    "decidedAt": "2026-10-20T10:04:55.844Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:04:46.793Z\",\"updatedAt\":\"2026-10-20T10:04:55.844Z\",\"id\":\"agt_mvgio9qhifhuhbr9\",\"type\":\"agent\",\"slug\":\"d-a3-counter\",\"name\":\"D-A3反价目标员工\",\"attrs\":{\"description\":\"组D 测试员工 d-a3-counter\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-coder\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A3\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"secret\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA灰度组\"],\"uhpHarnessRef\":\"h-d-",
+      "at": "2026-10-20T10:04:55.844Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:55.844Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:56.358Z",
+    "updatedAt": "2026-10-20T10:04:56.362Z",
+    "id": "apr_mvgioh46ifk1ak5b",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-预算熔断目标员工",
+    "payload": {
+      "agentId": "agt_mvgio9qnifi6tuw3",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组D 批准上线",
+    "decidedAt": "2026-10-20T10:04:56.362Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:04:46.799Z\",\"updatedAt\":\"2026-10-20T10:04:56.361Z\",\"id\":\"agt_mvgio9qnifi6tuw3\",\"type\":\"agent\",\"slug\":\"d-budget\",\"name\":\"D-预算熔断目标员工\",\"attrs\":{\"description\":\"组D 测试员工 d-budget\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A2\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA灰度组\"],\"uhpHarnessRef\":\"h-d-budget\"",
+      "at": "2026-10-20T10:04:56.362Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:56.362Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:56.875Z",
+    "updatedAt": "2026-10-20T10:04:56.878Z",
+    "id": "apr_mvgiohijifk95iy7",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-技能漂移员工",
+    "payload": {
+      "agentId": "agt_mvgio9qrific0s4v",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组D 批准上线",
+    "decidedAt": "2026-10-20T10:04:56.878Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:04:46.803Z\",\"updatedAt\":\"2026-10-20T10:04:56.877Z\",\"id\":\"agt_mvgio9qrific0s4v\",\"type\":\"agent\",\"slug\":\"d-skilldrift\",\"name\":\"D-技能漂移员工\",\"attrs\":{\"description\":\"组D 测试员工 d-skilldrift\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[\"qa-removed-skill-xyz\"],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A2\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA灰度组\"],",
+      "at": "2026-10-20T10:04:56.878Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:56.878Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:57.388Z",
+    "updatedAt": "2026-10-20T10:04:57.391Z",
+    "id": "apr_mvgiohwsifkhoebl",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-harness漂移员工",
+    "payload": {
+      "agentId": "agt_mvgio9qvifiifi2f",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组D 批准上线",
+    "decidedAt": "2026-10-20T10:04:57.391Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:04:46.807Z\",\"updatedAt\":\"2026-10-20T10:04:57.390Z\",\"id\":\"agt_mvgio9qvifiifi2f\",\"type\":\"agent\",\"slug\":\"d-harnessdrift\",\"name\":\"D-harness漂移员工\",\"attrs\":{\"description\":\"组D 测试员工 d-harnessdrift\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A2\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA灰度组\"],\"uhpHarnessRe",
+      "at": "2026-10-20T10:04:57.391Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:57.391Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:57.904Z",
+    "updatedAt": "2026-10-20T10:04:57.908Z",
+    "id": "apr_mvgioib4ifkpwo1n",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-冻结目标员工",
+    "payload": {
+      "agentId": "agt_mvgio9qzifioxb4y",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "组D 批准上线",
+    "decidedAt": "2026-10-20T10:04:57.908Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:04:46.811Z\",\"updatedAt\":\"2026-10-20T10:04:57.908Z\",\"id\":\"agt_mvgio9qzifioxb4y\",\"type\":\"agent\",\"slug\":\"d-frozen\",\"name\":\"D-冻结目标员工\",\"attrs\":{\"description\":\"组D 测试员工 d-frozen\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A2\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"dataClass\":\"internal\",\"trialGroups\":[\"QA灰度组\"],\"uhpHarnessRef\":\"h-d-frozen\",\"",
+      "at": "2026-10-20T10:04:57.908Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:04:57.908Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:06:13.923Z",
+    "updatedAt": "2026-10-20T10:06:13.923Z",
+    "id": "apr_mvgiq4yriflica8h",
+    "kind": "agent.unfreeze",
+    "title": "Agent「D-冻结目标员工」预算超限冻结，申请解冻",
+    "riskLevel": "high",
+    "payload": {
+      "agentId": "agt_mvgio9qzifioxb4y",
+      "reason": "执行中枢预算前置熔断：Agent 主体预算（agent:agt_mvgio9qzifioxb4y）已超限，action=block"
+    },
+    "requesterId": "exec-hub",
+    "requesterName": "执行中枢（预算联动，系统发起）",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:07:22.994Z",
+    "updatedAt": "2026-10-20T10:07:22.994Z",
+    "id": "apr_mvgirm9eifmywe65",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgirm9eifmvcoef（qa-a2-auto）",
+    "payload": {
+      "taskId": "task_mvgirm9eifmvcoef",
+      "agentId": "agt_mvg65xluidp4m49p",
+      "agentSlug": "qa-a2-auto",
+      "dataClass": "internal",
+      "messagePreview": "D1-探针：D-AUTH-KEYWORD 触发审批",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:07:27.046Z",
+    "updatedAt": "2026-10-20T10:07:27.046Z",
+    "id": "apr_mvgirpdyifn6kgg5",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgirpdyifn3t1i6（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgirpdyifn3t1i6",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "D1-探针：A1目标需人在环确认",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:07:53.117Z",
+    "updatedAt": "2026-10-20T10:08:01.224Z",
+    "id": "apr_mvgis9i5iformw3j",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgis9i5ifoo3f1e（qa-a2-auto）",
+    "payload": {
+      "taskId": "task_mvgis9i5ifoo3f1e",
+      "agentId": "agt_mvg65xluidp4m49p",
+      "agentSlug": "qa-a2-auto",
+      "dataClass": "internal",
+      "messagePreview": "D1-探针：D-AUTH-KEYWORD 触发审批",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "D1 批准",
+    "decidedAt": "2026-10-20T10:08:01.224Z",
+    "execution": {
+      "result": "{\"resumed\":true}",
+      "at": "2026-10-20T10:08:01.224Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:08:01.224Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:07:57.170Z",
+    "updatedAt": "2026-10-20T10:07:57.170Z",
+    "id": "apr_mvgiscmqifozuuzy",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiscmqifowm6g3（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgiscmqifowm6g3",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "D1-探针：A1目标需人在环确认",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:08:25.999Z",
+    "updatedAt": "2026-10-20T10:08:25.999Z",
+    "id": "apr_mvgisyvjifsco4au",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgisyviifs99gaw（d-a3-counter）",
+    "payload": {
+      "taskId": "task_mvgisyviifs99gaw",
+      "agentId": "agt_mvgio9qhifhuhbr9",
+      "agentSlug": "d-a3-counter",
+      "dataClass": "secret",
+      "messagePreview": "D2-审批规则命中探针（secret）",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:08:50.097Z",
+    "updatedAt": "2026-10-20T10:08:50.097Z",
+    "id": "apr_mvgithgxiftfgsqd",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgithgxiftc0a77（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgithgxiftc0a77",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "A2 驱动 A1",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:08:59.278Z",
+    "updatedAt": "2026-10-20T10:08:59.278Z",
+    "id": "apr_mvgitojyifto3r8h",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgitojyiftlclc5（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgitojyiftlclc5",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "A2 驱动 A1",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:08:59.334Z",
+    "updatedAt": "2026-10-20T10:08:59.334Z",
+    "id": "apr_mvgitoliifv65jxh",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgitoliifv3mi4l（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgitoliifv3mi4l",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "public",
+      "messagePreview": "D3-矩阵-A1>A1",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "pri_mvgio9r6ifj1n94o",
+    "requesterName": "agent:agt_mvgio9qaifho4e8x",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:09:04.287Z",
+    "updatedAt": "2026-10-20T10:09:04.287Z",
+    "id": "apr_mvgitsf3ifxmyt20",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgitsf3ifxjmvhw（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgitsf3ifxjmvhw",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "public",
+      "messagePreview": "D3-人类分支-A1",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:09:34.137Z",
+    "updatedAt": "2026-10-20T10:09:34.139Z",
+    "id": "apr_mvgiufg9ifz3w85b",
+    "kind": "agent.online",
+    "riskLevel": "high",
+    "title": "Agent 上线：D-A2调用方员工",
+    "payload": {
+      "agentId": "agt_mvgiufg6ifyyjrp3",
+      "requesterId": "usr_mvg65wqpidn417cg"
+    },
+    "requesterId": "usr_mvg65wqpidn417cg",
+    "requesterName": "平台资源管理员",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "D 批准",
+    "decidedAt": "2026-10-20T10:09:34.139Z",
+    "execution": {
+      "result": "{\"createdAt\":\"2026-10-20T10:09:34.134Z\",\"updatedAt\":\"2026-10-20T10:09:34.139Z\",\"id\":\"agt_mvgiufg6ifyyjrp3\",\"type\":\"agent\",\"slug\":\"d-a2-caller\",\"name\":\"D-A2调用方员工\",\"attrs\":{\"description\":\"组D A2 调用方（自持凭证，隔离他人轮换影响）\",\"avatar\":\"🤖\",\"tags\":[],\"model\":\"deepseek-chat\",\"skills\":[],\"mcpPermGroupIds\":[],\"riskLevel\":\"low\",\"autonomy\":\"A2\",\"runtime\":\"dsh\",\"a2aDataClassCeiling\":\"internal\",\"uhpSessionPolicy\":\"task-bound\",\"systemPromptVersion\":\"v1\",\"entryUrl\":\"https://qa.internal/chat\",\"dataClass\":\"internal\",\"tri",
+      "at": "2026-10-20T10:09:34.139Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:09:34.139Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:09:47.748Z",
+    "updatedAt": "2026-10-20T10:09:55.851Z",
+    "id": "apr_mvgiupycig133t4p",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiupycig10bezc（qa-a2-auto）",
+    "payload": {
+      "taskId": "task_mvgiupycig10bezc",
+      "agentId": "agt_mvg65xluidp4m49p",
+      "agentSlug": "qa-a2-auto",
+      "dataClass": "internal",
+      "messagePreview": "D1-探针：D-AUTH-KEYWORD 触发审批",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvgiufunifzcyvrj",
+    "requesterName": "agent:agt_mvgiufg6ifyyjrp3",
+    "status": "executed",
+    "approverId": "usr_mvg65wroidna0rra",
+    "approverName": "审批人（异人审批）",
+    "opinion": "D1 批准",
+    "decidedAt": "2026-10-20T10:09:55.851Z",
+    "execution": {
+      "result": "{\"resumed\":true}",
+      "at": "2026-10-20T10:09:55.851Z"
+    },
+    "finalReview": {
+      "approverId": "usr_mvg65wroidna0rra",
+      "approverName": "审批人（异人审批）",
+      "at": "2026-10-20T10:09:55.851Z"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:09:51.800Z",
+    "updatedAt": "2026-10-20T10:09:51.800Z",
+    "id": "apr_mvgiut2wig1bloyq",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiut2wig18vwq2（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgiut2wig18vwq2",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "D1-探针：A1目标需人在环确认",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvgiufunifzcyvrj",
+    "requesterName": "agent:agt_mvgiufg6ifyyjrp3",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:09:57.246Z",
+    "updatedAt": "2026-10-20T10:09:57.246Z",
+    "id": "apr_mvgiuxa6ig4lri3p",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiuxa5ig4il3kk（d-a3-counter）",
+    "payload": {
+      "taskId": "task_mvgiuxa5ig4il3kk",
+      "agentId": "agt_mvgio9qhifhuhbr9",
+      "agentSlug": "d-a3-counter",
+      "dataClass": "secret",
+      "messagePreview": "D2-审批规则命中探针（secret）",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvg65ywsidqrff73",
+    "requesterName": "agent:agt_mvg65ykridq44i55",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:10:00.875Z",
+    "updatedAt": "2026-10-20T10:10:00.875Z",
+    "id": "apr_mvgiv02zig4wkin7",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiv02zig4tfai8（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgiv02zig4tfai8",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "需人在环确认的任务，用于取消验证",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:10:05.443Z",
+    "updatedAt": "2026-10-20T10:10:05.443Z",
+    "id": "apr_mvgiv3lvig6lxzdj",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiv3lvig6iq1fk（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgiv3lvig6iq1fk",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "public",
+      "messagePreview": "D3-矩阵-A1>A1",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "pri_mvgio9r6ifj1n94o",
+    "requesterName": "agent:agt_mvgio9qaifho4e8x",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:10:09.920Z",
+    "updatedAt": "2026-10-20T10:10:09.920Z",
+    "id": "apr_mvgiv728ig7pptmp",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiv728ig7m9j2o（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgiv728ig7m9j2o",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "public",
+      "messagePreview": "D3-矩阵-A2>A1",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvgiufunifzcyvrj",
+    "requesterName": "agent:agt_mvgiufg6ifyyjrp3",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:10:14.871Z",
+    "updatedAt": "2026-10-20T10:10:14.871Z",
+    "id": "apr_mvgivavriga7o7k1",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgivavriga4ij6x（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgivavriga4ij6x",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "public",
+      "messagePreview": "D3-人类分支-A1",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:11:05.809Z",
+    "updatedAt": "2026-10-20T10:11:05.809Z",
+    "id": "apr_mvgiwe6pigcoohtu",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgiwe6pigclcy1u（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgiwe6pigclcy1u",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "越权取消探测：这是 caller-bot 的在途任务",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvg65ywpidqn1qme",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:11:52.442Z",
+    "updatedAt": "2026-10-20T10:11:52.442Z",
+    "id": "apr_mvgixe62igg1c7z6",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgixe62igfy4b99（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgixe62igfy4b99",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "D5-审计-人在环场景",
+      "reason": "协商矩阵要求人在环确认（A2 × A1）"
+    },
+    "requesterId": "pri_mvgiufunifzcyvrj",
+    "requesterName": "agent:agt_mvgiufg6ifyyjrp3",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:20:10.766Z",
+    "updatedAt": "2026-10-20T10:20:10.766Z",
+    "id": "apr_mvgj82oeigzndgdv",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgj82oeigzk6ntj（qa-a3-neg）",
+    "payload": {
+      "taskId": "task_mvgj82oeigzk6ntj",
+      "agentId": "agt_mvg65xxhidpg6765",
+      "agentSlug": "qa-a3-neg",
+      "dataClass": "internal",
+      "messagePreview": "LEADCANCEL 复核",
+      "reason": "命中敏感操作审批规则，人在环确认后恢复执行"
+    },
+    "requesterId": "pri_mvgj82o8igzay032",
+    "requesterName": "agent:agt_mvg65y94idps38ro",
+    "status": "pending"
+  },
+  {
+    "createdAt": "2026-10-20T10:22:28.272Z",
+    "updatedAt": "2026-10-20T10:22:28.272Z",
+    "id": "apr_mvgjb0s077d4pnp8",
+    "kind": "a2a.task.authorize",
+    "riskLevel": "medium",
+    "title": "A2A 协作任务授权：task_mvgjb0s077d1yp0s（qa-a1-exec）",
+    "payload": {
+      "taskId": "task_mvgjb0s077d1yp0s",
+      "agentId": "agt_mvg65xa6idoswiz0",
+      "agentSlug": "qa-a1-exec",
+      "dataClass": "internal",
+      "messagePreview": "LEADP0 受害任务：请勿通过",
+      "reason": "协商矩阵要求人在环确认（A1 × A1）"
+    },
+    "requesterId": "usr_mvg65e9midmcih9e",
+    "requesterName": "user:usr_mvg65e9midmcih9e",
+    "status": "pending"
+  }
+]

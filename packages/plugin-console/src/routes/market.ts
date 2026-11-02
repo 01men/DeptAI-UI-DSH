@@ -7,16 +7,8 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { HttpExchange } from '../../../platform-core/src/index.ts'
 import { createPluginContext } from '../../../platform-core/src/index.ts'
-
-type CallerInfo = { kind: 'human' | 'machine'; principalId: string; userId?: string; refType?: string; refId?: string; name: string; permissions: string[]; actChain?: Array<{ name: string; type: string }> }
-
-export interface ConsoleRouteDeps {
-  http: { register: (method: string, path: string, handler: (exchange: HttpExchange) => unknown | Promise<unknown>, options?: Record<string, unknown>) => void }
-  guarded: (method: string, path: string, permission: string, handler: (exchange: HttpExchange) => unknown | Promise<unknown>) => void
-  body: <T>(exchange: HttpExchange) => T
-  changeLog: (exchange: HttpExchange, action: string, resourceType: string, resourceId: string, resourceName: string, detail?: string) => void
-  caller: (exchange: HttpExchange) => CallerInfo
-}
+import { t } from '../../../platform-i18n/src/index.ts'
+import type { ConsoleRouteDeps } from './deps.ts'
 
 export function registerMarketRoutes(ctx: Context, deps: ConsoleRouteDeps): void {
   const { http, guarded, body, changeLog, caller } = deps
@@ -49,7 +41,7 @@ export function registerMarketRoutes(ctx: Context, deps: ConsoleRouteDeps): void
     const info = caller(exchange)
     if (info.permissions.includes('*')) return undefined // 管理员走管理路由
     const developer = ctx.market.developerOfPrincipal(info.principalId)
-    if (!developer) throw new Error('当前令牌不是开发者身份（请用 /api/market/developers/login）')
+    if (!developer) throw new Error(t('当前令牌不是开发者身份（请用 /api/market/developers/login）'))
     return developer
   }
 
@@ -57,7 +49,7 @@ export function registerMarketRoutes(ctx: Context, deps: ConsoleRouteDeps): void
     try {
       const developer = developerCaller(exchange)
       if (!developer) {
-        exchange.fail(403, 'FORBIDDEN', '插件提交仅限开发者身份')
+        exchange.fail(403, 'FORBIDDEN', t('插件提交仅限开发者身份'))
         return
       }
       const input = body<{ files: Record<string, string>; signature: string }>(exchange)
@@ -85,7 +77,7 @@ export function registerMarketRoutes(ctx: Context, deps: ConsoleRouteDeps): void
   guarded('POST', '/api/market/submissions/:id/approve', 'market.approve', (exchange) => {
     const info = caller(exchange)
     const { opinion } = body<{ opinion?: string }>(exchange)
-    const record = ctx.market.approve(exchange.params['id']!, info.name, opinion ?? '审核通过')
+    const record = ctx.market.approve(exchange.params['id']!, info.name, opinion ?? t('审核通过'))
     changeLog(exchange, 'market.plugin.approve', 'plugin_submission', record.id, `${record.pluginId}@${record.version}`)
     return record
   })
@@ -93,7 +85,7 @@ export function registerMarketRoutes(ctx: Context, deps: ConsoleRouteDeps): void
   guarded('POST', '/api/market/submissions/:id/reject', 'market.approve', (exchange) => {
     const info = caller(exchange)
     const { reason } = body<{ reason?: string }>(exchange)
-    return ctx.market.reject(exchange.params['id']!, info.name, reason ?? '不通过')
+    return ctx.market.reject(exchange.params['id']!, info.name, reason ?? t('不通过'))
   })
 
   guarded('GET', '/api/market/plugins', 'market.read', () => ({
@@ -109,7 +101,7 @@ export function registerMarketRoutes(ctx: Context, deps: ConsoleRouteDeps): void
     const info = caller(exchange)
     const input = body<{ orgId: string; tenantId?: string; approvedCapabilities: string[]; approvedPermissions?: string[] }>(exchange)
     const org = ctx.iam.orgs().get(input.orgId)
-    if (!org) throw new Error(`组织不存在：${input.orgId}`)
+    if (!org) throw new Error(t('组织不存在：{id}', { id: input.orgId }))
     const tenantId = input.tenantId ?? org.tenantId ?? 't_default'
     const record = ctx.market.install({
       pluginId: exchange.params['pluginId']!,
@@ -119,7 +111,7 @@ export function registerMarketRoutes(ctx: Context, deps: ConsoleRouteDeps): void
       approvedPermissions: input.approvedPermissions ?? [],
       installedBy: info.name,
     })
-    changeLog(exchange, 'market.plugin.install', 'plugin_install', record.id, record.pluginId, `能力审批：${record.capabilities.join(',')}`)
+    changeLog(exchange, 'market.plugin.install', 'plugin_install', record.id, record.pluginId, t('能力审批：{capabilities}', { capabilities: record.capabilities.join(',') }))
     return record
   })
 

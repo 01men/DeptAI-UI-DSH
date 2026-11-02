@@ -13,16 +13,27 @@ import { PlatformBusService } from './bus.ts'
 import { ToolRuntimeLite } from './tools-lite.ts'
 import { HttpServerService } from './http.ts'
 import { SqliteTxnService } from './sqlite.ts'
+import { WorkforcePolicyRegistry } from './workforce-port.ts'
 import { BehaviorService } from './behavior.ts'
 import { ScenegraphService } from './scenegraph.ts'
 
 export * from './storage.ts'
+export * from './storage-sqlite.ts'
 export * from './bus.ts'
 export * from './tools-lite.ts'
 export * from './http.ts'
+// OpenAPI 接口面投影（issue #6）：由 declaredRoutes 台账生成 3.0.3 文档，/api/openapi.json 据此伺服
+export * from './openapi.ts'
+export * from './rest-gate.ts'
+export * from './principal.ts'
+// 策略决策点 + 全链 trace 基元（MCP 治理契约 §11/§14，W3-T5）
+export * from './pdp.ts'
+export * from './trace.ts'
 export * from './ids.ts'
 export * from './sensitive.ts'
 export * from './sqlite.ts'
+export * from './workforce-port.ts'
+export * from './host-bridge.ts'
 export * from './yaml.ts'
 export * from './zip.ts'
 export * from './plugin-ctx.ts'
@@ -30,6 +41,9 @@ export * from './version.ts'
 export * from './behavior.ts'
 export * from './scenegraph.ts'
 export * from './signature.ts'
+export * from './boot-probe.ts'
+// 平台资产统一业务分类（Skill/Agent/应用/MCP/A2A 各板块共用口径）
+export * from './taxonomy.ts'
 
 export interface PlatformCoreConfig {
   dataDir?: string
@@ -46,6 +60,9 @@ export async function apply(ctx: Context, config: PlatformCoreConfig = {}) {
   const storage = new StorageService(ctx, { dataDir: config.dataDir })
   ctx.plugin(PlatformBusService)
   ctx.plugin(SqliteTxnService, { dataDir: config.dataDir })
+  // 数字员工工作策略登记器（窄端口）：plugin-workforce ready 后登记实现，
+  // 资源网关/exec-hub 经 ctx.workforcePolicy 消费（装配顺序无关，防循环依赖）
+  ctx.plugin(WorkforcePolicyRegistry)
   if (config.provideToolRuntime !== false) {
     ctx.plugin(ToolRuntimeLite)
   }

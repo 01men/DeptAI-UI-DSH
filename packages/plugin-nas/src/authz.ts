@@ -13,7 +13,8 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
-import { newId, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { newId, wrapPolicyDecision, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 import {
   AUTHZ_OPS, HIGH_RISK_OPS,
   buildOrgIndex, check as engineCheck, deriveRole, deriveScope, effectiveMatrix, normalizePath,
@@ -70,13 +71,15 @@ export interface AuthzDecisionRecord extends RecordBase {
   override: boolean
   observeOnly: boolean
   highRisk: boolean
+  /** 平台统一决策表达（W3-T5 契约 §11，additive）：既有引擎结论经 wrapPolicyDecision 包装的决策 id。 */
+  decisionId?: string
 }
 
 /** 版本乐观锁冲突（REST 层映射 409）。 */
 export class RulesVersionConflictError extends Error {
   readonly currentVersion: number
   constructor(currentVersion: number, expected: number) {
-    super(`规则版本冲突：当前 version=${currentVersion}，请求 ifVersion=${expected}（请重新读取后重试）`)
+    super(t('规则版本冲突：当前 version={current}，请求 ifVersion={expected}（请重新读取后重试）', { current: currentVersion, expected }))
     this.name = 'RulesVersionConflictError'
     this.currentVersion = currentVersion
   }
@@ -134,8 +137,8 @@ export class NasAuthzService extends Service {
       const p = payload as { groupId: string; groupName: string; addedCount: number; removedCount: number; threshold: number }
       this.ctx.audit.fire({
         severity: 'warning',
-        title: `动态用户组「${p.groupName}」成员漂移`,
-        message: `+${p.addedCount}/-${p.removedCount} 人（阈值 ${p.threshold}）。该组被 NAS 数据权限 C 角色引用，跨域只读范围可能静默变化，请复核。`,
+        title: t('动态用户组「{name}」成员漂移', { name: p.groupName }),
+        message: t('+{added}/-{removed} 人（阈值 {threshold}）。该组被 NAS 数据权限 C 角色引用，跨域只读范围可能静默变化，请复核。', { added: p.addedCount, removed: p.removedCount, threshold: p.threshold }),
         resourceType: 'iam_group',
         resourceId: p.groupId,
       })
@@ -290,7 +293,7 @@ export class NasAuthzService extends Service {
     let cGroups = current.cGroups
     if (patch.cGroups !== undefined) {
       const { ids, unresolved } = this.resolveCGroupNames(patch.cGroups)
-      if (unresolved.length > 0) throw new Error(`C 关联动态用户组不存在：${unresolved.join('、')}（请先在组织账号创建同名动态组）`)
+      if (unresolved.length > 0) throw new Error(t('C 关联动态用户组不存在：{names}（请先在组织账号创建同名动态组）', { names: unresolved.join('、') }))
       cGroups = ids
     }
     const next: AuthzRulesRecord = {
@@ -377,6 +380,7 @@ export class NasAuthzService extends Service {
     const op = AUTHZ_OPS.includes(input.op) ? input.op : undefined
     const rules = this.getRules()
     const paths = (Array.isArray(input.paths) ? input.paths : [input.paths]).map(String).filter(Boolean)
+    const unsupportedReason = t('op.unsupported：未知操作 {op}', { op: input.op })
     const base = {
       observeOnly: rules.observeOnly,
       override: input.override === true,
@@ -386,7 +390,7 @@ export class NasAuthzService extends Service {
       perPath: [],
       decision: 'deny' as const,
     }
-    if (!op) return { ...base, reasons: [`op.unsupported：未知操作 ${input.op}`], perPath: paths.map((path) => ({ path, decision: 'deny' as const, reasons: [`op.unsupported：未知操作 ${input.op}`] })) }
+    if (!op) return { ...base, reasons: [unsupportedReason], perPath: paths.map((path) => ({ path, decision: 'deny' as const, reasons: [unsupportedReason] })) }
     const user = this.resolveUser(input.userId)
     const nas = this.nasDescriptor(input.nasId)
     // 网关回调以 NAS IP 充当 nasId（其天然只知 IP）：统一收敛到平台资产 ID，
@@ -409,6 +413,9 @@ export class NasAuthzService extends Service {
       },
     )
     const enriched = { ...decision, ...(user ? { userName: user.displayName } : {}), ...(nas?.name ? { nasName: nas.name } : {}) }
+    // 统一决策表达（W3-T5 契约 §11）：引擎结论经 wrapPolicyDecision 包装取 decisionId，
+    // 随既有判定留痕（nas.authz.decision → nas:authzDecisions）落账——不重写引擎，决策可回查
+    const policyDecision = wrapPolicyDecision(decision.decision === 'allow', decision.reasons)
     // 留痕与告警（fire-and-forget；deny 全量、高危 op 全量留痕）
     const highRisk = HIGH_RISK_OPS.has(op)
     if (decision.decision === 'deny' || highRisk) {
@@ -417,6 +424,7 @@ export class NasAuthzService extends Service {
         op, paths, decision: decision.decision, ...(decision.role !== undefined ? { role: decision.role } : {}),
         scope: decision.scope, reasons: decision.reasons, ...(decision.ruleId !== undefined ? { ruleId: decision.ruleId } : {}),
         caller, override: input.override === true, observeOnly: rules.observeOnly, highRisk,
+        decisionId: policyDecision.decisionId,
       } satisfies Omit<AuthzDecisionRecord, 'id' | 'createdAt' | 'updatedAt'>)
     }
     if (decision.decision === 'deny' && rules.observeOnly === false) {
@@ -439,7 +447,7 @@ export class NasAuthzService extends Service {
       return {
         cTag: false, scope: [], matrix: effectiveMatrix(rules), observeOnly: rules.observeOnly,
         degradeAllToReadonly: rules.degradeAllToReadonly,
-        reasons: [!user ? 'user-not-found：账号不存在或未同步' : 'nas-not-found：NAS 资产不存在'],
+        reasons: [!user ? t('user-not-found：账号不存在或未同步') : t('nas-not-found：NAS 资产不存在')],
       }
     }
     const orgIndex = this.orgIndex()
@@ -447,8 +455,8 @@ export class NasAuthzService extends Service {
     const derived = deriveRole(engineUser, orgIndex)
     const scope = deriveScope(engineUser, nas, orgIndex)
     const reasons: string[] = []
-    if (scope.via === 'none') reasons.push(`nas.no-scope：未命中该 NAS 的接入组织锚点（${scope.reason}）`)
-    if (derived.special) reasons.push(`account.special：特殊账号态 ${derived.special}`)
+    if (scope.via === 'none') reasons.push(t('nas.no-scope：未命中该 NAS 的接入组织锚点（{reason}）', { reason: scope.reason }))
+    if (derived.special) reasons.push(t('account.special：特殊账号态 {special}', { special: derived.special }))
     return {
       ...(derived.role !== undefined ? { role: derived.role } : {}),
       ...(derived.special !== undefined ? { special: derived.special } : {}),
@@ -475,8 +483,8 @@ export class NasAuthzService extends Service {
       this.ctx.platformBus.emit('nas.authz.leaderVacant', { orgId: org.id, orgName: org.name })
       this.ctx.audit.fire({
         severity: 'info',
-        title: `组织「${org.name}」负责人悬空`,
-        message: `leaderUserIds 为空：该部门 delete/share 按矩阵无人可执行。可在控制台「组织与账号」选中该组织 →「设置负责人」手动绑定（锁定后不被连接器同步覆盖，清空即恢复跟随同步），或在钉钉侧配置部门负责人后触发同步。`,
+        title: t('组织「{name}」负责人悬空', { name: org.name }),
+        message: t('leaderUserIds 为空：该部门 delete/share 按矩阵无人可执行。可在控制台「组织与账号」选中该组织 →「设置负责人」手动绑定（锁定后不被连接器同步覆盖，清空即恢复跟随同步），或在钉钉侧配置部门负责人后触发同步。'),
         resourceType: 'org',
         resourceId: org.id,
       })
@@ -506,7 +514,7 @@ export class NasAuthzService extends Service {
         this.ctx.platformBus.emit('nas.authz.dirOrphan', { nasId: nasEntity.id, nasName: nasEntity.name, findings })
         this.ctx.audit.fire({
           severity: 'info',
-          title: `NAS「${nasEntity.name}」组织目录对账发现 ${findings.length} 处不匹配`,
+          title: t('NAS「{name}」组织目录对账发现 {count} 处不匹配', { name: nasEntity.name, count: findings.length }),
           message: findings.map((finding) => finding.detail).join('；'),
           resourceType: 'nas',
           resourceId: nasEntity.id,
@@ -525,7 +533,7 @@ export class NasAuthzService extends Service {
   async requestShareApproval(input: { nasId: string; userId: string; path: string; reason?: string; requesterName?: string }): Promise<{ approvalId: string; approverSuggestion: { orgId?: string; orgName?: string; leaderUserIds: string[] }; escalated: boolean }> {
     const iam = this.ctx.iam
     const user = this.resolveUser(input.userId)
-    if (!user) throw new Error(`申请账号不存在：${input.userId}`)
+    if (!user) throw new Error(t('申请账号不存在：{id}', { id: input.userId }))
     const orgIndex = this.orgIndex()
     const nearest = nearestLeaderOrg(orgIndex, user.primaryOrgId ?? user.orgId)
     let approverSuggestion: { orgId?: string; orgName?: string; leaderUserIds: string[] } = { leaderUserIds: [] }
@@ -533,19 +541,19 @@ export class NasAuthzService extends Service {
     let approverNameHint: string
     if (nearest) {
       approverSuggestion = { orgId: nearest.orgId, orgName: nearest.orgName, leaderUserIds: nearest.leaderUserIds }
-      approverNameHint = `自动路由：${nearest.orgName} 负责人`
+      approverNameHint = t('自动路由：{org} 负责人', { org: nearest.orgName })
     } else {
       escalated = true
       const admins = iam.users().all().filter((candidate) => candidate.status === 'active' && candidate.roleIds.some((roleId) => iam.roles().get(roleId)?.code === 'resource_admin'))
       approverSuggestion = { leaderUserIds: admins.map((admin) => admin.id) }
-      approverNameHint = `未找到组织链负责人，升级 resource_admin 兜底（${admins.map((admin) => admin.displayName).join('、') || '暂无'}）`
+      approverNameHint = t('未找到组织链负责人，升级 resource_admin 兜底（{names}）', { names: admins.map((admin) => admin.displayName).join('、') || t('暂无') })
     }
     const nas = this.ctx.resourceCore.get('nas', input.nasId)
     const approval = this.ctx.audit.createApproval({
       kind: 'nas.share',
       // WP-10/L1（QA A-06）：L4 高危统一高风险——通过需二次确认 + 公司级终审标记
       riskLevel: 'high',
-      title: `NAS 分享申请：${user.displayName} → ${nas?.name ?? input.nasId} ${input.path}`,
+      title: t('NAS 分享申请：{user} → {nas} {path}', { user: user.displayName, nas: nas?.name ?? input.nasId, path: input.path }),
       payload: {
         nasId: input.nasId, path: input.path, userId: user.id, userName: user.displayName,
         ...(input.reason ? { reason: input.reason } : {}),
@@ -564,13 +572,13 @@ export class NasAuthzService extends Service {
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60_000).toISOString()
       const exception = this.addException({
         effect: 'allow', nasId, path, ops: ['share'], userIds: [userId],
-        ...(expiresAt ? { expiresAt } : {}), note: `share 审批通过${reason ? `：${reason}` : ''}`, createdBy: 'approval:nas.share',
+        ...(expiresAt ? { expiresAt } : {}), note: reason ? t('share 审批通过：{reason}', { reason }) : t('share 审批通过'), createdBy: 'approval:nas.share',
       }, 'approval:nas.share')
       this.ctx.audit.record({
-        type: 'authz', actorType: 'system', actorId: 'nasAuthz', actorName: 'NAS 数据权限',
+        type: 'authz', actorType: 'system', actorId: 'nasAuthz', actorName: t('NAS 数据权限'),
         action: 'nas.authz.share_granted', resourceType: 'nas', resourceId: nasId,
         resourceName: this.ctx.resourceCore.get('nas', nasId)?.name ?? nasId,
-        result: 'ok', detail: `${userName ?? userId} 获得 ${path} 分享授权（例外 ${exception.id}，${expiresAt} 到期）`,
+        result: 'ok', detail: t('{user} 获得 {path} 分享授权（例外 {id}，{expiresAt} 到期）', { user: userName ?? userId, path, id: exception.id, expiresAt }),
       })
       return { exceptionId: exception.id, expiresAt }
     })
@@ -610,7 +618,7 @@ export class NasAuthzService extends Service {
         const parsed = JSON.parse(rawOverrides)
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) overrides = Object.fromEntries(Object.entries(parsed).map(([key, value]) => [key, String(value)]))
       } catch {
-        throw new Error(`NAS「${entity.name}」orgPathOverrides 不是合法 JSON`)
+        throw new Error(t('NAS「{name}」orgPathOverrides 不是合法 JSON', { name: entity.name }))
       }
     } else if (rawOverrides && typeof rawOverrides === 'object' && !Array.isArray(rawOverrides)) {
       overrides = Object.fromEntries(Object.entries(rawOverrides as Record<string, unknown>).map(([key, value]) => [key, String(value)]))
@@ -664,13 +672,13 @@ export class NasAuthzService extends Service {
 
   private normalizeExceptions(exceptions: AuthzException[], current: AuthzRulesRecord, actor: string): AuthzException[] {
     for (const exception of exceptions) {
-      if (!exception.effect || !['allow', 'deny'].includes(exception.effect)) throw new Error(`例外 effect 非法：${exception.effect}`)
-      if (!exception.nasId) throw new Error('例外必须指定 nasId')
-      if (!exception.path) throw new Error('例外必须指定 path')
+      if (!exception.effect || !['allow', 'deny'].includes(exception.effect)) throw new Error(t('例外 effect 非法：{value}', { value: String(exception.effect) }))
+      if (!exception.nasId) throw new Error(t('例外必须指定 nasId'))
+      if (!exception.path) throw new Error(t('例外必须指定 path'))
       if (!Array.isArray(exception.ops) || exception.ops.length === 0 || exception.ops.some((op) => !AUTHZ_OPS.includes(op))) {
-        throw new Error(`例外 ops 非法：${JSON.stringify(exception.ops)}`)
+        throw new Error(t('例外 ops 非法：{value}', { value: JSON.stringify(exception.ops) }))
       }
-      if (exception.expiresAt !== undefined && Number.isNaN(Date.parse(exception.expiresAt))) throw new Error(`例外 expiresAt 非法：${exception.expiresAt}`)
+      if (exception.expiresAt !== undefined && Number.isNaN(Date.parse(exception.expiresAt))) throw new Error(t('例外 expiresAt 非法：{value}', { value: String(exception.expiresAt) }))
     }
     // 合并语义：同 id 覆盖、新增追加、未出现在补丁中的既有例外保留（幂等导入靠内容比对）
     const byId = new Map(current.exceptions.map((exception) => [exception.id, exception]))

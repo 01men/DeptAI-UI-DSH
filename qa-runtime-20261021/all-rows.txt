@@ -1,0 +1,165 @@
+=== A 48/49 ===
+PASS | A0 账号矩阵登录（admin/ops/approver/collab/acceptor/a2aadmin/member/outsider）
+PASS | A0 夹具：目标员工上线 + A3 调用方凭证
+PASS | A1 平台目录卡匿名可读且为规范裸体（无 {ok,data} 信封）
+PASS | A1 平台目录卡声明 Ed25519 验签公钥
+PASS | A1 单员工卡 JWS 独立验签通过（Ed25519）
+PASS | A1 篡改 card.url 后验签失败（签名真实覆盖 body）
+PASS | A1 卡片声明 eventsUrl / securitySchemes.scopes / 协议扩展
+PASS | A1 卡片计量双主体口径声明（callerMeteringSubject）
+PASS | A1 不存在员工卡 404（不泄露存在性）
+PASS | A1 UHP 发现面免鉴权 + 版本锁定 2026-08-11 + conformance=core
+PASS | A1 UHP 发现面诚实声明 files_input/files_output=false（未做 NAS artifact）
+FAIL | A1【契约一致性】UHP 发现面应为规范裸体（当前仍包平台信封 {ok,data}，与 well-known 修复口径不一致）
+PASS | A1 发现面公布的 harness id 可直接作 model 调用（往返一致，非 404）
+PASS | A2 服务面可观测（health 200，作为总线纪律前置）
+PASS | A2 执行链路 A2A→UHP 贯通（execute_report 经 UHP 完成）
+PASS | A2 任务 attempts=1（首次派发）
+PASS | A2 UHP 执行记录与 A2A 任务一一对应（taskId + responseId 双向可查）
+PASS | A2 执行记录归属字段完整（callerPrincipalId / callerKind / dispatchedByPlatform / actChainJson 落账）
+PASS | A2 审批规则创建（a2a.admin）
+PASS | A2 受害任务处于 auth_required（人在环等待）
+PASS | A2 P0 护栏：外部凭证注入 ybk_a2a_task_id → 400 TASK_BINDING_FORBIDDEN
+PASS | A2 P0 护栏：受害任务未被推进（仍 auth_required，零伪造 artifact）
+PASS | A2 外部直调 UHP 记录不建立任务归属（无 task_id）
+PASS | A2 仓储面存在 progress 来源拒绝审计通道（可观测）
+PASS | A3 八态枚举在任务集合中可观测（≥5 态，含终态与非终态）
+PASS | A3 任务 history 状态迁移成链（含 status 条目）
+PASS | A3 completed 任务带 finishedAt/startedAt（时序可审计）
+PASS | A3 协商矩阵拒绝任务 mode=rejected（不再误记 single_turn）
+PASS | A4 协商矩阵 16 格与方案 §6.4 逐格一致（纯函数）
+PASS | A4 A3×A3 要约接受 → 自动执行 completed（协议行为真实）
+PASS | A4 协商要约双向留痕（offers ≥1 + history type=offer）
+PASS | A4 还价 → input_required，3 轮超限 → rejected（轮次上限硬约束）
+PASS | A5 同幂等键重放返回原 response（不重复执行）
+PASS | A5 审批恢复幂等（completed + attempts=1，无重复执行）
+PASS | A5 协作链计量按 contextId 归集（calls=1）
+PASS | A5 计量幂等键含 taskId 与 attempt 序号（两层同形）
+PASS | A5 计量事件带 context_id 列（additive 迁移生效）
+PASS | A6 message/stream 返回 JSON-RPC Task（与 message/send 同构，非裸 SSE）
+PASS | A6 tasks/list 方法可用且返回数组
+PASS | A7 请求级 tools/functions/mcp_servers 注入接受但不生效（ignored_fields 留痕）
+PASS | A7 previous_response_id 续接继承 session_id（可靠归组键）
+PASS | A7 续接把上一轮 assistant 回答回填进上下文（stub 实收）
+PASS | A7 UHP 无令牌 401 fail-closed
+PASS | A7 UHP 无 uhp.invoke → 403
+PASS | A7 SSE 无令牌 401 / 坏令牌 401（错误码规范，不混入 400）
+PASS | A7 SSE 带令牌建立（text/event-stream + 历史快照）
+PASS | A8 一致性巡检捕获 harness 幽灵引用（声明>授权的漂移）
+PASS | A8 巡检报告可回溯查询（/api/a2a/patrols）
+PASS | A8 隔离组织账号目录零可见（组织子树收敛）
+=== B 38/39 ===
+PASS | B0 夹具：A2/A1 目标上线
+PASS | B0 夹具：四类机器凭证就绪
+PASS | B1 治理读端点：无令牌 401（fail-closed）
+PASS | B1 治理读端点：最小权限成员 403
+PASS | B1 治理读端点：协作观察员 200（a2a.directory.read + uhp.read）
+PASS | B1 治理读端点：管理员 200
+PASS | B1 治理写端点：无令牌 401 / 最小成员 403 / 只读观察员 403
+PASS | B2 受害任务处于 auth_required（A1 目标人在环审批）
+PASS | B2 第①层：外部注入 ybk_a2a_task_id → 400 TASK_BINDING_FORBIDDEN
+PASS | B2 第②层：顶层 task_id 变体不建立任务绑定（fail-closed 不生效）
+FAIL | B2【留痕缺口】顶层 task_id 注入未进 ignored_fields 也未审计（与 metadata 变体 400 口径不一致）
+PASS | B2 注入变体矩阵：metadata.task_id / body.taskId / body.task_id 均不建立任务绑定且受害任务状态不变
+PASS | B2 第③层：受害任务状态未变且无伪造交付物
+PASS | B2 第④层：注入尝试成为可观测审计事件（task_binding_denied）
+PASS | B2 受害任务在合法审批后正常恢复执行（主流程未被破坏）
+PASS | B3 非发起方（持 a2a.directory.read）取消他人任务 → -32003
+PASS | B3 被越权取消的任务状态未变
+PASS | B3 管理员可取消（特权面不受归属限制）
+PASS | B4 UHP 属主创建执行记录
+PASS | B4 非属主读他人执行记录 → 404（不泄露存在性）
+PASS | B4 非属主取消他人执行记录 → 404/403
+PASS | B4 属主可读自己的执行记录
+PASS | B5 发起方/管理员可见任务正文
+PASS | B5 治理读观察员看他人任务 → contentRedacted=true 且正文被省略
+PASS | B5 脱敏视图保留状态骨架（state/agentSlug 仍可见）
+PASS | B5 REST 与 RPC tasks/get 脱敏口径一致（Q-29）
+PASS | B6 夹具：隔离组织账号就绪
+PASS | B6 隔离组织对跨组织协作数据零可见（目录/任务/履约/harness/执行记录）
+PASS | B7 发起人本人验收自己任务 → 403（职责分离）
+PASS | B7 非发起人持 a2a.task.accept 可验收（200）
+PASS | B7 非 completed 任务拒绝验收（400）
+PASS | B7 验收理由必填（空理由 400）
+PASS | B8 OBO 令牌 scope 含 agent.a2a.invoke（Q-6 修复）
+PASS | B8 人类经 OBO 令牌发起协作成功（不再因 scope 缺失被拒）
+PASS | B8 外部直调伪造 ybk_on_behalf_user（不存在用户）→ 不采信不入账
+PASS | B9 异常令牌矩阵：无/坏令牌 401，错作用域 403，零 5xx
+PASS | B9 异常令牌矩阵无任何放行（200）
+PASS | B10 拒绝路径审计留痕可回查（authz.denied 或等价事件）
+PASS | B10 审计日志可用 taskId/responseId 反查（取消留痕 Q-25）
+=== C 17/20 ===
+PASS | C1 后端 A2A/UHP 端点前端接线率（17/17）
+PASS | C1 未接端点占比 ≤ 20%
+PASS | C1 已接端点 HTTP 方法无错配
+PASS | C2 /api/usage/collaborations 前端接线（Q-11 重点主缺口）
+PASS | C2 协作链区块渲染函数存在（非仅请求）
+PASS | C3 a2a.js 文案键总数（108）
+FAIL | C3 en-US 覆盖率 ≥ 95%（缺 7）
+FAIL | C3 ja-JP 覆盖率 ≥ 95%（缺 7）
+PASS | C3 词典无「中文键 → 裸协议词」翻译（如 验收通过→accepted）
+PASS | C4 无 a2a.task.accept 权限时验收按钮隐藏（canAccept 判定）
+PASS | C4 无权限/非完成态时给出说明文案（而非只隐藏按钮）
+PASS | C4 a2a.admin 规则管理入口有权限判定
+PASS | C5 平台具备 SSE 传输基建（realtime.js 支持 EventSource + 轮询降级）
+FAIL | C5【体验缺口】a2a 页未接入 SSE，长任务仅一次性快照（Q-15 未修）
+PASS | C6 加载屏插件数与 /api/platform/info 一致
+PASS | C6 加载屏权限点数与 /api/iam/permissions 一致
+PASS | C6 启动文案词典无历史数字死键（84/85/94 等）
+PASS | C7 a2a 页面已在 SPA 路由注册表中注册
+PASS | C7 a2a.js 可被 ESM 加载（无语法/顶层错误）
+PASS | C7 a2a.js 导出渲染入口
+=== D 25/26 ===
+PASS | D0 夹具：A2 目标上线
+PASS | D1 非 online 目标拒绝（TARGET_NOT_ONLINE）
+PASS | D1 密级越级拒绝（DATA_CLASS_EXCEEDED）
+PASS | D1 冻结目标拒绝（TARGET_FROZEN）
+PASS | D1 审批规则命中 → auth_required 且挂审批工单
+PASS | D1 预算熔断（block）拒绝或放行口径可解释（记录实际行为）
+PASS | D1 workforce permit 探测面可用（治理第 2 项非空操作的前置）
+PASS | D2 同步等待窗超时返回在途任务（working/submitted）
+PASS | D2 在途取消即时生效（canceled）
+PASS | D2 取消后模型返回不交付（终态仍 canceled，无 artifact）
+PASS | D2 取消任务不计入协作链计量
+PASS | D3 审批通过幂等恢复（completed + attempts=1）
+PASS | D3 恢复执行只产生 1 条 UHP 执行记录（无重复执行）
+PASS | D4 发起人自验收被拒（职责分离）
+PASS | D4 第三方验收通过并回写 acceptance
+PASS | D4 履约视图聚合完成率/验收通过率/P95
+PASS | D4 履约视图 P95 非负且时间口径合理（>=0）
+PASS | D5 并发独立请求全部成功（无 5xx）
+PASS | D5 同幂等键并发仅产生 1 个 response（幂等收敛）
+PASS | D5 并发派发产生独立 taskId（5 条互不覆盖）
+PASS | D6 task-bound 会话续接继承 session_id
+PASS | D6 跨主体续接他人会话被拒（403）
+PASS | D7 巡检捕获 Skill 下架 + harness 幽灵引用（多类漂移）
+PASS | D8 SSE 建立并推送历史快照（首帧含 event/data）
+PASS | D8 UHP stream=true 返回 text/event-stream（协议头正确）
+FAIL | D8【缺陷】UHP 外部直调 SSE 不闭合（执行已 completed，却只下发 response.created；证据 repro/uhp-sse-direct.mjs）
+=== E 21/26 ===
+PASS | E0 夹具：目标上线 + harness 注册
+PASS | E1 只读 well-known 发现卡片（外部客户端零 SDK）
+PASS | E1 卡片含调用所需的全部契约面（endpoint/eventsUrl/scopes/协议扩展）
+PASS | E1 外部客户端派活成功（message/send → Task）
+FAIL | E1 tasks/get 轮询返回同一任务终态（外部凭证可查自己发起的任务）
+FAIL | E1【缺陷】外部 refType=external 凭证 dispatch 成功但 tasks/get 被组织判定拒绝（-32003）
+PASS | E1 tasks/list 可列举（外部客户端）
+FAIL | E1【缺陷】外部凭证 tasks/list 看不到自己发起的任务（返回空集）
+FAIL | E1 SSE 事件流可按卡片地址建立（外部客户端）
+PASS | E1 message/stream 返回 JSON-RPC Task（同构）
+PASS | E1 tasks/cancel 外部客户端可取消自己发起的任务
+FAIL | E1【越权口径】外部客户端取消自己任务被拒（应允许）
+PASS | E2 卡片 JWS 独立验签通过
+PASS | E2 篡改卡片 body 后验签失败（签名有效覆盖）
+PASS | E3 轮换后 clientId 不变
+PASS | E3 轮换后旧 secret 立即失效
+PASS | E3 轮换后新 secret 可换令牌
+PASS | E4 前置：OBO 目标上线
+PASS | E4 OBO 令牌签发且带 act 链（human 主体）
+PASS | E4 OBO 发起协作成功且任务落 onBehalfUser
+PASS | E4 审计可追真实发起人（OBO 链消费点存在）
+PASS | E5 CLI 帮助已覆盖 a2a/uhp（上一轮 Q-33 零覆盖）
+PASS | E5 CLI a2a/uhp 子命令全部可用（8/8）
+PASS | E5 CLI 遗留缺陷：无 TypeError/未知资源（agent topology / mcp get / group list）
+PASS | E5 CLI 全局选项可前置（--token 在子命令前）
+PASS | E5 CLI mcp invoke 失败时非零退出（不再 exit=0 假成功）

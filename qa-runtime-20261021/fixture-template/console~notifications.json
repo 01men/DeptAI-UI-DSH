@@ -1,0 +1,771 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:35.030Z",
+    "updatedAt": "2026-10-20T04:14:35.030Z",
+    "id": "ntf_mvg65wyeidonbtz2",
+    "at": "2026-10-20T04:14:35.030Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：QA-A0提示型员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.459Z",
+    "updatedAt": "2026-10-20T04:14:35.459Z",
+    "id": "ntf_mvg65xabidozy1u9",
+    "at": "2026-10-20T04:14:35.459Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：QA-A1执行型员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.881Z",
+    "updatedAt": "2026-10-20T04:14:35.881Z",
+    "id": "ntf_mvg65xm1idpb7d73",
+    "at": "2026-10-20T04:14:35.881Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：QA-A2自主型员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:36.299Z",
+    "updatedAt": "2026-10-20T04:14:36.299Z",
+    "id": "ntf_mvg65xxnidpn3q71",
+    "at": "2026-10-20T04:14:36.299Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：QA-A3协商型员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:36.718Z",
+    "updatedAt": "2026-10-20T04:14:36.718Z",
+    "id": "ntf_mvg65y9aidpzjfd4",
+    "at": "2026-10-20T04:14:36.718Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：QA协作发起方员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:14:37.138Z",
+    "updatedAt": "2026-10-20T04:14:37.138Z",
+    "id": "ntf_mvg65ykyidqbl6vg",
+    "at": "2026-10-20T04:14:37.138Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：QA-A3发起方员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:18:07.268Z",
+    "updatedAt": "2026-10-20T04:18:07.268Z",
+    "id": "ntf_mvg6agpwie6mc42o",
+    "at": "2026-10-20T04:18:07.268Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6agpvie6gowp7（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:18:35.974Z",
+    "updatedAt": "2026-10-20T04:18:35.974Z",
+    "id": "ntf_mvg6b2vaie9f01du",
+    "at": "2026-10-20T04:18:35.974Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6b2v9ie99i6yo（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:18:51.066Z",
+    "updatedAt": "2026-10-20T04:18:51.066Z",
+    "id": "ntf_mvg6beiiiebsi334",
+    "at": "2026-10-20T04:18:51.065Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6beigiebmor7t（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:18:57.211Z",
+    "updatedAt": "2026-10-20T04:18:57.211Z",
+    "id": "ntf_mvg6bj97iedtqtel",
+    "at": "2026-10-20T04:18:57.211Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6bj96iednyzoa（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:19:51.472Z",
+    "updatedAt": "2026-10-20T04:19:51.472Z",
+    "id": "ntf_mvg6cp4gieirmugw",
+    "at": "2026-10-20T04:19:51.472Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6cp4fieil24ih（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:20:02.515Z",
+    "updatedAt": "2026-10-20T04:20:02.515Z",
+    "id": "ntf_mvg6cxn7iekrlsf2",
+    "at": "2026-10-20T04:20:02.515Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6cxn6ieklfqho（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:20:42.734Z",
+    "updatedAt": "2026-10-20T04:20:42.734Z",
+    "id": "ntf_mvg6dsoeienc381l",
+    "at": "2026-10-20T04:20:42.734Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6dsoaien6ldly（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:20:49.498Z",
+    "updatedAt": "2026-10-20T04:20:49.498Z",
+    "id": "ntf_mvg6dxwaienswcx9",
+    "at": "2026-10-20T04:20:49.498Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6dxw9ienm89uu（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:01.260Z",
+    "updatedAt": "2026-10-20T04:21:01.260Z",
+    "id": "ntf_mvg6e6z0ieo7iz6r",
+    "at": "2026-10-20T04:21:01.260Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6e6z0ieo104bm（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:18.684Z",
+    "updatedAt": "2026-10-20T04:21:18.684Z",
+    "id": "ntf_mvg6ekf0ieourkfu",
+    "at": "2026-10-20T04:21:18.684Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6ekf0ieoo6x0q（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:27.736Z",
+    "updatedAt": "2026-10-20T04:21:27.736Z",
+    "id": "ntf_mvg6eregietss6yz",
+    "at": "2026-10-20T04:21:27.736Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6erefietms244（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:37.097Z",
+    "updatedAt": "2026-10-20T04:21:37.097Z",
+    "id": "ntf_mvg6eymhif2lme2u",
+    "at": "2026-10-20T04:21:37.097Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6eymdif2f9ott（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:40.800Z",
+    "updatedAt": "2026-10-20T04:21:40.800Z",
+    "id": "ntf_mvg6f1hcif2wk4t9",
+    "at": "2026-10-20T04:21:40.800Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6f1hcif2qjq43（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:44.854Z",
+    "updatedAt": "2026-10-20T04:21:44.854Z",
+    "id": "ntf_mvg6f4lyif7esga5",
+    "at": "2026-10-20T04:21:44.854Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6f4lyif78780h（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:52.034Z",
+    "updatedAt": "2026-10-20T04:21:52.034Z",
+    "id": "ntf_mvg6fa5eif8gc26o",
+    "at": "2026-10-20T04:21:52.034Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6fa5dif8a2xsh（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:21:54.330Z",
+    "updatedAt": "2026-10-20T04:21:54.330Z",
+    "id": "ntf_mvg6fbx6if8r9wbj",
+    "at": "2026-10-20T04:21:54.330Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6fbx6if8lksyx（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:07.926Z",
+    "updatedAt": "2026-10-20T04:22:07.926Z",
+    "id": "ntf_mvg6fmeuifadodrz",
+    "at": "2026-10-20T04:22:07.926Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6fmetifa73nvm（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:11.986Z",
+    "updatedAt": "2026-10-20T04:22:11.986Z",
+    "id": "ntf_mvg6fpjmifam8z7t",
+    "at": "2026-10-20T04:22:11.986Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6fpjlifag2yu0（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:25.696Z",
+    "updatedAt": "2026-10-20T04:22:25.696Z",
+    "id": "ntf_mvg6g04gifb85if2",
+    "at": "2026-10-20T04:22:25.696Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6g04fifb2rrwk（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:29.741Z",
+    "updatedAt": "2026-10-20T04:22:29.741Z",
+    "id": "ntf_mvg6g38tifbhu1i5",
+    "at": "2026-10-20T04:22:29.741Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6g38sifbb42ho（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:36.359Z",
+    "updatedAt": "2026-10-20T04:22:36.359Z",
+    "id": "ntf_mvg6g8cnifbsx2zu",
+    "at": "2026-10-20T04:22:36.359Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6g8cnifbm0dj8（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:40.417Z",
+    "updatedAt": "2026-10-20T04:22:40.417Z",
+    "id": "ntf_mvg6gbhdifc4n6od",
+    "at": "2026-10-20T04:22:40.417Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6gbhcifbyfa3m（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:53.954Z",
+    "updatedAt": "2026-10-20T04:22:53.954Z",
+    "id": "ntf_mvg6glxeifcfrll8",
+    "at": "2026-10-20T04:22:53.954Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6glxdifc9rrh9（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T04:22:58.015Z",
+    "updatedAt": "2026-10-20T04:22:58.015Z",
+    "id": "ntf_mvg6gp27ifcor36t",
+    "at": "2026-10-20T04:22:58.015Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvg6gp25ifcigz9j（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:34.596Z",
+    "updatedAt": "2026-10-20T10:04:34.596Z",
+    "id": "ntf_mvgio0boifher5m4",
+    "at": "2026-10-20T10:04:34.596Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：QA-A3协商型员工(反价stub)",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:54.801Z",
+    "updatedAt": "2026-10-20T10:04:54.801Z",
+    "id": "ntf_mvgiofwxifjf17x0",
+    "at": "2026-10-20T10:04:54.801Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-A0调用方员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:55.318Z",
+    "updatedAt": "2026-10-20T10:04:55.318Z",
+    "id": "ntf_mvgiogbaifjngdl8",
+    "at": "2026-10-20T10:04:55.318Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-A1调用方员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:55.841Z",
+    "updatedAt": "2026-10-20T10:04:55.841Z",
+    "id": "ntf_mvgiogptifjvck8r",
+    "at": "2026-10-20T10:04:55.841Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-A3反价目标员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:56.359Z",
+    "updatedAt": "2026-10-20T10:04:56.359Z",
+    "id": "ntf_mvgioh47ifk3sb4w",
+    "at": "2026-10-20T10:04:56.359Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-预算熔断目标员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:56.875Z",
+    "updatedAt": "2026-10-20T10:04:56.875Z",
+    "id": "ntf_mvgiohijifkbch4q",
+    "at": "2026-10-20T10:04:56.875Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-技能漂移员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:57.389Z",
+    "updatedAt": "2026-10-20T10:04:57.389Z",
+    "id": "ntf_mvgiohwtifkjzy0x",
+    "at": "2026-10-20T10:04:57.389Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-harness漂移员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:04:57.905Z",
+    "updatedAt": "2026-10-20T10:04:57.905Z",
+    "id": "ntf_mvgioib5ifkrrtx1",
+    "at": "2026-10-20T10:04:57.904Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-冻结目标员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:06:13.923Z",
+    "updatedAt": "2026-10-20T10:06:13.923Z",
+    "id": "ntf_mvgiq4yriflmyb41",
+    "at": "2026-10-20T10:06:13.923Z",
+    "type": "alert",
+    "title": "Agent 已冻结：D-冻结目标员工",
+    "body": "执行中枢预算前置熔断：Agent 主体预算（agent:agt_mvgio9qzifioxb4y）已超限，action=block——已生成解冻审批单（L4），审批通过后自动解冻",
+    "scope": {
+      "kind": "org",
+      "orgId": "org_mvg65e9lidmbgujd"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:06:13.924Z",
+    "updatedAt": "2026-10-20T10:06:13.924Z",
+    "id": "ntf_mvgiq4ysiflonces",
+    "at": "2026-10-20T10:06:13.924Z",
+    "type": "approval",
+    "title": "待审批：Agent「D-冻结目标员工」预算超限冻结，申请解冻",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:07:22.995Z",
+    "updatedAt": "2026-10-20T10:07:22.995Z",
+    "id": "ntf_mvgirm9fifn1kq1r",
+    "at": "2026-10-20T10:07:22.995Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgirm9eifmvcoef（qa-a2-auto）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:07:27.048Z",
+    "updatedAt": "2026-10-20T10:07:27.048Z",
+    "id": "ntf_mvgirpe0ifn9fig5",
+    "at": "2026-10-20T10:07:27.048Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgirpdyifn3t1i6（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:07:53.118Z",
+    "updatedAt": "2026-10-20T10:07:53.118Z",
+    "id": "ntf_mvgis9i6ifouq4zj",
+    "at": "2026-10-20T10:07:53.118Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgis9i5ifoo3f1e（qa-a2-auto）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:07:57.172Z",
+    "updatedAt": "2026-10-20T10:07:57.172Z",
+    "id": "ntf_mvgiscmsifp2vb25",
+    "at": "2026-10-20T10:07:57.172Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiscmqifowm6g3（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:08:26.000Z",
+    "updatedAt": "2026-10-20T10:08:26.000Z",
+    "id": "ntf_mvgisyvkifsfclvs",
+    "at": "2026-10-20T10:08:26.000Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgisyviifs99gaw（d-a3-counter）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:08:50.097Z",
+    "updatedAt": "2026-10-20T10:08:50.097Z",
+    "id": "ntf_mvgithgxiftidk81",
+    "at": "2026-10-20T10:08:50.097Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgithgxiftc0a77（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:08:59.278Z",
+    "updatedAt": "2026-10-20T10:08:59.278Z",
+    "id": "ntf_mvgitojyiftrwq1y",
+    "at": "2026-10-20T10:08:59.278Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgitojyiftlclc5（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:08:59.336Z",
+    "updatedAt": "2026-10-20T10:08:59.336Z",
+    "id": "ntf_mvgitolkifv9h4yw",
+    "at": "2026-10-20T10:08:59.336Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgitoliifv3mi4l（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:09:04.290Z",
+    "updatedAt": "2026-10-20T10:09:04.290Z",
+    "id": "ntf_mvgitsf6ifxprymw",
+    "at": "2026-10-20T10:09:04.290Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgitsf3ifxjmvhw（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:09:34.138Z",
+    "updatedAt": "2026-10-20T10:09:34.138Z",
+    "id": "ntf_mvgiufgaifz56dq4",
+    "at": "2026-10-20T10:09:34.138Z",
+    "type": "approval",
+    "title": "待审批：Agent 上线：D-A2调用方员工",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:09:47.749Z",
+    "updatedAt": "2026-10-20T10:09:47.749Z",
+    "id": "ntf_mvgiupydig167wg8",
+    "at": "2026-10-20T10:09:47.749Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiupycig10bezc（qa-a2-auto）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:09:51.801Z",
+    "updatedAt": "2026-10-20T10:09:51.801Z",
+    "id": "ntf_mvgiut2xig1eobq3",
+    "at": "2026-10-20T10:09:51.801Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiut2wig18vwq2（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:09:57.247Z",
+    "updatedAt": "2026-10-20T10:09:57.247Z",
+    "id": "ntf_mvgiuxa7ig4onz5p",
+    "at": "2026-10-20T10:09:57.247Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiuxa5ig4il3kk（d-a3-counter）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:10:00.875Z",
+    "updatedAt": "2026-10-20T10:10:00.875Z",
+    "id": "ntf_mvgiv02zig4ztp96",
+    "at": "2026-10-20T10:10:00.875Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiv02zig4tfai8（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:10:05.445Z",
+    "updatedAt": "2026-10-20T10:10:05.445Z",
+    "id": "ntf_mvgiv3lxig6obubs",
+    "at": "2026-10-20T10:10:05.445Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiv3lvig6iq1fk（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:10:09.923Z",
+    "updatedAt": "2026-10-20T10:10:09.923Z",
+    "id": "ntf_mvgiv72big7sfmst",
+    "at": "2026-10-20T10:10:09.922Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiv728ig7m9j2o（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:10:14.872Z",
+    "updatedAt": "2026-10-20T10:10:14.872Z",
+    "id": "ntf_mvgivavsigaaa335",
+    "at": "2026-10-20T10:10:14.872Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgivavriga4ij6x（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:11:05.810Z",
+    "updatedAt": "2026-10-20T10:11:05.810Z",
+    "id": "ntf_mvgiwe6qigcrpxyv",
+    "at": "2026-10-20T10:11:05.810Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgiwe6pigclcy1u（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:11:52.443Z",
+    "updatedAt": "2026-10-20T10:11:52.443Z",
+    "id": "ntf_mvgixe63igg4hzdy",
+    "at": "2026-10-20T10:11:52.443Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgixe62igfy4b99（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:12:00.785Z",
+    "updatedAt": "2026-10-20T10:12:00.785Z",
+    "id": "ntf_mvgixkltiggvyqes",
+    "at": "2026-10-20T10:12:00.785Z",
+    "type": "alert",
+    "title": "数字员工「QA-A3协商型员工(反价stub)」声明-授权一致性巡检发现 1 项漂移",
+    "body": "密级口径提示：A2A 天花板=secret 且业务密级=secret（绝密禁止 Agent 处理口径），执行面将按渠道锁死拒绝——请确认口径",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:12:00.786Z",
+    "updatedAt": "2026-10-20T10:12:00.786Z",
+    "id": "ntf_mvgixkluiggwdnlo",
+    "at": "2026-10-20T10:12:00.786Z",
+    "type": "alert",
+    "title": "数字员工「D-技能漂移员工」声明-授权一致性巡检发现 1 项漂移",
+    "body": "声明漂移：引用的 Skill「qa-removed-skill-xyz」已不在架（发布状态 不存在），卡片不会投影（声明≤授权已兜底），请清理 attrs.skills",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:12:00.786Z",
+    "updatedAt": "2026-10-20T10:12:00.786Z",
+    "id": "ntf_mvgixkluiggx0ugg",
+    "at": "2026-10-20T10:12:00.786Z",
+    "type": "alert",
+    "title": "数字员工「D-harness漂移员工」声明-授权一致性巡检发现 1 项漂移",
+    "body": "harness 漂移：uhpHarnessRef 指向的 h-nonexistent-xyz 不存在，执行将诚实失败",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:20:10.766Z",
+    "updatedAt": "2026-10-20T10:20:10.766Z",
+    "id": "ntf_mvgj82oeigzqpszq",
+    "at": "2026-10-20T10:20:10.766Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgj82oeigzk6ntj（qa-a3-neg）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  },
+  {
+    "createdAt": "2026-10-20T10:22:28.273Z",
+    "updatedAt": "2026-10-20T10:22:28.273Z",
+    "id": "ntf_mvgjb0s177d7ajr4",
+    "at": "2026-10-20T10:22:28.273Z",
+    "type": "approval",
+    "title": "待审批：A2A 协作任务授权：task_mvgjb0s077d1yp0s（qa-a1-exec）",
+    "body": "已在审批中心挂起，请及时处理",
+    "scope": {
+      "kind": "global"
+    }
+  }
+]

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01门 · 演示一键入场</title>
+  <style>
+    /* 演示一键入场中转页（2026-11-01）：签票 → 探测 01门装态 → 带 #entry_ticket 兑换直达。
+       零依赖零构建（与控制台 public 同约束）；配色对齐控制台 tokens（暖纸底 + 深青蓝文字）。 */
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #f6f4ef; color: #1f2d3d; padding: 24px;
+    }
+    .card {
+      width: 100%; max-width: 460px; background: #fff; border-radius: 14px;
+      border: 1px solid #e8e4da; box-shadow: 0 10px 34px rgba(31, 45, 61, .08); padding: 30px 30px 26px;
+    }
+    h1 { font-size: 17px; display: flex; align-items: center; gap: 8px; }
+    .sub { margin-top: 8px; font-size: 12.5px; color: #6b7280; line-height: 1.7; }
+    .status { margin-top: 18px; font-size: 13px; display: flex; align-items: center; gap: 8px; min-height: 22px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #f0a020; flex: none; animation: pulse 1.1s ease-in-out infinite; }
+    .dot.ok { background: #07c160; animation: none; }
+    .dot.bad { background: #d54941; animation: none; }
+    @keyframes pulse { 50% { opacity: .35; } }
+    .actions { margin-top: 18px; display: none; flex-direction: column; gap: 10px; }
+    .actions.show { display: flex; }
+    a.btn {
+      display: block; text-align: center; text-decoration: none; font-size: 13.5px; font-weight: 600;
+      padding: 10px 14px; border-radius: 9px; border: 1px solid #d8d4ca; color: #1f2d3d; background: #faf9f6;
+    }
+    a.btn.primary { background: #155e75; border-color: #155e75; color: #fff; }
+    .err { margin-top: 12px; font-size: 12px; color: #d54941; line-height: 1.6; word-break: break-all; display: none; }
+    .err.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🌳 01门 · 行业 AI 工作台</h1>
+    <p class="sub">演示环境免密通道：自动以演示身份签发一次性入场票据（≤120s），兑换后直达工作台。全程无需输入账号密码。</p>
+    <div class="status"><span class="dot" id="dot"></span><span id="msg">正在准备演示身份…</span></div>
+    <div class="err" id="err"></div>
+    <div class="actions" id="actions">
+      <a class="btn primary" id="retryPanel" href="/gate01/panel/">直接打开 01门面板（手动登录）</a>
+      <a class="btn" href="/">返回控制台首页</a>
+    </div>
+  </div>
+  <script type="module">
+    window.__gate01EntryBooted = true
+    window.addEventListener('error', (event) => { try { document.getElementById('err').textContent = '脚本异常：' + String(event.message ?? event.error); document.getElementById('err').classList.add('show') } catch { /* 忽略 */ } })
+    window.addEventListener('unhandledrejection', (event) => { try { document.getElementById('err').textContent = '流程异常：' + String(event.reason?.message ?? event.reason); document.getElementById('err').classList.add('show') } catch { /* 忽略 */ } })
+    const dot = document.getElementById('dot')
+    const msg = document.getElementById('msg')
+    const err = document.getElementById('err')
+    const showErr = (text) => { err.textContent = text; err.classList.add('show') }
+    const settle = (state, text) => {
+      dot.className = `dot ${state}`
+      msg.textContent = text
+      document.getElementById('actions').classList.add('show')
+    }
+    const jsonOf = async (res) => (String(res.headers.get('content-type') ?? '').includes('json') ? res.json().catch(() => null) : null)
+    const main = async () => {
+    try {
+      msg.textContent = '正在准备演示身份与工作台通道…'
+      // 签票与装态探测并行（边缘慢时不串行等待）；探测失败不阻断——控制台入口本身已探针门控
+      const [entry, link] = await Promise.all([
+        fetch('/api/panel/auth/demo-entry', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+          .then(jsonOf)
+          .catch(() => null),
+        fetch('/gate01/rqcard/link', { headers: { 'x-rqcard-call': '1', accept: 'application/json' } })
+          .then(jsonOf)
+          .catch(() => null),
+      ])
+      const gate01Absent = link !== null && (link?.ok !== true || typeof link.data?.mode !== 'string')
+      if (gate01Absent) {
+        // 明确未部署 01门（底座自装态）：指去底座内置部门面板，不空转到向导
+        settle('bad', '本实例未部署 01门面板（可体验底座内置部门面板）')
+        document.getElementById('retryPanel').href = '/panel/'
+        document.getElementById('retryPanel').textContent = '打开部门面板（底座内置）'
+        return
+      }
+      if (entry?.ok !== true || !entry.data?.ticket) {
+        settle('bad', '免密通道不可用（非演示实例或服务未就绪）')
+        showErr(entry?.error?.message ?? '签票服务无响应')
+        return
+      }
+      // 带 #entry_ticket 片段直达面板（面板 boot 自助兑换；片段不进服务端日志）
+      dot.className = 'dot ok'
+      msg.textContent = '已就绪，正在进入工作台…'
+      location.replace(`/gate01/panel/#entry_ticket=${encodeURIComponent(entry.data.ticket)}`)
+    } catch (error) {
+      settle('bad', '免密通道异常（网络或服务暂不可用）')
+      showErr(String(error?.message ?? error))
+    }
+    }
+    main()
+  </script>
+</body>
+</html>

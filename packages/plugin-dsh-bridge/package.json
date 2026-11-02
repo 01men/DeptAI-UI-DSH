@@ -6,5 +6,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./*": "./src/*"
-  }
+  },
+  "description": "dsh 宿主桥接（/rq 前缀路由挂载进 dsh webServer；experimental：仅 dsh 挂载形态加载，独立宿主不装配；W5 起宿主耦合面经 platform-core hostBridge 窄端口收敛）"
 }

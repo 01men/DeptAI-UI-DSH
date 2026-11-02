@@ -9,7 +9,13 @@ endpoints:
   - POST /api/mcp/services/:id/verify|deploy|rollback|offline|health · POST /api/mcp/services/:id/final-review（两级审批终审）
   - GET /api/mcp/services/:id/metrics · GET /api/mcp/calls
   - GET/POST /api/mcp/perm-groups · PATCH/DELETE /api/mcp/perm-groups/:id
-  - POST /api/mcp/invoke（网关统一鉴权/限流/审计）
+  - POST /api/mcp/invoke（网关统一鉴权/限流/审计；body.work 仅 permitId/runId/stepKey 索引透传；兼容层：Agent 标准默认路径是 /mcp/services/:serviceSlug，W2-T3 §9）
+  - POST/GET /api/mcp/risk-registry · POST /api/mcp/risk-registry/:id/decide|retire · GET /api/mcp/risk-registry/review-list（W1/V11 工具风险登记：两级审批+全量重审，mcp.risk.admin）
+  - POST /api/mcp/services/:id/owner-entity（归属指派） · GET /api/mcp/governance/summary（治理待办：unowned/plainHeaderServices/nonGateway，W1-T2 §5）
+  - PUT/GET /api/mcp/services/:id/credential（下游凭证 SecretBroker：值落密钥文件 0600，业务集合与响应零明文，W1-T2 §6）
+  - POST /api/mcp/credentials/migrate（存量明文敏感头迁移入 SecretBroker；dryRun 预检报告）
+  - POST /mcp/services/:serviceSlug（服务级 MCP 数据面：Bearer 平台令牌或 aud=mcp:service:<slug> 委托令牌，initialize/ping/tools/list/tools/call，tools/list 经 authorizedToolsFor 按调用方过滤，tools/call 统一走网关 invoke 链） · GET/DELETE /mcp/services/:serviceSlug（Streamable HTTP 会话语义与平台 /mcp 一致：GET=SSE 长流不支持 405，DELETE=会话终结恒成功） · POST /mcp/s/:serviceId（同上别名，按服务 ID 直达） · GET/DELETE /mcp/s/:serviceId（同上）
+  - POST /api/mcp/perm-groups/dry-run（mcp.permgroup.write；权限变更影响预演：newServices/writeTools/confidential/crossOrg/affectedSubjects，不落库） · POST /api/mcp/perm-groups/:id/scope-template（mcp.permgroup.read；按权限组策略生成资源限定 scope 模板 mcp.service:/mcp.tool: 形态，W3-T5 契约 §12/§14 控制台消费面）
 tools:
   - mcp_service_list
   - mcp_deploy
@@ -17,7 +23,12 @@ tools:
   - mcp_metrics
   - mcp_invoke
   - mcp_health_check
+  - mcp_service_register
+  - mcp_service_review
 services:
   - key: mcpRegistry
     access: ctx.mcpRegistry
     description: 服务注册/版本/灰度/回滚 + 健康探活熔断 + 权限组 + 调用网关 + 监控
+  - key: mcpToolRisks
+    access: ctx.mcpToolRisks
+    description: W1/V11 工具可信风险登记（submit/decide 两级审批/list/reviewList 重审清单/retire 退场；effectiveRisk 为网关闸门唯一风险来源）

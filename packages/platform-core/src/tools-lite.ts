@@ -21,6 +21,10 @@ export interface ToolPrincipal {
   kind: 'human' | 'machine'
   principalId: string
   userId?: string
+  /** D01（additive）：machine 专属——凭证关联资源类型（refType=agent 时可反查数字员工绑定）。 */
+  refType?: string
+  /** D01（additive）：machine 专属——凭证关联资源 ID。 */
+  refId?: string
   name: string
   permissions: string[]
   actChain?: Array<{ name: string; type: string }>
@@ -65,6 +69,14 @@ export interface ToolExecutionResultLite {
 
 export type ToolGuardLite = (input: { name: string; arguments: unknown }) => string | undefined
 
+/**
+ * 上下文型 guard（D02/D03 additive）：在旧 ToolGuardLite 之后运行，额外获得
+ * 调用者身份（principal）与 callId——入口/网关继续负责权限与策略，guard 链由此
+ * 获得身份可见性（缺身份 fail-closed 的工具可在此统一拦截）。旧 ToolGuardLite 不动。
+ * 返回字符串＝拒绝原因；返回 undefined＝放行。
+ */
+export type ContextualToolGuard = (input: { name: string; arguments: unknown; principal?: ToolPrincipal; callId: string }) => string | undefined
+
 /** 注册级拦截器（OPT-P1-03 正式扩展点）：所有 register 调用先过拦截链，返回（可替换的）定义。 */
 export type ToolInterceptor = (definition: ToolDefinitionLite) => ToolDefinitionLite
 
@@ -73,6 +85,7 @@ export class ToolRuntimeLite extends Service {
 
   private definitions = new Map<string, ToolDefinitionLite>()
   private guards: ToolGuardLite[] = []
+  private contextualGuards: ContextualToolGuard[] = []
   private interceptors: ToolInterceptor[] = []
 
   constructor(ctx: Context) {
@@ -107,6 +120,20 @@ export class ToolRuntimeLite extends Service {
     return () => {
       const index = this.guards.indexOf(guard)
       if (index >= 0) this.guards.splice(index, 1)
+    }
+  }
+
+  /**
+   * 上下文型 guard 注册器（D02/D03 additive）：注册的 guard 在旧 guard 链全部通过后
+   * 运行，按注册顺序执行并注入 principal/callId。任一返回拒绝原因即短路（与旧 guard
+   * 同款失败形态：isError + 中文拒绝文案）。返回注销函数。
+   */
+  guardContext(guard: ContextualToolGuard): () => void {
+    if (typeof guard !== 'function') throw new TypeError('[tools] guardContext 的 guard 必须是函数')
+    this.contextualGuards.push(guard)
+    return () => {
+      const index = this.contextualGuards.indexOf(guard)
+      if (index >= 0) this.contextualGuards.splice(index, 1)
     }
   }
 
@@ -165,6 +192,13 @@ export class ToolRuntimeLite extends Service {
     }
     for (const guard of this.guards) {
       const reason = guard({ name, arguments: args })
+      if (reason) {
+        return { ...base, isError: true, content: [{ type: 'text', text: `调用被拒绝：${reason}` }], error: { message: reason }, durationMs: Date.now() - started }
+      }
+    }
+    // 上下文型 guard（D02/D03）：旧 guard 链之后运行，注入身份可见性（principal/callId）
+    for (const guard of this.contextualGuards) {
+      const reason = guard({ name, arguments: args, ...(input.principal ? { principal: input.principal } : {}), callId })
       if (reason) {
         return { ...base, isError: true, content: [{ type: 'text', text: `调用被拒绝：${reason}` }], error: { message: reason }, durationMs: Date.now() - started }
       }

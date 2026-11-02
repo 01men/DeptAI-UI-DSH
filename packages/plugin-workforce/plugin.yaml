@@ -1,0 +1,28 @@
+# 插件声明：id、版本、依赖与权限点（插件标准解剖结构）
+# 数字员工域：员工档案/任用版本/运行绑定/能力清单/工作授权（permit）/受控调用/交付验收。
+# 事实源分工（实施路径 §3.1）：员工·任用·交付归本插件；目标/任务/run 归 exec-hub；
+# 资源实际调用与原授权链归各资源网关——本插件不复制三套身份，不重写资源服务。
+id: dsh-plugin-workforce
+version: 1.0.0
+label: 数字员工域（任用/准入/工作授权/受控调用/交付验收）
+depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam', 'dsh-plugin-authn', 'dsh-plugin-audit', 'dsh-plugin-usage', 'dsh-plugin-resource-core', 'dsh-plugin-agent', 'dsh-plugin-mcp', 'dsh-plugin-connector', 'dsh-plugin-modelgw', 'dsh-plugin-nas', 'dsh-plugin-skillhub', 'dsh-plugin-exec-hub']
+provides:
+  services:
+    - workforceStore
+    - workforceEmployees
+    - workforceAppointments
+    - workforceIdentity
+    - workforceAdmission
+    - workforcePermits
+    - workforceCapabilities
+    - workforceInvocations
+    - workforceArtifacts
+    - workforceDelivery
+    - workforceAdapters
+    - workforceMaintenance
+permissions:
+  - workforce.read
+  - workforce.write
+  - workforce.admin
+  - workforce.invoke
+  - workforce.accept

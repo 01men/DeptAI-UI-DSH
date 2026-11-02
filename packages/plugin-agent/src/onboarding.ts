@@ -60,8 +60,10 @@ curl -s -X POST ${origin}/api/agents/${agent.id}/metrics-report \\
 【第 4 步 · NAS 文件能力与数据权限（需文件能力时必读）】
 NAS 文件操作经文件网关（MCP：url=<网关地址>/mcp + Authorization: Bearer <管理员签发的网关令牌>）统一执法，
 按组织位置 + 角色层级 RBAC 判定，全链 fail-closed：
-- 身份红线（P0-2）：真实用户身份一律经请求头 X-On-Behalf-User: <平台或钉钉 userId> 透传，禁止进工具参数；
-  令牌须由管理员标记 allowedOnBehalf 才允许携带该头，否则一律 403 FORGED_ON_BEHALF（伪造留痕）；
+- 身份归因（MCP 治理 W1 降级表述，原 P0-2）：请求头 X-On-Behalf-User: <平台或钉钉 userId> 仅作调用
+  归因（审计口径），不是授权事实——授权一律以令牌及其委托链为准；该头仍禁止进工具参数，
+  且令牌须由管理员标记 allowedOnBehalf 才允许携带，否则一律 403 FORGED_ON_BEHALF（伪造留痕）；
+  需要代用户操作时改用委托令牌（POST ${origin}/api/authn/token/exchange）；
   无用户上下文的机器调用可不带头，由令牌绑定身份判定。
 - 越权返回 JSON-RPC -32403「数据权限拒绝：<reasons>」，前缀可归因：path.out-of-scope（超作用域）/
   matrix.deny（角色无权）/ org.* / account.* / degraded.*（平台不可达已降级）——原文透传给用户，不要变形重试。
@@ -70,6 +72,34 @@ NAS 文件操作经文件网关（MCP：url=<网关地址>/mcp + Authorization: 
   → 审批单自动路由用户组织链最近负责人（兜底 resource_admin），通过后自动写 7 天例外，到期自动失效。
 - PDP 不可达时网关按「作用域快照只读 → 全局只读 → 拒绝」降级：收到 degraded.* 理由提示用户稍后重试，
   不要连续重试。observeOnly 观察期越权放行但留痕告警，不代表越权合法。
+
+【第 5 步 · 服务级 MCP 数据面（调用平台已纳管 MCP 服务时的标准路径）】
+Agent 标准默认路径是 POST ${origin}/mcp/services/<服务slug>（/api/mcp/invoke 仅为兼容层）：
+1. 用第 1 步令牌换服务级委托令牌（audience 绑定目标服务，短时令牌替代长期令牌出域）：
+   curl -s -X POST ${origin}/api/authn/token/exchange \\
+     -H "Authorization: Bearer <token>" -H 'content-type: application/json' \\
+     -d '{"audience":"mcp:service:<服务slug>"}'
+   → 取响应 data.access_token（默认 15 分钟有效，可带 ttlSeconds≤3600；可调用范围由管理员配置的
+   MCP 权限组决定，需要新工具授权时向管理员申请，不要用长期令牌硬闯）。
+   换牌三模式（机器凭证用①即可）：①自委托=sub=自身、只传 audience；②代用户委托=传
+   "userId":"<被代理用户ID>"（sub=该用户、需该用户已绑定本 Agent）；③人类换牌=传
+   "targetPrincipalId":"<目标主体ID>"（sub=本人、act=目标主体）。
+2. initialize 握手（标准 JSON-RPC 2.0，回 mcp-session-id）：
+   curl -s -X POST ${origin}/mcp/services/<服务slug> \\
+     -H "Authorization: Bearer <access_token>" -H 'content-type: application/json' \\
+     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"${agent.slug}","version":"1.0"}}}'
+3. tools/list 拉取可调用工具（平台按本 Agent 权限过滤，未授权工具不会出现在列表里）：
+   curl -s -X POST ${origin}/mcp/services/<服务slug> -H "Authorization: Bearer <access_token>" \\
+     -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+4. tools/call 调用工具（params.arguments 传业务参数）：
+   {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"<工具名>","arguments":{...}}}
+   → 成功回 result.content[0].text（工具结果 JSON 串）；拒绝一律是 JSON-RPC error，
+   按 error.data.code 处理、不要变形重试：-32001 未认证（重新换牌）/-32003 拒绝
+   （AUDIENCE_MISMATCH 受众不符 / TOOL_NOT_VISIBLE_OR_DENIED 工具不可见或未授权 /
+   BREAKER_OPEN 熔断 / SERVICE_OFFLINE 已下线 / SERVICE_NOT_PUBLISHED 未发布）/
+   -32004 RATE_LIMITED 限流 / -32000 服务错误（SERVICE_NOT_FOUND 服务不存在）。
+   别名形态 POST ${origin}/mcp/s/<服务ID> 等价；无 audience 的平台令牌也可直连（可调用面同样
+   以权限组为准），但长期令牌不得写进客户端配置出域。
 
 【注意】
 ${secretNote}

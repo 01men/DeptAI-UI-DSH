@@ -5,6 +5,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '../../platform-core/src/index.ts'
+import { t as translate } from '../../platform-i18n/src/index.ts'
 
 export const name = 'connector-tools'
 export const inject = ['tools', 'connectorHub']
@@ -25,7 +26,7 @@ export function apply(ctx: Context) {
     output: { type: 'object', additionalProperties: true },
     async execute(args) {
       const catalog = await ctx.connectorHub.catalog()
-      if (!catalog) return { error: '目录尚未同步：请先执行 connector gateway health + 目录同步' }
+      if (!catalog) return { error: translate('目录尚未同步：请先执行 connector gateway health + 目录同步') }
       const keyword = (args.keyword ?? '').toLowerCase()
       const limit = Math.min(Number(args.limit ?? 50), 200)
       const matchAction = (action: { id: string; service: string; description?: string }): boolean =>
@@ -52,7 +53,7 @@ export function apply(ctx: Context) {
     async execute(args, exec) {
       // org 范围由服务端从执行上下文收敛（与 REST restrictOrgScope 同一逻辑），不接受入参
       const orgScope = ctx.connectorHub.orgScopeFor(exec.principal)
-      if (orgScope === null) return { total: 0, connections: [], note: '当前身份无组织归属，连接可见范围为空（fail-closed）' }
+      if (orgScope === null) return { total: 0, connections: [], note: translate('当前身份无组织归属，连接可见范围为空（fail-closed）') }
       const refs = ctx.connectorHub.connections().find((item) =>
         (orgScope === undefined || item.ownerOrgId === orgScope) && (!args.provider || item.provider === args.provider))
       return {
@@ -70,22 +71,38 @@ export function apply(ctx: Context) {
 
   t.register(defineTool({
     name: 'connector_execute',
-    description: '通过连接器网关调用 SaaS action：六步链（RBAC→权限组→审批→限流→oct_ 令牌→数据面）。admin 级 action 会返回审批单。',
+    description: '通过连接器网关调用 SaaS action：工作级准入（受管数字员工）+ 六步链（RBAC→权限组→审批→限流→oct_ 令牌→数据面）。admin 级 action 会返回审批单。',
     permission: 'connector.invoke',
     parameters: {
       actionId: { type: 'string', required: true, description: 'action ID（如 hackernews.get_top_stories）' },
       input: { type: 'object', description: 'action 入参' },
       connection: { type: 'string', description: '指定命名连接别名（org:<orgId>:<name>）' },
       dryRun: { type: 'boolean', description: 'true 时只做授权链预演不真实调用' },
+      work: {
+        type: 'object',
+        description: '工作授权引用索引（§10.4：仅索引透传，授权事实由服务端回查）：permitId/runId/stepKey',
+        properties: {
+          permitId: { type: 'string', description: '工作授权 permit ID' },
+          runId: { type: 'string', description: '执行 run ID' },
+          stepKey: { type: 'string', description: '业务步骤键（同键同参重投复用稳定幂等键）' },
+        },
+      },
     },
     output: { type: 'object', additionalProperties: true },
     async execute(args, exec) {
       // 调用方身份取自执行上下文（入口从令牌解析），缺失即 fail-closed，不再有共享身份兜底
+      const work = (args.work ?? {}) as { permitId?: unknown; runId?: unknown; stepKey?: unknown }
+      const workRef = {
+        ...(typeof work.permitId === 'string' && work.permitId ? { permitId: work.permitId } : {}),
+        ...(typeof work.runId === 'string' && work.runId ? { runId: work.runId } : {}),
+        ...(typeof work.stepKey === 'string' && work.stepKey ? { stepKey: work.stepKey } : {}),
+      }
       return await ctx.connectorHub.invokeAction(ctx.connectorHub.callerFromPrincipal(exec.principal), {
         actionId: args.actionId,
         input: args.input ?? {},
         ...(args.connection ? { alias: args.connection } : {}),
         ...(args.dryRun ? { dryRun: true } : {}),
+        ...(Object.keys(workRef).length > 0 ? { workRef } : {}),
       })
     },
   }))
@@ -98,7 +115,7 @@ export function apply(ctx: Context) {
     output: { type: 'object', additionalProperties: true },
     async execute(args, exec) {
       const orgScope = ctx.connectorHub.orgScopeFor(exec.principal)
-      if (orgScope === null) return { total: 0, groups: [], note: '当前身份无组织归属，权限组可见范围为空（fail-closed）' }
+      if (orgScope === null) return { total: 0, groups: [], note: translate('当前身份无组织归属，权限组可见范围为空（fail-closed）') }
       const groups = ctx.connectorHub.permGroups().find((group) => (orgScope === undefined || group.orgId === orgScope))
       return {
         total: groups.length,

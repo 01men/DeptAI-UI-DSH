@@ -1,3 +1,8 @@
+---
+name: dsh-ops-connector
+description: 排查和管理企业连接器、连接配置与受控调用。
+---
+
 # Skill: dsh-ops-connector
 
 ## 何时使用

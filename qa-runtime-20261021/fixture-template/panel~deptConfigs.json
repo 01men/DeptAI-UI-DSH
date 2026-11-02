@@ -1,0 +1,104 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:10.829Z",
+    "updatedAt": "2026-10-20T04:14:10.829Z",
+    "id": "rd",
+    "label": "研发部",
+    "icon": "🔬",
+    "theme": "深空蓝 · 项目工程风",
+    "collab": "任务驱动 · 评审协同",
+    "acts": [
+      "rd"
+    ],
+    "colors": {
+      "accent": "#4f46e5",
+      "soft": "#e0e7ff",
+      "deep": "#3730a3"
+    },
+    "agents": [],
+    "kpis": [],
+    "widgets": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.829Z",
+    "updatedAt": "2026-10-20T04:14:10.829Z",
+    "id": "mfg",
+    "label": "制造部",
+    "icon": "🏭",
+    "theme": "工业青 · 产线实时风",
+    "collab": "异常驱动 · 工单闭环",
+    "acts": [
+      "mfg",
+      "scm"
+    ],
+    "colors": {
+      "accent": "#0f766e",
+      "soft": "#ccfbf1",
+      "deep": "#115e59"
+    },
+    "agents": [],
+    "kpis": [],
+    "widgets": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.829Z",
+    "updatedAt": "2026-10-20T04:14:10.829Z",
+    "id": "sales",
+    "label": "销售部",
+    "icon": "💼",
+    "theme": "暖阳橙 · 赢单作战风",
+    "collab": "客户驱动 · 服务一体",
+    "acts": [
+      "svc",
+      "mkt"
+    ],
+    "colors": {
+      "accent": "#ea580c",
+      "soft": "#ffedd5",
+      "deep": "#9a3412"
+    },
+    "agents": [],
+    "kpis": [],
+    "widgets": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.829Z",
+    "updatedAt": "2026-10-20T04:14:10.829Z",
+    "id": "strategy",
+    "label": "战略部",
+    "icon": "🧭",
+    "theme": "深紫 · 洞察研判风",
+    "collab": "情报驱动 · 研判共创",
+    "acts": [
+      "mgmt"
+    ],
+    "colors": {
+      "accent": "#7c3aed",
+      "soft": "#ede9fe",
+      "deep": "#5b21b6"
+    },
+    "agents": [],
+    "kpis": [],
+    "widgets": []
+  },
+  {
+    "createdAt": "2026-10-20T04:14:10.829Z",
+    "updatedAt": "2026-10-20T04:14:10.829Z",
+    "id": "fin",
+    "label": "财务部",
+    "icon": "💳",
+    "theme": "墨绿金 · 严谨合规风",
+    "collab": "流程驱动 · 审批留痕",
+    "acts": [
+      "fin"
+    ],
+    "colors": {
+      "accent": "#047857",
+      "soft": "#d1fae5",
+      "deep": "#064e3b"
+    },
+    "agents": [],
+    "kpis": [],
+    "widgets": []
+  }
+]

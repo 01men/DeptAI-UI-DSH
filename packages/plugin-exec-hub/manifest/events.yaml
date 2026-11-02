@@ -1,0 +1,27 @@
+# 事件声明（发布/订阅）——跨插件联动只许通过事件或扩展点
+plugin: dsh-plugin-exec-hub
+events:
+  - name: exec.goal.changed
+    mode: emit
+    description: 目标/项目 CRUD 与改挂（通知中心消费）
+  - name: exec.issue.changed
+    mode: emit
+    description: 任务创建/流转/派发/锁释放（SSE 与通知消费）
+  - name: exec.wake.enqueued
+    mode: emit
+    description: 唤醒入队（幂等键去重后）
+  - name: exec.run.completed
+    mode: emit
+    description: run 收尾（run 级释放锁，任务转审阅）
+  - name: exec.lock.reclaimed
+    mode: emit
+    description: 僵尸锁强制回收（告警通知）
+  - name: exec.heartbeat.recorded
+    mode: emit
+    description: 心跳留痕（Agent 健康度数据源）
+  - name: exec.routine.changed
+    mode: emit
+    description: 例行规则变更
+  - name: agent.frozen
+    mode: subscribe
+    description: Agent 冻结（预算联动）→ 告警通知

@@ -4,7 +4,7 @@
 > 变更纪律：本契约升版须发发布说明并双侧同步（红线 1）。
 > 实现锚点：`packages/plugin-dsh-bridge/src/index.ts`（挂载半 + 身份半）、
 > `packages/plugin-authn/src/entry-ticket.ts`（票据服务）、`packages/plugin-console/src/index.ts`
-> `POST /api/auth/entry-tickets/self`（自助票）；设计依据 docs/dev-plan-agent-host-unification.md、docs/entry-switching.md。
+> `POST /api/auth/entry-tickets/self`（自助票）；设计依据 docs/internal/dev-plan-agent-host-unification.md、docs/entry-switching.md。
 
 ## 1. 身份链全貌（冻结）
 

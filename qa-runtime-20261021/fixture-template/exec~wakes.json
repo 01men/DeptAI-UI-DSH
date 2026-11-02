@@ -1,0 +1,30 @@
+[
+  {
+    "createdAt": "2026-10-20T10:05:03.621Z",
+    "updatedAt": "2026-10-20T10:06:13.923Z",
+    "id": "wake_mvgiompxifkz7i3x",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "issueId": "iss_mvgiompxifky33hy",
+    "agentId": "agt_mvgio9qzifioxb4y",
+    "trigger": "assign",
+    "status": "failed",
+    "idempotencyKey": "assign:iss_mvgiompxifky33hy:agt_mvgio9qzifioxb4y:2026-10-20T10",
+    "lineageSnapshot": [],
+    "budgetCheckPassed": false,
+    "lastError": "预算熔断：Agent 主体预算（agent:agt_mvgio9qzifioxb4y）已超限，action=block"
+  },
+  {
+    "createdAt": "2026-10-20T10:05:03.622Z",
+    "updatedAt": "2026-10-20T10:06:13.923Z",
+    "id": "wake_mvgiompyifl18zjn",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "issueId": "iss_mvgiompxifky33hy",
+    "agentId": "agt_mvgio9qzifioxb4y",
+    "trigger": "api",
+    "triggerDetail": "D 冻结触发",
+    "status": "failed",
+    "idempotencyKey": "api:iss_mvgiompxifky33hy:1792490703622",
+    "lineageSnapshot": [],
+    "lastError": "Agent 已冻结（预算超限联动），待解冻审批"
+  }
+]

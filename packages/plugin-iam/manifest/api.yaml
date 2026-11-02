@@ -5,8 +5,8 @@ endpoints:
   - GET/POST /api/iam/orgs · GET /api/iam/orgs/tree · PATCH /api/iam/orgs/:id · DELETE /api/iam/orgs/:id（body {cascade:true} 一键级联删除子树，直属账号上移到上级组织）
   - GET/POST /api/iam/users · PATCH /api/iam/users/:id · POST /api/iam/users/import
   - PATCH /api/iam/users/:id（status 冻结/恢复即走此处） · POST /api/iam/users/:id/reset-password
-  - POST /api/iam/users/:id/bindings · DELETE /api/iam/users/:id/bindings/:provider（三方身份绑定）
-  - GET /api/iam/roles · GET /api/iam/permissions · POST /api/iam/roles · PATCH /api/iam/roles/:id
+  - POST /api/iam/users/:id/bindings · DELETE /api/iam/users/:id/bindings/:provider（三方身份绑定；DELETE 支持 ?corpId= 限定单一主体，解绑写 bindingExemptions 防同步自动补回） · POST /api/iam/users/:id/bindings/:provider/replace（更换前置解绑，随后走扫码绑定）
+  - GET /api/iam/roles · GET /api/iam/permissions · POST /api/iam/roles · PATCH /api/iam/roles/:id · DELETE /api/iam/roles/:id（R4 删除面：内置/仍被挂载拒绝）· DELETE /api/iam/users/:id（R4 删除面：仅已注销账号）
   - GET/POST /api/iam/groups · PATCH/DELETE /api/iam/groups/:id · POST /api/iam/groups/refresh-snapshots
   - GET/POST /api/iam/connectors · PUT /api/iam/connectors/:provider · POST /api/iam/connectors/:provider/test · POST /api/iam/connectors/:provider/sync · POST /api/iam/connectors/auto-sync · DELETE /api/iam/connectors/:provider
   - GET /api/iam/conflicts · POST /api/iam/conflicts/:id/resolve

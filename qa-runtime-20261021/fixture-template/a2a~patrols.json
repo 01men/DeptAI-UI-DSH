@@ -1,0 +1,166 @@
+[
+  {
+    "createdAt": "2026-10-20T04:17:12.434Z",
+    "updatedAt": "2026-10-20T04:17:12.434Z",
+    "id": "a2ap_mvg69aeqidxbcl96",
+    "at": "2026-10-20T04:17:12.434Z",
+    "actor": "usr_mvg65e9midmcih9e",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:17:12.436Z",
+    "updatedAt": "2026-10-20T04:17:12.436Z",
+    "id": "a2ap_mvg69aesidxf39m3",
+    "at": "2026-10-20T04:17:12.436Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:17:42.360Z",
+    "updatedAt": "2026-10-20T04:17:42.360Z",
+    "id": "a2ap_mvg69xi0ie3vjksj",
+    "at": "2026-10-20T04:17:42.360Z",
+    "actor": "usr_mvg65e9midmcih9e",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:17:42.365Z",
+    "updatedAt": "2026-10-20T04:17:42.365Z",
+    "id": "a2ap_mvg69xi5ie41hhbu",
+    "at": "2026-10-20T04:17:42.365Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:18:55.166Z",
+    "updatedAt": "2026-10-20T04:18:55.166Z",
+    "id": "a2ap_mvg6bhoeiecy6ez9",
+    "at": "2026-10-20T04:18:55.166Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:19:01.292Z",
+    "updatedAt": "2026-10-20T04:19:01.292Z",
+    "id": "a2ap_mvg6bmekief2446y",
+    "at": "2026-10-20T04:19:01.292Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:21:22.787Z",
+    "updatedAt": "2026-10-20T04:21:22.787Z",
+    "id": "a2ap_mvg6enkzieq1nb0z",
+    "at": "2026-10-20T04:21:22.787Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:21:31.821Z",
+    "updatedAt": "2026-10-20T04:21:31.821Z",
+    "id": "a2ap_mvg6eujxieylgszr",
+    "at": "2026-10-20T04:21:31.821Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:21:41.223Z",
+    "updatedAt": "2026-10-20T04:21:41.223Z",
+    "id": "a2ap_mvg6f1t3if40psz6",
+    "at": "2026-10-20T04:21:41.223Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T04:21:56.142Z",
+    "updatedAt": "2026-10-20T04:21:56.142Z",
+    "id": "a2ap_mvg6fdbiif9vtm6y",
+    "at": "2026-10-20T04:21:56.142Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 6,
+    "driftAgents": 0,
+    "findings": []
+  },
+  {
+    "createdAt": "2026-10-20T10:12:00.785Z",
+    "updatedAt": "2026-10-20T10:12:00.785Z",
+    "id": "a2ap_mvgixkltiggt91b1",
+    "at": "2026-10-20T10:12:00.785Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 15,
+    "driftAgents": 3,
+    "findings": [
+      {
+        "agentId": "agt_mvgimrunifgcjrg2",
+        "agentName": "QA-A3协商型员工(反价stub)",
+        "findings": [
+          "密级口径提示：A2A 天花板=secret 且业务密级=secret（绝密禁止 Agent 处理口径），执行面将按渠道锁死拒绝——请确认口径"
+        ]
+      },
+      {
+        "agentId": "agt_mvgio9qrific0s4v",
+        "agentName": "D-技能漂移员工",
+        "findings": [
+          "声明漂移：引用的 Skill「qa-removed-skill-xyz」已不在架（发布状态 不存在），卡片不会投影（声明≤授权已兜底），请清理 attrs.skills"
+        ]
+      },
+      {
+        "agentId": "agt_mvgio9qvifiifi2f",
+        "agentName": "D-harness漂移员工",
+        "findings": [
+          "harness 漂移：uhpHarnessRef 指向的 h-nonexistent-xyz 不存在，执行将诚实失败"
+        ]
+      }
+    ]
+  },
+  {
+    "createdAt": "2026-10-20T10:14:20.002Z",
+    "updatedAt": "2026-10-20T10:14:20.002Z",
+    "id": "a2ap_mvgj0k0yigmm1ieh",
+    "at": "2026-10-20T10:14:20.002Z",
+    "actor": "usr_mvg65wukidnsk7vg",
+    "checkedAgents": 15,
+    "driftAgents": 3,
+    "findings": [
+      {
+        "agentId": "agt_mvgimrunifgcjrg2",
+        "agentName": "QA-A3协商型员工(反价stub)",
+        "findings": [
+          "密级口径提示：A2A 天花板=secret 且业务密级=secret（绝密禁止 Agent 处理口径），执行面将按渠道锁死拒绝——请确认口径"
+        ]
+      },
+      {
+        "agentId": "agt_mvgio9qrific0s4v",
+        "agentName": "D-技能漂移员工",
+        "findings": [
+          "声明漂移：引用的 Skill「qa-removed-skill-xyz」已不在架（发布状态 不存在），卡片不会投影（声明≤授权已兜底），请清理 attrs.skills"
+        ]
+      },
+      {
+        "agentId": "agt_mvgio9qvifiifi2f",
+        "agentName": "D-harness漂移员工",
+        "findings": [
+          "harness 漂移：uhpHarnessRef 指向的 h-nonexistent-xyz 不存在，执行将诚实失败"
+        ]
+      }
+    ]
+  }
+]

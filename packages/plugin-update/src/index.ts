@@ -23,6 +23,7 @@ import {
   PlatformEvents, defineTool, platformVersionInfo, readRootVersion, verifyEd25519, isValidEd25519PublicKeyBase64,
   type Collection, type RecordBase,
 } from '../../platform-core/src/index.ts'
+import { t as translate } from '../../platform-i18n/src/index.ts'
 import { readGitHead, runGit, runNpm } from './git.ts'
 
 /** 发布清单（scripts/release-manifest.mjs 产物，随仓库根发布）。 */
@@ -300,8 +301,8 @@ export class UpdateService extends Service {
       dismissed: hasUpdate && state.dismissedVersion === latestVersion && latestVersion !== '',
       canApply: info.installMode === 'source',
       nextCheckHint: state.autoCheck && state.intervalHours > 0
-        ? `自动检查每 ${state.intervalHours}h 一次`
-        : '自动检查已关闭，需手动检查',
+        ? translate('自动检查每 {hours}h 一次', { hours: state.intervalHours })
+        : translate('自动检查已关闭，需手动检查'),
       releaseKeyConfigured: Boolean((state.releasePublicKey ?? '').trim()),
       requireSignedManifests: state.requireSignedManifests === true,
     }
@@ -311,10 +312,15 @@ export class UpdateService extends Service {
   async checkNow(options: { manual?: boolean } = {}): Promise<UpdateStatus> {
     if (options.manual) {
       const cooldown = this.cooldownRemainingMs()
-      if (cooldown > 0) throw new Error(`检查过于频繁，请 ${Math.ceil(cooldown / 1000)} 秒后再试`)
+      if (cooldown > 0) {
+        // 协议键错误码由 REST 层判定（不再对译文做子串匹配）：附带 code 供路由精确映射 429
+        const error = new Error(translate('检查过于频繁，请 {seconds} 秒后再试', { seconds: Math.ceil(cooldown / 1000) })) as Error & { code?: string }
+        error.code = 'TOO_FREQUENT'
+        throw error
+      }
       this.lastManualCheckAt = Date.now()
     }
-    if (this.checking) throw new Error('已有检查在进行中，请稍候')
+    if (this.checking) throw new Error(translate('已有检查在进行中，请稍候'))
     this.checking = true
     try {
       const info = platformVersionInfo()
@@ -340,10 +346,10 @@ export class UpdateService extends Service {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const pkg = await res.json() as { version?: string }
         latestVersion = String(pkg.version ?? '')
-        if (!latestVersion) throw new Error('远端 package.json 无 version 字段')
+        if (!latestVersion) throw new Error(translate('远端 package.json 无 version 字段'))
         sources.push('github-raw')
       } catch (error) {
-        errors.push(`版本获取失败：${error instanceof Error ? error.message : String(error)}`)
+        errors.push(translate('版本获取失败：{message}', { message: error instanceof Error ? error.message : String(error) }))
       }
 
       // 2) 提交差（GitHub compare API，仅源码形态且能定位本地 HEAD）
@@ -366,12 +372,12 @@ export class UpdateService extends Service {
           }))
           sources.push('github-api')
         } catch (error) {
-          errors.push(`提交对比失败：${error instanceof Error ? error.message : String(error)}`)
+          errors.push(translate('提交对比失败：{message}', { message: error instanceof Error ? error.message : String(error) }))
         }
       }
 
       if (sources.length === 0) {
-        const message = errors.join('；') || '无法访问上游（网络不可达或被限流）'
+        const message = errors.join('；') || translate('无法访问上游（网络不可达或被限流）')
         updateStateCollection(this.ctx).update(STATE_ID, { lastError: message })
         throw new Error(message)
       }
@@ -457,7 +463,7 @@ export class UpdateService extends Service {
       publicKey = (updateStateCollection(this.ctx).get(STATE_ID)?.releasePublicKey ?? '').trim()
     } catch { /* 状态未就绪按未配置 */ }
     if (!publicKey) {
-      return { checked: false, verified: false, note: '未登记 releasePublicKey：发布清单验签未启用（生成密钥：node scripts/release-manifest.mjs --generate-key）' }
+      return { checked: false, verified: false, note: translate('未登记 releasePublicKey：发布清单验签未启用（生成密钥：node scripts/release-manifest.mjs --generate-key）') }
     }
     const url = `${this.source.rawBase}/${this.source.repo}/${targetResolved}/release-manifest.json`
     try {
@@ -465,16 +471,16 @@ export class UpdateService extends Service {
         headers: { accept: 'application/json', 'user-agent': `dsh-ops-update/${platformVersionInfo().version}` },
         signal: AbortSignal.timeout(this.source.timeoutMs),
       })
-      if (!res.ok) return { checked: true, verified: false, note: `发布清单不可达（HTTP ${res.status}）：${url}` }
+      if (!res.ok) return { checked: true, verified: false, note: translate('发布清单不可达（HTTP {status}）：{url}', { status: res.status, url }) }
       const manifest = await res.json() as ReleaseManifest
-      if (manifest.algorithm !== 'ed25519') return { checked: true, verified: false, note: `清单签名算法异常：${String(manifest.algorithm)}` }
+      if (manifest.algorithm !== 'ed25519') return { checked: true, verified: false, note: translate('清单签名算法异常：{algorithm}', { algorithm: String(manifest.algorithm) }) }
       if (String(manifest.commit ?? '') !== targetResolved) {
-        return { checked: true, verified: false, note: `清单 commit ${String(manifest.commit ?? '').slice(0, 12)} 与升级目标 ${targetResolved.slice(0, 12)} 不一致` }
+        return { checked: true, verified: false, note: translate('清单 commit {manifest} 与升级目标 {target} 不一致', { manifest: String(manifest.commit ?? '').slice(0, 12), target: targetResolved.slice(0, 12) }) }
       }
       const verified = verifyEd25519(publicKey, String(manifest.commit), String(manifest.signature ?? ''))
-      return { checked: true, verified, note: verified ? '发布清单验签通过（Ed25519）' : '发布清单签名与登记公钥不匹配' }
+      return { checked: true, verified, note: verified ? translate('发布清单验签通过（Ed25519）') : translate('发布清单签名与登记公钥不匹配') }
     } catch (error) {
-      return { checked: true, verified: false, note: `发布清单拉取失败：${error instanceof Error ? error.message : String(error)}` }
+      return { checked: true, verified: false, note: translate('发布清单拉取失败：{message}', { message: error instanceof Error ? error.message : String(error) }) }
     }
   }
 
@@ -484,12 +490,12 @@ export class UpdateService extends Service {
    */
   async rollbackUpdate(options: { reason?: string; actor?: { id: string; name: string } } = {}): Promise<Record<string, unknown>> {
     const info = platformVersionInfo()
-    if (info.installMode !== 'source') return { ok: false, supported: false, notice: 'bundle 形态请在宿主 dsh 侧回退插件版本' }
+    if (info.installMode !== 'source') return { ok: false, supported: false, notice: translate('bundle 形态请在宿主 dsh 侧回退插件版本') }
     const state = updateStateCollection(this.ctx).get(STATE_ID)
     const snapshot = state?.lastApplySnapshot
-    if (!snapshot) throw new Error('无可回滚快照：本进程尚未执行过带 pin 的升级（OPT-P2-03）')
+    if (!snapshot) throw new Error(translate('无可回滚快照：本进程尚未执行过带 pin 的升级（OPT-P2-03）'))
     const reason = (options.reason ?? '').trim()
-    if (!reason) throw new Error('回滚原因必填（留痕要求）')
+    if (!reason) throw new Error(translate('回滚原因必填（留痕要求）'))
     const actor = options.actor ?? { id: 'api', name: 'api' }
     const from = info.version
     await runGit(info.rootDir, ['reset', '--hard', snapshot])
@@ -517,7 +523,7 @@ export class UpdateService extends Service {
       rolledBackTo: snapshot,
       npmFailed,
       needRestart: true,
-      notice: npmFailed ? '代码已回退但依赖同步失败：请手动执行 npm install 后重启' : '已回退到升级前版本，请重启平台进程生效',
+      notice: npmFailed ? translate('代码已回退但依赖同步失败：请手动执行 npm install 后重启') : translate('已回退到升级前版本，请重启平台进程生效'),
     }
   }
 
@@ -537,7 +543,7 @@ export class UpdateService extends Service {
     if (patch.releasePublicKey !== undefined) {
       const key = String(patch.releasePublicKey).trim()
       if (key !== '' && !isValidEd25519PublicKeyBase64(key)) {
-        throw new Error('releasePublicKey 格式非法：应为 Ed25519 SPKI DER base64（生成：node scripts/release-manifest.mjs --generate-key）')
+        throw new Error(translate('releasePublicKey 格式非法：应为 Ed25519 SPKI DER base64（生成：node scripts/release-manifest.mjs --generate-key）'))
       }
       update.releasePublicKey = key
     }
@@ -545,7 +551,7 @@ export class UpdateService extends Service {
       // fail-closed 防呆：强制验签不能在没有公钥的情况下单独开启（开启即拒绝一切升级）
       if (patch.requireSignedManifests === true) {
         const existing = update.releasePublicKey ?? updateStateCollection(this.ctx).get(STATE_ID)?.releasePublicKey ?? ''
-        if (!existing.trim()) throw new Error('开启 requireSignedManifests 前必须先登记 releasePublicKey')
+        if (!existing.trim()) throw new Error(translate('开启 requireSignedManifests 前必须先登记 releasePublicKey'))
       }
       update.requireSignedManifests = patch.requireSignedManifests
     }
@@ -564,7 +570,7 @@ export class UpdateService extends Service {
     // OPT-P2-03：pin 强制——禁止裸拉上游最新（版本钉扎是可回滚与可审计的前提）
     const pin = String(options.pin ?? '').trim()
     if (info.installMode === 'source' && !options.dryRun && !pin) {
-      throw new Error('必须显式 pin 升级目标（tag / commit / 分支名，如 v1.1.0），禁止裸拉 main 最新（OPT-P2-03）')
+      throw new Error(translate('必须显式 pin 升级目标（tag / commit / 分支名，如 v1.1.0），禁止裸拉 main 最新（OPT-P2-03）'))
     }
     let targetResolved = ''
     let signatureVerified: boolean | undefined
@@ -572,10 +578,12 @@ export class UpdateService extends Service {
     let manifestCheck: Awaited<ReturnType<UpdateService['verifyReleaseManifest']>> | undefined
     if (info.installMode === 'source' && pin) {
       try {
-        await runGit(info.rootDir, ['fetch', 'origin', '--tags', '--prune'])
+        // E-05：fetch 只在正式执行路径发生（外呼 + 变更 .git）——dryRun 不外呼不落 .git，
+        // pin 解析/签名核验基于本地既有 refs（上次 fetch 的远端追踪引用与 tags）完成
+        if (!options.dryRun) await runGit(info.rootDir, ['fetch', 'origin', '--tags', '--prune'])
         targetResolved = (await runGit(info.rootDir, ['rev-parse', '--verify', `${pin}^{commit}`])).trim()
       } catch (error) {
-        throw new Error(`pin 目标无法解析：${pin}（${error instanceof Error ? error.message.slice(0, 160) : String(error)}）`)
+        throw new Error(translate('pin 目标无法解析：{pin}（{message}）', { pin, message: error instanceof Error ? error.message.slice(0, 160) : String(error) }))
       }
       try {
         await runGit(info.rootDir, ['verify-commit', targetResolved])
@@ -584,13 +592,13 @@ export class UpdateService extends Service {
         signatureVerified = false
         signatureNote = error instanceof Error ? error.message.split('\n')[0]!.slice(0, 160) : String(error)
         if (this.requireSignedCommits()) {
-          throw new Error(`目标提交签名校验未通过（requireSignedCommits=true，OPT-P2-03）：${signatureNote}`)
+          throw new Error(translate('目标提交签名校验未通过（requireSignedCommits=true，OPT-P2-03）：{note}', { note: signatureNote }))
         }
       }
       // T5（M2）：发布清单验签（Ed25519）——登记 releasePublicKey 后启用；强制策略开启时任何不通过即拒绝
       manifestCheck = await this.verifyReleaseManifest(targetResolved)
       if (manifestCheck.checked && !manifestCheck.verified && this.requireSignedManifests()) {
-        throw new Error(`发布清单验签未通过（requireSignedManifests=true，T5）：${manifestCheck.note}`)
+        throw new Error(translate('发布清单验签未通过（requireSignedManifests=true，T5）：{note}', { note: manifestCheck.note }))
       }
     }
     const base = {
@@ -605,9 +613,9 @@ export class UpdateService extends Service {
         ok: false,
         supported: false,
         instructions: [
-          '本实例为 dsh 插件市场安装形态（bundle），升级请在宿主 dsh 侧执行：',
-          `  dsh plugin update github:${this.source.repo}    # 或重新安装：dsh plugin add github:${this.source.repo}`,
-          '完成后重启 dsh 宿主进程生效。',
+          translate('本实例为 dsh 插件市场安装形态（bundle），升级请在宿主 dsh 侧执行：'),
+          translate('  dsh plugin update github:{repo}    # 或重新安装：dsh plugin add github:{repo}', { repo: this.source.repo }),
+          translate('完成后重启 dsh 宿主进程生效。'),
         ].join('\n'),
       }
     }
@@ -617,13 +625,13 @@ export class UpdateService extends Service {
         ok: true,
         supported: true,
         dryRun: true,
-        ...(pin ? { pin, targetResolved, signatureVerified, ...(signatureNote ? { signatureNote } : {}), ...(manifestCheck ? { manifestCheck } : {}) } : { pin: '（dryRun 未指定；正式执行必须 pin，OPT-P2-03）' }),
+        ...(pin ? { pin, targetResolved, signatureVerified, ...(signatureNote ? { signatureNote } : {}), ...(manifestCheck ? { manifestCheck } : {}) } : { pin: translate('（dryRun 未指定；正式执行必须 pin，OPT-P2-03）') }),
         requireSignedCommits: this.requireSignedCommits(),
         requireSignedManifests: this.requireSignedManifests(),
         steps: [
-          `git fetch origin --tags + verify-commit（签名核验）+ git merge --ff-only（目录 ${info.rootDir}；脏工作区/分叉将安全失败）`,
-          'npm install（依赖同步，package-lock 有变化时生效）',
-          '重启平台进程（systemd / pm2 / 手动 node src/main.ts），新版本生效',
+          translate('git fetch origin --tags + verify-commit（签名核验）+ git merge --ff-only（目录 {dir}；脏工作区/分叉将安全失败）', { dir: info.rootDir }),
+          translate('npm install（依赖同步，package-lock 有变化时生效）'),
+          translate('重启平台进程（systemd / pm2 / 手动 node src/main.ts），新版本生效'),
         ],
         ...(status.behindBy > 0
           ? { incomingCommits: status.recentCommits.map((item) => `${item.sha} ${item.message}`) }
@@ -631,7 +639,7 @@ export class UpdateService extends Service {
       }
     }
     const reason = (options.reason ?? '').trim()
-    if (!reason) throw new Error('升级原因必填（留痕要求）')
+    if (!reason) throw new Error(translate('升级原因必填（留痕要求）'))
     const actor = options.actor ?? { id: 'api', name: 'api' }
     const from = info.version
     let gitOutput = ''
@@ -648,7 +656,7 @@ export class UpdateService extends Service {
         action: 'platform.update.apply', resourceType: 'platform', resourceId: 'self', resourceName: '平台升级',
         result: 'failed', detail: `git pull 失败：${message.slice(0, 300)}`,
       })
-      throw new Error(`git pull 失败（本地有未提交修改或分叉，请人工处理）：${message.slice(0, 300)}`)
+      throw new Error(translate('git pull 失败（本地有未提交修改或分叉，请人工处理）：{message}', { message: message.slice(0, 300) }))
     }
     // QA E-01：merge 成功即登记回滚快照——此前 lastApplySnapshot 全仓无写入点，
     // rollback 恒报「无可回滚快照」，一键回滚是死路；先于 npm install 落库，
@@ -690,8 +698,8 @@ export class UpdateService extends Service {
       npmFailed,
       needRestart: true,
       notice: npmFailed
-        ? '代码已更新但依赖同步失败：请在本目录手动执行 npm install 后重启平台进程'
-        : '升级已拉取完成，请重启平台进程（systemd/pm2 或手动重启）后生效',
+        ? translate('代码已更新但依赖同步失败：请在本目录手动执行 npm install 后重启平台进程')
+        : translate('升级已拉取完成，请重启平台进程（systemd/pm2 或手动重启）后生效'),
     }
   }
 }
@@ -728,7 +736,7 @@ export const updateApi = {
         point,
         path: exchange.path,
       })
-      exchange.fail(403, 'FORBIDDEN', `缺少权限点 ${point}，请联系平台管理员`, { permission: point })
+      exchange.fail(403, 'FORBIDDEN', translate('缺少权限点 {point}，请联系平台管理员', { point }), { permission: point })
       return false
     }
 
@@ -748,7 +756,8 @@ export const updateApi = {
         exchange.ok(await service.checkNow({ manual: true }))
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        if (message.includes('过于频繁')) {
+        // TOO_FREQUENT 由 checkNow 以 error.code 标注（避免对本地化后的译文做子串匹配）
+        if ((error as { code?: string }).code === 'TOO_FREQUENT') {
           exchange.fail(429, 'TOO_FREQUENT', message)
         } else {
           exchange.fail(502, 'UPSTREAM_ERROR', message)
@@ -835,7 +844,7 @@ export const updateTools = {
       async execute(args) {
         const dryRun = args.dryRun === true
         const reason = String(args.reason ?? '')
-        if (!dryRun && !reason.trim()) throw new Error('正式执行升级必须给出 reason（留痕要求）')
+        if (!dryRun && !reason.trim()) throw new Error(translate('正式执行升级必须给出 reason（留痕要求）'))
         return await service.applyUpdate({ dryRun, reason, pin: args.pin === undefined ? undefined : String(args.pin), actor: { id: 'tool:update_apply', name: 'dsh Agent' } })
       },
     }))

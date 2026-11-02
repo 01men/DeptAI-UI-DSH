@@ -8,4 +8,4 @@ tools:
 services:
   - key: market
     access: ctx.market
-    description: 插件提交→审批→上架→安装计量；开发者门户与沙箱预检（REST 面由 console 聚合暴露）
+    description: 插件提交→两级审批→上架→安装计量；开发者门户与沙箱预检（REST 面由 console 聚合暴露）

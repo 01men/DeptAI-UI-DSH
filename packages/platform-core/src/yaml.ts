@@ -81,8 +81,10 @@ export function parseYaml(text: string): unknown {
       pos++
       if (rest === '') {
         result.push(pos < lines.length && indentOf(lines[pos]!) > ind ? parseBlock(indentOf(lines[pos]!)) : null)
-      } else if (/^[^:]+:\s*/.test(rest) && !rest.startsWith('"') && !rest.startsWith("'")) {
-        // 行内映射项：以更深缩进注入虚拟行后按映射解析
+      } else if (/^[^:]+:(\s|$)/.test(rest) && !rest.startsWith('"') && !rest.startsWith("'")) {
+        // 行内映射项判定（E-05）：冒号后必须跟空白或行尾才算映射键（YAML 惯例）——
+        // 「12:34:56」这类无空格冒号串（时间/比例）保持标量，不再误判为映射后报「[object Object]」。
+        // 以更深缩进注入虚拟行后按映射解析
         const virtualIndent = ind + 2
         lines.splice(pos, 0, ' '.repeat(virtualIndent) + rest)
         result.push(parseMap(virtualIndent))

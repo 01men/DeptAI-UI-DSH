@@ -2,9 +2,11 @@
 
 > 面向对象：以机器身份接入平台的企业 Agent（注册 → 机器凭证 → 接入验证 → 计量对齐）。
 > 适用版本：2026-08-26 接入加固落地后（Agent 凭证默认含 usage.write；计量键错误明确报 400 并给出期望键；
-> 凭证支持轮换；机器身份访问 Agent 台账记审计 agent.verify）。加固清单见 `docs/dev-plan-access-hardening.md`。
+> 凭证支持轮换；机器身份访问 Agent 台账记审计 agent.verify）。加固清单见 `docs/internal/dev-plan-access-hardening.md`。
 > 2026-08-30 NAS 数据权限上线：新增 4.5 节（文件网关接入、X-On-Behalf-User 身份红线、
 > 越权/分享审批/降级语义），需文件能力的 Agent 必读。设计全文见 `docs/nas-authz.md`。
+> 2026-10-31 资产使用凭证上线：新增 4.7 节（获取资产=授权 → 使用 → 逐次提报使用凭证，
+> 提报记录进资产台账与审计，构成资产经营侧的使用证据），使用 skill/MCP 的 Agent 必读。
 > 本文档随服务发布，可直接访问 `http://<平台地址>/docs/agent-onboarding.md`。
 
 【任务】接入宿主平台 http://192.168.0.7:7300，完成 Agent 注册、机器身份打通与计量对齐。
@@ -33,8 +35,8 @@
    存量令牌全部吊销），不要重新注册。
    若返回 400「已存在」：用 dshctl agent list 按名称找到既有 Agent 复用，不要换名重复注册。
    attrs 是白名单制：白名单外字段（含 version，放 attrs 或请求顶层都一样）静默丢弃——返回 200 但不落库，
-   不要以 200 判定字段生效。平台无通用 version 字段；提示词版本用 systemPromptVersion（上线必填），
-   通用版本写进 description 和 tags（dshctl 不支持，需直接 POST /api/agents 或注册后 PATCH）。
+   不要以 200 判定字段生效。平台无通用 version 字段，也不登记提示词版本；模型版本与提示词版本写进
+   description 和 tags（dshctl 不支持，需直接 POST /api/agents 或注册后 PATCH）。
    记下该 Agent 的 orgId（dshctl agent get <agt_...> 可查），第 4 步要用。
 
 2. 登录打通（机器身份，不走 OIDC/SSO）：
@@ -68,6 +70,16 @@
    兑换时实时校验账号状态；签发与兑换均入审计（agent.entry.ticket.*）。
    票据无效/过期时引导用户回控制台重新点击打开即可，不要缓存重试。
    注：签发侧授权=负责人/绑定用户/管理员（使用即授权留痕）；标准 OIDC 应用仍走 /oauth/authorize。
+
+3.6 无交互界面声明（headless，2026-10-31 新增）：
+   Work Body、定时任务型等纯后台执行体没有任何面向用户的交互界面——既签发不了带回调地址的
+   OIDC 客户端，也没有 `entryUrl` 可登记。此类 Agent 由负责人（或 Agent 凭自身凭证）声明：
+   PATCH /api/agents/<agt_...>  body {"attrs":{"headless":true}}
+   声明后上线门禁（AGENT_SSO_ENFORCE=1 默认模式）凭已颁发的机器身份凭证放行；
+   未颁发凭证的声明不放行（无凭证放行等于无主体上线）。控制台「Agent 详情 → SSO 配置」
+   提供声明/撤销入口；声明写入属性并全程审计，上线 L4 审批照常执行，审批挂单期间撤销声明
+   将被执行期复核拦截（对齐 SSO 客户端禁用同款语义）。
+   另：`entryUrl` 现支持负责人在控制台 SSO 配置页直接登记（此前仅 Agent 侧自助提报）。
 
 4. 计量口径（防漏计与双计）：
    - 经平台 MCP 网关 / 模型网关的调用，平台已自动计量——禁止再手动推送，否则同一消耗双计费。
@@ -103,13 +115,109 @@
      不要连续重试（网关有熔断：连续 5 次超时进入降级态，平台恢复后自动退出并留痕）。
    - 观察期语义：平台 observeOnly 灰度开关开启期间，越权操作仍放行但全部留痕并触发告警
      （网关 OBSERVE-DENY 日志、平台判定留痕可查）——放行是灰度设计，不代表越权合法。
+   - 口径更新（2026-10-22 MCP 治理）：X-On-Behalf-User 降级为「仅归因」——该头只作调用归因
+     （审计口径），不是授权事实；授权一律以令牌及其委托链为准，代用户操作优先改用委托令牌
+     （POST /api/authn/token/exchange）。
+
+4.6 服务级 MCP 数据面接入（调用平台已纳管 MCP 服务的标准路径，2026-10-22 起）：
+   Agent 标准默认路径是服务级端点 POST /mcp/services/<服务slug>；/api/mcp/invoke 与
+   mcp_invoke 工具保留为兼容层（行为不变，不必迁移，新接入一律走本节）。长令牌不透传下游：
+   先换 audience 绑定目标服务的委托令牌，再走标准 MCP 协议（JSON-RPC 2.0 over POST）。
+   - 第 1 步 · 换服务级委托令牌（用第 2 步拿到的机器令牌）：
+     curl -s -X POST http://192.168.0.7:7300/api/authn/token/exchange
+       -H "Authorization: Bearer <机器令牌>" -H 'content-type: application/json'
+       -d '{"audience":"mcp:service:<服务slug>"}'
+     → 响应 data.access_token 即服务级令牌（默认 900 秒有效，ttlSeconds 上限 3600）；
+       audience 强制 mcp:service:<slug> 形态，携带其它受众令牌访问端点会 403 AUDIENCE_MISMATCH。
+   - 换牌的三种模式（2026-10-22 终审裁决，机器凭证用第一种即可）：
+     ① 自委托：只传 audience，sub=调用者自身（Agent 以自己身份调用平台已纳管服务）；
+     ② 代用户委托：传 "userId":"<被代理用户ID>"，sub=该用户、act 链含 Agent（需该用户已绑定
+        本 Agent，且令牌带与用户匹配的 scope）；
+     ③ 人类换牌：人类令牌传 "targetPrincipalId":"<目标Agent/App主体ID>"，sub=本人、act=目标主体。
+   - 第 2 步 · initialize 握手（响应头回 mcp-session-id，serverInfo.name=mcp:<服务slug>）：
+     curl -s -X POST http://192.168.0.7:7300/mcp/services/<服务slug>
+       -H "Authorization: Bearer <access_token>" -H 'content-type: application/json'
+       -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"<agent-slug>","version":"1.0"}}}'
+   - 第 3 步 · tools/list（平台按本 Agent 的 MCP 权限组过滤，未授权工具不出现在列表；
+     列表即边界，不在列表中的工具调用同样被拒）：
+     curl -s -X POST http://192.168.0.7:7300/mcp/services/<服务slug>
+       -H "Authorization: Bearer <access_token>" -H 'content-type: application/json'
+       -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+   - 第 4 步 · tools/call（统一走网关链：鉴权/限流/熔断/审计/计量）：
+     curl -s -X POST http://192.168.0.7:7300/mcp/services/<服务slug>
+       -H "Authorization: Bearer <access_token>" -H 'content-type: application/json'
+       -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"<工具名>","arguments":{}}}'
+     成功回 result.content[0].text（工具结果 JSON 串）；拒绝一律 JSON-RPC error，
+     按 error.data.code 处理、不要变形重试：-32001 未认证（重新换牌一次再试）/
+     -32003 拒绝（AUDIENCE_MISMATCH 受众不符 / TOOL_NOT_VISIBLE_OR_DENIED 工具不可见或未授权 /
+     BREAKER_OPEN 熔断 / SERVICE_OFFLINE 已下线 / SERVICE_NOT_PUBLISHED 未发布）/
+     -32004 RATE_LIMITED 限流 / -32000 服务错误（SERVICE_NOT_FOUND 服务不存在等）。
+   - 别名形态 POST /mcp/s/<服务ID> 等价（aud 恒按服务 slug 校验）；无 audience 的平台令牌
+     也可直连（可调用面同样以权限组为准），但长期令牌不得写进客户端配置出域；
+     可调用范围由管理员配置的 MCP 权限组决定，需要新工具授权时向我（管理员）申请。
+
+4.7 资产获取与使用凭证提报（使用平台 skill / MCP 后必做，2026-10-31 起）：
+   完整链路：登记（步骤1）→ 获取资产（=授权）→ 使用 → 逐次提报使用凭证。使用凭证是资产经营侧的
+   重要证据（资产台账「使用凭证」列、审计 asset.usage.report 逐次留痕），与步骤 4 的计量事件口径
+   互补、互不替代：计量=平台自动统计（计费管道），凭证=使用方自证（使用事实）。
+   - 获取（授权前提，无获取记录的提报会被拒）：
+     · skill：管理员 install 绑定（POST /api/skills/<skill-id>/install  body {"agentId":"<agt_...>"}），
+       或本 Agent 凭机器令牌自取（POST /api/skills/<skill-id>/download 登记 + GET /api/skills/<skill-id>/package
+       拿 skill.zip——自取同样构成授权记录）；
+     · MCP：管理员把本 Agent 配进 MCP 权限组（subjects 含本 Agent 且 policies 覆盖目标服务），
+       调用走 4.6 服务级数据面。
+   - 提报（每次使用后；机器令牌即可，无需额外权限点——注册默认 scope 已含 usage.write）：
+     POST /api/assets/usage-reports
+     body {
+       "assetType": "skill",                  // 必填：skill | mcp
+       "assetRef": "<skill 的 id/slug 或 mcp 的 slug>",  // 必填
+       "assetVersion": "1.2.0",               // 可选：使用时的资产版本
+       "action": "invoke",                    // 可选：默认 invoke（execute/call/read 等，小写下划线 ≤32 字符）
+       "occurredAt": "2026-10-31T08:00:00Z",  // 可选：缺省当前；仅允许补录近 30 天，不接受未来时间
+       "outcome": "success",                  // 可选：success | failure（失败也如实报，默认 success）
+       "durationMs": 1234,                    // 可选：非负整数
+       "tokens": 456,                         // 可选：非负整数（如适用）
+       "taskId": "<业务单号/任务ID>",          // 可选：建议携带，经营侧按任务归因
+       "note": "一句话说明",                   // 可选：≤500 字
+       "idempotencyKey": "<agent标识>:<业务单号>"  // 必填：全局唯一；同键同内容重放安全（返回原凭证 deduped=true），
+                                                  // 同键不同内容 409 拒绝
+     }
+     → 200 {report, deduped}；凭证实时进资产台账（GET /api/fleet/ledger 对应资产行 usageReports30d）
+       与审计（GET /api/audit/logs 查 asset.usage.report）。
+   - 错误语义（按码处置，不要变形重试）：
+     · 403 NO_GRANT：本 Agent 尚未获取该资产——先走上面的获取链路，获取成功后原样重发；
+     · 404 ASSET_NOT_FOUND：资产不存在或未上架——向我确认资产登记状态，不要编造 assetRef；
+     · 409 IDEMPOTENCY_CONFLICT：幂等键已被不同内容占用——换业务单号重报，不要改内容撞同键；
+     · 400 字段非法：按错误信息修正（assetType 枚举、occurredAt ISO8601 且在 30 天补录窗内）。
+   - 工具面等价：经平台 MCP 工具面接入的 Agent 可直接调 asset_usage_report 工具（参数同上），
+     不必手拼 REST。
+   - 口径边界：经平台数据面（4.6）的 MCP 调用平台已逐次计量+审计（等价凭证），无需逐次重复提报，
+     可按任务/会话粒度汇总提报（taskId 关联）；skill.zip 下载到本地执行平台无感知，必须逐次提报。
+     步骤 4 的计量义务不因提报凭证而免除或替代。
 
 5. 权限自检与护栏：接入完成后先试跑一次换牌（步骤2）和一次 usage record（步骤4）。
    403 = 缺权限点（响应体会指明缺哪个），向我报告，不要换账号或重试硬闯；
    403 本身不触发锁定，触发锁定的是登录/换牌类连续失败（按用户名或 clientId 计，5 次/15 分钟窗口起）。
    不做上线/下线等审批操作；若任务明确要求"正式上线"或"可被应用编排"，
-   先补齐治理属性（systemPromptVersion、dataClass；试运行还需 trialGroups），再走平台 L4 审批流，不得绕过。
+   先补齐治理属性（dataClass；试运行还需 trialGroups），再走平台 L4 审批流，不得绕过。
 
 【完成后回报】Agent id（agt_ 前缀）、clientId、首次运营数据提报（metrics-report）与 entryUrl 提报的
 状态码与关键证据（响应片段 + 控制台「Agent 本体 → 监控」页运营数据、审计页 agent.metrics.report 记录）、
-控制台查看路径（http://192.168.0.7:7300/ →「Agent 本体」页）。
+本次接入中使用过的平台资产的首条使用凭证提报证据（POST /api/assets/usage-reports 200 响应片段，
+未使用资产则注明「未使用」）、控制台查看路径（http://192.168.0.7:7300/ →「Agent 本体」页）。
+
+---
+
+## 附：2026-10-22 治理属性收敛
+
+Agent 白名单已移除 `systemPromptVersion`（系统提示词版本）。上线门禁只剩：
+
+1. `dataClass`（数据密级，必填枚举）；
+2. 身份纳管（签发 OIDC 客户端、登记 `entryUrl` 免登通道，或声明 `headless` 无交互界面三选一——
+   headless 适用于 Work Body 等纯后台执行体：无任何面向用户的界面时，凭已颁发的机器凭证放行，
+   `AGENT_SSO_ENFORCE=oidc` 严格模式不适用）；
+3. 进入试运行另需 `trialGroups` 非空。
+
+提示词与模型版本请写进 `description` / `tags`：平台不承担提示词版本台账职责，
+不提供通用 `version` 字段，也不需要伪造字段名。存量登记里已存在的
+`systemPromptVersion` 值不再参与校验，展示层也不再读取。

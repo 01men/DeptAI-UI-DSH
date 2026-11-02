@@ -4,6 +4,9 @@ events:
   - name: iam.user.frozen
     mode: emit
     description: 账号冻结（authn 订阅吊销令牌）
+  - name: iam.user.password-reset
+    mode: emit
+    description: 口令重置（authn 订阅吊销全部既有会话与委托，P1-08）
   - name: iam.user.activated
     mode: emit
     description: 账号恢复

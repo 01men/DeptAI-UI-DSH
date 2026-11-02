@@ -2,8 +2,12 @@
 plugin: dsh-plugin-mcp
 points:
   - mcp.service.read
+  # W3-T5（MCP 治理契约 §12/§15）：读取 MCP 权限组与 scope 模板
+  - mcp.permgroup.read
   - mcp.service.write
   - mcp.service.deploy
   - mcp.service.offline
   - mcp.permgroup.write
   - mcp.invoke
+  # W 批次 W1（V11 根治）：MCP 工具可信风险登记审批面——登记/两级审批/重审清单/退场
+  - mcp.risk.admin

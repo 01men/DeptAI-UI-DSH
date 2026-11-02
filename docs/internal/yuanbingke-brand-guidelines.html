@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>元冰可 YUANBINGKE · 品牌标识规范 v1.0</title>
+<style>
+:root{
+  --blue:#0052D9; --blue-deep:#0A2A6B; --cyan:#00C8FF; --sky:#00A3FF; --soft:#3D8BFF;
+  --ink:#0B1A33; --gray:#5B6B85; --mute:#8A98AC; --line:#E4EAF2; --bg:#F5F8FC;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:0 32px 96px}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+
+/* 封面 */
+.cover{background:linear-gradient(135deg,#0A2A6B 0%,#0052D9 62%,#0A6BE0 100%);color:#fff;padding:88px 32px 76px;position:relative;overflow:hidden}
+.cover:after{content:"";position:absolute;right:-140px;top:-140px;width:520px;height:520px;border-radius:50%;border:1px solid rgba(255,255,255,.14)}
+.cover:before{content:"";position:absolute;right:-60px;bottom:-220px;width:420px;height:420px;border-radius:50%;border:1px solid rgba(255,255,255,.10)}
+.cover-in{max-width:1080px;margin:0 auto;position:relative;z-index:2}
+.eyebrow{font-size:12px;letter-spacing:.32em;text-transform:uppercase;color:#9FC4FF;margin:0 0 30px}
+.cover .lockup{margin:0 0 34px}
+.cover h1{font-size:30px;font-weight:700;margin:0 0 8px;letter-spacing:.02em}
+.cover p{margin:0;color:#BBD3FF;font-size:14px}
+.meta{margin-top:44px;display:flex;gap:56px;flex-wrap:wrap;font-size:13px;color:#9FC4FF}
+.meta b{display:block;color:#fff;font-weight:500;font-size:14px;margin-top:4px}
+
+/* 标识组合 */
+.lockup{display:inline-flex;align-items:center;gap:26px}
+.lockup .mk{width:104px;height:104px;display:block;flex:none}
+.lockup .txt{display:flex;flex-direction:column}
+.lockup .cn{font-size:46px;font-weight:700;letter-spacing:1.5px;line-height:1.02;color:var(--ink)}
+.lockup .en{font-size:13px;font-weight:500;letter-spacing:2.8px;color:var(--gray);margin-top:7px;line-height:1}
+.lockup.on-dark .cn{color:#fff}
+.lockup.on-dark .en{color:#9BB4D9}
+.lockup.sm .mk{width:36px;height:36px}
+.lockup.sm .cn{font-size:16px;letter-spacing:.6px}
+.lockup.sm .en{font-size:9px;letter-spacing:1.4px;margin-top:2px}
+.lockup.xs .mk{width:26px;height:26px}
+.lockup.xs .cn{font-size:12px;letter-spacing:.4px}
+.lockup.xs .en{display:none}
+
+/* 章节 */
+section{margin-top:72px}
+.sec-head{display:flex;align-items:baseline;gap:14px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:32px}
+.sec-num{font-size:12px;font-weight:600;color:var(--blue);letter-spacing:.12em}
+.sec-head h2{font-size:20px;font-weight:700;margin:0;letter-spacing:.01em}
+.sec-head span.desc{font-size:13px;color:var(--mute);margin-left:auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+h3{font-size:14px;font-weight:700;margin:0 0 10px;letter-spacing:.01em}
+p{margin:0 0 12px;color:#33445F}
+p.dim{color:var(--gray);font-size:13.5px}
+.lead{font-size:16px;color:#22334F;line-height:1.85}
+
+/* 展示台 */
+.stage{display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--line);border-radius:14px;min-height:190px;padding:28px}
+.stage.gray{background:var(--bg)}
+.stage.dark{background:#0B1A33;border-color:#0B1A33}
+.stage.mesh{background:linear-gradient(135deg,#EEF3FA 0%,#DCE7F7 100%)}
+.cap{font-size:12px;color:var(--mute);margin-top:10px;letter-spacing:.04em}
+.cap b{color:var(--gray);font-weight:600}
+
+/* 尺寸示例 */
+.sizes{display:flex;align-items:flex-end;gap:34px;flex-wrap:wrap;padding:34px 28px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.sizes figure{margin:0;text-align:center}
+.sizes svg{display:block;margin:0 auto}
+.sizes figcaption{font-size:11px;color:var(--mute);margin-top:9px;letter-spacing:.03em}
+
+/* 色卡 */
+.swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:16px}
+.sw{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.sw .chip{height:96px}
+.sw .info{padding:12px 14px 14px}
+.sw .nm{font-size:13px;font-weight:700;margin-bottom:2px}
+.sw .role{font-size:11px;color:var(--mute);margin-bottom:8px}
+.sw dl{margin:0;font-size:11px;color:var(--gray);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;line-height:1.75}
+.sw dt{display:inline;color:var(--mute)}
+.sw dd{display:inline;margin:0 0 0 4px}
+.sw dl div{margin:0}
+
+/* 比例/网格解析 */
+.anat{display:flex;gap:34px;align-items:center;flex-wrap:wrap}
+.anat .fig{flex:none}
+.anat ul{margin:0;padding-left:18px;color:#33445F;font-size:13.5px}
+.anat li{margin-bottom:8px}
+.anat li b{color:var(--ink)}
+
+/* 场景 */
+.scene{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.scene .body{padding:22px}
+.scene .cap{padding:0 22px 18px;margin:0}
+.browser{background:#EEF2F7;border-radius:10px 10px 0 0;padding:9px 12px 0;display:flex;gap:6px;align-items:flex-end}
+.browser .dot{width:9px;height:9px;border-radius:50%;background:#CFD8E4;margin-bottom:9px}
+.tabs{display:flex;gap:3px;margin-left:10px}
+.tab{background:#fff;border-radius:8px 8px 0 0;padding:6px 14px 7px;display:flex;align-items:center;gap:7px;font-size:11.5px;color:#33445F;box-shadow:0 -1px 0 rgba(0,0,0,.03)}
+.tab svg{width:14px;height:14px;flex:none}
+.tab.off{background:#E0E7F0;color:#7C8AA0}
+.urlbar{background:#fff;border-radius:0 0 10px 10px;padding:0 12px 10px}
+.urlbar .bar{background:#F1F4F9;border-radius:6px;padding:5px 11px;font-size:11px;color:#7C8AA0;display:flex;align-items:center;gap:8px}
+
+.nav{display:flex;align-items:center;gap:30px;padding:14px 18px;border-bottom:1px solid #EFF3F8}
+.nav .menu{display:flex;gap:22px;font-size:12.5px;color:#5B6B85;margin-left:auto}
+.nav .menu span:first-child{color:var(--blue);font-weight:600}
+
+.bizcard{aspect-ratio:9/5;background:#fff;border-radius:10px;border:1px solid var(--line);padding:20px;display:flex;flex-direction:column;justify-content:space-between}
+.bizcard .rows{font-size:10px;color:#7C8AA0;line-height:1.9}
+.bizcard .rows b{color:var(--ink);font-size:11px;font-weight:600}
+
+.appgrid{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-end}
+.appitem{text-align:center}
+.appitem svg{display:block;border-radius:22.5%;box-shadow:0 6px 18px rgba(0,82,217,.22)}
+.appitem .cap{margin-top:8px}
+
+/* 禁忌 */
+.donts{display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:16px}
+.dont{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;position:relative}
+.dont .demo{height:76px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.dont .demo svg{width:60px;height:60px}
+.dont .no{position:absolute;top:12px;right:12px;width:18px;height:18px;border-radius:50%;background:#FFE9E9;color:#D93A3A;font-size:12px;line-height:18px;text-align:center;font-weight:700}
+.dont .why{font-size:12px;color:var(--gray);line-height:1.6}
+.dont .why b{display:block;color:var(--ink);font-size:12.5px;margin-bottom:4px}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+th{font-size:12px;color:var(--mute);font-weight:600;letter-spacing:.04em;background:#FAFCFE}
+td code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--blue)}
+tr:last-child td{border-bottom:none}
+
+.note{background:#F0F6FF;border-left:3px solid var(--blue);border-radius:0 10px 10px 0;padding:14px 18px;font-size:13.5px;color:#274A7A}
+.note b{color:var(--blue)}
+footer{margin-top:80px;padding-top:26px;border-top:1px solid var(--line);font-size:12px;color:var(--mute);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+@media(max-width:640px){
+  .wrap{padding:0 20px 64px}
+  .cover{padding:60px 20px 52px}
+  .lockup .mk{width:74px;height:74px}
+  .lockup .cn{font-size:33px}
+  .lockup .en{font-size:10px;letter-spacing:2px}
+  .meta{gap:28px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 图形资源 ============ -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00A3FF"/><stop offset=".55" stop-color="#0070E0"/><stop offset="1" stop-color="#0052D9"/>
+    </linearGradient>
+    <linearGradient id="gAppBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A2A6B"/><stop offset="1" stop-color="#0052D9"/>
+    </linearGradient>
+    <linearGradient id="gAppFg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#D6E9FF"/>
+    </linearGradient>
+    <mask id="cutAll">
+      <rect width="240" height="240" fill="#000000"/>
+      <polygon points="120,20 206.6,70 206.6,170 120,220 33.4,170 33.4,70" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="18" stroke-linejoin="round"/>
+      <g stroke="#000000" stroke-width="24" stroke-linecap="round" fill="none">
+        <path d="M91 69L120 114"/><path d="M149 69L120 114"/><path d="M120 114L120 169"/>
+      </g>
+    </mask>
+    <symbol id="mkA" viewBox="0 0 240 240">
+      <polygon points="120,20 206.6,70 206.6,170 120,220 33.4,170 33.4,70" fill="url(#gA)" stroke="url(#gA)" stroke-width="18" stroke-linejoin="round"/>
+      <g stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" fill="none">
+        <path d="M91 69L120 114"/><path d="M149 69L120 114"/><path d="M120 114L120 169"/>
+      </g>
+    </symbol>
+    <symbol id="mkFlat" viewBox="0 0 240 240">
+      <polygon points="120,20 206.6,70 206.6,170 120,220 33.4,170 33.4,70" fill="#0052D9" stroke="#0052D9" stroke-width="18" stroke-linejoin="round"/>
+      <g stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" fill="none">
+        <path d="M91 69L120 114"/><path d="M149 69L120 114"/><path d="M120 114L120 169"/>
+      </g>
+    </symbol>
+    <symbol id="mkW" viewBox="0 0 240 240"><rect width="240" height="240" fill="#FFFFFF" mask="url(#cutAll)"/></symbol>
+    <symbol id="mkK" viewBox="0 0 240 240"><rect width="240" height="240" fill="#0B1A33" mask="url(#cutAll)"/></symbol>
+    <symbol id="mkApp" viewBox="0 0 1024 1024">
+      <rect width="1024" height="1024" rx="224" fill="url(#gAppBg)"/>
+      <g transform="translate(128,128) scale(3.2)"><rect width="240" height="240" fill="url(#gAppFg)" mask="url(#cutAll)"/></g>
+    </symbol>
+    <symbol id="mkHexOnly" viewBox="0 0 240 240">
+      <polygon points="120,20 206.6,70 206.6,170 120,220 33.4,170 33.4,70" fill="url(#gA)" stroke="url(#gA)" stroke-width="18" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="mkYOnly" viewBox="0 0 240 240">
+      <g stroke="#0052D9" stroke-width="24" stroke-linecap="round" fill="none">
+        <path d="M91 69L120 114"/><path d="M149 69L120 114"/><path d="M120 114L120 169"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============ 封面 ============ -->
+<header class="cover">
+  <div class="cover-in">
+    <p class="eyebrow">Brand Identity Guideline</p>
+    <div class="lockup on-dark">
+      <svg class="mk" viewBox="0 0 240 240" role="img" aria-label="元冰可 图形标识"><use href="#mkW"/></svg>
+      <div class="txt"><span class="cn">元冰可</span><span class="en">YUANBINGKE</span></div>
+    </div>
+    <h1>品牌标识规范</h1>
+    <p>杭州元冰可科技有限公司 · 标准配色方案 / 设计说明 / 多尺寸应用规范</p>
+    <div class="meta">
+      <div>版本<b>v1.0</b></div>
+      <div>发布日期<b>2026.09</b></div>
+      <div>适用介质<b>网页 · 移动端 · 印刷 · 物料</b></div>
+      <div>主色<b>#0052D9</b></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ============ 01 主标识 ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">01</span><h2>标准标识</h2><span class="desc">Primary Logo</span></div>
+  <div class="stage"><div class="lockup">
+    <svg class="mk" viewBox="0 0 240 240" role="img" aria-label="元冰可 图形标识"><use href="#mkA"/></svg>
+    <div class="txt"><span class="cn">元冰可</span><span class="en">YUANBINGKE</span></div>
+  </div></div>
+  <p class="cap"><b>横版标准组合</b>　图形 104px ＋ 间距 26px ＋ 中文 46px / 英文 13px；日常应用的首选形态，适用于网页页头、文档页眉、邮件签名等横向空间。</p>
+</section>
+
+<!-- ============ 02 设计说明 ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">02</span><h2>设计说明</h2><span class="desc">Design Rationale</span></div>
+  <p class="lead">标识由「冰晶六边形」与「负空间字母 Y」两部分构成，以最少的元素同时承载公司名称、行业属性与精神气质。</p>
+  <div class="grid2" style="margin-top:26px">
+    <div class="card">
+      <h3>图形释义</h3>
+      <ul style="padding-left:18px;margin:0;font-size:13.5px;color:#33445F;line-height:1.8">
+        <li style="margin-bottom:9px"><b>六边形 · 冰</b>　六方晶系是水分子结晶的自然结构，几何上端正、稳定、可无限延展成蜂巢网格。「冰」传递纯净、冷静、精密的品牌底色。</li>
+        <li style="margin-bottom:9px"><b>负空间 Y · 元</b>　轮廓内部以镂空方式切出字母 Y，取自拼音首字母 Yuan，其骨架同时呼应「元」字上部的开张结构——两条上臂向上生长，一条主干向下扎根。</li>
+        <li style="margin-bottom:9px"><b>一笔生长 · 可</b>　三笔由一点向外展开，寓意「从原点到无限可能」，对应「可」所代表的开放与可行；负空间手法让图形在正负形之间自由切换。</li>
+        <li><b>六边形网格</b>　六边形可无缝平铺，构成统一的辅助图形系统，用于背景、分隔与延展物料。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>风格定位</h3>
+      <ul style="padding-left:18px;margin:0;font-size:13.5px;color:#33445F;line-height:1.8">
+        <li style="margin-bottom:9px"><b>科技感</b>　全部轮廓由 60°／120° 网格推导，两臂夹角 66°，主干与两臂等长，严格左右对称，无任何装饰性笔画。</li>
+        <li style="margin-bottom:9px"><b>年轻化</b>　外轮廓圆角 R9、笔画圆头收尾，配合冷调蓝青渐变，在理性的几何中保留亲和与轻盈。</li>
+        <li style="margin-bottom:9px"><b>极简</b>　仅两种颜色（主蓝 ＋ 镂空白），无描边、无阴影、无立体效果，任何尺寸下都不丢失结构。</li>
+        <li><b>可缩放</b>　在 16px 图标尺寸下，六边形轮廓与 Y 形负空间仍可清晰分辨，满足网页 favicon 与移动端应用图标的极限场景。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>图形构成解析</h3>
+    <div class="anat">
+      <div class="fig" style="display:flex;gap:26px;align-items:center">
+        <div style="text-align:center">
+          <svg viewBox="0 0 240 240" style="width:104px;height:104px;display:block"><use href="#mkHexOnly"/></svg>
+          <div class="cap">① 六边形（冰）</div>
+        </div>
+        <div style="color:#C3CFE0;font-size:18px;padding-top:20px">＋</div>
+        <div style="text-align:center">
+          <svg viewBox="0 0 240 240" style="width:104px;height:104px;display:block"><use href="#mkYOnly"/></svg>
+          <div class="cap">② 负空间 Y（元）</div>
+        </div>
+        <div style="color:#C3CFE0;font-size:18px;padding-top:20px">＝</div>
+        <div style="text-align:center">
+          <svg viewBox="0 0 240 240" style="width:104px;height:104px;display:block"><use href="#mkA"/></svg>
+          <div class="cap">③ 最终标识</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 配色 ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">03</span><h2>标准配色方案</h2><span class="desc">Color System</span></div>
+  <p class="lead">以高饱和冷调蓝为绝对主色，建立科技与信任感；辅以冰湖青点亮年轻气质；中性色承担信息层级。全系色彩控制在蓝色 60°–210° 色相区间内，保持整体清冷统一。</p>
+
+  <h3 style="margin-top:30px">主色 Primary</h3>
+  <div class="swatches">
+    <div class="sw">
+      <div class="chip" style="background:#0052D9"></div>
+      <div class="info"><div class="nm">元冰蓝</div><div class="role">品牌主色 · 占比 60%</div>
+      <dl><div><dt>HEX</dt><dd>#0052D9</dd></div><div><dt>RGB</dt><dd>0, 82, 217</dd></div><div><dt>CMYK</dt><dd>100 62 0 15</dd></div></dl></div>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:#0A2A6B"></div>
+      <div class="info"><div class="nm">深潭蓝</div><div class="role">主色深阶 · 深色底 / 图标底</div>
+      <dl><div><dt>HEX</dt><dd>#0A2A6B</dd></div><div><dt>RGB</dt><dd>10, 42, 107</dd></div><div><dt>CMYK</dt><dd>91 81 30 22</dd></div></dl></div>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:#00A3FF"></div>
+      <div class="info"><div class="nm">天穹蓝</div><div class="role">辅色 · 渐变起点</div>
+      <dl><div><dt>HEX</dt><dd>#00A3FF</dd></div><div><dt>RGB</dt><dd>0, 163, 255</dd></div><div><dt>CMYK</dt><dd>100 36 0 0</dd></div></dl></div>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:#00C8FF"></div>
+      <div class="info"><div class="nm">冰湖青</div><div class="role">点缀色 · 强调 / 数据高亮</div>
+      <dl><div><dt>HEX</dt><dd>#00C8FF</dd></div><div><dt>RGB</dt><dd>0, 200, 255</dd></div><div><dt>CMYK</dt><dd>100 22 0 0</dd></div></dl></div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:34px">中性色 Neutral</h3>
+  <div class="swatches">
+    <div class="sw">
+      <div class="chip" style="background:#0B1A33"></div>
+      <div class="info"><div class="nm">夜墨</div><div class="role">标题 / 正文主色</div>
+      <dl><div><dt>HEX</dt><dd>#0B1A33</dd></div><div><dt>RGB</dt><dd>11, 26, 51</dd></div><div><dt>CMYK</dt><dd>78 49 0 80</dd></div></dl></div>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:#5B6B85"></div>
+      <div class="info"><div class="nm">烟灰蓝</div><div class="role">次级文字 / 说明</div>
+      <dl><div><dt>HEX</dt><dd>#5B6B85</dd></div><div><dt>RGB</dt><dd>91, 107, 133</dd></div><div><dt>CMYK</dt><dd>32 20 0 48</dd></div></dl></div>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:#E4EAF2"></div>
+      <div class="info"><div class="nm">云线</div><div class="role">分割线 / 描边</div>
+      <dl><div><dt>HEX</dt><dd>#E4EAF2</dd></div><div><dt>RGB</dt><dd>228, 234, 242</dd></div><div><dt>CMYK</dt><dd>6 3 0 5</dd></div></dl></div>
+    </div>
+    <div class="sw">
+      <div class="chip" style="background:#F5F8FC;border-bottom:1px solid #E4EAF2"></div>
+      <div class="info"><div class="nm">霜白</div><div class="role">页面底色</div>
+      <dl><div><dt>HEX</dt><dd>#F5F8FC</dd></div><div><dt>RGB</dt><dd>245, 248, 252</dd></div><div><dt>CMYK</dt><dd>2 1 0 0</dd></div></dl></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:26px">
+    <h3>渐变规范</h3>
+    <p class="dim" style="margin-bottom:16px">数字环境下，图形标识可使用 135° 冷蓝渐变，提升科技质感；印刷、单色、极小尺寸场景请使用平涂主色 <code style="font-family:ui-monospace,monospace;color:#0052D9">#0052D9</code>。</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="height:64px;border-radius:10px;background:linear-gradient(135deg,#00A3FF 0%,#0070E0 55%,#0052D9 100%)"></div>
+        <div class="cap"><b>元冰渐变</b>　135°　#00A3FF → #0070E0 → #0052D9</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="height:64px;border-radius:10px;background:linear-gradient(135deg,#0A2A6B 0%,#0052D9 100%)"></div>
+        <div class="cap"><b>深底渐变</b>　135°　#0A2A6B → #0052D9（App 图标 / 深色模块）</div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:20px">主色 <b>#0052D9</b> 与国内主流互联网品牌蓝处于同一色域，具备强烈的科技行业共识与信任感，同时色相更偏冷、明度更低，视觉上更沉稳克制，避免与同类品牌混淆。</div>
+  </div>
+</section>
+
+<!-- ============ 04 组合规范 ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">04</span><h2>标识组合与使用规范</h2><span class="desc">Lockups & Clear Space</span></div>
+
+  <div class="grid2">
+    <div>
+      <div class="stage" style="min-height:250px">
+        <div style="text-align:center">
+          <svg viewBox="0 0 240 240" style="width:120px;height:120px;display:block;margin:0 auto"><use href="#mkA"/></svg>
+          <div style="font-size:34px;font-weight:700;letter-spacing:2.4px;margin-top:14px;color:var(--ink)">元冰可</div>
+          <div style="font-size:11px;font-weight:500;letter-spacing:3.4px;color:var(--gray);margin-top:6px">YUANBINGKE</div>
+        </div>
+      </div>
+      <p class="cap"><b>竖版组合</b>　正方形／近正方形空间使用，如 App 启动页、社交媒体头像、易拉宝。</p>
+    </div>
+    <div>
+      <div class="stage" style="min-height:250px">
+        <div style="text-align:center">
+          <svg viewBox="0 0 240 240" style="width:132px;height:132px;display:block;margin:0 auto"><use href="#mkA"/></svg>
+          <p class="cap" style="margin-top:16px"><b>纯图形标识</b>　最小 16px<br>用于 favicon、App Icon、头像、社交媒体</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:20px">
+    <div class="card">
+      <h3>安全空间</h3>
+      <p class="dim" style="margin-bottom:18px">标识四周须保留不低于 <b style="color:var(--ink)">图形高度 1/4</b> 的空白区域（记为 x），任何文字、图形、边框不得进入该区域。</p>
+      <div style="display:flex;justify-content:center;padding:8px 0 4px">
+        <div style="position:relative;padding:26px;border:1px dashed #C9D6E8;border-radius:8px">
+          <svg viewBox="0 0 240 240" style="width:104px;height:104px;display:block"><use href="#mkA"/></svg>
+          <span style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:10px;color:#8A98AC">x</span>
+          <span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10px;color:#8A98AC">x</span>
+          <span style="position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:10px;color:#8A98AC">x</span>
+          <span style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:10px;color:#8A98AC">x</span>
+        </div>
+      </div>
+      <p class="cap" style="text-align:center">x ＝ 图形视觉高度的 25%（104px 图形对应 26px）</p>
+    </div>
+    <div class="card">
+      <h3>最小使用尺寸</h3>
+      <table style="margin-top:6px">
+        <thead><tr><th>组合形式</th><th>数字介质</th><th>印刷介质</th></tr></thead>
+        <tbody>
+          <tr><td>纯图形标识</td><td><code>16 px</code></td><td><code>6 mm</code></td></tr>
+          <tr><td>横版组合</td><td><code>88 px</code> 宽</td><td><code>26 mm</code> 宽</td></tr>
+          <tr><td>竖版组合</td><td><code>64 px</code> 宽</td><td><code>20 mm</code> 宽</td></tr>
+        </tbody>
+      </table>
+      <p class="cap" style="margin-top:14px">低于最小尺寸时，请仅使用纯图形标识，并改用平涂主色版本，避免渐变细节糊化。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 尺寸应用 ============ -->
+<section id="s05">
+  <div class="sec-head"><span class="sec-num">05</span><h2>不同尺寸下的应用示例</h2><span class="desc">Scaling Test · 按实际像素呈现</span></div>
+  <p class="lead">以下为图形标识在真实像素尺寸下的呈现效果（1:1，非等比放大）。由于标识基于几何网格构建，从 16px 到 256px 均保持结构完整与视觉均衡，无需为大尺寸另做放大版本。</p>
+  <div class="sizes" style="margin-top:26px">
+    <figure><svg viewBox="0 0 240 240" style="width:16px;height:16px"><use href="#mkA"/></svg><figcaption>16 px</figcaption></figure>
+    <figure><svg viewBox="0 0 240 240" style="width:24px;height:24px"><use href="#mkA"/></svg><figcaption>24 px</figcaption></figure>
+    <figure><svg viewBox="0 0 240 240" style="width:32px;height:32px"><use href="#mkA"/></svg><figcaption>32 px</figcaption></figure>
+    <figure><svg viewBox="0 0 240 240" style="width:48px;height:48px"><use href="#mkA"/></svg><figcaption>48 px</figcaption></figure>
+    <figure><svg viewBox="0 0 240 240" style="width:64px;height:64px"><use href="#mkA"/></svg><figcaption>64 px</figcaption></figure>
+    <figure><svg viewBox="0 0 240 240" style="width:96px;height:96px"><use href="#mkA"/></svg><figcaption>96 px</figcaption></figure>
+    <figure><svg viewBox="0 0 240 240" style="width:128px;height:128px"><use href="#mkA"/></svg><figcaption>128 px</figcaption></figure>
+    <figure><svg viewBox="0 0 240 240" style="width:200px;height:200px"><use href="#mkA"/></svg><figcaption>200 px</figcaption></figure>
+  </div>
+
+  <h3 style="margin-top:34px">横版组合的尺寸递进</h3>
+  <div class="card" style="display:flex;align-items:flex-end;gap:44px;flex-wrap:wrap;padding:34px 28px">
+    <div class="lockup xs"><svg class="mk" viewBox="0 0 240 240"><use href="#mkA"/></svg><div class="txt"><span class="cn">元冰可</span><span class="en">YUANBINGKE</span></div></div>
+    <div class="lockup sm"><svg class="mk" viewBox="0 0 240 240"><use href="#mkA"/></svg><div class="txt"><span class="cn">元冰可</span><span class="en">YUANBINGKE</span></div></div>
+    <div class="lockup" style="transform:scale(.78);transform-origin:left bottom"><svg class="mk" viewBox="0 0 240 240"><use href="#mkA"/></svg><div class="txt"><span class="cn">元冰可</span><span class="en">YUANBINGKE</span></div></div>
+    <div class="lockup"><svg class="mk" viewBox="0 0 240 240"><use href="#mkA"/></svg><div class="txt"><span class="cn">元冰可</span><span class="en">YUANBINGKE</span></div></div>
+  </div>
+  <p class="cap" style="margin-top:14px">对应实际宽度约 <b>88px · 128px · 176px · 286px</b>。小于 88px 时请仅使用纯图形图标。</p>
+</section>
+
+<!-- ============ 06 场景应用 ============ -->
+<section id="s06">
+  <div class="sec-head"><span class="sec-num">06</span><h2>场景应用示例</h2><span class="desc">Applications</span></div>
+
+  <div class="grid2">
+    <div class="scene">
+      <div class="browser">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="tabs">
+          <div class="tab"><svg viewBox="0 0 240 240"><use href="#mkA"/></svg>元冰可 · 首页</div>
+          <div class="tab off">控制台</div>
+        </div>
+      </div>
+      <div class="urlbar"><div class="bar">yuanbingke.com</div></div>
+      <div class="body" style="padding-top:16px">
+        <div class="nav" style="border:none;padding:0">
+          <div class="lockup xs"><svg class="mk" viewBox="0 0 240 240" style="width:28px;height:28px"><use href="#mkA"/></svg><div class="txt"><span class="cn" style="font-size:14px">元冰可</span></div></div>
+          <div class="menu"><span>首页</span><span>解决方案</span><span>关于我们</span></div>
+        </div>
+      </div>
+      <p class="cap"><b>浏览器标签页与网页导航</b>　favicon 使用 16px 纯图形，导航栏使用横版组合；深色导航请替换为反白版本。</p>
+    </div>
+
+    <div class="scene">
+      <div class="body" style="padding:28px 22px 22px">
+        <div class="appgrid">
+          <div class="appitem"><svg viewBox="0 0 1024 1024" style="width:96px;height:96px"><use href="#mkApp"/></svg><div class="cap">96 px · App Icon</div></div>
+          <div class="appitem"><svg viewBox="0 0 1024 1024" style="width:64px;height:64px"><use href="#mkApp"/></svg><div class="cap">64 px</div></div>
+          <div class="appitem"><svg viewBox="0 0 1024 1024" style="width:44px;height:44px"><use href="#mkApp"/></svg><div class="cap">44 px · 桌面图标</div></div>
+          <div class="appitem"><svg viewBox="0 0 1024 1024" style="width:28px;height:28px"><use href="#mkApp"/></svg><div class="cap">28 px · 设置列表</div></div>
+        </div>
+      </div>
+      <p class="cap"><b>移动端应用图标</b>　深底渐变底板 ＋ 白色图形，圆角为边长的 22.5%；系统若自动加圆角，请使用直角矩形底板版本。</p>
+    </div>
+
+    <div class="scene">
+      <div class="body" style="padding:0">
+        <div class="stage dark" style="border:none;border-radius:12px 12px 0 0;min-height:150px">
+          <div class="lockup on-dark sm"><svg class="mk" viewBox="0 0 240 240" style="width:40px;height:40px"><use href="#mkW"/></svg><div class="txt"><span class="cn" style="font-size:19px">元冰可</span><span class="en" style="font-size:9.5px">YUANBINGKE</span></div></div>
+        </div>
+      </div>
+      <p class="cap" style="padding:16px 22px 18px"><b>深色背景</b>　深蓝、深灰、照片及视频背景上使用反白版；若背景明度不稳定，须先叠加 60% 遮罩或纯色底板。</p>
+    </div>
+
+    <div class="scene">
+      <div class="body" style="padding:22px">
+        <div class="bizcard">
+          <div class="lockup xs"><svg class="mk" viewBox="0 0 240 240" style="width:30px;height:30px"><use href="#mkA"/></svg><div class="txt"><span class="cn" style="font-size:14px">元冰可</span></div></div>
+          <div class="rows"><b>联系人 / 职务</b><br>杭州元冰可科技有限公司<br>浙江省杭州市 · 手机 138 0000 0000</div>
+        </div>
+      </div>
+      <p class="cap" style="padding:0 22px 18px"><b>名片与工牌</b>　横向物料统一使用左上角放置横版组合，右下角承载联系信息，四周留出至少 5mm 安全空间。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 禁忌 ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">07</span><h2>标识使用禁忌</h2><span class="desc">Misuse</span></div>
+  <div class="donts">
+    <div class="dont"><span class="no">×</span>
+      <div class="demo"><svg viewBox="0 0 240 240" style="width:84px;height:52px"><use href="#mkA"/></svg></div>
+      <div class="why"><b>禁止拉伸变形</b>图形须等比缩放，不得单独改变宽度或高度。</div>
+    </div>
+    <div class="dont"><span class="no">×</span>
+      <div class="demo"><svg viewBox="0 0 240 240" style="filter:drop-shadow(0 4px 6px rgba(0,0,0,.35))"><use href="#mkA"/></svg></div>
+      <div class="why"><b>禁止添加阴影与立体效果</b>不得使用投影、内阴影、浮雕、外发光等装饰。</div>
+    </div>
+    <div class="dont"><span class="no">×</span>
+      <div class="demo"><svg viewBox="0 0 240 240" style="filter:hue-rotate(140deg) saturate(1.6)"><use href="#mkA"/></svg></div>
+      <div class="why"><b>禁止随意更改配色</b>仅可使用规定的标准色与反白、单色版本。</div>
+    </div>
+    <div class="dont"><span class="no">×</span>
+      <div class="demo"><svg viewBox="0 0 240 240" style="transform:rotate(-28deg)"><use href="#mkA"/></svg></div>
+      <div class="why"><b>禁止旋转与倾斜</b>标识须保持正置，不得旋转、倾斜或做镜像翻转。</div>
+    </div>
+    <div class="dont"><span class="no">×</span>
+      <div class="demo" style="background:linear-gradient(45deg,#FF8A3D,#E0457B 55%,#7B3FE4);border-radius:8px">
+        <svg viewBox="0 0 240 240"><use href="#mkW"/></svg></div>
+      <div class="why"><b>禁止在杂乱背景上直接使用</b>低对比或图案背景须先加纯色底或遮罩。</div>
+    </div>
+    <div class="dont"><span class="no">×</span>
+      <div class="demo" style="gap:6px"><svg viewBox="0 0 240 240" style="width:52px;height:52px"><use href="#mkA"/></svg>
+        <span style="font-size:15px;font-weight:700;color:#0B1A33">元冰可</span></div>
+      <div class="why"><b>禁止自行调整图文间距</b>组合中各元素的位置与比例须按本文档执行。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 资产 ============ -->
+<section>
+  <div class="sec-head"><span class="sec-num">08</span><h2>交付资产清单</h2><span class="desc">Deliverables</span></div>
+  <div class="card" style="padding:8px 0 0;overflow:hidden">
+    <table>
+      <thead><tr><th>文件</th><th>形式</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td><code>yuanbingke-logo-horizontal.svg</code></td><td>横版组合</td><td>页头、文档页眉、邮件签名（首选）</td></tr>
+        <tr><td><code>yuanbingke-logo-horizontal-inverse.svg</code></td><td>横版组合 · 反白</td><td>深色底、深色导航</td></tr>
+        <tr><td><code>yuanbingke-logo-vertical.svg</code></td><td>竖版组合</td><td>启动页、头像、易拉宝</td></tr>
+        <tr><td><code>yuanbingke-mark-gradient.svg</code></td><td>纯图形 · 渐变</td><td>数字界面、网页、演示文稿</td></tr>
+        <tr><td><code>yuanbingke-mark-flat.svg</code></td><td>纯图形 · 平涂</td><td>印刷、丝印、刺绣、雕刻</td></tr>
+        <tr><td><code>yuanbingke-mark-inverse.svg</code></td><td>纯图形 · 反白</td><td>深色背景、照片叠加</td></tr>
+        <tr><td><code>yuanbingke-logo-mono-black.svg</code></td><td>标识 · 单色黑</td><td>传真、合同附件、单色印刷</td></tr>
+        <tr><td><code>yuanbingke-appicon.svg</code></td><td>App 图标 1024</td><td>iOS / Android / 小程序图标</td></tr>
+        <tr><td><code>png/ybk-mark-16 → 1024.png</code></td><td>PNG 序列</td><td>favicon、图标、位图素材</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note" style="margin-top:20px">全部标识均为矢量（SVG）交付，可无损缩放至任意尺寸。正式对外发布前，建议将字标「元冰可 / YUANBINGKE」转换为轮廓路径，以彻底规避不同设备字库差异导致的字形偏差。</div>
+</section>
+
+<footer>
+  <span>杭州元冰可科技有限公司 · 品牌标识规范 v1.0</span>
+  <span>主色 #0052D9　·　2026.09</span>
+</footer>
+</div>
+</body>
+</html>

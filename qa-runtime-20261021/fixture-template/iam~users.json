@@ -1,0 +1,173 @@
+[
+  {
+    "createdAt": "2026-10-20T04:14:10.827Z",
+    "updatedAt": "2026-10-20T13:07:50.535Z",
+    "id": "usr_mvg65e9midmcih9e",
+    "username": "admin",
+    "displayName": "平台管理员",
+    "email": "admin@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "title": "平台管理员",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65e9lidm5hzhq"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$vYGPHa+dzEAxzs3Nkz/FSA==$KUbtMtU0pJtrjNugEPHRveWWQhIxgHOstxQvE6JRMiAAAemtjvScWgXJoEagqol0EXqmRQgLUZGkczQDKcIGxw==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T13:07:50.535Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.770Z",
+    "updatedAt": "2026-10-20T10:03:58.432Z",
+    "id": "usr_mvg65wqpidn417cg",
+    "username": "qa-ops",
+    "displayName": "平台资源管理员",
+    "email": "qa-ops@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqkidmqcvda"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$c9G0c/UcZ474axFXoS/0iA==$FB845rR6TesK+ruYqpiYlbz88jTpXxymWKPN69v6Fxdzq/TArDn+RrDVPYe201KJAymqGBOR2sc0272u5oVkKA==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.432Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.805Z",
+    "updatedAt": "2026-10-20T10:03:58.453Z",
+    "id": "usr_mvg65wroidna0rra",
+    "username": "qa-approver",
+    "displayName": "审批人（异人审批）",
+    "email": "qa-approver@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqlidms4r7g"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$UHcNTBqsWW4tGllEj5KSrg==$9y3DzCCEtI9yHN1si5ekie6ST7+xcxmOZwQJMJzpyQ/2AOKCbh9PT6+WSqSGPzjQLpk21GElN10t8noJ8kfaOA==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.453Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.839Z",
+    "updatedAt": "2026-10-20T10:03:58.471Z",
+    "id": "usr_mvg65wsmidng74se",
+    "username": "qa-collab",
+    "displayName": "协作观察员（只读协作面）",
+    "email": "qa-collab@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65wqiidmm0h3x",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqmidmuj6hp"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$jPD5M//SNuKjJiV4j4gpRg==$8sgLQZPJK+saEqLXV0NAb85NY9I3HcxQGNzxU5/MDvtjWRYTKHoI8ICyyDx9BBkHwj0MhIC8O0nMenHWW1CAMQ==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.471Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.874Z",
+    "updatedAt": "2026-10-20T10:03:58.489Z",
+    "id": "usr_mvg65wtlidnmrmj7",
+    "username": "qa-acceptor",
+    "displayName": "验收员（可交付验收）",
+    "email": "qa-acceptor@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqnidmw9fm6"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$egyw02jN/DS9hPMUUWFNmw==$iLR6yyhU2L3miyHEk33BWNR+BfIkDts+yMC0dCctG5ph9ahj15c3sLgo0YTUpVEiY4yv14Ea6ggosQ4BnLhyVw==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.489Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.909Z",
+    "updatedAt": "2026-10-20T10:03:58.506Z",
+    "id": "usr_mvg65wukidnsk7vg",
+    "username": "qa-a2aadmin",
+    "displayName": "协作管理员（规则/巡检/harness）",
+    "email": "qa-a2aadmin@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqnidmysuge"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$6MqGVkdZvfJSKrxwAkH9WQ==$FWKt68efMAD4vA9ApymyuMy7PDmjHGcP2/N08sBBvSyXAE7X+3YRxJHo/stAB+MxQPGJ6lcepCuXWMLvjEeWRA==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.506Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.943Z",
+    "updatedAt": "2026-10-20T10:03:58.524Z",
+    "id": "usr_mvg65wviidnym61w",
+    "username": "qa-member",
+    "displayName": "最小权限普通成员",
+    "email": "qa-member@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65e9lidmbgujd",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqoidn0ruub"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$tgEfD9/D2cIvLJRJlf/Mhw==$+YMAYQgEJMXg9gevvTY5sEgoyRv2Fi6PO4u0VU6dSD7j44Uxu7YpyJBH+fz285Fvfd2toyc/7h+SWUVAZ/iXrA==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.524Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:34.977Z",
+    "updatedAt": "2026-10-20T10:03:58.541Z",
+    "id": "usr_mvg65wwgido4fbwt",
+    "username": "qa-ro",
+    "displayName": "隔离组织只读",
+    "email": "qa-ro@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65wqjidmow2ek",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqoidn2rfy9"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$y+yhxKcSNG57gvSBTysuug==$VhJMX1bil0aEDUas/ORz4hKgxoLNScDlYaf6eVbNX+Q1n8bgqUvoMf33pu0R3K/biK+oqrBlmxgKcKNkKD4CQg==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.541Z"
+  },
+  {
+    "createdAt": "2026-10-20T04:14:35.010Z",
+    "updatedAt": "2026-10-20T10:03:58.558Z",
+    "id": "usr_mvg65wxeidoang9r",
+    "username": "qa-outsider",
+    "displayName": "跨组织越权探针",
+    "email": "qa-outsider@yuanbingke.com",
+    "phone": "",
+    "orgId": "org_mvg65wqjidmow2ek",
+    "title": "",
+    "status": "active",
+    "roleIds": [
+      "rol_mvg65wqoidn0ruub"
+    ],
+    "passwordSalt": "",
+    "passwordHash": "scrypt$16384$8$1$HlLJsdNK726B/PFfa0S9pw==$TjdbTqrmh6B5owv40WNs0J6WqeUrSdkgz8KA/KKiB+cGKN0nlamnyRCJVAS7QP+Vu3cgWyndtavGICLQLmh0pg==",
+    "bindings": [],
+    "lastLoginAt": "2026-10-20T10:03:58.558Z"
+  }
+]

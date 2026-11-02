@@ -12,6 +12,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
 import { newId, slugify, type Collection, type RecordBase } from '../../platform-core/src/index.ts'
+import { t } from '../../platform-i18n/src/index.ts'
 
 // ---------------------------------------------------------------------------
 // 属性表 schema DSL
@@ -148,6 +149,8 @@ export interface DatasetRecord extends RecordBase {
   /** 关联场景编号（ScenegraphScene.code）。 */
   sceneCodes: string[]
   quality?: DatasetQualityScore
+  /** 质量分版本号（C-11）：每次登记自增；expectedVersion 条件更新据此判冲突。 */
+  qualityRevision?: number
   note?: string
 }
 
@@ -203,7 +206,7 @@ export class ResourceCoreService extends Service {
 
   private requireSpec(type: string): ResourceTypeSpec {
     const spec = this.types.get(type)
-    if (!spec) throw new Error(`未注册的资源类型：${type}`)
+    if (!spec) throw new Error(t('未注册的资源类型：{type}', { type }))
     return spec
   }
 
@@ -215,38 +218,40 @@ export class ResourceCoreService extends Service {
     for (const field of spec.schema.fields) {
       const value = attrs[field.key]
       const present = value !== undefined && value !== null && value !== ''
-      if (mode === 'create' && field.required && !present) {
-        errors.push(`缺少必填字段「${field.label}」(${field.key})`)
+      // update 校验的是合并后的完整 attrs，required 与 create 同等强制——否则 PATCH 空值可绕过
+      // 创建期必填（外部 QA-20261014 QA-04：PATCH description:'' 曾返回 200 清空描述）
+      if ((mode === 'create' || mode === 'update') && field.required && !present) {
+        errors.push(t('缺少必填字段「{label}」({key})', { label: field.label, key: field.key }))
       }
       if (mode === 'online' && field.requiredForOnline && !present) {
-        errors.push(`上线前必须补全「${field.label}」(${field.key})`)
+        errors.push(t('上线前必须补全「{label}」({key})', { label: field.label, key: field.key }))
       }
       if (!present) continue
       switch (field.type) {
         case 'number':
-          if (typeof value !== 'number' || !Number.isFinite(value)) errors.push(`「${field.label}」必须是数字`)
+          if (typeof value !== 'number' || !Number.isFinite(value)) errors.push(t('「{label}」必须是数字', { label: field.label }))
           break
         case 'boolean':
-          if (typeof value !== 'boolean') errors.push(`「${field.label}」必须是布尔值`)
+          if (typeof value !== 'boolean') errors.push(t('「{label}」必须是布尔值', { label: field.label }))
           break
         case 'enum':
           if (!field.options?.some((option) => option.value === value)) {
-            errors.push(`「${field.label}」的取值必须是：${field.options?.map((o) => o.value).join(' / ')}`)
+            errors.push(t('「{label}」的取值必须是：{values}', { label: field.label, values: field.options?.map((o) => o.value).join(' / ') }))
           }
           break
         case 'tags':
           if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
-            errors.push(`「${field.label}」必须是字符串数组`)
+            errors.push(t('「{label}」必须是字符串数组', { label: field.label }))
           }
           break
         case 'url':
-          if (typeof value !== 'string' || !/^https?:\/\//.test(value)) errors.push(`「${field.label}」必须是 http(s) 地址`)
+          if (typeof value !== 'string' || !/^https?:\/\//.test(value)) errors.push(t('「{label}」必须是 http(s) 地址', { label: field.label }))
           break
         default:
-          if (typeof value !== 'string') errors.push(`「${field.label}」必须是字符串`)
+          if (typeof value !== 'string') errors.push(t('「{label}」必须是字符串', { label: field.label }))
           else if (looksLikeCorruptedText(value)) {
             // 测试 DEF-06：注册端编码错误（如 GBK 字节流按 UTF-8 解码）产生的乱码不再入库上架
-            errors.push(`「${field.label}」含乱码字符（疑似编码错误），请以 UTF-8 编码重新提交`)
+            errors.push(t('「{label}」含乱码字符（疑似编码错误），请以 UTF-8 编码重新提交', { label: field.label }))
           }
       }
     }
@@ -263,7 +268,7 @@ export class ResourceCoreService extends Service {
     orgId: string
   }): ResourceEntity {
     const spec = this.requireSpec(type)
-    if (!input.name || !String(input.name).trim()) throw new Error(`${spec.label}名称不能为空`)
+    if (!input.name || !String(input.name).trim()) throw new Error(t('{label}名称不能为空', { label: spec.label }))
     const attrs: Record<string, unknown> = {}
     for (const field of spec.schema.fields) {
       const provided = input.attrs?.[field.key]
@@ -271,11 +276,11 @@ export class ResourceCoreService extends Service {
       else if (field.defaultValue !== undefined) attrs[field.key] = field.defaultValue
     }
     const errors = this.validateAttrs(type, attrs, 'create')
-    if (errors.length > 0) throw new Error(`属性校验失败：${errors.join('；')}`)
+    if (errors.length > 0) throw new Error(t('属性校验失败：{errors}', { errors: errors.join('；') }))
     const slug = input.slug || slugify(input.name)
     const collection = this.collection(type)
     if (collection.findOne((entity) => entity.slug === slug)) {
-      throw new Error(`${spec.label}标识 ${slug} 已存在`)
+      throw new Error(t('{label}标识 {slug} 已存在', { label: spec.label, slug }))
     }
     const now = new Date().toISOString()
     return collection.insert({
@@ -295,19 +300,19 @@ export class ResourceCoreService extends Service {
     const spec = this.requireSpec(type)
     const collection = this.collection(type)
     const entity = collection.get(id)
-    if (!entity) throw new Error(`${spec.label}不存在：${id}`)
+    if (!entity) throw new Error(t('{label}不存在：{id}', { label: spec.label, id }))
     const mergedAttrs = { ...entity.attrs }
     if (patch.attrs) {
       for (const field of spec.schema.fields) {
         if (patch.attrs[field.key] === undefined) continue
         if (field.immutable && entity.attrs[field.key] !== patch.attrs[field.key]) {
-          throw new Error(`字段「${field.label}」创建后不可修改`)
+          throw new Error(t('字段「{label}」创建后不可修改', { label: field.label }))
         }
         mergedAttrs[field.key] = patch.attrs[field.key]
       }
     }
     const errors = this.validateAttrs(type, mergedAttrs, 'update')
-    if (errors.length > 0) throw new Error(`属性校验失败：${errors.join('；')}`)
+    if (errors.length > 0) throw new Error(t('属性校验失败：{errors}', { errors: errors.join('；') }))
     return collection.update(id, {
       attrs: mergedAttrs,
       ...(patch.name !== undefined ? { name: patch.name } : {}),
@@ -345,7 +350,7 @@ export class ResourceCoreService extends Service {
     if (!entity) return false
     const allowed = opts?.allowStates ?? spec.lifecycle.states.filter((state) => state.terminal).map((state) => state.key)
     if (!allowed.includes(entity.status)) {
-      throw new Error(`当前状态 ${entity.status} 不可删除（可删状态：${allowed.join(' / ')}）`)
+      throw new Error(t('当前状态 {status} 不可删除（可删状态：{allowed}）', { status: entity.status, allowed: allowed.join(' / ') }))
     }
     return this.collection(type).remove(id)
   }
@@ -372,12 +377,12 @@ export class ResourceCoreService extends Service {
     const spec = this.requireSpec(type)
     const collection = this.collection(type)
     const entity = collection.get(id)
-    if (!entity) throw new Error(`${spec.label}不存在：${id}`)
+    if (!entity) throw new Error(t('{label}不存在：{id}', { label: spec.label, id }))
     const transition = spec.lifecycle.transitions.find((item) => item.action === action)
-    if (!transition) throw new Error(`未知操作：${action}`)
+    if (!transition) throw new Error(t('未知操作：{action}', { action }))
     if (!transition.from.includes(entity.status)) {
       const fromState = this.stateLabel(type, entity.status).label
-      throw new Error(`当前状态「${fromState}」不允许执行「${transition.label}」`)
+      throw new Error(t('当前状态「{from}」不允许执行「{action}」', { from: fromState, action: transition.label }))
     }
     if (transition.to === 'online') {
       const errors = this.validateAttrs(type, entity.attrs, 'online')
@@ -443,7 +448,7 @@ export class ResourceCoreService extends Service {
       id,
       name: entity?.name ?? id,
       status: entity?.status ?? 'unknown',
-      statusLabel: entity && spec ? this.stateLabel(type, entity.status).label : '外部节点',
+      statusLabel: entity && spec ? this.stateLabel(type, entity.status).label : t('外部节点'),
       children: [],
     }
     if (depth <= 0) return node
@@ -490,12 +495,12 @@ export class ResourceCoreService extends Service {
     note?: string
   }): DatasetRecord {
     if (!input.code?.trim() || !/^[A-Za-z0-9._-]{2,64}$/.test(input.code)) {
-      throw new Error(`数据集 code 非法（字母/数字/._-，2-64 位）：${input.code}`)
+      throw new Error(t('数据集 code 非法（字母/数字/._-，2-64 位）：{code}', { code: String(input.code) }))
     }
-    if (!input.name?.trim()) throw new Error('数据集名称必填')
-    if (!input.sourceSystem?.trim()) throw new Error('来源系统必填（sourceSystem）')
+    if (!input.name?.trim()) throw new Error(t('数据集名称必填'))
+    if (!input.sourceSystem?.trim()) throw new Error(t('来源系统必填（sourceSystem）'))
     if (!['public', 'internal', 'secret'].includes(input.classification)) {
-      throw new Error(`数据分级非法：${input.classification}（public/internal/secret）`)
+      throw new Error(t('数据分级非法：{value}（public/internal/secret）', { value: String(input.classification) }))
     }
     const sceneCodes = [...new Set((input.sceneCodes ?? []).map((code) => code.trim()).filter(Boolean))]
     const existing = this.datasets().findOne((item) => item.code === input.code)
@@ -542,14 +547,30 @@ export class ResourceCoreService extends Service {
       .sort((a, b) => a.code.localeCompare(b.code))
   }
 
-  /** 质量分登记（2-2）：四维 0-100，overall 等权均值；登记快照不回写历史引用。 */
-  scoreDataset(code: string, score: { completeness: number; accuracy: number; timeliness: number; consistency: number; note?: string }): DatasetRecord {
+  /**
+   * 质量分登记（2-2）：四维 0-100，overall 等权均值；登记快照不回写历史引用。
+   * 并发语义（C-11）：score.expectedVersion 缺省=最后写入（存量调用方不受影响）；
+   * 携带时与当前 qualityRevision 比对，不一致即拒绝（防并发登记互相覆盖）。
+   */
+  scoreDataset(code: string, score: {
+    completeness: number
+    accuracy: number
+    timeliness: number
+    consistency: number
+    note?: string
+    /** 乐观锁：携带时必须等于当前 qualityRevision，否则拒绝。 */
+    expectedVersion?: number
+  }): DatasetRecord {
     const dataset = this.datasets().findOne((item) => item.code === code)
-    if (!dataset) throw new Error(`数据集不存在：${code}（请先登记）`)
+    if (!dataset) throw new Error(t('数据集不存在：{code}（请先登记）', { code }))
     const dims = ['completeness', 'accuracy', 'timeliness', 'consistency'] as const
     for (const dim of dims) {
       const value = score[dim]
-      if (!Number.isFinite(value) || value < 0 || value > 100) throw new Error(`质量分 ${dim} 应为 0-100，收到 ${value}`)
+      if (!Number.isFinite(value) || value < 0 || value > 100) throw new Error(t('质量分 {dim} 应为 0-100，收到 {value}', { dim, value: String(value) }))
+    }
+    const currentRevision = dataset.qualityRevision ?? 0
+    if (score.expectedVersion !== undefined && score.expectedVersion !== currentRevision) {
+      throw new Error(t('质量分版本冲突：当前 revision={current}，请求基于 revision={expected}（已被并发登记更新，请读取最新分后重试）', { current: currentRevision, expected: score.expectedVersion }))
     }
     const overall = Math.round(((score.completeness + score.accuracy + score.timeliness + score.consistency) / 4) * 10) / 10
     const quality: DatasetQualityScore = {
@@ -558,8 +579,8 @@ export class ResourceCoreService extends Service {
       overall, scoredAt: new Date().toISOString(),
       ...(score.note ? { note: score.note } : {}),
     }
-    const updated = this.datasets().update(dataset.id, { quality })
-    this.ctx.platformBus.emit('resource.dataset.changed', { code, action: 'quality_scored', overall })
+    const updated = this.datasets().update(dataset.id, { quality, qualityRevision: currentRevision + 1 })
+    this.ctx.platformBus.emit('resource.dataset.changed', { code, action: 'quality_scored', overall, revision: currentRevision + 1 })
     return updated
   }
 
@@ -582,13 +603,33 @@ export class ResourceCoreService extends Service {
     return { dataset: code, upstream: collect(true), downstream: collect(false) }
   }
 
-  /** 登记血缘边（派生集 derived 依赖源集 source）。 */
+  /** 登记血缘边（派生集 derived 依赖源集 source）。成环拒绝（C-08）：沿既有 dataset 血缘边 DFS，source 已可达 derived 即环。 */
   addLineage(derived: string, source: string, kind = 'lineage'): DependencyRecord {
-    if (derived === source) throw new Error('血缘边两端不能是同一数据集')
+    if (derived === source) throw new Error(t('血缘边两端不能是同一数据集'))
     for (const code of [derived, source]) {
-      if (!this.datasets().findOne((item) => item.code === code)) throw new Error(`数据集未登记：${code}（请先登记再建血缘）`)
+      if (!this.datasets().findOne((item) => item.code === code)) throw new Error(t('数据集未登记：{code}（请先登记再建血缘）', { code }))
+    }
+    if (this.lineageReaches(source, derived)) {
+      throw new Error(t('血缘成环拒绝：{source} 经既有血缘已可达 {derived}，再登记 {derived}→{source} 将形成循环依赖', { source, derived }))
     }
     return this.addDependency({ fromType: 'dataset', fromId: derived, toType: 'dataset', toId: source, kind })
+  }
+
+  /** 沿 dataset 依赖边（from→to）向下 DFS：判断 from 是否可达 target（成环判定的可达性查询）。 */
+  private lineageReaches(from: string, target: string): boolean {
+    const seen = new Set<string>([from])
+    const stack = [from]
+    while (stack.length > 0) {
+      const current = stack.pop()!
+      for (const edge of this.dependencies().find((item) => item.fromType === 'dataset' && item.fromId === current)) {
+        if (edge.toId === target) return true
+        if (!seen.has(edge.toId)) {
+          seen.add(edge.toId)
+          stack.push(edge.toId)
+        }
+      }
+    }
+    return false
   }
 
   metricDefinitions(): Collection<MetricDefinitionRecord> {
@@ -598,6 +639,7 @@ export class ResourceCoreService extends Service {
   /**
    * 指标口径登记（2-4）：同码不覆盖不合并——内容相同的重复登记幂等返回既有条目；
    * 内容不同即新定义并存（口径冲突按记录人/时间全量留账），仲裁决定 active。
+   * 指纹键序归一（C-09）：payload 递归排序键后序列化，同内容不同键序不再误判为口径冲突。
    */
   putMetricDefinition(input: {
     code: string
@@ -607,12 +649,12 @@ export class ResourceCoreService extends Service {
     payload?: Record<string, unknown>
     recordedBy: string
   }): { definition: MetricDefinitionRecord; conflict: boolean } {
-    if (!input.code?.trim()) throw new Error('指标码 code 必填（如 gm_revenue）')
-    if (!input.name?.trim()) throw new Error('指标名称必填')
-    if (!input.recordedBy?.trim()) throw new Error('记录人 recordedBy 必填（口径问责）')
-    const fingerprint = JSON.stringify([input.name, input.unit ?? '', input.description ?? '', input.payload ?? {}])
+    if (!input.code?.trim()) throw new Error(t('指标码 code 必填（如 gm_revenue）'))
+    if (!input.name?.trim()) throw new Error(t('指标名称必填'))
+    if (!input.recordedBy?.trim()) throw new Error(t('记录人 recordedBy 必填（口径问责）'))
+    const fingerprint = stableStringify([input.name, input.unit ?? '', input.description ?? '', input.payload ?? {}])
     const existing = this.metricDefinitions().all().filter((item) => item.code === input.code)
-    const same = existing.find((item) => JSON.stringify([item.name, item.unit ?? '', item.description ?? '', item.payload ?? {}]) === fingerprint)
+    const same = existing.find((item) => stableStringify([item.name, item.unit ?? '', item.description ?? '', item.payload ?? {}]) === fingerprint)
     if (same) return { definition: same, conflict: false }
     const activeCount = existing.filter((item) => item.status === 'active').length
     const definition = this.metricDefinitions().insert({
@@ -641,19 +683,17 @@ export class ResourceCoreService extends Service {
   arbitrateMetric(code: string, definitionId: string, actor: string): { active: MetricDefinitionRecord; superseded: number } {
     const all = this.metricDefinitions().all().filter((item) => item.code === code)
     const target = all.find((item) => item.id === definitionId)
-    if (!target) throw new Error(`指标定义不存在：${definitionId}（code=${code}）`)
+    if (!target) throw new Error(t('指标定义不存在：{id}（code={code}）', { id: definitionId, code }))
     let superseded = 0
     for (const item of all) {
-      if (item.id === definitionId) {
-        if (item.status !== 'active') this.metricDefinitions().update(item.id, { status: 'active', supersedes: undefined })
-        continue
-      }
-      if (item.status === 'active') {
+      if (item.id === definitionId) continue
+      // C-09：非目标的同码定义统一把 supersedes 指向本次赢家（含此前已 superseded 的陈旧指针）
+      if (item.status !== 'superseded' || item.supersedes !== definitionId) {
         this.metricDefinitions().update(item.id, { status: 'superseded', supersedes: definitionId })
-        superseded++
+        if (item.status === 'active') superseded++
       }
     }
-    this.metricDefinitions().update(definitionId, { status: 'active' })
+    this.metricDefinitions().update(definitionId, { status: 'active', supersedes: undefined })
     this.ctx.platformBus.emit('resource.metric.changed', { code, definitionId, action: 'arbitrated', actor, superseded })
     return { active: this.metricDefinitions().get(definitionId)!, superseded }
   }
@@ -666,6 +706,19 @@ export interface TopologyNode {
   status: string
   statusLabel: string
   children: TopologyNode[]
+}
+
+/**
+ * 键序归一化序列化（C-09）：对象键递归排序后再序列化——同一口径 payload 因键插入顺序不同
+ * 不再被判为口径冲突（伪冲突）。数组保持原序（元素顺序通常有语义），仅对象键无序。
+ */
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map((item) => stableStringify(item)).join(',')}]`
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`
+  }
+  return JSON.stringify(value ?? null)
 }
 
 /**

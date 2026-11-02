@@ -3,7 +3,7 @@
 > 回答一个问题：**控制台前端如何从「只能连本机宿主」变为「可配置、可切换多个宿主服务」？**
 > 例：默认连本机宿主；要把控制台指到另一台宿主 `http://192.168.0.7:7300/`，手动配置一次，
 > 之后在连接清单里一键切换，切换后页面自动刷新生效。
-> 关联：`docs/dev-plan-agent-host-unification.md`（单进程单入口）、`docs/entry-switching.md`（入口分诊）。
+> 关联：`docs/internal/dev-plan-agent-host-unification.md`（单进程单入口）、`docs/entry-switching.md`（入口分诊）。
 
 ---
 
@@ -64,3 +64,21 @@
   决议（默认本机→切远程→悬空回落）/删除回落标记，7 组。
 - 既有不变量保持：console 前端零裸 fetch（测活收敛在 api.js）；RBAC 矩阵不受影响
   （CORS 是响应头语义，不新增端点）。
+
+---
+
+## 四、2026-10-22 扩展：宿主 × 部门 = 面板登记（面板入口不再硬编码）
+
+「部门面板」从 NAV 里的固定外链改为**登记清单页 `#/panels`**，登记数据在浏览器侧（`heng_ops_panels`）：
+
+- 每条登记 = `{ 宿主 connectionId, 部门标识 dept, 名称 }`；宿主候选来自本页的连接清单（本机恒在列）。
+- 跳转地址由登记项推导：本机 → `<部署前缀>/panel/?dept=<dept>`；远程 → `<宿主 base>/panel/?dept=<dept>`。
+- 面板侧新增 `?dept=` 深链（优先于 `localStorage['panel_dept']` 记忆；越权/不存在静默回落，
+  规则见 `plugin-panel-core/public/js/dept.js` 与 `dept.test.mjs`）。
+- **删除宿主连接时其面板登记自动清理**；绕过删除产生的脏数据在清单里标「宿主已删除」并禁用进入。
+- 登记面两处：本页（`#/connections`）的「部门面板」区块、`#/panels` 页本身。
+
+因此「在宿主服务连接里登记好的面板，才支持在部门面板跳转访问」这句话现在是**代码保证**的：
+入口由登记项生成，未登记不产生任何链接；`#/panels` 只是这份登记的看板与深链出口。
+
+纯函数单测见 `connections.test.mjs`（面板登记 7 例）；回滚口径：删 `heng_ops_panels` 键即可清空登记。

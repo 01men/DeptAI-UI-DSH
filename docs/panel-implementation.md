@@ -1,6 +1,14 @@
 # DSH 部门 Agent 工作台面板——实施记录（review-dsh-agent-panel-v2 落地）
 
-> 依据：`docs/review-dsh-agent-panel-v2.md`（六大领域差距分析 + 四阶段计划）
+> **⚠️ 历史实施记录（已被架构统一取代）**：2026-10-29 起，底座仓的部门面板域不再独立维护——
+> `packages/plugin-panel-core` 整包收编自 01men/DeptAI-UI-DSH 面板轨实现（IAW 六空间工作台，
+> 五部门成为数据作用域而非面板形态；工信部 2025 版 14 行业登记；服务端软依赖 5 键 + demoAuth
+> 双形态）。本文所述「五部门面板 SPA / dept.js / i18n 词典 / QB01+GCJX 两图谱包」等细节为
+> 旧架构史档；现行事实以 `CHANGELOG.md`「面板架构统一」条目与上游面板轨仓为准。
+> 底座侧回植的治理语义（#13 契约版本 / #17 组织兜底 / A-01 场景守卫 / D09 技能证据 /
+> ddws pull 反查修正 / 种子门控）见该 CHANGELOG 条目逐项列表。
+
+> 依据：`docs/internal/review-dsh-agent-panel-v2.md`（六大领域差距分析 + 四阶段计划）
 > 物料：`dsh-agent-panel-design/`（DESIGN.md + index.html 878 行可交互原型）
 > 分支：`custom/dsh-rq`；门禁：`npm run selftest`（871/871）+ `npm run lint:manifests`（85 清单 + 5 卡片包 + 2 图谱包）全绿。
 

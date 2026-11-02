@@ -12,6 +12,7 @@
  *   ⑤ 默认 deny
  * - selftest 直接单测本模块（引擎分层约束 O8）。
  */
+import { t } from '../../../platform-i18n/src/index.ts'
 
 // ---------------------------------------------------------------------------
 // 类型
@@ -166,7 +167,7 @@ export function effectiveMatrix(rules: Pick<AuthzRulesSnapshot, 'matrixOverrides
 export function normalizePath(path: string): string {
   const normalized = `/${path}`.replace(/\\/g, '/').replace(/\/+$/, '')
   const segments = normalized.split('/').filter(Boolean)
-  if (segments.some((segment) => segment === '..')) throw new Error('路径不允许包含 ..')
+  if (segments.some((segment) => segment === '..')) throw new Error(t('路径不允许包含 ..'))
   return `/${segments.join('/')}`
 }
 
@@ -385,8 +386,8 @@ export function check(input: EngineCheckInput, ctx: EngineCheckContext): EngineD
   }
 
   const user = ctx.user
-  if (!user) return denyAll(['user-not-found：账号不存在或未同步'])
-  if (ctx.nas === undefined) return denyAll(['nas-not-found：NAS 资产不存在'])
+  if (!user) return denyAll([t('user-not-found：账号不存在或未同步')])
+  if (ctx.nas === undefined) return denyAll([t('nas-not-found：NAS 资产不存在')])
 
   // C 叠加标签（判定序④的范围扩展依据）
   const cTag = ctx.rules.cGroups.some((groupId) => ctx.cGroupHits.includes(groupId))
@@ -397,14 +398,14 @@ export function check(input: EngineCheckInput, ctx: EngineCheckContext): EngineD
   const derived = deriveRole(user, ctx.orgIndex)
   base.role = derived.role
   if (derived.special === 'suspended-review') {
-    return denyAll(['account.suspended-review：账号带可疑标记已冻结判定，转人工复核（审计已留痕）'])
+    return denyAll([t('account.suspended-review：账号带可疑标记已冻结判定，转人工复核（审计已留痕）')])
   }
   if (derived.special === 'external') {
     const verdicts = input.paths.map((path) => {
       const whitelisted = ctx.rules.externalReadPaths.some((entry) => entry.nasId === input.nasId && matchExceptionPath(entry.path, path))
-      if (!whitelisted) return { path, decision: 'deny' as const, reasons: ['account.external：外部账号仅白名单目录可读'] }
-      if (WRITE_OPS.has(input.op)) return { path, decision: 'deny' as const, reasons: ['account.external：外部账号只读（白名单目录）'] }
-      return { path, decision: 'allow' as const, reasons: ['account.external：白名单目录只读放行'] }
+      if (!whitelisted) return { path, decision: 'deny' as const, reasons: [t('account.external：外部账号仅白名单目录可读')] }
+      if (WRITE_OPS.has(input.op)) return { path, decision: 'deny' as const, reasons: [t('account.external：外部账号只读（白名单目录）')] }
+      return { path, decision: 'allow' as const, reasons: [t('account.external：白名单目录只读放行')] }
     })
     base.decision = verdicts.every((verdict) => verdict.decision === 'allow') ? 'allow' : 'deny'
     base.reasons = [...new Set(verdicts.flatMap((verdict) => verdict.reasons))]
@@ -422,9 +423,9 @@ export function check(input: EngineCheckInput, ctx: EngineCheckContext): EngineD
         && (!exception.userIds || exception.userIds.includes(user.id))
         && matchExceptionPath(exception.path, path))
       if (rescue) {
-        return { path, decision: 'allow' as const, reasons: [`exception.allow：显式授权规则 ${rescue.id} 救援挂根账号（root-no-role）${rescue.note ? `（${rescue.note}）` : ''}`], ruleId: rescue.id }
+        return { path, decision: 'allow' as const, reasons: [t('exception.allow：显式授权规则 {id} 救援挂根账号（root-no-role）', { id: rescue.id }) + (rescue.note ? `（${rescue.note}）` : '')], ruleId: rescue.id }
       }
-      return { path, decision: 'deny' as const, reasons: ['org.root-no-role：挂根组织且非负责人，无数据权限（请落入部门/班组）'] }
+      return { path, decision: 'deny' as const, reasons: [t('org.root-no-role：挂根组织且非负责人，无数据权限（请落入部门/班组）')] }
     })
     base.decision = verdicts.every((verdict) => verdict.decision === 'allow') ? 'allow' : 'deny'
     base.reasons = [...new Set(verdicts.flatMap((verdict) => verdict.reasons))]
@@ -452,7 +453,7 @@ export function check(input: EngineCheckInput, ctx: EngineCheckContext): EngineD
   const normalizedInputs = input.paths.map((p) => { try { return normalizePath(p) } catch { return '' } })
   const allOwned = input.op !== 'admin' && normalizedInputs.length > 0 && normalizedInputs.every((p) => ownedPaths.includes(p))
   if (scope.via === 'none' && leaderScopes.length === 0 && !allOwned) {
-    return denyAll([`nas.no-scope：未命中该 NAS 的接入组织锚点（${scope.reason}）`])
+    return denyAll([t('nas.no-scope：未命中该 NAS 的接入组织锚点（{reason}）', { reason: scope.reason })])
   }
   base.scope = scope.via === 'none' ? [] : [...scope.prefixes]
   for (const led of leaderScopes) {
@@ -488,7 +489,7 @@ export function check(input: EngineCheckInput, ctx: EngineCheckContext): EngineD
       && (!exception.userIds || exception.userIds.includes(user.id))
       && matchExceptionPath(exception.path, path))
     if (denyHit) {
-      return { path, decision: 'deny', reasons: [`exception.deny：命中显式拒绝规则 ${denyHit.id}${denyHit.note ? `（${denyHit.note}）` : ''}`], ruleId: denyHit.id }
+      return { path, decision: 'deny', reasons: [t('exception.deny：命中显式拒绝规则 {id}', { id: denyHit.id }) + (denyHit.note ? `（${denyHit.note}）` : '')], ruleId: denyHit.id }
     }
     // ③ 资源级显式 allow（C 跨域白名单、临时授权；可过期）
     const allowHit = ctx.rules.exceptions.find((exception) => exception.effect === 'allow'
@@ -498,32 +499,32 @@ export function check(input: EngineCheckInput, ctx: EngineCheckContext): EngineD
       && (!exception.userIds || exception.userIds.includes(user.id))
       && matchExceptionPath(exception.path, path))
     if (allowHit) {
-      return { path, decision: 'allow', reasons: [`exception.allow：命中显式授权规则 ${allowHit.id}${allowHit.expiresAt ? `（${allowHit.expiresAt} 到期）` : ''}${allowHit.note ? `（${allowHit.note}）` : ''}`], ruleId: allowHit.id }
+      return { path, decision: 'allow', reasons: [t('exception.allow：命中显式授权规则 {id}', { id: allowHit.id }) + (allowHit.expiresAt ? `（${allowHit.expiresAt} 到期）` : '') + (allowHit.note ? `（${allowHit.note}）` : '')], ruleId: allowHit.id }
     }
     // ③b 文件所有权（2026-09-17 新增）：上传者对自有文档默认全权（admin 为平台权限点，不随所有权）。
     // 登记仅覆盖文件精确路径（目录不登记，避免建目录者获得子树删权）；显式 deny 仍优先（判定序②）；
     // allow 后仍受 finalize 的全量降级只读（G3）约束。
     if (input.op !== 'admin' && ctx.ownedPaths?.includes(path)) {
-      return { path, decision: 'allow', reasons: [`owner.allow：文件上传者对自有文档默认放行「${OP_LABEL[input.op]}」`] }
+      return { path, decision: 'allow', reasons: [t('owner.allow：文件上传者对自有文档默认放行「{op}」', { op: t(OP_LABEL[input.op]) })] }
     }
     // 作用域祖先链只读列举：判定序在显式例外之后、作用域边界之前（NAS 根为祖先链特例，reason 沿用 root-listing）
     const onAncestorChain = ancestorPrefixes.some((prefix) => pathWithin(prefix, path))
     if (ancestorPrefixes.length > 0 && !WRITE_OPS.has(input.op) && onAncestorChain) {
       return path === nasRoot
-        ? { path, decision: 'allow', reasons: ['org.root-listing：本 NAS 作用域内用户的根目录只读列举放行'] }
-        : { path, decision: 'allow', reasons: ['org.ancestor-listing：作用域祖先目录只读列举放行（浏览逐级下钻）'] }
+        ? { path, decision: 'allow', reasons: [t('org.root-listing：本 NAS 作用域内用户的根目录只读列举放行')] }
+        : { path, decision: 'allow', reasons: [t('org.ancestor-listing：作用域祖先目录只读列举放行（浏览逐级下钻）')] }
     }
 
     // ④ 角色矩阵 × 作用域边界（主作用域 / 跨分支领导层 / 兼任只读层 / C 跨域只读层）
     if (input.override === true) {
-      return { path, decision: 'allow', reasons: ['override：破窗放行（P 判定，强制留痕）'] }
+      return { path, decision: 'allow', reasons: [t('override：破窗放行（P 判定，强制留痕）')] }
     }
     const inPrimary = scope.prefixes.some((prefix) => pathWithin(path, prefix))
     const ledHits = leaderScopes.filter((led) => led.prefixes.some((prefix) => pathWithin(path, prefix)))
     const inSecondary = !inPrimary && ledHits.length === 0 && secondaryPrefixes.some((prefix) => pathWithin(path, prefix))
     const inCScope = cTag && pathWithin(path, ctx.nas!.rootPath)
     if (!inPrimary && ledHits.length === 0 && !inSecondary && !inCScope) {
-      return { path, decision: 'deny', reasons: [`path.out-of-scope：超出作用域 ${[...scope.prefixes, ...leaderScopes.flatMap((led) => led.prefixes)].join('、')}`] }
+      return { path, decision: 'deny', reasons: [t('path.out-of-scope：超出作用域 {scopes}', { scopes: [...scope.prefixes, ...leaderScopes.flatMap((led) => led.prefixes)].join('、') })] }
     }
     // 有效角色 = 主作用域角色与跨分支所领导部门角色的最高档（多身份作用域重叠时取高不叠加）
     const roleRank: Record<AuthzRole, number> = { P: 0, D: 1, T: 2 }
@@ -537,28 +538,38 @@ export function check(input: EngineCheckInput, ctx: EngineCheckContext): EngineD
     }
     if (effRole) {
       const allowed = matrix[effRole][input.op]
-      const sourceTag = effFrom ? `（跨分支所领导部门「${effFrom}」）` : ''
-      const shareHint = input.op === 'share' && (effRole === 'T' || effRole === 'M') ? '（需走审批申请例外）' : ''
+      const sourceTag = effFrom ? t('（跨分支所领导部门「{org}」）', { org: effFrom }) : ''
+      const shareHint = input.op === 'share' && (effRole === 'T' || effRole === 'M') ? t('（需走审批申请例外）') : ''
       return allowed
-        ? { path, decision: 'allow', reasons: [`matrix.allow：角色 ${roleLabel(effRole)}${sourceTag} 在作用域内放行「${OP_LABEL[input.op]}」${!effFrom && coLeaderMarks.length > 0 ? `（${coLeaderMarks.join('、')}）` : ''}`] }
-        : { path, decision: 'deny', reasons: [`matrix.deny：角色 ${roleLabel(effRole)}${sourceTag} 对「${OP_LABEL[input.op]}」无权限${shareHint}`] }
+        ? { path, decision: 'allow', reasons: [t('matrix.allow：角色 {role}{source} 在作用域内放行「{op}」{coleader}', {
+            role: roleLabel(effRole),
+            source: sourceTag,
+            op: t(OP_LABEL[input.op]),
+            coleader: !effFrom && coLeaderMarks.length > 0 ? `（${coLeaderMarks.join('、')}）` : '',
+          })] }
+        : { path, decision: 'deny', reasons: [t('matrix.deny：角色 {role}{source} 对「{op}」无权限{hint}', {
+            role: roleLabel(effRole),
+            source: sourceTag,
+            op: t(OP_LABEL[input.op]),
+            hint: shareHint,
+          })] }
     }
     if (deptRootReadonly) {
       return WRITE_OPS.has(input.op)
-        ? { path, decision: 'deny', reasons: ['org.dept-root-readonly：未落班组，部门根目录只读'] }
-        : { path, decision: 'allow', reasons: ['org.dept-root-readonly：部门根目录只读放行'] }
+        ? { path, decision: 'deny', reasons: [t('org.dept-root-readonly：未落班组，部门根目录只读')] }
+        : { path, decision: 'allow', reasons: [t('org.dept-root-readonly：部门根目录只读放行')] }
     }
     if (inSecondary) {
       return WRITE_OPS.has(input.op)
-        ? { path, decision: 'deny', reasons: ['org.secondary-readonly：兼任归属子树仅授只读（避免双写冲突）'] }
-        : { path, decision: 'allow', reasons: ['org.secondary-readonly：兼任归属子树只读放行'] }
+        ? { path, decision: 'deny', reasons: [t('org.secondary-readonly：兼任归属子树仅授只读（避免双写冲突）')] }
+        : { path, decision: 'allow', reasons: [t('org.secondary-readonly：兼任归属子树只读放行')] }
     }
     if (inCScope) {
       return WRITE_OPS.has(input.op)
-        ? { path, decision: 'deny', reasons: ['role.c-readonly：C 跨域叠加仅只读，白名单目录写需显式授权'] }
-        : { path, decision: 'allow', reasons: ['role.c-readonly：C 动态用户组跨域只读放行'] }
+        ? { path, decision: 'deny', reasons: [t('role.c-readonly：C 跨域叠加仅只读，白名单目录写需显式授权')] }
+        : { path, decision: 'allow', reasons: [t('role.c-readonly：C 动态用户组跨域只读放行')] }
     }
-    return { path, decision: 'deny', reasons: ['role.none：无法推导主角色（组织挂载异常）'] }
+    return { path, decision: 'deny', reasons: [t('role.none：无法推导主角色（组织挂载异常）')] }
   })
 
   base.perPath = verdicts
@@ -574,9 +585,9 @@ function finalize(decision: EngineDecision, rules: Pick<AuthzRulesSnapshot, 'obs
   decision.observeOnly = rules.observeOnly
   if (decision.decision === 'allow' && rules.degradeAllToReadonly && WRITE_OPS.has(input.op) && input.override !== true) {
     decision.decision = 'deny'
-    decision.reasons = [...decision.reasons, 'degrade.readonly：全量降级观察期，写类操作统一拒绝（G3）']
+    decision.reasons = [...decision.reasons, t('degrade.readonly：全量降级观察期，写类操作统一拒绝（G3）')]
     decision.perPath = decision.perPath.map((verdict) => verdict.decision === 'allow'
-      ? { ...verdict, decision: 'deny' as const, reasons: [...verdict.reasons, 'degrade.readonly：全量降级观察期'] }
+      ? { ...verdict, decision: 'deny' as const, reasons: [...verdict.reasons, t('degrade.readonly：全量降级观察期')] }
       : verdict)
   }
   return decision
@@ -587,7 +598,7 @@ function expired(exception: AuthzException, now: string): boolean {
 }
 
 function roleLabel(role: AuthzRole): string {
-  return role === 'P' ? 'P(平台负责人)' : role === 'D' ? 'D(部门负责人)' : role === 'T' ? 'T(班组负责人)' : 'M(成员)'
+  return role === 'P' ? t('P(平台负责人)') : role === 'D' ? t('D(部门负责人)') : role === 'T' ? t('T(班组负责人)') : t('M(成员)')
 }
 
 // ---------------------------------------------------------------------------
@@ -618,17 +629,17 @@ export interface DirOrphanFinding {
 export function reconcileOrgDirs(dirNames: string[], nas: EngineNas, orgIndex: OrgIndex): DirOrphanFinding[] {
   const findings: DirOrphanFinding[] = []
   const anchor = nas.orgRoot ? ([...orgIndex.values()].find((node) => node.id === nas.orgRoot || node.name === nas.orgRoot)) : undefined
-  if (!anchor) return [{ kind: 'dir-without-org', name: '*', detail: `NAS 未配置有效 orgRoot（${nas.orgRoot ?? '空'}），作用域推导处于全 deny 态` }]
+  if (!anchor) return [{ kind: 'dir-without-org', name: '*', detail: t('NAS 未配置有效 orgRoot（{orgRoot}），作用域推导处于全 deny 态', { orgRoot: nas.orgRoot ?? t('空') }) }]
   const overrides = nas.orgPathOverrides ?? {}
   const childOrgs = [...orgIndex.values()].filter((node) => node.parentId === anchor.id)
   const dirSet = new Set(dirNames)
   for (const dir of dirNames) {
     const hasOrg = childOrgs.some((node) => node.name === dir)
     const hasOverride = Object.values(overrides).some((prefix) => normalizePath(prefix) === normalizePath(`/${dir}`) || normalizePath(prefix).startsWith(normalizePath(`/${dir}`)))
-    if (!hasOrg && !hasOverride) findings.push({ kind: 'dir-without-org', name: dir, detail: `目录「/${dir}」在组织树（${anchor.name} 子级）无归属` })
+    if (!hasOrg && !hasOverride) findings.push({ kind: 'dir-without-org', name: dir, detail: t('目录「/{dir}」在组织树（{org} 子级）无归属', { dir, org: anchor.name }) })
   }
   for (const org of childOrgs) {
-    if (!dirSet.has(org.name)) findings.push({ kind: 'org-without-dir', name: org.name, detail: `组织「${org.name}」在 NAS 上无同名目录（改名请登记 orgPathOverrides）` })
+    if (!dirSet.has(org.name)) findings.push({ kind: 'org-without-dir', name: org.name, detail: t('组织「{name}」在 NAS 上无同名目录（改名请登记 orgPathOverrides）', { name: org.name }) })
   }
   return findings
 }

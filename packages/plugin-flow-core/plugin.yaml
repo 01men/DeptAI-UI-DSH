@@ -1,6 +1,6 @@
 # 插件声明：id、版本、依赖与权限点（插件标准解剖结构）
 id: dsh-plugin-flow-core
-version: 1.1.0
+version: 1.5.0
 label: 事务流引擎（TF 编排/模板库/SLA/甘特）
 depends: ['dsh-plugin-platform-core', 'dsh-plugin-iam']
 provides:

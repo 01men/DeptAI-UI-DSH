@@ -3,6 +3,7 @@ import { api } from '../api.js'
 import { icon } from '../icons.js'
 import { h, $, $$, esc, timeAgo } from '../ui.js'
 import { openUpdateDrawer } from '../update.js'
+import rqI18n from '../i18n.js'
 
 export async function renderPlatform(content) {
   const info = await api.get('/api/platform/info')
@@ -24,13 +25,14 @@ export async function renderPlatform(content) {
   content.innerHTML = `
     <div class="page-head">
       <div>
+        <div class="micro-label">PLUGINS / RUNTIME</div>
         <div class="page-title">插件与工具</div>
-        <div class="page-desc">运行中的平台 = 一棵 cordis 插件树。每个业务域都是可独立启停的插件，工具契约与 dsh 原生 ToolRuntime 对齐。</div>
+        <div class="page-sub">运行中的平台 = 一棵 cordis 插件树。每个业务域都是可独立启停的插件，工具契约与 dsh 原生 ToolRuntime 对齐。</div>
       </div>
       <div class="page-actions">
-        <button class="badge badge-brand no-dot" id="btn-platform-version" title="查看平台更新" style="cursor:pointer;border:0">版本 v${esc(info.version)}${info.installMode === 'bundle' ? '（市场安装）' : ''}</button>
-        <span class="badge badge-brand no-dot">运行时：${esc(info.runtime)}</span>
-        <span class="badge badge-ok no-dot">${info.plugins.length} 个插件在线</span>
+        <button class="badge badge-brand no-dot" id="btn-platform-version" title="查看平台更新" style="cursor:pointer;border:0">${esc(rqI18n.t('版本 v{v}{suffix}', { v: info.version, suffix: info.installMode === 'bundle' ? rqI18n.t('（市场安装）') : '' }))}</button>
+        <span class="badge badge-brand no-dot">${esc(rqI18n.t('运行时：{v}', { v: info.runtime }))}</span>
+        <span class="badge badge-ok no-dot">${esc(rqI18n.t('{n} 个插件在线', { n: info.plugins.length }))}</span>
       </div>
     </div>
 
@@ -65,7 +67,7 @@ export async function renderPlatform(content) {
 
     <div class="card">
       <div class="card-head">
-        <span class="card-title">${icon('terminal', 15)} 模型可用工具目录（${info.tools.length}）</span>
+        <span class="card-title">${icon('terminal', 15)} ${esc(rqI18n.t('模型可用工具目录（{n}）', { n: info.tools.length }))}</span>
         <span class="card-sub">与 dsh ToolRuntime 契约一致 · 可被 dshctl / Skill / 模型直接调用</span>
       </div>
       <div class="card-body" style="padding-top:8px">
@@ -83,7 +85,7 @@ export async function renderPlatform(content) {
     </div>
 
     <div class="card mt-20">
-      <div class="card-head"><span class="card-title">${icon('box', 15)} 数据集合（${info.collections.length}）</span><span class="card-sub">存储抽象：JSON 集合 + 原子落盘，可替换为 DB 实现</span></div>
+      <div class="card-head"><span class="card-title">${icon('box', 15)} ${esc(rqI18n.t('数据集合（{n}）', { n: info.collections.length }))}</span><span class="card-sub">存储抽象：JSON 集合 + 原子落盘，可替换为 DB 实现</span></div>
       <div class="card-body">
         <div class="flex" style="flex-wrap:wrap;gap:6px">
           ${info.collections.map((collection) => `<span class="badge badge-muted no-dot mono">${esc(collection)}</span>`).join('')}

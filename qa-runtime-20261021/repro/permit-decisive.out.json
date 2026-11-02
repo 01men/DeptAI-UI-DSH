@@ -1,0 +1,11 @@
+{
+  "fixture": {
+    "employee": 200,
+    "binding": 200,
+    "appointments": 0
+  },
+  "dispatch": {
+    "state": "completed"
+  },
+  "verdict": "FAIL（已绑定但无生效任用仍放行 → permit 探测分支未到达；静态证据：plugin-a2a inject 缺 workforceIdentity，异常被 catch 吞掉按 legacy 放行）"
+}

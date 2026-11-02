@@ -1,3 +1,8 @@
+---
+name: dsh-ops-mcp
+description: 管理和排查 MCP 服务部署、健康状态与调用。
+---
+
 # Skill: dsh-ops-mcp
 
 ## 何时使用

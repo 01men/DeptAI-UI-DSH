@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * register-dsh-agent.mjs —— 平台自营 dsh Agent 一键资产登记（dev-plan-agent-host-unification.md M3）。
+ * register-dsh-agent.mjs —— 平台自营 dsh Agent 一键资产登记（docs/internal/dev-plan-agent-host-unification.md M3）。
  *
  * 对宿主平台执行 agent-onboarding 全流程（docs/agent-onboarding.md），幂等可重跑：
  *   ① 注册 Agent（按名称幂等：已存在则复用，不换名重复注册）
  *   ② 机器凭证落盘 data/dsh-agent-credential.json（0600；secret 只在下发时出现一次，丢失走轮换不重注册）
- *   ③ 机器身份 PATCH 治理属性（entryUrl / systemPromptVersion / dataClass）
+ *   ③ 机器身份 PATCH 治理属性（entryUrl / dataClass）
  *   ④ 首次运营数据提报（metrics-report，"发一句话"接入义务）
  *   ⑤ 签发 Agent 关联 OIDC 客户端（redirect_uri=<entry>/auth/oidc/callback；已签发则复用）
  *
@@ -33,7 +33,6 @@ const RISK_LEVEL = arg('--risk-level', 'low')
 const DATA_DIR = resolve(arg('--data-dir', './data'))
 const CRED_FILE = join(DATA_DIR, 'dsh-agent-credential.json')
 const OIDC_CALLBACK_PATH = arg('--redirect', '/auth/oidc/callback')
-const SYSTEM_PROMPT_VERSION = arg('--prompt-version', 'prompt-v1')
 const DATA_CLASS = arg('--data-class', 'internal')
 const DESCRIPTION = arg('--desc', `元冰可平台自营 dsh Agent（宿主：${BASE_URL}）。由 register-dsh-agent.mjs 登记与维护。`)
 
@@ -113,10 +112,10 @@ if (stored.clientId && stored.clientSecret) {
 
   const patched = await api('PATCH', `/api/agents/${agent.id}`, {
     token: machineToken,
-    body: { attrs: { entryUrl: ENTRY_URL, systemPromptVersion: SYSTEM_PROMPT_VERSION, dataClass: DATA_CLASS } },
+    body: { attrs: { entryUrl: ENTRY_URL, dataClass: DATA_CLASS } },
   })
   if (!patched.ok) fail(`治理属性提报失败：${patched.error?.message ?? patched.status}`)
-  log(`治理属性已提报：entryUrl=${ENTRY_URL} systemPromptVersion=${SYSTEM_PROMPT_VERSION} dataClass=${DATA_CLASS}`)
+  log(`治理属性已提报：entryUrl=${ENTRY_URL} dataClass=${DATA_CLASS}`)
 
   const report = await api('POST', `/api/agents/${agent.id}/metrics-report`, {
     token: machineToken,

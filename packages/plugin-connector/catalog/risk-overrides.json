@@ -1,0 +1,96 @@
+{
+  "$comment": "连接器风险目录声明（R6：声明式化，吸收 paperclip app-definitions 声明式目录模式）。结构：providers.<service>.defaultRisk=未显式声明 action 的回落风险级；riskTier=provider 分层（S1=低风险常规连接（只读为主），S2=高敏连接（写/管理面、资金/权限/组织变更类））；actions.<actionId>=显式风险级（read|write|admin）。优先级：action 自带 riskLevel 字段 > actions 声明 > provider defaultRisk > heuristicRiskLevel 启发式兜底（fail-closed 默认 admin）。riskTier 本迭代仅作为声明与展示字段，S2 审批联动留待后续迭代接入。事实源即本文件，改后运行 node scripts/gen-connector-catalog.mjs 重新生成 TS 常量（生成物入库）。对账口径不受影响：providers 数组结构原样保留，本目录只覆盖 riskLevel/riskTier 判定。",
+  "providers": {
+    "dingtalk": {
+      "defaultRisk": "write",
+      "riskTier": "S2",
+      "actions": {
+        "dingtalk.get_user_info": "read",
+        "dingtalk.list_departments": "read",
+        "dingtalk.list_todos": "read",
+        "dingtalk.create_todo": "write",
+        "dingtalk.send_work_message": "write",
+        "dingtalk.delete_user": "admin"
+      }
+    },
+    "github": {
+      "defaultRisk": "write",
+      "riskTier": "S2",
+      "actions": {
+        "github.create_issue": "write",
+        "github.create_pull_request": "write",
+        "github.delete_webhook": "admin",
+        "github.list_issues": "read",
+        "github.list_repositories": "read",
+        "github.merge_pull_request": "write"
+      }
+    },
+    "gitlab": {
+      "defaultRisk": "write",
+      "riskTier": "S2",
+      "actions": {
+        "gitlab.create_branch": "write",
+        "gitlab.create_issue": "write",
+        "gitlab.delete_project": "admin",
+        "gitlab.list_issues": "read",
+        "gitlab.list_projects": "read"
+      }
+    },
+    "google": {
+      "defaultRisk": "write",
+      "riskTier": "S2",
+      "actions": {
+        "google.delete_file": "admin",
+        "google.get_calendar_events": "read",
+        "google.list_drive_files": "read",
+        "google.send_gmail": "write",
+        "google.share_file": "admin",
+        "google.upload_file": "write"
+      }
+    },
+    "hackernews": {
+      "defaultRisk": "read",
+      "riskTier": "S1",
+      "actions": {
+        "hackernews.do_the_thing": "admin",
+        "hackernews.fetch_item": "read",
+        "hackernews.get_top_stories": "read",
+        "hackernews.submit_post": "write"
+      }
+    },
+    "jira": {
+      "defaultRisk": "write",
+      "riskTier": "S1",
+      "actions": {
+        "jira.create_issue": "write",
+        "jira.delete_issue": "admin",
+        "jira.get_issue": "read",
+        "jira.search_issues": "read",
+        "jira.update_issue": "write"
+      }
+    },
+    "notion": {
+      "defaultRisk": "write",
+      "riskTier": "S1",
+      "actions": {
+        "notion.create_page": "write",
+        "notion.delete_page": "admin",
+        "notion.get_page": "read",
+        "notion.search_pages": "read",
+        "notion.update_page": "write"
+      }
+    },
+    "slack": {
+      "defaultRisk": "write",
+      "riskTier": "S1",
+      "actions": {
+        "slack.create_channel": "write",
+        "slack.delete_channel": "admin",
+        "slack.invite_user": "admin",
+        "slack.list_channels": "read",
+        "slack.search_messages": "read",
+        "slack.send_message": "write"
+      }
+    }
+  }
+}

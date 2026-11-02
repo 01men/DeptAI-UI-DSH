@@ -2,6 +2,7 @@
 import { api, session } from './api.js'
 import { icon } from './icons.js'
 import { h, esc, toast, $ } from './ui.js'
+import rqI18n from './i18n.js'
 
 export function openCmdk() {
   closeCmdk()
@@ -99,16 +100,28 @@ function closeCmdk() {
 function buildStaticItems(q) {
   const pages = [
     { title: '工作台', hash: '#/dashboard', icon: 'dashboard' },
+    { title: '执行中枢（目标/任务/调度）', hash: '#/exec', icon: 'target', perm: 'exec.read' },
+    { title: 'A2A 协作（数字员工协作面）', hash: '#/a2a', icon: 'flow', perm: 'a2a.directory.read' },
+    { title: 'UHP 执行（执行体与执行记录）', hash: '#/a2a?tab=uhp', icon: 'cpu', perm: 'uhp.read' },
+    { title: '资产台账（六类统一盘点）', hash: '#/assets', icon: 'layers', perm: 'usage.read' },
     { title: 'Skill 市场', hash: '#/skills', icon: 'sparkles', perm: 'skill.read' },
+    { title: '模型网关', hash: '#/gateway', icon: 'route', perm: 'usage.read' },
     { title: 'Agent 本体', hash: '#/agents', icon: 'bot', perm: 'agent.read' },
     { title: 'AI 应用', hash: '#/apps', icon: 'app', perm: 'app.read' },
     { title: 'MCP 服务', hash: '#/mcp', icon: 'plug', perm: 'mcp.service.read' },
-    { title: '资产运营（台账/巡检/成本）', hash: '#/assets', icon: 'layers', perm: 'usage.read' },
+    { title: 'NAS 存储', hash: '#/nas', icon: 'server', perm: 'nas.read' },
+    { title: '数据权限', hash: '#/nas-authz', icon: 'shield', perm: 'nas.authz.read' },
+    { title: '连接器', hash: '#/connectors', icon: 'plug', perm: 'connector.catalog.read' },
+    { title: '用量与成本', hash: '#/usage', icon: 'barChart3', perm: 'usage.read' },
+    { title: '财务视图', hash: '#/finops', icon: 'coins', perm: 'usage.read' },
     { title: '审批中心', hash: '#/approvals', icon: 'checkSquare', perm: 'approval.read' },
     { title: '审计与告警', hash: '#/audit', icon: 'scroll', perm: 'audit.read' },
     { title: '组织与账号', hash: '#/iam', icon: 'users', perm: 'iam.user.read' },
     { title: '角色权限', hash: '#/iam?tab=roles', icon: 'shield', perm: 'iam.org.read' },
     { title: '三方集成（钉钉同步）', hash: '#/iam?tab=connectors', icon: 'link', perm: 'iam.org.read' },
+    { title: '平台接入', hash: '#/access', icon: 'fingerprint', perm: 'connect.manage' },
+    { title: '我的接入', hash: '#/me', icon: 'user', perm: 'console.login' },
+    { title: '宿主服务连接', hash: '#/connections', icon: 'server', perm: 'console.login' },
     { title: '认证与令牌', hash: '#/authn', icon: 'key', perm: 'authn.principal.read' },
     { title: '插件与工具', hash: '#/platform', icon: 'puzzle' },
   ]
@@ -119,6 +132,15 @@ function buildStaticItems(q) {
   if (session.can('mcp.service.write')) actions.push({ title: '接入新 MCP 服务', hash: '#/mcp?action=deploy', icon: 'plus', group: '动作' })
   if (session.can('iam.connector.write')) actions.push({ title: '触发钉钉通讯录同步', hash: '#/iam?tab=connectors&action=sync', icon: 'refresh', group: '动作' })
   if (session.can('authn.principal.write')) actions.push({ title: '签发机器凭证', hash: '#/authn?action=credential', icon: 'key', group: '动作' })
+  // 执行中枢新建任务（R8）：跳 #/exec 后派发自定义事件打开抽屉；exec.js 首渲染以标记位兜底早到事件
+  if (session.can('exec.write')) actions.push({
+    title: '新建执行任务', icon: 'plus', group: '动作',
+    run: () => {
+      go('#/exec')
+      window.__execNewIssueRequested = true
+      setTimeout(() => window.dispatchEvent(new CustomEvent('exec:new-issue')), 350)
+    },
+  })
 
   const all = [
     ...pages.filter((p) => !p.perm || session.can(p.perm)).map((p) => ({ ...p, group: '页面', run: () => go(p.hash) })),
@@ -138,7 +160,7 @@ async function buildDynamicItems(q) {
       session.can('mcp.service.read') ? api.get('/api/mcp/services') : Promise.resolve({ services: [] }),
     ])
     for (const skill of (skills.skills ?? []).slice(0, 3)) {
-      items.push({ group: 'Skill', icon: 'sparkles', title: skill.name, sub: `市场 · ${skill.status}`, run: () => go(`#/skills?focus=${skill.id}`) })
+      items.push({ group: 'Skill', icon: 'sparkles', title: skill.name, sub: rqI18n.t('市场 · {status}', { status: skill.status }), run: () => go(`#/skills?focus=${skill.id}`) })
     }
     for (const agent of (agents.agents ?? []).filter((a) => `${a.name}${a.slug}`.toLowerCase().includes(q.toLowerCase())).slice(0, 3)) {
       items.push({ group: 'Agent', icon: 'bot', title: agent.name, sub: `${agent.slug} · ${agent.status}`, run: () => go(`#/agents?focus=${agent.id}`) })

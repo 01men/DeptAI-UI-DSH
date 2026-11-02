@@ -19,14 +19,36 @@
  * widget 求值 resolveWidgetSource：connector/mcp/manual/mock 四源适配，逐 widget 独立降级
  * （照抄 portal.board() 范式）；来源徽标（连接器/手工/模拟）是治理硬性 DoD。
  */
+import { createHash } from 'node:crypto'
 import { Service } from '@deepseek-ai/cordis'
 import type { Collection, RecordBase } from '../../platform-core/src/storage.ts'
 import { PlatformEvents } from '../../platform-core/src/bus.ts'
 import type { SceneActivity, ScenegraphPack } from '../../platform-core/src/scenegraph.ts'
 import { ACTIVITY_LABELS } from '../../platform-core/src/scenegraph.ts'
+import type { WorkforcePolicyRegistry } from '../../platform-core/src/workforce-port.ts'
 import { newId } from '../../platform-core/src/ids.ts'
 import { resolvePanelModelGateway } from './llm-bridge.ts'
 import type { AuditLogRecord } from '../../plugin-audit/src/index.ts'
+
+/**
+ * V16/D08 问答分型标注（additive）：面板/A2A 的模型单轮调用是「问答」，不构成任务执行。
+ * 目标 Agent 命中受管数字员工（workforce 端口服务端反查）时随应答返回本字段；
+ * 端口未就绪/未命中时不出现（legacy 语义，消费方向后兼容）。
+ */
+export interface PanelWorkforceNotice {
+  managed: true
+  employeeId: string
+  /** 固定口径文案：问答结果不构成任务执行或交付验收（问答与执行彻底分型）。 */
+  notice: string
+}
+
+/** V16/D08 技能证据化加载（D09 关联，additive）：直调成功即随应答返回本次实际加载的技能版本指纹。 */
+export interface PanelSkillLoad {
+  skillId: string
+  version: string
+  /** 当前版本指令内容摘要（sha256 hex）：安装版本、加载摘要与实际使用可对账（D09）。 */
+  contentHash?: string
+}
 
 // ---------------------------------------------------------------------------
 // 记录模型
@@ -133,6 +155,20 @@ export interface TaskRecord extends RecordBase {
   sceneCode?: string
   messageId?: string
   createdBy: string
+  /** ── 执行中枢血缘（DSH issue#3 additive，2026-10-29）：面板=执行中枢投影，不复制权威状态 ── */
+  /** 关联的 exec-hub 任务（exec:issues.id）；携带即「面板泳道迁移镜像回写 exec-hub」。 */
+  execIssueId?: string
+  /** 血缘根目标（exec:goals.id，随 execIssueId 冗余下发免二次反查）。 */
+  goalId?: string
+  /** 证据包引用（NAS/审批/审计产物 URI 数组，验收对账用）。 */
+  evidenceRefs?: string[]
+  /** 验收结论：accepted=签认关闭 / rework=打回返工（面板签认动作落点，镜像回写 exec-hub）。 */
+  verdict?: 'accepted' | 'rework'
+  verdictBy?: string
+  verdictAt?: string
+  verdictOpinion?: string
+  /** 返工血缘（本任务由哪个任务打回产生）。 */
+  reworkOf?: string
 }
 
 export interface ArtifactRecord extends RecordBase {
@@ -496,8 +532,11 @@ export class PanelService extends Service {
     }
   }
 
-  /** Agent 应答落库 + 事件广播（invokeAgent / streamAgentReply 共用）。 */
-  private async insertAgentReply(dept: DeptConfigRecord, agentCard: DeptAgent, trigger: MessageRecord, text: string, card?: MessageRecord['card'], usedModel?: string): Promise<MessageRecord> {
+  /** Agent 应答落库 + 事件广播（invokeAgent / streamAgentReply 共用；V16/D08 分型标注随事件透传）。 */
+  private async insertAgentReply(
+    dept: DeptConfigRecord, agentCard: DeptAgent, trigger: MessageRecord, text: string,
+    card?: MessageRecord['card'], usedModel?: string, workforce?: PanelWorkforceNotice,
+  ): Promise<MessageRecord> {
     const record = this.messages().insert({
       id: newId('pmsg'), channelId: trigger.channelId, dept: dept.id,
       senderType: 'agent', senderName: agentCard.name, senderIcon: agentCard.icon,
@@ -508,13 +547,16 @@ export class PanelService extends Service {
     this.ctx.platformBus.emit(PlatformEvents.PanelMessageCreated, {
       messageId: record.id, dept: dept.id, channelId: trigger.channelId,
       senderName: agentCard.name, text, ddSync: 'none', card: record.card, title: record.card?.title ?? '',
+      // V16/D08 additive 分型标注（命中受管员工才出现；面板 SSE 扇出原样透传，前端按需消费）
+      ...(workforce ? { workforce } : {}),
     })
     return record
   }
 
   /**
    * Agent 调用前置解析（invokeAgent / streamAgentReply 共用）：资产绑定 → 模型取向 →
-   * 频道上下文 + 部门场景图谱摘要组装。返回 ok:false 时 reason 为可展示的诚实降级文案。
+   * 频道上下文 + 部门场景图谱摘要组装。返回 ok:false 时 reason 为可展示的诚实降级文案；
+   * ok 载荷携带 asset（审计 resourceId 与 V16/D08 分型探测的依据）。
    */
   private prepareAgentInvocation(
     dept: DeptConfigRecord,
@@ -522,7 +564,7 @@ export class PanelService extends Service {
     trigger: MessageRecord,
     modelOverride?: string,
     contextNote?: string,
-  ): { ok: true; model: string; systemPrompt: string; userText: string } | { ok: false; reason: string } {
+  ): { ok: true; model: string; systemPrompt: string; userText: string; asset: { id: string } } | { ok: false; reason: string } {
     const channel = this.channels().get(trigger.channelId)
     const ref = agentCard.agentRef?.replace(/^agent:/, '') ?? ''
     const asset = ref ? this.soft('resourceCore')?.list('agent').find((item) => item.id === ref || item.slug === ref || item.name === ref) : undefined
@@ -551,12 +593,12 @@ export class PanelService extends Service {
       contextNote ?? '',
       channel ? `以下是频道「${channel.name}」最近对话：\n${contextText}` : '',
     ].filter(Boolean).join('\n\n')
-    return { ok: true, model, systemPrompt, userText: trigger.text }
+    return { ok: true, model, systemPrompt, userText: trigger.text, asset: { id: asset.id } }
   }
 
-  /** Agent 调用后的协作计量（D1 裁决键格式；org 主键缺省跳过，计量失败不阻塞协作面）。 */
+  /** Agent 调用后的协作计量（D1 裁决键格式；org 兜底链解析失败才跳过，计量失败不阻塞协作面）。 */
   private meterAgentCall(dept: DeptConfigRecord, trigger: MessageRecord, agentCard: DeptAgent): void {
-    const orgId = this.callerOrgId(trigger.senderId)
+    const orgId = this.resolveOrgId(trigger.senderId, dept).orgId
     if (!orgId) return
     try {
       this.soft('usage')?.record({
@@ -571,8 +613,8 @@ export class PanelService extends Service {
   }
 
   async invokeAgent(dept: DeptConfigRecord, agentCard: DeptAgent, trigger: MessageRecord, modelOverride?: string): Promise<void> {
-    const reply = (text: string, card?: MessageRecord['card'], usedModel?: string) =>
-      this.insertAgentReply(dept, agentCard, trigger, text, card, usedModel)
+    const reply = (text: string, card?: MessageRecord['card'], usedModel?: string, workforce?: PanelWorkforceNotice) =>
+      this.insertAgentReply(dept, agentCard, trigger, text, card, usedModel, workforce)
     const fallbackToHuman = async (reason: string) => {
       await reply(`「${agentCard.name}」暂不能自主应答：${reason}已转人工待办，请相关同事跟进。`)
       this.tasks().insert({
@@ -583,23 +625,28 @@ export class PanelService extends Service {
     }
     const prepared = this.prepareAgentInvocation(dept, agentCard, trigger, modelOverride)
     if (!prepared.ok) return void fallbackToHuman(prepared.reason)
+    // V16/D08 问答分型探测：命中受管员工 → 事件与审计 additive 标注（问答 ≠ 任务执行）
+    const workforce = await this.managedWorkforceOf(prepared.asset.id)
+    // #17：组织兜底链（caller→dept.orgId→根组织）——机器主体/外部通道无用户归属时不再空串打穿计量
+    const { orgId, orgSource } = this.resolveOrgId(trigger.senderId, dept)
     try {
       const gateway = resolvePanelModelGateway(this.ctx)?.gateway
       if (!gateway) throw new Error('模型网关未接入（01门演示态）——连接宿主后可用')
       const result = await gateway.invoke({
         model: prepared.model,
-        orgId: this.callerOrgId(trigger.senderId),
+        orgId,
         subject: trigger.senderId ? `user:${trigger.senderId}` : 'panel:runtime',
         messages: [
           { role: 'system', content: prepared.systemPrompt },
           { role: 'user', content: prepared.userText },
         ],
       })
-      await reply(stripThink(result.content), undefined, result.model)
+      await reply(stripThink(result.content), undefined, result.model, workforce)
       this.auditSafe({
         type: 'invoke', actorType: 'machine', actorId: `agent:${agentCard.name}`, actorName: agentCard.name,
-        action: 'panel.agent.invoke', resourceType: 'agent', resourceId: asset.id, resourceName: agentCard.name,
-        result: 'ok', detail: `model=${result.model} tokens=${result.inputTokens}/${result.outputTokens}`,
+        action: 'panel.agent.invoke', resourceType: 'agent', resourceId: prepared.asset.id, resourceName: agentCard.name,
+        // V16：审计口径=问答/协作（panel.agent.invoke 非执行链）；受管员工命中时随 detail 留分型标注
+        result: 'ok', detail: `model=${result.model} tokens=${result.inputTokens}/${result.outputTokens} org=${orgSource}${workforce ? `；workforce=受管员工(${workforce.employeeId})，${workforce.notice}` : ''}`,
         ...(trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}),
       })
     } catch (error) {
@@ -607,8 +654,8 @@ export class PanelService extends Service {
       await fallbackToHuman(`模型网关调用失败（${message}）。`)
       this.auditSafe({
         type: 'invoke', actorType: 'machine', actorId: `agent:${agentCard.name}`, actorName: agentCard.name,
-        action: 'panel.agent.invoke', resourceType: 'agent', resourceId: asset.id, resourceName: agentCard.name,
-        result: 'error', detail: `model=${model} 失败：${message}`,
+        action: 'panel.agent.invoke', resourceType: 'agent', resourceId: prepared.asset.id, resourceName: agentCard.name,
+        result: 'error', detail: `model=${prepared.model} 失败：${message}`,
         ...(trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}),
       })
     } finally {
@@ -642,6 +689,9 @@ export class PanelService extends Service {
     }
     const prepared = this.prepareAgentInvocation(dept, agentCard, trigger, modelOverride)
     if (!prepared.ok) return void fallback(prepared.reason)
+    // V16/D08 问答分型探测 + #17 组织兜底链（与 invokeAgent 同规）
+    const workforce = await this.managedWorkforceOf(prepared.asset.id)
+    const { orgId, orgSource } = this.resolveOrgId(trigger.senderId, dept)
     try {
       const resolved = resolvePanelModelGateway(this.ctx)
       if (!resolved) throw new Error('模型网关未接入（01门演示态）——连接宿主后可用')
@@ -661,6 +711,7 @@ export class PanelService extends Service {
       if (typeof gateway.streamEvents === 'function') {
         for await (const chunk of gateway.streamEvents({
           model: prepared.model,
+          orgId,
           messages,
           subject: trigger.senderId ? `user:${trigger.senderId}` : 'panel:runtime',
         })) {
@@ -674,7 +725,7 @@ export class PanelService extends Service {
         // modelgw 单轮形态：整段作为单个 delta（不造假流式动画，通道能力如实呈现）
         const result = await gateway.invoke({
           model: prepared.model,
-          orgId: this.callerOrgId(trigger.senderId),
+          orgId,
           subject: trigger.senderId ? `user:${trigger.senderId}` : 'panel:runtime',
           messages,
         })
@@ -687,11 +738,23 @@ export class PanelService extends Service {
         await fallback('模型只输出了思考过程（<think> 未闭合或正文为空），没有可展示的应答。')
         return
       }
-      await this.insertAgentReply(dept, agentCard, trigger, finalContent, undefined, usedModel || undefined)
+      await this.insertAgentReply(dept, agentCard, trigger, finalContent, undefined, usedModel || undefined, workforce)
       onEvent({ type: 'done', agent: agentCard.name })
+      this.auditSafe({
+        type: 'invoke', actorType: 'machine', actorId: `agent:${agentCard.name}`, actorName: agentCard.name,
+        action: 'panel.agent.invoke', resourceType: 'agent', resourceId: prepared.asset.id, resourceName: agentCard.name,
+        result: 'ok', detail: `model=${usedModel || prepared.model} stream=1 org=${orgSource}${workforce ? `；workforce=受管员工(${workforce.employeeId})，${workforce.notice}` : ''}`,
+        ...(trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}),
+      })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       await fallback(`模型网关调用失败（${message}）。`)
+      this.auditSafe({
+        type: 'invoke', actorType: 'machine', actorId: `agent:${agentCard.name}`, actorName: agentCard.name,
+        action: 'panel.agent.invoke', resourceType: 'agent', resourceId: prepared.asset.id, resourceName: agentCard.name,
+        result: 'error', detail: `model=${prepared.model} 失败：${message}`,
+        ...(trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}),
+      })
     } finally {
       this.meterAgentCall(dept, trigger, agentCard)
     }
@@ -701,6 +764,49 @@ export class PanelService extends Service {
     if (!userId) return ''
     const user = this.soft('iam')?.users().get(userId)
     return user?.orgId ?? ''
+  }
+
+  /** 平台首个根组织（无父组织）；组织树未播种（01门演示态）时为 undefined。 */
+  private rootOrgId(): string | undefined {
+    try {
+      return this.soft('iam')?.orgs().all().find((org: { parentId?: string | null }) => !org.parentId)?.id
+    } catch {
+      return undefined
+    }
+  }
+
+  /**
+   * 组织归属解析兜底链（#17，2026-10-29 回植自底座）：调用方用户组织 → 部门绑定组织（R11）→ 平台根组织。
+   * 机器主体 / 外部工具通道没有用户归属，此前 orgId 空串直达 modelgw——模型应答后在计量落账处
+   * 抛「usage 事件 org 必填」，先花钱后报错；现在调用前即解析出真实归属，orgSource 随审计留痕。
+   */
+  private resolveOrgId(userId: string | undefined, dept?: { id: string; orgId?: string }): { orgId: string; orgSource: string } {
+    const caller = this.callerOrgId(userId)
+    if (caller) return { orgId: caller, orgSource: 'caller' }
+    const deptOrg = dept?.orgId ?? ''
+    if (deptOrg) return { orgId: deptOrg, orgSource: `dept:${dept!.id}` }
+    const root = this.rootOrgId()
+    if (root) return { orgId: root, orgSource: 'platform-root' }
+    return { orgId: '', orgSource: 'unresolved' }
+  }
+
+  /**
+   * V16/D08 受管数字员工结构化探测：按目标 agentId 经 workforce 窄端口服务端反查
+   * （ctx.workforcePolicy.port()?.describeManagedAgent）。端口未就绪 → undefined（保持 legacy
+   * 现状）；未命中 → undefined；端口执行异常 → undefined（问答面 fail-open，治理端口故障
+   * 不阻塞面板应答）。判定只依据服务端反查，与请求是否携带任何 work 上下文无关（冻结契约）。
+   */
+  private async managedWorkforceOf(agentId: string): Promise<PanelWorkforceNotice | undefined> {
+    try {
+      const registry = (this.ctx as unknown as { workforcePolicy?: WorkforcePolicyRegistry }).workforcePolicy
+      const port = registry?.port?.() ?? null
+      if (!port) return undefined
+      const managed = await port.describeManagedAgent(agentId)
+      if (!managed) return undefined
+      return { managed: true, employeeId: managed.employeeId, notice: '问答结果，不构成任务执行或交付验收' }
+    } catch {
+      return undefined
+    }
   }
 
   /**
@@ -713,7 +819,7 @@ export class PanelService extends Service {
     agentName: string,
     question: string,
     options: { userId?: string; modelOverride?: string; contextNote?: string; sceneCode?: string } = {},
-  ): Promise<{ ok: true; reply: string; model: string } | { ok: false; reason: string }> {
+  ): Promise<{ ok: true; reply: string; model: string; workforce?: PanelWorkforceNotice } | { ok: false; reason: string }> {
     const dept = this.dept(deptId)
     const agentCard = dept.agents.find((card) => card.name === agentName)
     if (!agentCard) {
@@ -725,7 +831,11 @@ export class PanelService extends Service {
     if (!asset) return { ok: false, reason: `Agent「${agentName}」未绑定 Agent 资产（agentRef），无法自主应答` }
     const model = options.modelOverride ?? String((asset.attrs as Record<string, unknown> | undefined)?.model ?? '')
     if (!model) return { ok: false, reason: `Agent「${agentName}」未配置模型（model 属性为空），且本次未指定模型` }
-    const orgId = this.callerOrgId(options.userId)
+    // V16/D08 问答分型探测：命中受管员工 → 应答 additive 携带 workforce 标注（问答 ≠ 任务执行）；
+    // 不新建 run、不改任务状态（问答与执行彻底分型）。
+    const workforce = await this.managedWorkforceOf(asset.id)
+    // #17：组织兜底链（caller→dept.orgId→根组织），机器主体点名不再空串打穿计量
+    const { orgId, orgSource } = this.resolveOrgId(options.userId, dept)
     const sceneSummary = this.sceneSummaryForDept(dept)
     const systemPrompt = [
       String((asset.attrs as Record<string, unknown> | undefined)?.systemPrompt ?? `你是企业部门协作面板中的数字同事「${agentCard.name}」（${agentCard.desc}）。`),
@@ -745,10 +855,15 @@ export class PanelService extends Service {
       this.auditSafe({
         type: 'invoke', actorType: 'machine', actorId: `agent:${agentName}`, actorName: agentName,
         action: 'panel.agent.invoke', resourceType: 'agent', resourceId: asset.id, resourceName: agentName,
-        result: 'ok', detail: `model=${result.model}（askAgent 直答）`,
+        // V16：审计口径=问答/协作；受管员工命中时随 detail 留分型标注
+        result: 'ok', detail: `model=${result.model}（askAgent 直答）org=${orgSource}${workforce ? `；workforce=受管员工(${workforce.employeeId})，${workforce.notice}` : ''}`,
         ...(options.sceneCode ? { sceneCode: options.sceneCode } : {}),
       })
-      return { ok: true, reply: stripThink(result.content), model: result.model }
+      return {
+        ok: true, reply: stripThink(result.content), model: result.model,
+        // V16/D08 additive 分型字段：命中受管数字员工才出现（legacy 路径无此键）
+        ...(workforce ? { workforce } : {}),
+      } as { ok: true; reply: string; model: string; workforce?: PanelWorkforceNotice }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.auditSafe({
@@ -810,11 +925,14 @@ export class PanelService extends Service {
     skillName: string,
     message: string,
     options: { userId?: string; modelOverride?: string; contextNote?: string; sceneCode?: string } = {},
-  ): Promise<{ ok: true; reply: string; model: string; skill: { name: string; version: string } } | { ok: false; reason: string }> {
+  ): Promise<{ ok: true; reply: string; model: string; skill: { name: string; version: string }; skillLoad?: PanelSkillLoad } | { ok: false; reason: string }> {
     const name = skillName.trim()
     if (!name) return { ok: false, reason: '技能名为空（用 /技能名 或 panel_skill_invoke 点名）' }
-    const orgId = this.callerOrgId(options.userId)
-    const invokeable = this.listInvokeableSkills(orgId || undefined)
+    // #17：根组织只用于计量归属（PR #18 安全修复）；没有用户组织的机器主体
+    // 不能因计量兜底而获得根组织受限技能的可见性——可见性按真实调用者组织判定。
+    const { orgId } = this.resolveOrgId(options.userId)
+    const viewerOrg = this.callerOrgId(options.userId)
+    const invokeable = this.listInvokeableSkills(viewerOrg || undefined)
     // 按名全名匹配优先，slug 兜底（技能名常含中文与空格，通用 regex 兜不了）
     const skill = invokeable.find((item) => item.name === name) ?? invokeable.find((item) => item.slug === name)
     if (!skill) {
@@ -827,6 +945,13 @@ export class PanelService extends Service {
     const version = record?.versions.find((item) => item.version === skill.version && item.status === 'published')
     const content = version?.content?.trim() ?? ''
     if (!content) return { ok: false, reason: `技能「${skill.name}」当前版本（${skill.version}）无指令内容，无法直调` }
+    // D09/V16（additive）证据化加载：本次实际加载的技能 ID/版本/内容摘要随应答返回，
+    // 供「安装版本 ↔ 加载摘要 ↔ 实际使用」三方对账（摘要现场计算，不落库不改 skillhub schema）。
+    const skillLoad: PanelSkillLoad = {
+      skillId: skill.id,
+      version: skill.version,
+      contentHash: createHash('sha256').update(content).digest('hex'),
+    }
     // 模型取向：显式指定优先；未指定时不跟随 Agent 资产（技能无资产），自动取目录首个在线模型
     // （班组长没选过模型也要能一把直调——目录为空才诚实拒绝）
     let model = options.modelOverride?.trim() ?? ''
@@ -857,10 +982,14 @@ export class PanelService extends Service {
         type: 'invoke', actorType: options.userId ? 'human' : 'machine', actorId: options.userId ?? 'panel:tool',
         actorName: options.userId ?? 'panel:tool',
         action: 'panel.skill.invoke', resourceType: 'skill', resourceId: skill.id, resourceName: skill.name,
-        result: 'ok', detail: `model=${result.model} version=${skill.version}`,
+        result: 'ok', detail: `model=${result.model} version=${skill.version} contentHash=${skillLoad.contentHash}`,
         ...(options.sceneCode ? { sceneCode: options.sceneCode } : {}),
       })
-      return { ok: true, reply: stripThink(result.content), model: result.model, skill: { name: skill.name, version: skill.version } }
+      return {
+        ok: true, reply: stripThink(result.content), model: result.model, skill: { name: skill.name, version: skill.version },
+        // D09/V16 additive：证据化加载指纹（skillId/version/contentHash）
+        skillLoad,
+      }
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error)
       this.auditSafe({
@@ -966,8 +1095,20 @@ export class PanelService extends Service {
     } catch { /* 审计面独立降级 */ }
   }
 
-  createTask(input: { dept: string; title: string; detail?: string; lane?: TaskLane; assigneeType?: 'human' | 'agent'; assigneeName?: string; sceneCode?: string; createdBy: string }): TaskRecord {
+  createTask(input: {
+    dept: string; title: string; detail?: string; lane?: TaskLane
+    assigneeType?: 'human' | 'agent'; assigneeName?: string; sceneCode?: string; createdBy: string
+    execIssueId?: string; goalId?: string; evidenceRefs?: string[]; reworkOf?: string
+  }): TaskRecord {
     this.dept(input.dept)
+    // 执行中枢血缘（DSH issue#3 修订，2026-10-29）：面板=执行中枢投影——携带 execIssueId 时
+    // 必须能在 exec:issues 命中（唯一任务事实源红线），exec-hub 缺席（01门演示态）则诚实拒绝。
+    if (input.execIssueId) {
+      const hub = this.execHub()
+      if (!hub) throw new Error('执行中枢未接入（01门演示态）——携带 execIssueId 的任务需要宿主执行中枢')
+      if (!hub.issues().get(input.execIssueId)) throw new Error(`执行中枢任务不存在：${input.execIssueId}`)
+    }
+    if (input.reworkOf && !this.tasks().get(input.reworkOf)) throw new Error(`返工来源任务不存在：${input.reworkOf}`)
     const record = this.tasks().insert({
       id: newId('ptask'), dept: input.dept, title: input.title,
       ...(input.detail ? { detail: input.detail } : {}),
@@ -975,16 +1116,30 @@ export class PanelService extends Service {
       assigneeType: input.assigneeType ?? 'human',
       ...(input.assigneeName ? { assigneeName: input.assigneeName } : {}),
       ...(input.sceneCode ? { sceneCode: input.sceneCode } : {}),
+      ...(input.execIssueId ? { execIssueId: input.execIssueId } : {}),
+      ...(input.goalId ? { goalId: input.goalId } : {}),
+      ...(input.evidenceRefs?.length ? { evidenceRefs: input.evidenceRefs } : {}),
+      ...(input.reworkOf ? { reworkOf: input.reworkOf } : {}),
       createdBy: input.createdBy,
     })
     this.auditSafe({
       type: 'change', actorType: input.createdBy.startsWith('agent:') ? 'machine' : 'human',
       actorId: input.createdBy, actorName: input.createdBy,
       action: 'panel.task.create', resourceType: 'panel_task', resourceId: record.id, resourceName: input.title,
-      result: 'ok', detail: `泳道 ${input.lane ?? 'todo'}${input.assigneeName ? `，指派 ${input.assigneeName}` : ''}`,
+      result: 'ok', detail: `泳道 ${input.lane ?? 'todo'}${input.assigneeName ? `，指派 ${input.assigneeName}` : ''}${input.execIssueId ? `，血缘 exec:${input.execIssueId}` : ''}`,
       ...(input.sceneCode ? { sceneCode: input.sceneCode } : {}),
     })
     return record
+  }
+
+  /** exec-hub 软读（执行中枢投影）：缺席（01门演示态）→ undefined，端点级诚实降级。 */
+  private execHub(): any | undefined {
+    return this.soft('execHub')
+  }
+
+  /** 面板泳道 → exec-hub 任务状态镜像（todo/doing/review/done ↔ todo/in_progress/review/done）。 */
+  private laneToIssueStatus(lane: TaskLane): 'todo' | 'in_progress' | 'review' | 'done' {
+    return lane === 'doing' ? 'in_progress' : lane
   }
 
   transitionTask(taskId: string, lane: TaskLane, actorId: string): TaskRecord {
@@ -992,15 +1147,100 @@ export class PanelService extends Service {
     if (!task) throw new Error(`任务不存在：${taskId}`)
     if (!TASK_LANES.includes(lane)) throw new Error(`非法泳道：${lane}`)
     const updated = this.tasks().update(taskId, { lane })
+    // 泳道迁移镜像回写 exec-hub（唯一任务事实源；best-effort + 审计如实留痕，不阻塞本地流转）
+    let mirror = ''
+    if (task.execIssueId) {
+      const hub = this.execHub()
+      if (!hub) mirror = '；exec-hub 缺席，仅本地流转'
+      else {
+        try {
+          hub.transitionIssue(task.execIssueId, this.laneToIssueStatus(lane), `panel:${actorId}`)
+          mirror = `；镜像 exec:${task.execIssueId} → ${this.laneToIssueStatus(lane)}`
+        } catch (error) {
+          mirror = `；镜像失败：${error instanceof Error ? error.message : String(error)}`
+        }
+      }
+    }
     this.ctx.platformBus.emit(PlatformEvents.PanelTaskUpdated, { taskId, dept: task.dept, lane, actorId, title: task.title })
     this.auditSafe({
       type: 'change', actorType: actorId.startsWith('agent:') ? 'machine' : 'human',
       actorId, actorName: actorId,
       action: 'panel.task.transition', resourceType: 'panel_task', resourceId: taskId, resourceName: task.title,
-      result: 'ok', detail: `${task.lane} → ${lane}`,
+      result: 'ok', detail: `${task.lane} → ${lane}${mirror}`,
       ...(task.sceneCode ? { sceneCode: task.sceneCode } : {}),
     })
     return updated
+  }
+
+  /**
+   * 验收裁决（DSH issue#4 修订，2026-10-29）：签认关闭（accepted）/ 打回返工（rework）。
+   * 结论落面板任务 + 镜像回写 exec-hub（accepted→done；rework→in_progress 重开返工）；
+   * 同一任务不可重复裁决；镜像失败如实留痕不阻塞结论（对账靠 audit detail）。
+   */
+  taskVerdict(taskId: string, verdict: 'accepted' | 'rework', input: { actorId: string; opinion?: string }): TaskRecord {
+    const task = this.tasks().get(taskId)
+    if (!task) throw new Error(`任务不存在：${taskId}`)
+    if (task.verdict) throw new Error(`任务已有验收结论（${task.verdict === 'accepted' ? '签认' : '返工'}），不可重复裁决`)
+    const updated = this.tasks().update(taskId, {
+      verdict,
+      verdictBy: input.actorId,
+      verdictAt: new Date().toISOString(),
+      ...(input.opinion ? { verdictOpinion: input.opinion } : {}),
+    })
+    let mirror = 'exec-hub 缺席，仅本地落结论'
+    const hub = task.execIssueId ? this.execHub() : undefined
+    if (hub && task.execIssueId) {
+      const target = verdict === 'accepted' ? 'done' : 'in_progress'
+      try {
+        hub.transitionIssue(task.execIssueId, target, `panel:${input.actorId}`)
+        mirror = `镜像 exec:${task.execIssueId} → ${target}`
+      } catch (error) {
+        mirror = `镜像失败：${error instanceof Error ? error.message : String(error)}`
+      }
+    }
+    this.ctx.platformBus.emit(PlatformEvents.PanelTaskUpdated, {
+      taskId, dept: task.dept, lane: updated.lane, actorId: input.actorId, title: task.title,
+      verdict, ...(task.execIssueId ? { execIssueId: task.execIssueId } : {}),
+    })
+    this.auditSafe({
+      type: 'change', actorType: input.actorId.startsWith('agent:') ? 'machine' : 'human',
+      actorId: input.actorId, actorName: input.actorId,
+      action: 'panel.task.verdict', resourceType: 'panel_task', resourceId: taskId, resourceName: task.title,
+      result: 'ok',
+      detail: `验收结论 ${verdict === 'accepted' ? '签认关闭' : '打回返工'}${input.opinion ? `（${input.opinion}）` : ''}；${mirror}`,
+      ...(task.sceneCode ? { sceneCode: task.sceneCode } : {}),
+    })
+    return updated
+  }
+
+  /**
+   * 部门目标投影（DSH issue#4 修订，2026-10-29）：读透 exec-hub（不复制权威状态）——
+   * 目标（含 metric 基线/目标值）+ 任务（含血缘 goalAncestry/执行锁）+ 面板侧关联任务 ID。
+   * 范围：部门绑定组织 → 该组织子树；未绑定 → 全量（与部门范围权限同口径）。
+   * exec-hub 缺席 → null（调用方 503 DEGRADED 诚实降级）。
+   */
+  deptGoalsProjection(dept: DeptConfigRecord): { goals: unknown[]; issues: unknown[] } | null {
+    const hub = this.execHub()
+    if (!hub) return null
+    const iam = this.soft('iam')
+    const orgScoped = dept.orgId && iam
+      ? (orgId: string): boolean => this.orgSubtreeContains(dept.orgId!, orgId)
+      : (): boolean => true
+    const panelTaskByIssue = new Map<string, string[]>()
+    for (const task of this.tasks().find((item) => item.dept === dept.id)) {
+      if (!task.execIssueId) continue
+      panelTaskByIssue.set(task.execIssueId, [...(panelTaskByIssue.get(task.execIssueId) ?? []), task.id])
+    }
+    const goals = hub.goals().all()
+      .filter((goal: { orgId: string }) => orgScoped(goal.orgId))
+      .map((goal: Record<string, unknown>) => ({ ...goal }))
+    const issues = hub.issues().all()
+      .filter((issue: { orgId: string }) => orgScoped(issue.orgId))
+      .map((issue: Record<string, unknown>) => ({
+        ...issue,
+        panelTaskIds: panelTaskByIssue.get(String(issue.id)) ?? [],
+      }))
+    return { goals, issues }
   }
 
   // -- 场景诊断（会话 × 图谱联动） -------------------------------------------------

@@ -1,7 +1,7 @@
 /**
  * 面板种子（review-dsh-agent-panel-v2 Phase 1 第 5-10 条）：
  * - 基线（首次启动，panel:deptConfigs 为空时）：五部门骨架配置（一套骨架五种皮肤的数据底座，
- *   DEPT_META 来自设计原型剥离）+ 内置行业激活（QB01/GCJX 图谱包随平台分发 → 默认授权根组织）。
+ *   DEPT_META 来自设计原型剥离）+ 内置行业激活（QB01/YB01/JB01 图谱包随平台分发 → 默认授权根组织，幂等收敛）。
  * - 演示（DEMO_SEED=1）：追加五部门 KPI/widget（来源徽标 mock/手工）/频道/样例会话/任务/部门知识——
  *   全部来自 demo-content.json（原型 APPLIANCE 数据，scripts/extract-panel-seed.mjs 确定性剥离）。
  * 演示会话中的 Agent 卡片不预绑 agentRef（面板阵容的 agentRef 由管理员经 PUT /api/panel/:dept/agents

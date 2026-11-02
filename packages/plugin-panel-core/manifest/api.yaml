@@ -7,7 +7,9 @@ endpoints:
   - GET/PUT /api/panel/:dept/widgets · GET/PUT /api/panel/:dept/kpis（读 panel.read / 写 panel.config.write）
   - GET /api/panel/models（panel.read）· POST /api/panel/models · DELETE /api/panel/models/:id · POST /api/panel/models/:slug/test（panel.config.write；与 dsh 服务共用 modelgw 模型目录）
   - GET/POST /api/panel/:dept/channels · GET/POST /api/panel/:dept/messages（POST 支持 model 参数=对话框切换已登记模型）· POST /api/panel/messages/:id/card-action
-  - GET/POST /api/panel/:dept/tasks · POST /api/panel/tasks/:id/transition（panel.task.write）
+  - GET/POST /api/panel/:dept/tasks · POST /api/panel/tasks/:id/transition（panel.task.write；POST 支持执行中枢血缘 execIssueId/goalId/evidenceRefs/reworkOf，携带即投影 exec-hub 权威）
+  - GET /api/panel/:dept/goals（panel.read；执行中枢目标投影：读透 exec-hub 不复制权威状态，缺席 503 DEGRADED）
+  - POST /api/panel/tasks/:id/verdict（panel.task.write；验收裁决：签认关闭/打回返工，镜像回写 exec-hub）
   - GET /api/panel/:dept/artifacts · GET /api/panel/:dept/poll（降级轮询）
   - GET /api/panel/:dept/skills（panel.read）· POST /api/panel/:dept/skills/invoke（panel.write；J1 直调：降级=200+ok:false，鉴权/范围=403/400）
   - POST /api/panel/stream-ticket（panel.read + 部门范围校验；换取 ≤60s 一次性 SSE 票据，H4）
@@ -15,7 +17,6 @@ endpoints:
   - GET /api/panel/industries（三态）· POST /api/panel/industries/:code/activate-requests
   - GET /api/panel/scenegraph?industry=（scenegraph.read）· POST /api/panel/scenegraphs/reload（panel.config.write）
   - GET /panel（面板 SPA 页面） · GET /api/panel/orgs（部门树）
-  - GET/POST /api/panel/models（模型端点登记） · DELETE /api/panel/models/:id · POST /api/panel/models/:id/test（连通性测试）
   - POST /api/panel/channels/:id/read（频道已读游标）
   - PUT /api/panel/:dept/config（面板配置） · PUT /api/panel/:dept/agents（Agent 阵容） · POST /api/panel/:dept/artifacts（产物登记）
   - POST /api/panel/:dept/scenes/:scene/diagnose（场景诊断） · POST /api/panel/:dept/scenes/:scene/sync-dingtalk（场景钉钉同步）
@@ -24,8 +25,8 @@ endpoints:
   - GET /api/panel/ddws/status（panel.read；installed/bound/auth 形状）· POST /api/panel/ddws/install · POST /api/panel/ddws/test · POST /api/panel/ddws/pull（panel.config.write）
   - PUT/DELETE /api/panel/ddws/bind（panel.config.write；绑定/解绑钉钉群）
   - POST /api/panel/:dept/agent-stream（panel.read；SSE 流式对话降级通道）
-  # —— 制造工具箱（2026-10-19 并入「制造业 AI 工具集」，docs/plan-mfg-toolkit-fusion-20261019.md）——
-  # 13 个确定性计算内核 + 3 个 AI 工具（Skill 放行制）+ 100 项选题清单；模型面经平台网关，面板零密钥。
+  - # —— 制造工具箱（2026-10-19 并入「制造业 AI 工具集」，docs/plan-mfg-toolkit-fusion-20261019.md）——
+  - # 13 个确定性计算内核 + 3 个 AI 工具（Skill 放行制）+ 100 项选题清单；模型面经平台网关，面板零密钥。
   - GET /api/panel/mfg/catalog（panel.read；工具目录 + 分类 + Skill 放行状态 + 模型就绪态）
   - GET /api/panel/mfg/roadmap（panel.read；100 项选题清单：来源追溯/验收标准/交付边界/状态）
   - POST /api/panel/mfg/tools/:id/run（panel.write；统一执行入口：strict 字段校验 + 溢出拦截 + 质量门禁）

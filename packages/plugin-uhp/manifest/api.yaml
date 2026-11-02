@@ -1,0 +1,19 @@
+# OpenAPI 摘要（REST + 服务键）—— CLI/Skill/Web 三端对齐的唯一事实源
+plugin: dsh-plugin-uhp
+base: /api
+endpoints:
+  # UHP 协议面（/v1 非 /api 域，免控制台鉴权；任务面自校验 Bearer 加 uhp.invoke 权限点，fail-closed）
+  - GET /v1/uhp（UHP 能力发现，规范要求免鉴权）
+  - POST /v1/uhp/responses（UHP 任务面，幂等键请求头，stream=true 时 SSE）
+  - GET /v1/uhp/responses/:id
+  - POST /v1/uhp/responses/:id/cancel
+  # harness 注册表管理（guarded，进 RBAC 越权探针矩阵）
+  - GET /api/uhp/harnesses
+  - POST /api/uhp/harnesses
+  - PATCH /api/uhp/harnesses/:id
+  - DELETE /api/uhp/harnesses/:id
+  - GET /api/uhp/responses
+services:
+  - key: uhpGateway
+    access: ctx.uhpGateway
+    description: UHP Server 协议面——configured harness 注册表 + Responses 兼容任务面（幂等/会话续接/取消/SSE）

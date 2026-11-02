@@ -1,3 +1,8 @@
+---
+name: dsh-ops-agent
+description: 管理数字员工的登记、授权、上下线和运行指标。
+---
+
 # Skill: dsh-ops-agent
 
 ## 何时使用
@@ -26,7 +31,7 @@ agent.write / agent.approve 权限；上线审批需第二管理员配合。
 ### 场景 2：注册新 Agent
 `dshctl agent create --name=<名称> --model=deepseek-chat --riskLevel=low`
 → 返回机器凭证（仅一次；scopes 含 mcp.invoke/skill.read/agent.read/agent.write/usage.write，Agent 可自推直连消耗的计量）。
-补全 systemPromptVersion/dataClass 后方可上线。
+补全 dataClass 后方可上线。
 运营数据提报是接入义务（与 AI 应用同级）：Agent 必须每日 POST /api/agents/<id>/metrics-report
 （dau/sessions/uniqueUsers，明细可传 userIds 平台侧哈希脱敏），并 PATCH attrs.entryUrl 提报交互界面地址。
 凭证 secret 丢失/泄露：找管理员执行 `dshctl credential rotate <principalId>` 轮换（clientId 不变、旧值立即失效），无需重新注册。

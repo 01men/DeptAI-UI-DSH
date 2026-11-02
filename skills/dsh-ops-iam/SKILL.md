@@ -1,3 +1,8 @@
+---
+name: dsh-ops-iam
+description: 管理组织、账号、角色、用户组及身份同步。
+---
+
 # Skill: dsh-ops-iam
 
 ## 何时使用

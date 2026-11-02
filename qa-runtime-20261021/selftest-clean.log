@@ -1,0 +1,1790 @@
+
+> dsh-enterprise-ops@1.3.0 selftest
+> node scripts/selftest.mjs
+
+[90m» 启动隔离测试实例…[0m
+
+[36m━━ 平台健康与登录 ━━[0m
+  [32m✔ 健康检查[0m
+  [32m✔ 无令牌访问被拒绝（401）[0m
+  [32m✔ 错误密码被拒绝[0m
+  [32m✔ 管理员登录成功[0m
+  [32m✔ 登录返回权限点（含 *）[0m
+  [32m✔ SSO 发起授权（签发 state）[0m
+  [32m✔ SSO 授权地址不带 prompt=consent（已授权用户可静默通过，缩短回跳链路）[0m
+  [32m✔ 钉钉免密登录（身份链接命中）[0m
+  [32m✔ 登录返回 refresh token（7d 轮转链）[0m
+  [32m✔ state 重放被拒绝（防 CSRF）[0m
+  [32m✔ 伪造 state 被拒绝[0m
+  [32m✔ code 重放被拒绝（单次消费）[0m
+  [32m✔ 未命中身份签发待绑定票据[0m
+  [32m✔ 绑定校验密码（错误拒绝）[0m
+  [32m✔ 绑定已有账号并登录[0m
+  [32m✔ 一人一号：身份绑定第二个账号被拒（引擎唯一约束）[0m
+  [32m✔ 三方身份注册新账号并登录[0m
+  [32m✔ 开发者登录[0m
+
+[36m━━ RBAC 权限模型 ━━[0m
+  [32m✔ 开发者创建组织被拒（403）[0m
+  [32m✔ 审计员写操作被拒[0m
+  [32m✔ 审计员读日志放行[0m
+
+[36m━━ 工作台聚合 ━━[0m
+  [32m✔ 总览数据完整[0m
+
+[36m━━ 组织账号（IAM） ━━[0m
+  [32m✔ 创建组织[0m
+  [32m✔ 重复用户名被拒[0m
+  [32m✔ 创建账号（默认激活）[0m
+  [32m✔ 创建账号返回一次性随机初始口令[0m
+  [32m✔ 指定口令过短被拒（护栏）[0m
+  [32m✔ 二次修改为指定口令[0m
+  [32m✔ 修改后原口令立即失效[0m
+  [32m✔ 指定口令可登录[0m
+  [32m✔ 分配角色[0m
+  [32m✔ 开发者角色默认含 agent.write（与 app.write 对称，注册/提报更新闭环）[0m
+  [32m✔ 权限目录：三个无消费死点已摘除（market.submit / connector.market.publish / scenegraph.activate）[0m
+  [32m✔ 权限目录：org_admin 迁移批次不再含 scenegraph.activate（member/auditor 同查）[0m
+  [32m✔ 第二审批人账号就绪[0m
+  [32m✔ 第二审批人可登录[0m
+  [32m✔ 批量导入[0m
+  [32m✔ 组织树包含新组织[0m
+  [32m✔ 创建同级组织（改名冲突靶子）[0m
+  [32m✔ 组织重命名[0m
+  [32m✔ 空白名称重命名被拒[0m
+  [32m✔ 同级重名重命名被拒[0m
+  [32m✔ 调整上级组织[0m
+  [32m✔ 移动到自身被拒（环检测）[0m
+  [32m✔ 移动到子孙被拒（环检测）[0m
+  [32m✔ 级联删除靶子就绪（母/子组织 + 直属账号）[0m
+  [32m✔ 存在子组织时普通删除被拒并指路[0m
+  [32m✔ 级联一键删除整棵子树（组织数/上移账号数）[0m
+  [32m✔ 级联后子树全部消失、上级组织仍在[0m
+  [32m✔ 直属账号自动上移到上级组织[0m
+  [32m✔ 空组织普通删除仍可用（非级联路径回归）[0m
+  [32m✔ 创建静态用户组[0m
+  [32m✔ 钉钉全量同步执行[0m
+  [32m✔ 同步冲突处理（以三方为准）[0m
+
+[36m━━ 账号冻结 → 令牌联动吊销 ━━[0m
+  [32m✔ 新账号可登录（随机初始口令）[0m
+  [32m✔ 新账号令牌可用[0m
+  [32m✔ 冻结缺少原因被拒（护栏）[0m
+  [32m✔ 冻结成功[0m
+  [32m✔ 冻结后令牌立即失效（401）[0m
+  [32m✔ 冻结账号无法登录[0m
+
+[36m━━ refresh token 轮转、宽限自愈与重放防护（H3/T-08：多标签页互踩自愈） ━━[0m
+  [32m✔ 登录返回令牌对[0m
+  [32m✔ refresh 轮转签发新对[0m
+  [32m✔ 轮转后新 access 可用[0m
+  [32m✔ refresh 宽限：轮转后 30s 内旧 token 再兑换成功（多标签自愈，H3/T-08）[0m
+  [32m✔ refresh 宽限：宽限签发的兄弟对立即可用[0m
+  [32m✔ refresh 宽限：宽限兑换不吊销原链（兄弟对共存）[0m
+  [32m✔ refresh 宽限：超过兑换上限仅拒绝该次请求（宽限 10 次封顶）[0m
+  [32m✔ refresh 宽限：超限拒绝不连带吊销整链[0m
+
+[36m━━ 统一认证（机器身份 / 令牌） ━━[0m
+  [32m✔ 签发机器凭证（secret 一次性返回）[0m
+  [32m✔ 可绑定资源聚合（Agent / AI 应用清单）[0m
+  [32m✔ 选择已注册主体签发 → 凭据自动关联资源[0m
+  [32m✔ 错误 client_secret 被拒[0m
+  [32m✔ Client Credentials 登录[0m
+  [32m✔ 机器身份越权被拒（scope 限制）[0m
+  [32m✔ 管理端签发令牌[0m
+  [32m✔ 吊销令牌[0m
+  [32m✔ 吊销后令牌失效[0m
+  [32m✔ 治理夹具：签发 agent.read 机器凭证并换牌[0m
+  [32m✔ 调整权限范围 200[0m
+  [32m✔ 调整 scopes 后旧令牌联动吊销（收权即时生效）[0m
+  [32m✔ 重新换牌按新范围签发[0m
+  [32m✔ 拼错权限点被拒（权限目录校验）[0m
+  [32m✔ '*' 与其他权限点混用被拒[0m
+  [32m✔ 创建凭证即校验权限点（入口防拼错）[0m
+  [32m✔ 创建机器角色（组织角色目录）[0m
+  [32m✔ 签发仅角色授权的机器凭证（scopes 可空）[0m
+  [32m✔ 换牌 scope 解析自角色权限点[0m
+  [32m✔ 角色授权机器可调用角色权限范围内的接口[0m
+  [32m✔ 角色收权后存量令牌实时降级（无需换牌）[0m
+  [32m✔ 重新换牌按新角色范围签发[0m
+  [32m✔ 角色 + 附加权限点并集生效（列表含角色名与解析后权限）[0m
+  [32m✔ 无角色且无权限点的凭证被拒[0m
+  [32m✔ 引用不存在的角色被拒[0m
+  [32m✔ 轮换 clientSecret（clientId 不变 + note 提示 + 无 hash 外发）[0m
+  [32m✔ 旧 secret 换牌立即 401[0m
+  [32m✔ 新 secret 换牌 200[0m
+  [32m✔ 身份列表不再外发 clientSecretHash[0m
+
+[36m━━ 第 1 步：令牌受众（aud）与插件命名空间收敛 ━━[0m
+  [32m✔ 签发带受众（aud）的令牌[0m
+  [32m✔ 受众匹配 → 校验通过[0m
+  [32m✔ 受众不匹配 → 拒绝[0m
+  [32m✔ 无受众令牌访问受众服务被拒[0m
+  [32m✔ 插件令牌命名空间内 scope 放行[0m
+  [32m✔ 插件令牌跨命名空间 scope 被拒（唯一收敛面）[0m
+
+[36m━━ 第 2 步：多租户最小集与 usage 计量管道 ━━[0m
+  [32m✔ 默认租户兜底（存量数据落 t_default）[0m
+  [32m✔ 创建租户[0m
+  [32m✔ 组织挂载租户[0m
+  [32m✔ 计量事件登记（零价快照 charge=0 + 租户解析）[0m
+  [32m✔ 幂等键重复投递不重复计量[0m
+  [32m✔ 租户隔离的计量总额（只计一次）[0m
+  [32m✔ 同幂等键不同内容被拒（防篡改）[0m
+  [32m✔ schema v1 校验（resource 格式拒绝）[0m
+  [32m✔ 无计价规则拒绝登记（不免费放行）[0m
+  [32m✔ 计量键与价格簿不符被拒（mcp:* 须 tokens，错误可自纠）[0m
+  [32m✔ 计量键匹配路径计价恒等（1000 tokens 零价快照 charge=0）[0m
+  [32m✔ 三方对账：usage 口径 = audit 投影（全量比对）[0m
+  [32m✔ 运行时对账检出未声明能力（M5 漂移）[0m
+  [32m✔ 授权后该主体能力漂移消除[0m
+  [32m✔ 能力漂移已入告警中心[0m
+
+[36m━━ usage 值域扩展（WP-03/D1：app:<id> 与 kb:<orgId>） ━━[0m
+  [32m✔ app:<id> 事件入管道（默认零费率规则播种，charge=0）[0m
+  [32m✔ 零费率事件自动标非计费（rate.nonbillable=true，D2 统一零价快照）[0m
+  [32m✔ kb:<orgId> 事件入管道（值域 additive，命中 kb:* 零费率）[0m
+  [32m✔ kb:* 计量键仍受价格簿硬校验（须 calls，不静默 0 计费）[0m
+
+[36m━━ 零价快照构造（WP-03/D2：nonbillableUsage 便捷入口） ━━[0m
+  [32m✔ nonbillableUsage 便捷构造（calls 计量 + nonbillable 标记）[0m
+  [32m✔ 便捷构造事件直入 record（零价入账 + 标记在快照）[0m
+  [32m✔ nonbillable 标记配非零费率规则被拒（防计费口径漂移）[0m
+  [32m✔ 零价快照不污染总额（charge 恒 0）[0m
+
+[36m━━ FinOps 成本穿透（M2 CFO 视图：org×model 交叉 + 环比 + Top 主体） ━━[0m
+  [32m✔ 价格簿登记 model:*（内部成本 10 分/千 tokens）[0m
+  [32m✔ FinOps 第二部门建组织（矩阵第二行）[0m
+  [32m✔ 空转样本入账（model a / 5000 tokens → 50 分）[0m
+  [32m✔ 空转判定场景全部入账（4 model + 3 动作）[0m
+  [32m✔ FinOps overview 一次取全（penetration + idle）[0m
+  [32m✔ 穿透 totals 金额口径（全资源成本 ≥ model 域 170 分）[0m
+  [32m✔ 穿透环比口径（delta_pct 与 cost/prev 复算自洽，prev=0 且 cur>0 时为 null）[0m
+  [32m✔ 部门维度含两个探针组织（byOrg 按成本降序）[0m
+  [32m✔ 模型维度探针精确（selftest-a 90 分 / selftest-b 80 分）[0m
+  [32m✔ org×model 矩阵行列齐备（Top orgs/models + 「其他」行列）[0m
+  [32m✔ 矩阵总计守恒（全格之和 = model 域成本合计 170 分）[0m
+  [32m✔ Top 消耗主体（探针主体在列）[0m
+  [32m✔ 空转判定：恰好 2 条疑似空转（无后续动作的 model 调用）[0m
+  [32m✔ 空转成本精确（探针 50+20=70 分；份额与全库 model 域复算自洽）[0m
+  [32m✔ 空转分模型拆分（探针 selftest-a/b 各 1 条）[0m
+  [32m✔ 空转分部门拆分（两探针部门各 1 条）[0m
+  [32m✔ 空转样本可复核（samples 含两条 + 时间/主体/模型齐备）[0m
+  [32m✔ 空转窗口参数生效（窗口收窄 5 分钟 → evFollow 亦成疑似，空转数上升）[0m
+  [32m✔ 无 usage.read 访问 CFO 视图被拒（403）[0m
+  [32m✔ FinOps CSV 导出（text/csv + BOM + 穿透/空转区块表头）[0m
+  [32m✔ 非法月份参数被拒（400）[0m
+  [32m✔ 成本管道：demo 种子计量经 usage 管道入账（seed: 幂等键可反查且带定价，成本经管道派生非直写）[0m
+
+[36m━━ 首启 bootstrap 状态（M2 部署产品化：上线三步走数据源） ━━[0m
+  [32m✔ bootstrap 公开端点可达（登录页提示数据源，匿名可读）[0m
+  [32m✔ 演示种子无初始口令待接管（DEMO 口令显式指定不落盘）[0m
+  [32m✔ bootstrap detail 强制鉴权（匿名 401）[0m
+  [32m✔ bootstrap detail 全量（demo 模式 + 根组织 + seededAt）[0m
+
+[36m━━ T2 远程接入降级审计接线（connect.degraded 落审计链） ━━[0m
+  [32m✔ audit 已订阅 connect.degraded（T2 收口：降级显式留痕，不再只到总线为止）[0m
+  [32m✔ connect 降级事件源在位（扩展点缺失 + 转发失败两条 fail-closed 路径均发事件）[0m
+
+[36m━━ T6 billing 残留防复发（集成面零 precheckCents） ━━[0m
+  [32m✔ dshctl 用法文案无 precheckCents 残留（T6）[0m
+  [32m✔ connector 集成文档无 precheckCents 示例（T6）[0m
+  [32m✔ connector 工具描述无计费预检/precheckCents 残留（T6，防误导集成方）[0m
+
+[36m━━ behavior 事件管道（WP-03/D3：采集 / 鉴权 / 幂等） ━━[0m
+  [32m✔ behavior 采集：未认证 401（write-only 门禁 fail-closed）[0m
+  [32m✔ behavior 采集：登录用户上报成功（主体强制取认证身份）[0m
+  [32m✔ behavior 采集：幂等重放返回既有事件 + duplicated 标记[0m
+  [32m✔ behavior 采集：同幂等键不同内容被拒[0m
+  [32m✔ behavior 采集：type 点分小写键校验[0m
+  [32m✔ behavior 采集：payload 超 4KB 被拒[0m
+  [32m✔ behavior 只读：无 audit.read 被拒 403[0m
+  [32m✔ behavior 只读：audit.read 可查且幂等不双计（total=1）[0m
+
+[36m━━ 五平台主题（WP-05/B3：仅 data-platform 属性差，定版色值在位） ━━[0m
+  [32m✔ 主题：五平台仅 data-platform 属性差（五块覆盖 + 定版色值在位，无 Tailwind 引入）[0m
+
+[36m━━ rbac endpoint matrix（WP-04/A1：普通成员直调管理端点 100% 被拒，矩阵驱动） ━━[0m
+  [32m✔ 矩阵：服务端路由×权限矩阵可查询（端点覆盖面充足）[0m
+  [32m✔ 矩阵：普通成员账号就绪[0m
+  [32m✔ 矩阵：320 个越权探针 100% 被拒 403（端点清单变动即红）[0m
+  [32m✔ 矩阵：公开白名单零意外扩张（变动须经评审后同步本清单）[0m
+  [32m✔ 矩阵：/api/* 全量声明且三分类全覆盖（H5：register 缺声明注册期即抛）[0m
+  [32m✔ 矩阵：7 个公开自校验端点匿名探针 100% fail-closed（H5）[0m
+  [32m✔ 走查不变量：console 前端除 api.js（与协议页豁免）外零裸 fetch/XHR/SSE[0m
+  [32m✔ 走查不变量：console+panel 前端零 window.open/alert/confirm/prompt 弹窗（dsh 完整页面）[0m
+
+[36m━━ usage 最近调用（WP-04/A3：工作台自见 ≤5） ━━[0m
+  [32m✔ 最近调用：登录人自身计量事件自见（≤5 条，含展示名与计量明细）[0m
+  [32m✔ 最近调用：未认证被拒（401，服务端强制不靠菜单隐藏）[0m
+
+[36m━━ feedback 回传（WP-07/D1：👍👎 落零价快照 + 归因 + 幂等不重复计数） ━━[0m
+  [32m✔ feedback：👍 落库为非计费零价快照（charge=0 + nonbillable）[0m
+  [32m✔ feedback：同键重放幂等（同一 event_id，不重复计数）[0m
+  [32m✔ feedback：X-On-Behalf-User 归因到人（Agent 代用户回传）[0m
+  [32m✔ feedback：事件主体归因正确（dev 本人 + OBO 归因均在列）[0m
+  [32m✔ feedback：非法评分被拒 400[0m
+  [32m✔ feedback：同 messageId 改评分幂等（不再双计，event_id 归并首条）[0m
+  [32m✔ feedback：改评不产生第二条聚合（agent:dev-coder 行 up=1/down=1，down 仅 OBO msg-drill-2 一条）[0m
+  [32m✔ W4：机器凭证就绪（refType=agent + console.login scope → client-credentials 换 token）[0m
+  [32m✔ W4：机器凭证 OBO 指向白名单外用户 → 403（机器主体不得归因到任意用户）[0m
+  [32m✔ W4：403 反查 audit/authz 留痕（detail 含 usage.feedback(on-behalf:agent:<refId>)）[0m
+  [32m✔ W4：夹具——dev 绑定为该 Agent 绑定真人（既有 bindings 端点）[0m
+  [32m✔ W4：OBO 指向绑定真人（dev）→ 200 且零价快照口径不变（nonbillable）[0m
+  [32m✔ W4：OBO 指向不存在用户 → 403（fail-closed）[0m
+
+[36m━━ 错误文案映射完整性（WP-06/C3：枚举全部对外原因码，漏配即红） ━━[0m
+  [32m✔ 文案：定版六条原因码 + 会话侧兜底码全部在册[0m
+  [32m✔ 文案：后端对外原因码全集 ⊆ ERROR_CODES ∪ BINDING_REASONS（扫描到 40 条，漏配即红）[0m
+  [32m✔ 文案：每条原因码均有标题/正文/行动按钮（无空文案）[0m
+  [32m✔ 文案：绑定失效细分原因出可读补充（冻结/离职联动语义）[0m
+  [32m✔ 文案：未知原因码回落通用兜底（永不裸奔技术错误）[0m
+  [32m✔ 文案：绑定细分原因码在册（no_cookie/expired/account_inactive）[0m
+
+[36m━━ 四态状态源映射（WP-06/C2：rq-card 纯函数，状态输入 → UI 态输出） ━━[0m
+  [32m✔ 四态：调用中（invoke 发起中 → calling，骨架可取消）[0m
+  [32m✔ 四态：执行中（healthy + 无结果 → executing）[0m
+  [32m✔ 四态：执行中 degraded 附「有点慢」（degraded:true 附加信息）[0m
+  [32m✔ 四态：已完成（调用返回 + 非 error → done，呈现 👍/👎）[0m
+  [32m✔ 四态：异常阻断优先级（authzDenied > quotaExceeded > pdpUnreachable > breakerOpen > down）[0m
+  [32m✔ 四态：阻断 fail-safe 优先于完成态（历史结果不误导当前可用性）[0m
+  [32m✔ 四态：工具报错兜底第七码 invoke-error（errors.js 文案在册）[0m
+  [32m✔ 四态：空闲基态（无结果无调用无健康 → idle）[0m
+  [32m✔ 四态：rq-card 随包单测全绿（node --test）[0m
+
+[36m━━ yaml 序列解析（组5 E-05：冒号后无空白的序列项保持标量） ━━[0m
+  [32m✔ yaml：parseSeq 时间串「12:34:56」保持标量（不再误判映射后 [object Object]）[0m
+  [32m✔ yaml：序列内映射项解析不受影响（冒号后带空白仍为键）[0m
+
+[36m━━ 前端命令面板路由索引（组6：cmdk 页面索引补六路由） ━━[0m
+  [32m✔ 前端：cmdk 静态索引含 NAS/数据权限/财务视图/连接器/资产登记/宿主连接六路由（缺一即红）[0m
+
+[36m━━ 场景图谱校验器（F 清单 M 节：8 类价值标签 / tags 可空 / links 可选，既有包零改动兼容） ━━[0m
+  [32m✔ M：原文口径标签 增收/安全/环保 入白名单（8 类=原文 7 类+节能兼容保留）[0m
+  [32m✔ M：词表外标签仍被拒[0m
+  [32m✔ M：tags 空数组放行（原文未标注场景如实装载，不造假标签）[0m
+  [32m✔ M：tags 缺位（非数组）仍被拒[0m
+  [32m✔ M：links 可选字段零校验负担（带环节链的包零错误，既有包无需改动）[0m
+
+[36m━━ 第 3 步：契约五面 / 事件源校验 / 代理 ctx / L0 市场 ━━[0m
+  [32m✔ 代理 ctx：自有命名空间事件放行[0m
+  [32m✔ 代理 ctx：平台事件被拦（前缀强制）[0m
+  [32m✔ 总线：plugin 来源直发保留命名空间被拦[0m
+  [32m✔ 总线：plugin 命名空间无来源被拦[0m
+  [32m✔ 代理 ctx：未授权服务访问被拦（能力裁剪）[0m
+  [32m✔ 代理 ctx：授权能力内服务放行[0m
+  [32m✔ 开发者注册（Ed25519 发布者公钥）[0m
+  [32m✔ 开发者登录（独立身份域）[0m
+  [32m✔ 开发者密码错误被拒[0m
+  [32m✔ 开发者注册缺 password → 400 中文文案（密码至少 8 位）[0m
+  [32m✔ 开发者注册缺 displayName → 400 中文文案（显示名必填）[0m
+  [32m✔ 契约五面提交（Ed25519 验签通过）[0m
+  [32m✔ 市场门禁：L1 有码插件被拒（第 10 步交付前仅受理 L0）[0m
+  [32m✔ 签名验签失败被拒[0m
+  [32m✔ L0 内容扫描拦截破坏性内容[0m
+  [32m✔ publisher 必须为提交者本人[0m
+  [32m✔ 市场门禁：com.y.* 与开发者命名空间不一致被拒（400 含「命名空间」，防品牌段冒认）[0m
+  [32m✔ 市场门禁：com.x.*（自有命名空间）提交正常受理（pending_approval）[0m
+  [32m✔ 审批上架[0m
+  [32m✔ 安装（权限确认 + 能力固化）[0m
+  [32m✔ 越权能力安装被拒（approved ⊆ requested）[0m
+  [32m✔ 越权权限安装被拒（QA E-02：approvedPermissions ⊆ requested）[0m
+  [32m✔ 权限范围内安装通过（QA E-02 正向）[0m
+  [32m✔ L0 运行时：提示词包可取用[0m
+  [32m✔ L0 计量：提示词取用产生 usage 事件（L3）[0m
+  [32m✔ 插件计量入账（meter key 来自 billing.yaml 声明，金额零价快照）[0m
+  [32m✔ L0 计量：同 UTC 分钟内重放取用两次 → 该主体 usage 事件恒定不增长（幂等键分钟窗去重）[0m
+  [32m✔ app 复合验收：拓扑 + 成本穿透 + 计量管道三链齐备[0m
+  [32m✔ 应用指标上报端点写入成功（DAU/留存即生效）[0m
+  [32m✔ 应用指标可指定日期补录历史（同日已有记录则会话累加）[0m
+  [32m✔ 应用指标日期格式非法被拒（400）[0m
+  [32m✔ 不存在应用上报被拒（400）[0m
+  [32m✔ 无 app.write 上报应用指标被拒（403）[0m
+  [32m✔ 工具 app_metrics_report 上报（同日 DAU 取最大）[0m
+  [32m✔ PV/UV 口径上报（首日写入）[0m
+  [32m✔ PV 同日累加 / UV 同日取最大（DAU 800 不覆盖 888）[0m
+
+[36m━━ 平台侧指标自动折算（beacon PV/UV + SSO 到访 DAU） ━━[0m
+  [32m✔ 折算验收应用创建[0m
+  [32m✔ beacon GET 免鉴权：200 + 1x1 GIF + no-store[0m
+  [32m✔ beacon PV 逐次累加 / UV 按 vid 去重（4 次上报 → pv=4 uv=2 dau=0）[0m
+  [32m✔ 未知应用 beacon 恒 200 GIF（不泄露应用存在性）[0m
+  [32m✔ entry-ticket 兑换 200（公开端点）[0m
+  [32m✔ entry-ticket 兑换自动折算 DAU（admin 新访客 → dau=1 uv=3）[0m
+  [32m✔ 折算验收应用自助签发 SSO 客户端[0m
+  [32m✔ OIDC 授权确认发码（auditor human）[0m
+  [32m✔ OIDC 发码自动折算 DAU（auditor 新访客 → dau=2 uv=4）[0m
+  [32m✔ dshctl plugin init 脚手架五面生成[0m
+  [32m✔ 脚手架默认 L0 + Hello World + 发布者密钥对[0m
+
+[36m━━ 第 5 步：模型接入网关（真实转发 / 零价快照计量 / 内部成本参考） ━━[0m
+  [32m✔ 未配置 endpoint 的模型拒绝调用（不生成假 completion）[0m
+  [32m✔ 模型目录登记（价格簿自动登记：零价 + 内部成本参考）[0m
+  [32m✔ 模型调用真实往返 + 实测 tokens 计量[0m
+  [32m✔ 内部成本参考折算（1500 tokens × 5分/千 = 8 分；charge 恒 0）[0m
+  [32m✔ 模型计量事件含 input/output meters + 租户维度[0m
+  [32m✔ 模型网关事件零价快照（charge=0 / cost=8）[0m
+  [32m✔ 充值端点已随 M0-2 下线（404）[0m
+
+[36m━━ 第 6 步：OIDC Provider（浏览器授权流 / RS256 / 协议合规） ━━[0m
+  [32m✔ OIDC 发现文档暴露（jwks_uri / 端点 / RS256）[0m
+  [32m✔ 发现文档协议面（email scope / Basic+Post 双认证 / refresh+revoke+end_session）[0m
+  [32m✔ JWKS 数组化公钥（kid/kty/n）[0m
+  [32m✔ 登记 OIDC 客户端（secret 一次性返回）[0m
+  [32m✔ discovery 携带 CORS 放行头（origin 命中已登记 redirect_uri）[0m
+  [32m✔ OPTIONS 预检 → 204 + allow-methods/headers/max-age[0m
+  [32m✔ 未登记来源不发放 allow-origin（仅 vary）[0m
+  [32m✔ 错误响应（invalid_client）同样携带放行头（浏览器可读错误体）[0m
+  [32m✔ 无效 client_id → 302 平台错误页（Location 不含外部域）[0m
+  [32m✔ redirect_uri 不在白名单 → 平台错误页[0m
+  [32m✔ 白名单外 scope → invalid_scope 错误页[0m
+  [32m✔ 缺少 PKCE → 错误页（强制 S256）[0m
+  [32m✔ response_type=token → unsupported_response_type 错误页[0m
+  [32m✔ 合法授权请求 → 302 平台授权页（/#/oauth/authorize?req=）[0m
+  [32m✔ 授权请求公开查询（客户端名/scope，不泄露 redirect_uri）[0m
+  [32m✔ 机器身份确认授权被拒（human-only）[0m
+  [32m✔ 用户确认授权 → 回跳地址（code/state 原样透传 + iss 防 mix-up）[0m
+  [32m✔ 授权请求重放被拒（单次消费）[0m
+  [32m✔ 伪造 reqId 被拒[0m
+  [32m✔ 过期授权请求被拒（TTL 语义）[0m
+  [32m✔ 登记需显式同意的客户端[0m
+  [32m✔ consentRequired 状态公开回显[0m
+  [32m✔ 未表达同意 → 400[0m
+  [32m✔ 显式拒绝 → access_denied 回跳（拒绝事件留痕）[0m
+  [32m✔ 勾选同意后放行（签发 code）[0m
+  [32m✔ code 换令牌（client_secret_post + form 编码）[0m
+  [32m✔ 响应契约（scope 字段 + confidential 客户端附带 refresh_token）[0m
+  [32m✔ 授权码重放被拒（单次消费 → 400 invalid_grant）[0m
+  [32m✔ code 换令牌（client_secret_basic + Basic 头认证）[0m
+  [32m✔ code 换令牌（JSON 编码 + Post 认证）[0m
+  [32m✔ PKCE verifier 错误 → 400 invalid_grant[0m
+  [32m✔ PKCE 缺少 code_verifier → 400[0m
+  [32m✔ client_secret 错误 → 401 + WWW-Authenticate: Basic[0m
+  [32m✔ token 类型打标（access/id 区分 + kid 头）[0m
+  [32m✔ 外部应用以 JWKS 公钥本地验签通过[0m
+  [32m✔ userinfo 返回 NormalizedProfile（org/角色/租户）[0m
+  [32m✔ id_token 调 userinfo 被拒（token_use 收敛）[0m
+  [32m✔ userinfo 无凭证 → 401 + WWW-Authenticate: Bearer[0m
+  [32m✔ SPA 静态页可达（#/oauth/* 前端路由承载）[0m
+  [32m✔ openid-client：授权地址 302 平台授权页[0m
+  [32m✔ openid-client：授权码换令牌（Basic 认证 + PKCE + id_token 验签全过）[0m
+  [32m✔ openid-client：userinfo 取回身份（一行 SDK 式接入闭环）[0m
+  [32m✔ 账号冻结 → OIDC 令牌即时失效（卖点闭环）[0m
+
+[36m━━ 第 7 步：L0 市场 beta（自营供给 / 零价计量 / 卸载联动） ━━[0m
+  [32m✔ 自营首批供给上架（3 个标杆 L0）[0m
+  [32m✔ 安装自营插件[0m
+  [32m✔ 市场计量口径（仅 meter key/单位，零价无金额）[0m
+  [32m✔ 订阅代收端点已随 M0-2 下线（404）[0m
+  [32m✔ 自营插件提示词包可取用[0m
+  [32m✔ 卸载联动（运行态回收）[0m
+  [32m✔ 卸载后提示词包不再提供[0m
+
+[36m━━ MCP 部署服务 ━━[0m
+  [32m✔ 注册 MCP 服务（草稿）[0m
+  [32m✔ 草稿服务拒绝调用[0m
+  [32m✔ 测试环境验证[0m
+  [32m✔ 部署 dry-run 影响面预览[0m
+  [32m✔ 灰度发布（20%）[0m
+  [32m✔ 全量发布[0m
+  [32m✔ 版本回滚（版本不可变保留）[0m
+  [32m✔ 未授权主体被网关拒绝[0m
+  [32m✔ 创建 MCP 权限组[0m
+  [32m✔ 授权后调用成功（只读工具放行）[0m
+  [32m✔ 只读约束拦截写工具[0m
+  [32m✔ 注册 Agent（MCP 鉴权回归用）[0m
+  [32m✔ Agent 机器凭证换令牌[0m
+  [32m✔ 未授权 Agent 被网关拒绝[0m
+  [32m✔ 创建 Agent 主体权限组[0m
+  [32m✔ Agent 主体命中权限组放行[0m
+  [32m✔ Agent 机器令牌经 /mcp mcp_invoke 放行[0m
+  [32m✔ 调用监控指标（调用方/工具/序列）[0m
+  [32m✔ 健康探测[0m
+
+[36m━━ 第 0 步：真实传输层与真实连接器 ━━[0m
+  [32m✔ 注册 real 服务（默认真实传输）[0m
+  [32m✔ real 服务测试验证（真实 initialize 探测）[0m
+  [32m✔ real 调用真实往返（stub 内容透传）[0m
+  [32m✔ real 错误路径（isError → status error）[0m
+  [32m✔ real 计量来自响应 usage（tokens=4321，非伪造）[0m
+  [32m✔ real 失败调用同样标记 exec=real[0m
+  [32m✔ MCP real 调用自动进入计量管道（含失败调用）[0m
+  [32m✔ real 验证不可达 endpoint 被拒（不再恒可达）[0m
+
+[36m━━ MCP 配置导入（mcpServers JSON 一键接入） ━━[0m
+  [32m✔ mcpServers JSON 一键导入[0m
+  [32m✔ 工具自动发现（initialize→tools/list，SSE 帧解析）[0m
+  [32m✔ 导入即验证并上线（autoDeploy）[0m
+  [32m✔ 发现的工具含完整 inputSchema[0m
+  [32m✔ 导入服务真实调用（SSE 响应 + 会话复用）[0m
+  [32m✔ 导入的认证头透传到远端（Authorization）[0m
+  [32m✔ 清单外工具被网关拒绝（导入不越权）[0m
+  [32m✔ 认证头列表回显脱敏[0m
+  [32m✔ stdio/command 形态标记不可导入[0m
+  [32m✔ 非法 JSON 报错（400）[0m
+  [32m✔ 重复导入同名列出冲突[0m
+  [32m✔ 无 mcp.service.write 权限导入被拒（403）[0m
+  [32m✔ 远端不可达：导入保留草稿并回传原因[0m
+  [32m✔ 不可达服务不落伪工具清单[0m
+  [32m✔ 在线外部服务可同步工具清单[0m
+
+[36m━━ MCP 工具风险登记（W1/V11 根治） ━━[0m
+  [32m✔ W1 注册 external real 自测服务（显式申报 unknown/read 各一）[0m
+  [32m✔ W1 未登记 unknown 工具非只读语境调用被拒（RISK_UNREGISTERED）[0m
+  [32m✔ W1 拒绝链落账 mcp:calls（status=denied 且附领域拒绝码）[0m
+  [32m✔ W1 风险登记提交（登记即提交 pending_domain）[0m
+  [32m✔ W1 审批级别与 pending 级别不匹配 → 400 中文错误[0m
+  [32m✔ W1 domain 审批通过 → write 升级 pending_security（D-① 两级）[0m
+  [32m✔ W1 security 审批通过 → effective[0m
+  [32m✔ W1 登记生效后按登记风险放行（闸门取登记值 write）[0m
+  [32m✔ W1 登记清单（serviceId+status 过滤命中 effective）[0m
+  [32m✔ W1 重审清单（D-⑤=a）：未登记读工具 unregistered + 已登记写工具 registered[0m
+  [32m✔ W1 生效登记退场 → retired[0m
+  [32m✔ W1 退场后闸门回到 unknown → 再调用被拒（RISK_UNREGISTERED）[0m
+  [32m✔ 连接器切换真实模式[0m
+  [32m✔ 真实连接器健康检查（mock:false）[0m
+  [32m✔ 真实 OpenAPI 登录链路（token→userinfo→命中）[0m
+  [32m✔ 真实目录同步（OpenAPI 分页拉取）[0m
+  [32m✔ 真实同步新建账号落库[0m
+  [32m✔ 切回降级模式（显式标注 mock）[0m
+  [32m✔ SQLite 事务存储已就位（txnstore.db）[0m
+
+[36m━━ 多主体接入（同 provider 多实例连接器：创建/唯一约束/隔离同步/删除） ━━[0m
+  [32m✔ 创建第二主体连接器（POST /api/iam/connectors）[0m
+  [32m✔ 连接器列表出现 2 条配置[0m
+  [32m✔ 同 provider+corpId 重复创建被拒（provider|corpId 唯一约束）[0m
+  [32m✔ 按实例 id 同步第二主体[0m
+  [32m✔ 第一主体旧路由（按 provider 解析）同步互不影响[0m
+  [32m✔ 两家主体部门并存（两家根部门均落库）[0m
+  [32m✔ 删除第二主体连接器（DELETE /api/iam/connectors/:id）[0m
+  [32m✔ 删除后列表回到 1 条[0m
+  [32m✔ 已删除实例不可再测试[0m
+  [32m✔ 三方登录入口带 configId/name（多主体可区分）[0m
+
+[36m━━ 连接器自动同步与全员名册（组织数据通道） ━━[0m
+  [32m✔ 创建自动同步主体（intervalMinutes=5，从未同步=到期）[0m
+  [32m✔ 创建仅手动主体（intervalMinutes=0）[0m
+  [32m✔ 到期巡检：从未同步的连接器被补同步[0m
+  [32m✔ 到期巡检：0=仅手动的连接器不被处理[0m
+  [32m✔ 到期巡检：刚同步过的连接器不重复处理[0m
+  [32m✔ 清理自动同步主体[0m
+  [32m✔ 清理仅手动主体[0m
+  [32m✔ 管理员拉取全员名册（users+orgs）[0m
+  [32m✔ 名册含同步账号（工号/组织名/稳定关联键 id）[0m
+  [32m✔ 名册组织含部门负责人（钉钉 dept_manager 同步链）[0m
+  [32m✔ 名册 PII 最小化（无口令字段/无手机号）[0m
+  [32m✔ 未认证拉取名册 401[0m
+  [32m✔ 无 iam.roster.read 的机器凭证 403[0m
+  [32m✔ 签发名册读取机器凭证（应用接入组织数据通道）[0m
+  [32m✔ 机器凭证（iam.roster.read）拉取名册 200（与管理员同视图）[0m
+  [32m✔ 名册拉取留痕（invoke 审计含 machine actor）[0m
+
+[36m━━ 应用组织架构同步（org-sync：绑定凭证自助拉平台组织树，version 轮询） ━━[0m
+  [32m✔ 注册组织同步验收应用（自动带默认机器凭证）[0m
+  [32m✔ 应用默认凭证自助拉取组织快照 200（orgs+users+version）[0m
+  [32m✔ org-sync PII 最小化（无 email/phone/口令/三方绑定）[0m
+  [32m✔ org-sync 含部门负责人字段与成员组织归属（组织模块复用要素）[0m
+  [32m✔ version 内容哈希幂等（同内容再拉 version 不变）[0m
+  [32m✔ ifNoneMatch 命中返回 unchanged（零载荷轮询）[0m
+  [32m✔ 平台新增组织成功（构造变更源）[0m
+  [32m✔ 组织变更后 version 变化且新组织入快照[0m
+  [32m✔ 过期 ifNoneMatch 不命中（回落全量快照）[0m
+  [32m✔ 未认证拉取组织快照 401[0m
+  [32m✔ 无 app.read 的他应用凭证 403[0m
+  [32m✔ org-sync 拉取留痕（invoke 审计 app.org-sync.pull）[0m
+  [32m✔ 验收临时组织清理成功[0m
+
+[36m━━ M0-2 钱包/分账下线回归（全端点 404 / 权限点移除） ━━[0m
+  [32m✔ 钱包查询端点已下线（404）[0m
+  [32m✔ 账期结转端点已下线（404）[0m
+  [32m✔ 分账分录端点已下线（404）[0m
+  [32m✔ billing.* 权限点已从矩阵移除[0m
+
+[36m━━ 评审缺陷修复回归（replay 不双计 / 死信端点可用） ━━[0m
+  [32m✔ replay 重放不双计（消费水位幂等，投影/口径一致）[0m
+  [32m✔ 死信重投端点可用（真实执行重试）[0m
+
+[36m━━ 认证加固回归（密钥轮换宽限期 / 暴力破解锁定 / OIDC scope+PKCE） ━━[0m
+  [32m✔ 密钥轮换宽限期：存量令牌不掉线（24h 验签兼容）[0m
+  [32m✔ 轮换后新签发令牌可用（新密钥签名）[0m
+  [32m✔ 连续失败 5 次后锁定（正确口令也暂拒 + 告警）[0m
+  [32m✔ 锁定触发已入告警中心（暴力破解可观测）[0m
+
+[36m━━ 资产运营（统一台账 / 健康巡检 / 成本报表） ━━[0m
+  [32m✔ 资产台账（五类资产统一盘点）[0m
+  [32m✔ 资产成本报表（Top 资产 / 主体分摊 / 日趋势）[0m
+  [32m✔ 资产健康巡检（批量探活并留审计）[0m
+  [32m✔ 台账筛选（类型 + 窗口）[0m
+  [32m✔ 成本穿透（零价快照口径：内部成本逐行恒等，无收入/毛利）[0m
+
+[36m━━ Skill 市场流水线 ━━[0m
+  [32m✔ 静态扫描拦截恶意提交（自动驳回）[0m
+  [32m✔ 正常提交进入待审批[0m
+  [32m✔ 领域审批通过[0m
+  [32m✔ 版本化上架[0m
+  [32m✔ 安装到 Agent（依赖登记）[0m
+  [32m✔ Agent 关联 Skill 自动回填[0m
+  [32m✔ 下载留痕（返回 SKILL.md）[0m
+  [32m✔ Skill 下载/安装进计量管道（skill:<ID> 资源，零费率）[0m
+  [32m✔ skill 事件 meters 含价格簿计价键 calls（硬校验下内部管道存活）[0m
+  [32m✔ 外部 usage record 可上报 skill:<ID> 资源（默认价格簿放行）[0m
+  [32m✔ 技能热力图（skill × 日使用矩阵，含安装/下载/外部上报）[0m
+  [32m✔ 非作者且无管理权的开发者编辑被拒（403）[0m
+  [32m✔ 非作者重传资源包被拒（403）[0m
+  [32m✔ 作者编辑市场信息（slug 与版本不变，不重走审批）[0m
+  [32m✔ 作者名称可改（仅展示署名，authorId 归属不变）[0m
+  [32m✔ 编辑校验：作者名称不可为空白[0m
+  [32m✔ 管理员（skill.publish）可编辑任意 Skill 信息[0m
+  [32m✔ 编辑校验：名称不可为空白[0m
+  [32m✔ 资源包校验：非 ZIP 内容被拒（PK 魔数）[0m
+  [32m✔ 作者重传资源包（原地替换，版本号不变）[0m
+  [32m✔ 资源包替换落库（已发布版本 packageBase64/登记同步更新）[0m
+  [32m✔ 弃用未填原因被拒（护栏，下架分析口径依赖）[0m
+  [32m✔ 弃用并触发存量引用告警[0m
+  [32m✔ 弃用原因落库持久化（详情与下架分析可见）[0m
+  [32m✔ 存量引用告警已入告警中心[0m
+  [32m✔ 评分[0m
+
+[36m━━ Agent 本体生命周期 ━━[0m
+  [32m✔ 资源管理员登录[0m
+  [32m✔ 注册 Agent（并颁发机器凭证）[0m
+  [32m✔ 新注册 Agent 凭证默认含 usage.write[0m
+  [32m✔ 新注册 Agent 凭证默认含 agent.write（自主提报更新）[0m
+  [32m✔ 新注册 Agent 凭证默认含 modelgw.invoke（模型网关调用）[0m
+  [32m✔ Agent 凭自身凭证提报更新资料 200（agent.write 生效）[0m
+  [32m✔ 人类读台账不产生 agent.verify（噪音控制）[0m
+  [32m✔ 机器令牌读台账 200（接入验证「发一句话」）[0m
+  [32m✔ 机器身份读台账入审计（agent.verify 留痕）[0m
+  [32m✔ Agent 凭自身凭证提报运营数据 200（agent.write 生效，首提即"发一句话"）[0m
+  [32m✔ Agent 提报语义：同日 dau 取最大、会话累加、用户哈希去重并集[0m
+  [32m✔ Agent 提报校验：负数 dau 被拒[0m
+  [32m✔ Agent 提报校验：非法 date 被拒[0m
+  [32m✔ Agent 提报校验：不存在的 Agent 被拒[0m
+  [32m✔ 工具 agent_metrics_report 上报（同日 dau 取最大）[0m
+  [32m✔ Agent 自主提报交互界面地址（entryUrl 白名单生效）[0m
+  [32m✔ Agent 机器令牌自推计量 200（usage.write 生效，零价快照）[0m
+  [32m✔ Agent 接入提示词：凭自身凭证 rotate 生成（含新 secret 与关键词「提示词」）[0m
+  [32m✔ Agent 接入提示词：轮换后新 secret 可换牌[0m
+  [32m✔ Agent 接入提示词：轮换后凭新令牌 PATCH 资料 200[0m
+  [32m✔ 防双计①：自推 mcp:* 计量不回灌调用台账（MCP 口径归 McpInvoked，宁缺勿重）[0m
+  [32m✔ Agent 验证模型目录登记[0m
+  [32m✔ Agent 凭自身凭证调用模型网关 200（modelgw.invoke 生效）[0m
+  [32m✔ 网关计量事件主体为 agent:<id>（回灌依据）[0m
+  [32m✔ 模型网关调用回灌 Agent 台账（calls=1 / tokens=1620 / gwCalls=1）[0m
+
+[36m━━ M0 用量透明月报（J4：部门/Agent/Skill tokens 三维聚合 + CSV 自助导出） ━━[0m
+  [32m✔ J4 月报聚合可用（当月 totals 事件数 > 0）[0m
+  [32m✔ J4 部门维度（org 归口聚合，tokens 汇总）[0m
+  [32m✔ J4 Agent 维度（subject=agent:* 聚合）[0m
+  [32m✔ J4 Skill 维度（resource=skill:* 聚合）[0m
+  [32m✔ J4 零价快照口径（totals charge 恒 0）[0m
+  [32m✔ J4 CSV 自助导出（text/csv + BOM + 表头）[0m
+  [32m✔ J4 三维自洽（QA B-01：totals.tokens = ΣbyOrg.tokens，修复前差 176 倍）[0m
+  [32m✔ 缺治理属性不可上线（校验）[0m
+  [32m✔ QA-04 回归：PATCH 清空必填描述被 400 拒绝（update 不得绕过 required）[0m
+  [32m✔ QA-04 回归：被拒后原描述原样保留（空值未落库）[0m
+  [32m✔ 进入试运行[0m
+  [32m✔ on-behalf-of 令牌（act 链）[0m
+  [32m✔ 绑定用户（授权留痕）[0m
+  [32m✔ 直达票据：机器身份签发被拒（human-only）[0m
+  [32m✔ 直达票据：未授权用户被拒 403（owner/绑定用户/管理员之外，使用即授权留痕）[0m
+  [32m✔ 直达票据：绑定审计员（构造纯绑定用户路径）[0m
+  [32m✔ 直达票据：绑定用户签发 200（一次性票据 + TTL）[0m
+  [32m✔ 直达票据：公开端点兑换平台身份（sub/roles/tenant + refType/refId）[0m
+  [32m✔ 直达票据：重放兑换被拒（一次性消费）[0m
+  [32m✔ 直达票据：兑换响应放行跨域（任意 entryUrl 前端可读取，ACAO=*）[0m
+  [32m✔ 直达票据：OPTIONS 预检 204 + ACAO（跨域浏览器流程可通）[0m
+  [32m✔ 直达票据：伪造票据被拒[0m
+  [32m✔ 上线生成 L4 审批单[0m
+  [32m✔ R12：发起人自审 agent.online 被拒（职责分离恢复）[0m
+  [32m✔ 异人审批通过并自动执行上线（R12 新口径）[0m
+  [32m✔ Agent 状态已上线[0m
+  [32m✔ 下线生成 L4 审批单[0m
+  [32m✔ 下线后状态与凭证联动禁用[0m
+
+[36m━━ A2A 点名直调与零价快照计量（C3：usage 事件必落账，计量构造缺失不得被静默吞掉） ━━[0m
+  [32m✔ A2A：deepseek-chat 重指本段 stub[0m
+  [32m✔ A2A：测试 Agent 注册[0m
+  [32m✔ A2A：测试 Agent 进入试运行[0m
+  [32m✔ A2A：上线 L4 审批单创建[0m
+  [32m✔ A2A：异人审批通过并自动执行上线[0m
+  [32m✔ A2A：调用前该 Agent 无计量事件（基线干净）[0m
+  [32m✔ A2A：点名直调成功（ok:true + reply + 模型回显）[0m
+  [32m✔ A2A：零价快照计量事件落账（resource=agent:<id> · 零费率 nonbillable · calls=1 · charge=0）[0m
+  [32m✔ A2A：非 online 状态点名被拒（400 诚实拒绝，不下模型）[0m
+
+[36m━━ A2A/UHP 协作面（Agent Card 验签 / 八态任务 / 治理五查 / A0-A3 协商 / UHP 执行驱动） ━━[0m
+  [32m✔ 协作面：deepseek-chat 重指本段 stub[0m
+  [32m✔ 协作面：目标员工注册[0m
+  [32m✔ 协作面：目标员工上线[0m
+  [32m✔ 协作面：平台目录卡公开可读（含 Ed25519 验签公钥）[0m
+  [32m✔ 协作面：单员工签名卡 JWS 验签通过（Ed25519）[0m
+  [32m✔ 协作面：未上线/不存在员工卡片 404（不泄露存在性）[0m
+  [32m✔ 协作面：目录检索命中在线员工（治理扩展字段透出）[0m
+  [32m✔ 协作面：message/send 单轮问答 completed（A0 目标诚实代答）[0m
+  [32m✔ 协作面：协作链计量按 contextId 归集（calls=1 + tokens 随链）[0m
+  [32m✔ 协作面：密级越级走治理拒绝（-32002 DATA_CLASS_EXCEEDED，任务留痕 rejected）[0m
+  [32m✔ 协作面：发起方机器凭证（refType=agent + agent.a2a.invoke）[0m
+  [32m✔ 协作面：协商矩阵拒绝（A3 调用方 × A0 目标 → NEGOTIATION_REJECTED）[0m
+  [32m✔ 协作面：execute_report 经 UHP 执行 completed（发起方=agent 身份 + OBO 链留痕）[0m
+  [32m✔ 协作面：UHP 执行记录真实落账（completed + taskId 关联）[0m
+  [32m✔ 协作面：同步等待超时返回在途任务（working 态 + taskId，供续查/取消）[0m
+  [32m✔ 协作面：在途任务取消（canceled 终态，取消语义即时生效）[0m
+  [32m✔ 协作面：取消任务不计入协作链计量（诚实口径）[0m
+  [32m✔ 协作面：审批规则创建（a2a.admin）[0m
+  [32m✔ 协作面：敏感规则命中 → auth_required 挂审批工单（而非直接拒绝）[0m
+  [32m✔ 协作面：审批通过 → 任务幂等恢复执行至 completed（无重复执行）[0m
+  [32m✔ 协作面：A3×A3 要约被接受 → 自动转执行 completed（协议行为真实）[0m
+  [32m✔ 协作面：A3×A3 还价 → input_required，轮次超限（3 轮）→ rejected（协议超时拒绝）[0m
+  [32m✔ UHP：能力发现免鉴权（uhp_version + conformance_class=core）[0m
+  [32m✔ UHP：任务面无令牌 401 fail-closed[0m
+  [32m✔ UHP：无 uhp.invoke 权限点 403（执行面最小权限）[0m
+  [32m✔ UHP：直调执行 completed + 同幂等键重放返回原 response（不重复执行）[0m
+  [32m✔ UHP：请求级 tools 注入接受但不生效（ignored_fields 留痕）[0m
+  [32m✔ UHP：configured harness 注册（uhp.admin）[0m
+  [32m✔ UHP：uhpHarnessRef 指向的 harness 生效（执行记录 harnessId 一致）[0m
+  [32m✔ 协作面：一致性巡检捕获 harness 漂移（ghost 引用 + 告警留痕）[0m
+  [32m✔ 协作面：非 completed 任务拒绝验收（不轻信自报）[0m
+  [32m✔ 协作面：completed 任务人工验收通过（a2a.task.accept）[0m
+  [32m✔ 协作面：履约视图回写（完成率/验收通过率/耗时 P95）[0m
+  [32m✔ 协作面：任务治理视图可检索全链任务[0m
+  [32m✔ 协作面：任务 SSE 无 token 401 fail-closed[0m
+  [32m✔ 协作面：任务 SSE 带 token 建立（text/event-stream + 历史快照）[0m
+
+[36m━━ A2A/UHP 安全护栏（任务劫持 P0 / 越权取消 / 正文脱敏 / 验收职责分离） ━━[0m
+  [32m✔ 护栏前置：受害任务处于 auth_required（人在环审批等待）[0m
+  [32m✔ P0 护栏：外部凭证注入 ybk_a2a_task_id 被拒（400 TASK_BINDING_FORBIDDEN）[0m
+  [32m✔ P0 护栏：受害任务未被劫持（仍 auth_required，无伪造交付物）[0m
+  [32m✔ P1 护栏：非发起方（持治理读权限）取消他人任务被拒（-32003）[0m
+  [32m✔ P1 护栏：被越权取消的任务状态未变[0m
+  [32m✔ P1 护栏：平台管理员可见任务正文（特权面不受脱敏影响）[0m
+  [32m✔ P1 护栏：验收职责分离判定生效（发起人本人验收被拒；他人发起不受限）[0m
+  [32m✔ 护栏前置：隔离组织夹具创建成功[0m
+  [32m✔ P1 护栏：下级组织账号对跨组织协作数据零可见（目录/任务/harness）[0m
+  [32m✔ 契约护栏：message/stream 返回 JSON-RPC Task（与 message/send 同构）[0m
+  [32m✔ 契约护栏：Agent Card 为规范裸体（非 {ok,data} 信封）且含事件地址/权限点/协议版本[0m
+  [32m✔ 契约护栏：SSE 端点坏令牌/无令牌均返 401（不再混入 400 参数错误）[0m
+  [32m✔ 协作面：下线后派单被治理拒绝（TARGET_NOT_ONLINE 留痕）[0m
+
+[36m━━ AI 应用资料字段（头像 URL / 开发者下拉 / 描述） ━━[0m
+  [32m✔ developer-options：资源管理员（app.* → app.write）可拉取在编用户瘦字段[0m
+  [32m✔ developer-options：包含演示开发者账号（dev / 陈默）[0m
+  [32m✔ 注册应用：icon 接受图片 URL（头像）[0m
+  [32m✔ 注册应用：developerId 校验存在并回填 developerName（displayName 为准）[0m
+  [32m✔ 注册应用：developerId 不存在被拒 400[0m
+  [32m✔ 更新应用：icon 可改；developerId 空串清除开发者[0m
+  [32m✔ 更新应用：developerName 支持自由文本快照（外部开发者场景）[0m
+  [32m✔ 接入提示词：rotate 生成完整提示词（含新 clientSecret 与关键词「提示词」）[0m
+  [32m✔ 接入提示词：轮换后的新 secret 可正常换牌（旧值已吊销）[0m
+  [32m✔ 接入提示词：不轮换生成（含 client_id 与占位说明，不含 secret 明文）[0m
+  [32m✔ 开发者选项：响应含钉钉 unionIds 绑定（表格人员字段解析用）[0m
+  [32m✔ MCP 注册：orgId 缺省回落根组织[0m
+  [32m✔ MCP 注册：自测服务下线（viaApproval=false 直下）[0m
+  [32m✔ MCP 注册：自测服务清理[0m
+
+[36m━━ console ticket redeem（WP-02：票据免登控制台，零二次登录） ━━[0m
+  [32m✔ 免登：领票（复用既有签发端点，一次性 etk_ 票据）[0m
+  [32m✔ 免登：票据兑换成功建立控制台会话（dst1 令牌 + refresh + 用户档案）[0m
+  [32m✔ 免登：兑换所得会话可直接调用工作台聚合（打开即工作台）[0m
+  [32m✔ 免登：重放票据被拒（一次性消费防重放）[0m
+  [32m✔ 免登：伪造票据被拒[0m
+  [32m✔ 免登：票据本体零进服务端日志（stdout/stderr 全量扫描）[0m
+  [32m✔ 免登：兑换入审计（*.entry.ticket.session 可检索，且审计不含票据本体）[0m
+
+[36m━━ 自助入场票据与跨源回跳（G1：self 票种 / TTL ≤120s / 一次性 / 审计闭环） ━━[0m
+  [32m✔ 自助票：未认证被拒（401，机器主体不可自助签发）[0m
+  [32m✔ 自助票：登录人类可自助签发（etk_ 票据，TTL 硬上限 120s 覆盖 env 调高）[0m
+  [32m✔ 自助票：兑换建立控制台会话（跨源回跳后复用既有公开兑换端点，零新增公开面）[0m
+  [32m✔ 自助票：重放被拒（一次性/防重放语义与 agent/app 票一致）[0m
+  [32m✔ 自助票：签发与兑换均入审计（self.entry.ticket.* 可检索，票据本体不落审计）[0m
+
+[36m━━ Agent ↔ SSO 打通（OIDC-agent 关联，dev-plan-agent-host-unification M2） ━━[0m
+  [32m✔ 注册 SSO 自测 Agent（owner=资源管理员）[0m
+  [32m✔ Agent 上线门禁：无 OIDC 客户端且无 entryUrl 被拒并指路[0m
+  [32m✔ Agent SSO 签发 200（owner 自助，refType=agent，secret 一次性返回）[0m
+  [32m✔ 重复签发被拒（先禁用后重签）[0m
+  [32m✔ 机器身份轮换环回回调客户端 200（绑定凭证环回自助）[0m
+  [32m✔ 机器身份自助改回调（环回→环回）200[0m
+  [32m✔ owner 把 Agent 回调改为公网 https 200[0m
+  [32m✔ 机器身份轮换非环回回调客户端被拒 403（环回限定）[0m
+  [32m✔ owner 恢复 Agent 环回回调 200[0m
+  [32m✔ 签发校验：redirectUris 为空被拒（客户端已存在先拒）[0m
+  [32m✔ Agent 详情含 SSO 配置块（discovery / refAgentName / 门禁模式）[0m
+  [32m✔ 上线门禁（点1）：已签发客户端后放行并快照 clientId[0m
+  [32m✔ 管理员禁用客户端 200[0m
+  [32m✔ 上线门禁（点2）：审批期间禁用 → 执行期复核失败留痕[0m
+  [32m✔ 复核失败状态未上线[0m
+  [32m✔ owner 重新启用客户端 200[0m
+  [32m✔ 重新发起上线 → 审批执行成功（状态 online）[0m
+  [32m✔ owner 轮换 secret 200（旧值立即失效）[0m
+  [32m✔ Agent 下线联动：关联 OIDC 客户端自动禁用（refresh 链一并吊销）[0m
+
+[36m━━ AI 应用 ↔ SSO 打通（注册 → 签发 → 门禁双点 → 跳转登录） ━━[0m
+  [32m✔ 注册应用（编排在线 Agent，owner=资源管理员）[0m
+  [32m✔ 新注册应用凭证默认含 app.write/app.read（提报与自更新）[0m
+  [32m✔ 应用凭自身凭证提报指标 200（app.write 生效，"发一句话"）[0m
+  [32m✔ 应用直达票据：机器身份签发被拒（human-only）[0m
+  [32m✔ 应用直达票据：登录用户签发 200[0m
+  [32m✔ 应用直达票据：兑换返回 refType=app + 平台身份[0m
+  [32m✔ 上线门禁（点1）：未签发 SSO 客户端被拒并指路[0m
+  [32m✔ 非 owner 开发者签发被拒（developer 有 app.write 但非 owner）[0m
+  [32m✔ 机器身份签发被拒（非环回回调须 human owner/管理员）[0m
+  [32m✔ 未绑定机器身份签发环回回调仍被拒 403（须应用自身凭证/登记 owner）[0m
+  [32m✔ 注册环回自助签发用应用（自动带机器凭证）[0m
+  [32m✔ 应用自身凭证自助签发环回 SSO 客户端 200（127.0.0.1 / 0.0.0.0 放行）[0m
+  [32m✔ 应用自身凭证自助改回调（环回→环回）200[0m
+  [32m✔ 应用自身凭证改回调为非环回被拒 403[0m
+  [32m✔ 应用自身凭证轮换环回客户端 secret 200[0m
+  [32m✔ 应用自身凭证禁用客户端 200（disable 纯降险恒放行）[0m
+  [32m✔ 应用自身凭证重新启用环回客户端 200[0m
+  [32m✔ owner 签发 SSO 客户端（secret 一次性返回）[0m
+  [32m✔ 回跳地址护栏（http 公网域名仍被拒）[0m
+  [32m✔ 回跳地址护栏（http 内网 IP / localhost 放行）[0m
+  [32m✔ 回跳地址恢复 https（后续授权流沿用）[0m
+  [32m✔ 应用详情返回 sso 块（无 secret 泄露）[0m
+  [32m✔ 签发后发起上线（审批单快照 ssoClientId）[0m
+  [32m✔ 门禁点2：审批期间禁用 → 上线执行失败留痕[0m
+  [32m✔ 复核通过后上线成功[0m
+  [32m✔ 应用拓扑穿透（app→agent→skill）[0m
+  [32m✔ 应用成本穿透归集[0m
+  [32m✔ 应用客户端授权第一跳 → 平台授权页[0m
+  [32m✔ 应用完整浏览器流（authorize → consent → token → userinfo）[0m
+  [32m✔ 授权页可探测钉钉登录入口（providers 公开回显）[0m
+  [32m✔ 钉钉身份在授权页登录（sso hit 签发平台会话令牌）[0m
+  [32m✔ 钉钉身份完整浏览器流（sso 登录 → consent → token → userinfo 身份一致）[0m
+  [32m✔ SSO 到访自动折算（ticket admin + 发码 ops/钉钉 → dau=3 uv=3，同用户重复授权去重）[0m
+  [32m✔ 应用改名 → OIDC 客户端名称同步（app.updated 联动）[0m
+  [32m✔ owner 轮换 secret（新值一次性返回）[0m
+  [32m✔ 轮换后旧 secret 被拒（401）[0m
+  [32m✔ 新 secret 换牌成功[0m
+  [32m✔ 应用下架 → SSO 客户端联动禁用（app.offlined）[0m
+  [32m✔ 客户端禁用期间重新上线被门禁拦截[0m
+  [32m✔ 应用恢复上线 → 客户端联动启用（app.onlined）[0m
+  [32m✔ 应用归档 → 客户端联动禁用（app.archived 终态）[0m
+
+[36m━━ OIDC 会话补全（refresh 轮转 / end_session / revoke / 密钥轮换） ━━[0m
+  [32m✔ OIDC 客户端全局列表（含关联应用与 discovery 元数据）[0m
+  [32m✔ openid-client：refresh_token 轮转新令牌对[0m
+  [32m✔ 旧 refresh 重放被拒[0m
+  [32m✔ 重放触发整链吊销（轮转后的新 refresh 一并失效）[0m
+  [32m✔ refresh 扩大 scope 被拒（只允许收窄）[0m
+  [32m✔ 账号冻结 → refresh 换发被拒（实时校验用户状态）[0m
+  [32m✔ end_session 合法回跳 → 302 平台登出中转页[0m
+  [32m✔ end_session 同时吊销 refresh 链（登出后不能静默续期）[0m
+  [32m✔ end_session 非法回跳 → 平台错误页（不开放重定向）[0m
+  [32m✔ end_session 未带回跳参数 → 按唯一登记登出地址回跳（门户登出场景兜底）[0m
+  [32m✔ end_session 未带参数且登记多个登出地址 → 不猜测回跳，停留平台登出页[0m
+  [32m✔ revoke access token → userinfo 即时 401[0m
+  [32m✔ revoke refresh token → 换发被拒[0m
+  [32m✔ 密钥轮换执行（新 kid + 24h 宽限）[0m
+  [32m✔ 轮换后旧 token 宽限内仍可验签（在途不掉线）[0m
+  [32m✔ 新令牌切换到新 kid 签名[0m
+  [32m✔ JWKS 宽限期公布双公钥（旧 key 保留验签）[0m
+  [32m✔ 登记 public 客户端（无 secret 返回）[0m
+  [32m✔ public 客户端免 secret 换牌成功且不签发 refresh[0m
+  [32m✔ 授权事件审计留痕（granted / denied）[0m
+
+[36m━━ 审计与告警与成本 ━━[0m
+  [32m✔ 四类审计日志齐全[0m
+  [32m✔ 越权拒绝已留痕（authz denied）[0m
+  [32m✔ 审计筛选（类型+结果）[0m
+  [32m✔ 成本按应用穿透[0m
+  [32m✔ 成本按组织穿透[0m
+  [32m✔ 创建告警规则[0m
+  [32m✔ 告警中心存在未读告警（前置）[0m
+  [32m✔ 单条告警标记已读[0m
+  [32m✔ 一键全部已读（返回条数 = 剩余未读，且未读清零）[0m
+  [32m✔ 重复一键已读幂等（返回 0）[0m
+  [32m✔ 工具桥一键已读（audit_alerts_read_all）[0m
+  [32m✔ 无 audit.read 权限不可一键已读（403）[0m
+
+[36m━━ 工具桥（模型可用工具） ━━[0m
+  [32m✔ 工具目录 ≥ 37 个[0m
+  [32m✔ 工具执行（iam_org_tree）[0m
+  [32m✔ 工具执行（agent_list 过滤）[0m
+
+[36m━━ 平台自更新（plugin-update） ━━[0m
+  [32m✔ 更新工具已注册（update_status 等）[0m
+  [32m✔ 更新状态可读（版本取自根 package.json）[0m
+  [32m✔ 安装形态识别为 source（git 检出）[0m
+  [32m✔ 环境变量关闭自动检查生效（DSH_UPDATE_AUTO_CHECK=off）[0m
+  [32m✔ 未检查时无最新版本快照[0m
+  [32m✔ 匿名访问更新状态被拒（401）[0m
+  [32m✔ 手动检查成功（stub 上游）[0m
+  [32m✔ 发现新版本（1.3.0 → 9.9.9）[0m
+  [32m✔ 提交对比生效（落后 2 个提交）[0m
+  [32m✔ 手动检查 60 秒冷却（429）[0m
+  [32m✔ 已广播 platform.update.available 事件[0m
+  [32m✔ audit 联动留痕（platform.update.available）[0m
+  [32m✔ 无权限用户执行升级被拒（403）[0m
+  [32m✔ dry-run 预演返回步骤且不执行任何变更[0m
+  [32m✔ dry-run 附带待拉取提交清单[0m
+  [32m✔ 正式升级缺少原因被拒（400）[0m
+  [32m✔ P2-03 正式升级缺 pin 被拒（禁止裸拉最新）[0m
+  [32m✔ P2-03 无可回滚快照被拒（本进程未执行过 apply）[0m
+  [32m✔ P2-03 dryRun 透出 pin/签名策略口径[0m
+  [32m✔ E-05：dryRun+pin（HEAD）可解析目标（targetResolved 40 位 commit，不依赖外呼）[0m
+  [32m✔ E-05：dryRun 前后 refs/FETCH_HEAD 快照一致（git fetch 只在正式执行路径发生）[0m
+  [32m✔ E-01：回滚快照写入点在位且序正确（merge 成功后、npm install 前写 lastApplySnapshot）[0m
+  [32m✔ E-01：rollback 读取点在位（state?.lastApplySnapshot 缺失即拒绝，非死路）[0m
+  [32m✔ 忽略指定版本（横幅静默）[0m
+  [32m✔ 恢复更新提醒[0m
+  [32m✔ 开启自动检查（每 24h）[0m
+  [32m✔ Agent 工具 update_status 可用[0m
+  [32m✔ 工具级权限拦截 update_apply（403）[0m
+
+[36m━━ T5 发布清单验签（供应链校验：Ed25519 复用平台签名基建） ━━[0m
+  [32m✔ T5 公钥登记格式校验（非法内容登记即拒 400，不拖到升级时才炸）[0m
+  [32m✔ T5 未登记公钥开启强制验签被拒（防呆：开启即拒绝一切升级）[0m
+  [32m✔ T5 公钥登记成功（status.releaseKeyConfigured=true）[0m
+  [32m✔ T5 公钥在场后可开启强制验签（再关闭回落告警放行口径）[0m
+  [32m✔ T5 强制验签可关闭（默认告警放行，显式增强非静默降级）[0m
+  [32m✔ T5 未登记公钥：checked=false 显式报未启用（不算失败，不静默）[0m
+  [32m✔ T5 正确签名清单验签通过（verified=true）[0m
+  [32m✔ T5 清单 commit 与升级目标不一致判失败（verified=false）[0m
+  [32m✔ T5 伪造清单验签失败（签名与登记公钥不匹配）[0m
+  [32m✔ T5 CLI 发布工具 e2e（生成密钥 → 签清单 → 校验通过）[0m
+✘ 清单校验未通过（commit 不一致或签名无效）
+  [32m✔ T5 CLI 篡改检测（commit 不一致校验拒绝，exit≠0）[0m
+
+[36m━━ 远程 dsh 接入（plugin-connect） ━━[0m
+  [32m✔ 接入管理工具已注册（connect_code_create 等）[0m
+  [32m✔ 无 connect.manage 权限创建/查看接入码被拒（403）[0m
+  [32m✔ 创建接入码（operator，一次性展示）[0m
+  [32m✔ 接入码列表只含掩码不含明文[0m
+  [32m✔ 伪造接入码 enroll 被拒[0m
+  [32m✔ 接入码换机器凭证成功[0m
+  [32m✔ 接入码一次性消费（重放被拒）[0m
+  [32m✔ 机器凭证换取机器令牌[0m
+  [32m✔ 机器令牌可读平台概览（operator 含读权限）[0m
+  [32m✔ operator 模板无 iam.org.write（越权被拒 403）[0m
+  [32m✔ 机器令牌经工具桥执行 agent_list[0m
+  [32m✔ 接入客户端心跳上报成功[0m
+  [32m✔ 非接入客户端身份心跳被拒（404）[0m
+  [32m✔ 心跳端点强制 Bearer 鉴权（401）[0m
+  [32m✔ 已接入客户端登记（模板/主机名/最近使用）[0m
+  [32m✔ 宿主侧可见客户端心跳与元信息[0m
+  [32m✔ 禁用接入客户端（原因必填留痕）[0m
+  [32m✔ 禁用后凭证换牌被拒、旧机器令牌即时失效[0m
+  [32m✔ 作废未使用接入码后 enroll 被拒[0m
+  [32m✔ 工具 connect_code_create 签发接入码[0m
+
+[36m━━ NAS 数据权限引擎（纯函数单测 engine.ts，dev-plan-nas-authz §四） ━━[0m
+  [32m✔ 推导：平台负责人 → P[0m
+  [32m✔ 推导：部门负责人 → D[0m
+  [32m✔ 推导：班组负责人 → T[0m
+  [32m✔ 推导：班组成员 → M[0m
+  [32m✔ 多负责人 co-leader：双负责人均得 P 且 reasons 标注[0m
+  [32m✔ 挂根组织非负责人 → 全 deny[0m
+  [32m✔ 挂根组织 + 管理员显式 allow 例外 → 例外救援放行（平台服务账号存储区授权），例外路径外/未授权 op 仍 deny[0m
+  [32m✔ 未落班组（部门根非负责人）→ 只读[0m
+  [32m✔ 兼任：主归属正常写 + 兼任子树仅只读[0m
+  [32m✔ 作用域锚对齐：部门负责人主部门挂在下属班组，作用域提升到所领导部门（角色与作用域一致）[0m
+  [32m✔ 跨分支领导（一人多角色）：主归属矩阵不抬档，所领导部门子树按该部门角色全权限生效[0m
+  [32m✔ 跨分支领导救回作用域：主部门不在锚点链（原 no-scope 早退）不吞所领导部门权限[0m
+  [32m✔ 根目录只读列举（B 语义）：作用域内用户列根放行、写根仍拒、越界子路径不变、无作用域用户列根仍拒[0m
+  [32m✔ 作用域祖先链只读列举（2026-09-17 拍板）：深层子树成员可逐级下钻到自己的目录，兄弟子树/越界仍拒、写祖先仍拒[0m
+  [32m✔ 负责人悬空检测：质检线在列[0m
+  [32m✔ 判定序：显式 deny 压过显式 allow[0m
+  [32m✔ readonly 语义（未落班组只读态）：写类全拒/读下载放行[0m
+  [32m✔ M 矩阵：写文件放行/改结构删除分享管理拒绝[0m
+  [32m✔ 文件所有权（2026-09-17 新增）：上传者对自有文档全权（M 可删/改自己的文件），admin 不随所有权，精确路径外不命中[0m
+  [32m✔ 文件所有权：显式 deny 仍压过所有权（判定序②不变）[0m
+  [32m✔ 文件所有权：全量降级只读（G3）仍会压过所有权写类放行[0m
+  [32m✔ 矩阵一致性：内置矩阵 M 行与判定一致[0m
+  [32m✔ 例外 expiresAt 过期即失效（回落矩阵后越界 deny）[0m
+  [32m✔ 例外未过期即生效[0m
+  [32m✔ C 叠加：跨域只读放行、写拒绝[0m
+  [32m✔ C 白名单目录写需显式 allow[0m
+  [32m✔ 边界：路径超出组织子树 deny[0m
+  [32m✔ 多 NAS：B 平台 NAS 对 A 平台成员 deny（orgRoot 不在链上）[0m
+  [32m✔ orgPathOverrides 优先于名字推导[0m
+  [32m✔ 组织改名作用域不漂移（映射表按 orgId 命中）[0m
+  [32m✔ override 破窗放行（并留痕标记）[0m
+  [32m✔ degradeAllToReadonly：allow 视作 readonly[0m
+  [32m✔ observeOnly 标注透传[0m
+  [32m✔ 审批人路由：沿链向上最近负责人（班组自身有负责人即命中；悬空则跳到上级）[0m
+  [32m✔ 外部账号白名单只读[0m
+  [32m✔ 可疑标记账号 deny 转人工[0m
+
+[36m━━ NAS 资产纳管（plugin-nas + 文件网关 stub） ━━[0m
+  [32m✔ 网关 stub 校验 Bearer（错误令牌 401）[0m
+  [32m✔ mcpServers JSON 一键导入（探活 → 上线 → 工具发现）[0m
+  [32m✔ 详情含健康与网关工具面[0m
+  [32m✔ 访问令牌回显脱敏（原文不落响应）[0m
+  [32m✔ 手动探活（initialize 握手测延迟）[0m
+  [32m✔ 列出共享文件夹（fs_list_shares）[0m
+  [32m✔ 列目录（fs_list）[0m
+  [32m✔ 创建目录（fs_create_folder：folder_path+name 数组一一对应）[0m
+  [32m✔ 上传文件（平台 staging → 网关 fs_upload 侧读盘）[0m
+  [32m✔ 文件所有权登记（服务层）：上传成功即登记上传者 + 网关上报可登记成员[0m
+  [32m✔ 文件所有权判定（服务层）：上传者删除自有文档放行（owner.allow，优先于作用域/矩阵）[0m
+  [32m✔ 文件所有权不外溢：非本人上传的文件所有权判定不命中（admin 上传的文件对成员仍按矩阵/作用域）[0m
+  [32m✔ 检索文件（fs_search：folder_path 字符串）[0m
+  [32m✔ 删除文件（fs_delete：path 数组）[0m
+  [32m✔ 文件所有权随删除移除（生命周期维护）[0m
+  [32m✔ 列目录（fs_list：folder_path 字符串）[0m
+  [32m✔ 重命名（fs_rename：path+name 数组一一对应）[0m
+  [32m✔ 批量上传（保留目录结构：docs/、src/ 等）[0m
+  [32m✔ 触发下载落盘（POST /fs/download → 网关 fs_download 真实落盘）[0m
+  [32m✔ 浏览器真实下载（GET /fs/file 200 + bytes 一致 + content-disposition attachment）[0m
+  [32m✔ inline=1 预览模式（content-disposition: inline）[0m
+  [32m✔ stream 下载无 token 且无票据 401[0m
+  [32m✔ 签发一次性下载票据[0m
+  [32m✔ 票据直取文件（无 Bearer，字节一致）[0m
+  [32m✔ 票据一次性（重放 401）[0m
+  [32m✔ 未知票据 401[0m
+  [32m✔ 签发分享链接票据（mode=link，TTL 600s）[0m
+  [32m✔ 链接票据 TTL 内可重复消费[0m
+  [32m✔ 写类文件操作审计留痕[0m
+  [32m✔ NAS 文件操作进计量管道（calls 全量 + upload bytes）[0m
+  [32m✔ stream 下载无 nas.read 403[0m
+  [32m✔ 无 nas.read 角色访问被拒（403）[0m
+  [32m✔ developer 只读放行（nas.read）[0m
+  [32m✔ developer 写操作被拒（缺 nas.write，403）[0m
+  [32m✔ 二次编辑（PATCH 属性合并更新）[0m
+  [32m✔ 编辑未携带的接入属性保持原值（网关地址/令牌未丢）[0m
+  [32m✔ 编辑后网关客户端缓存已作废（fs 调用仍通）[0m
+  [32m✔ developer 编辑被拒（缺 nas.write，403）[0m
+  [32m✔ 登记第二台 NAS（草稿）[0m
+  [32m✔ developer 删除被拒（缺 nas.write，403）[0m
+  [32m✔ 草稿资产可直接删除[0m
+  [32m✔ 删除后详情不再可查[0m
+  [32m✔ 在线资产删除被拒（需先下线/归档）[0m
+  [32m✔ 已下线资产删除仍被拒（需先归档）[0m
+  [32m✔ 归档为终态[0m
+  [32m✔ 归档后删除成功（含健康/工具缓存清理）[0m
+
+[36m━━ NAS 数据权限 API（check/scope/rules/例外/审批闭环，dev-plan-nas-authz §2.3-§2.7） ━━[0m
+  [32m✔ NAS 配置接入组织锚点（orgRoot=元冰可集团）[0m
+  [32m✔ 组织夹具就绪（根/技术中心/AI 平台部/产品运营部/前端部）[0m
+  [32m✔ 用户夹具就绪[0m
+  [32m✔ 附件矩阵 35 格（P/D/T/M × 7 操作）判定一致且每格含 reasons[0m
+  [32m✔ scope 返回角色/作用域并与 check 一致[0m
+  [32m✔ 钉钉 userId 反查与平台 userId 等价（identityLinks）[0m
+  [32m✔ 钉钉 userid 口径反查与平台 userId 等价（双身份链：unionId 供登录、userid 供运营反查）[0m
+  [32m✔ share-link 默认档 24 小时（决策②：不传 ttlSec/permanent → 86400 且绝不产生永久链接）[0m
+  [32m✔ 显式档位 1h/7d/30d 签发[0m
+  [32m✔ TTL 超策略上限 400 TTL_EXCEEDS_POLICY（明确拒绝，不回落到上限）[0m
+  [32m✔ 永久档策略默认关（决策③：allowPermanent=false 时持 nas.authz.write 也 403，策略开关优先于权限点）[0m
+  [32m✔ permanent 与 ttlSec 互斥（400，语义歧义不猜测）[0m
+  [32m✔ 签名链接取流（免 Bearer 直下 bytes）+ 使用计数/清单可见（keyId 留痕）[0m
+  [32m✔ 签名关：篡改 path/exp/sub/jti 任一字段 401[0m
+  [32m✔ 签发员夹具就绪（nas.write 持有、无 nas.authz.write，挂 元冰可集团 组织链）[0m
+  [32m✔ 策略面开启 allowPermanent（PUT share-link-policy）[0m
+  [32m✔ 永久越权 403 PERMANENT_REQUIRES_AUTHZ_WRITE（策略已开但无 nas.authz.write）[0m
+  [32m✔ 永久链接签发（策略开启后）：exp=0 + expiresAt=null + 档位标注「永久」[0m
+  [32m✔ 机器身份签发拒绝（403 MACHINE_ISSUANCE_UNSUPPORTED，收紧而非放宽）[0m
+  [32m✔ 独立密钥隔离（决策①）：轮换令牌签名密钥后 share-link 仍可取流[0m
+  [32m✔ 长期密钥轮换（决策① (a)）：旧链接凭退役密钥仍可取流，新签发 keyId 更替[0m
+  [32m✔ 吊销即时生效（吊销前 200 → 吊销后 401）且重复吊销幂等 200[0m
+  [32m✔ 批量吊销（按签发者，离职场景）：两条链接一并失效[0m
+  [32m✔ 权限复核（核心增量）：签发者数据权限回收后原链接 403 且产生 nas.authz.decision 留痕[0m
+  [32m✔ 永久链接可吊销（吊销后 401）+ 策略回关 allowPermanent=false（决策③ A1 起步姿态）[0m
+  [32m✔ 部门负责人随同步映射（managerRemoteIds userid 口径 → identityLinks 反查）[0m
+  [32m✔ 多部门成员兼任落库（primaryOrgId=主部门，orgId=挂靠部门）[0m
+  [32m✔ 兼任权限不冲突：主归属可写、兼任子树只读（secondary-readonly）[0m
+  [32m✔ 无 nas.authz.check 权限 403；无 nas.authz.read 403[0m
+  [32m✔ 未落班组（部门根非负责人）→ 只读[0m
+  [32m✔ 挂根组织非负责人 → deny 全部[0m
+  [32m✔ 外部账号白名单只读（白名单内 read 放行/write 拒绝、白名单外 deny）[0m
+  [32m✔ 可疑标记账号 deny + 转人工留痕[0m
+  [32m✔ 兼任账号：主归属正常写 + 兼任子树仅只读[0m
+  [32m✔ rules PUT ifVersion 乐观锁冲突 409[0m
+  [32m✔ rules PUT 携正确 ifVersion 成功且 version 递增[0m
+  [32m✔ 种子导入：首次变更（cGroups 清空为未解析组）+ 再次导入幂等[0m
+  [32m✔ C 关联动态组标记回写（authzRoleC）[0m
+  [32m✔ C 叠加：跨域 read 放行/write 拒绝[0m
+  [32m✔ override 破窗放行并强制留痕[0m
+  [32m✔ X-On-Behalf-User 头透传（平台 userId → 钉钉身份优先；身份零进工具参数）[0m
+  [32m✔ enforce（observeOnly=false）高频 deny → nas_authz_denied 告警触发[0m
+  [32m✔ deny 判定留痕可查询（decisions 集合）[0m
+  [32m✔ M share 默认 deny（提示走审批）[0m
+  [32m✔ share 申请 → 审批人自动路由（沿组织链向上最近负责人：AI 平台部自身的连接器同步负责人）[0m
+  [32m✔ 审批通过 → share 例外自动写入并放行（7 天有效期留痕）[0m
+  [32m✔ share 例外到期自动拒绝（回落矩阵 deny）[0m
+  [32m✔ 负责人悬空扫描：新悬空组织被发现 + leaderVacant 告警[0m
+  [32m✔ 负责人手动绑定夹具就绪（市场部同步负责人 DD0008）[0m
+  [32m✔ 负责人手动绑定：落库 + leaderSource=manual + 悬空扫描不再命中[0m
+  [32m✔ 手动锁定不被连接器同步覆盖（同步跳过 manual 组织并在消息计数）[0m
+  [32m✔ 清空负责人恢复跟随同步（leaderSource 回 sync）[0m
+  [32m✔ 恢复跟随同步后负责人由同步回填（孟疏桐 DD0008）[0m
+  [32m✔ 组织↔目录对账：目录无组织 + 组织无目录 双向发现并告警[0m
+  [32m✔ 多 NAS：A 平台成员对 B 平台 NAS deny（orgRoot 不在其组织链）[0m
+  [32m✔ 组织改名演练：映射表命中 → 改名前后作用域均为 /研发（不漂移）[0m
+  [32m✔ C 组重算漂移 → cGroupDrift 告警（C 关联组任何漂移都告警）[0m
+  [32m✔ 高危 op（share）留痕 highRisk 标记（永久保留策略依据）[0m
+
+[36m━━ Skill 包 NAS 存储（上架自动打包上传） ━━[0m
+  [32m✔ 无 skill.storage.write 配置存储被拒（403）[0m
+  [32m✔ 配置包存储后端为已纳管 NAS 资产[0m
+  [32m✔ 提交可携带 skill.zip（hasPackage）[0m
+  [32m✔ 非 ZIP 内容（缺 PK 魔数）提交被拒[0m
+  [32m✔ 上架自动上传 NAS（fs_upload 收到包）[0m
+  [32m✔ 上传产物即提交的 zip（字节级一致）[0m
+  [32m✔ 上传路径契约 <basePath>/<slug>/<slug>-<version>.zip[0m
+  [32m✔ 版本记录回写 package 元数据（storage=nas）[0m
+  [32m✔ 包下载端点返回 zip（PK 头）[0m
+  [32m✔ 无 zip 时由 SKILL.md 现场打包上传[0m
+  [32m✔ 现场打包产物含 SKILL.md 条目[0m
+  [32m✔ 存储后端 NAS 未上线 → 上架 fail-closed[0m
+  [32m✔ fail-closed 后版本未标记 published[0m
+  [32m✔ 存储后端可切回 local[0m
+
+[36m━━ 资产台账与巡检（NAS 接入） ━━[0m
+  [32m✔ 台账包含 nas 资产类型[0m
+  [32m✔ 一键巡检覆盖在线 NAS（initialize 探活 healthy）[0m
+  [32m✔ 下架分析（原因聚合，Skill 弃用原因可检索）[0m
+
+[36m━━ 平台即 MCP Server（POST /mcp） ━━[0m
+  [32m✔ 无 Bearer 令牌 401[0m
+  [32m✔ GET SSE 长流不支持（405，纯 JSON 形态合法）[0m
+  [32m✔ initialize 返回 serverInfo/capabilities + 会话头[0m
+  [32m✔ 通知类消息 202 确认[0m
+  [32m✔ tools/list 暴露全部运维工具（40+，含 nas_*）[0m
+  [32m✔ 组2：/mcp tools/list 权限注解全覆盖（86/86 工具声明非空 x-permission，console.login 基线仅作漏声明 fail-safe）[0m
+  [32m✔ 组2：注解不变量——凡携带 annotations 的工具其 x-permission 必为非空字符串[0m
+  [32m✔ 主控：connect 五个本地工具（client 形态）均声明 permission=console.login（静态源断言）[0m
+  [32m✔ tools/call 执行成功（content blocks）[0m
+  [32m✔ 工具级权限点拦截（dev 缺 nas.write → isError）[0m
+  [32m✔ 未知方法 -32601[0m
+  [32m✔ A7 前置：仅 agent.read scope 的机器令牌就绪[0m
+  [32m✔ 组2 A7：agent.read 机器令牌 tools/call agent_list 放行[0m
+  [32m✔ 组2 A7：同令牌 REST tools/call audit_logs 被拒（403 FORBIDDEN，缺 audit.read）[0m
+  [32m✔ 组2 A7：同令牌 /mcp tools/call audit_logs → isError（与 REST 桥权限基线对齐）[0m
+  [32m✔ 组2 A7：工具桥拒绝落审计（authz denied：缺少权限点 audit.read，path=/mcp 可反查）[0m
+
+[36m━━ 连接器纳管（open-connector 融合） ━━[0m
+  [32m✔ T-02 缺 OOMOL_CONNECT_ENCRYPTION_KEY → fail-closed 文案[0m
+  [32m✔ T-02 管理口令未解析 → fail-closed 文案[0m
+  [32m✔ 网关配置（baseUrl + adminToken env: 间接引用）[0m
+  [32m✔ 探活契约（ok/runtime/latencyMs）[0m
+  [32m✔ 网关状态可用（healthy + envChecks 双 true）[0m
+  [32m✔ 目录同步 providers/actions 计数与 added 清单[0m
+  [32m✔ 非法 service 标识被拒纳管（resource 正则）[0m
+  [32m✔ riskLevel 映射（读/写/管理 + 默认 admin 兜底）[0m
+  [32m✔ 连接向导 agent.md 代理展示（文本）[0m
+  [32m✔ 测试主体就绪（dev 令牌 / audit 令牌）[0m
+  [32m✔ API Key 表单直达 sidecar（返回 active 引用）[0m
+  [32m✔ T-06 未存 client 配置 → oauth_client_config_required 透传+自备 App 指引[0m
+  [32m✔ T-01 OAuth 发起信封 {authorizationUrl,state}[0m
+  [32m✔ sidecar 回调完成页受理[0m
+  [32m✔ T-05 回调后状态轮询：引用转 active 且平台不落凭证原文[0m
+  [32m✔ 测试用户组建好[0m
+  [32m✔ T-20 引用非本组织前缀别名的权限组被拒[0m
+  [32m✔ 三个权限组建好（含显式清单/通配/admin 通道）[0m
+  [32m✔ T-11 只读组令牌策略镜像逐字段一致[0m
+  [32m✔ T-11 通配组令牌镜像（allowedActions=['*']，无绑定连接则空数组全发）[0m
+  [32m✔ 变更影响面预览（N 令牌/M 连接）[0m
+  [32m✔ T-08 无 connector.invoke 权限点 → 403 + authz.denied 事件[0m
+  [32m✔ dry-run 影响面预览（五步链通过、只读约束可见、不真实调用）[0m
+  [32m✔ 授权放行成功调用（runId=executionId + 计量回执）[0m
+  [32m✔ T-14 usage.record 口径（resource/meters/trace_id/idempotency_key）[0m
+  [32m✔ 价格簿 connector:* 零费率条目存在（缺规则会被 record 拒绝的反向保障）[0m
+  [32m✔ T-09 write 级超出 readOnly/riskCap=read → 平台侧拒绝[0m
+  [32m✔ T-10 pattern 未命中 → 平台侧拒绝[0m
+  [32m✔ T-15 invoke 日志含 runId（run= 前缀反查命中）[0m
+  [32m✔ T-22 同键重放返回原 executionId（24h 窗口语义）[0m
+  [32m✔ T-22 重放不产生重复 run（stub 侧单条）[0m
+  [32m✔ admin 级 action → 审批单生成且不执行[0m
+  [32m✔ 同图 pending 审批单复用（不重复开单）[0m
+  [32m✔ 审批通过后 executor 同步完成调用（L4 闭环）[0m
+  [32m✔ executor 真实下发一次数据面调用[0m
+  [32m✔ P1-02 工具桥走私旧布尔/伪造能力令牌 → 仍强制开单（fail-closed）[0m
+  [32m✔ P1-02 旧布尔旁路全仓 0 命中（能力令牌替代，验收 grep 口径）[0m
+  [32m✔ T-18 requireApproval → 仅生成审批单（凭证不落任何集合）[0m
+  [32m✔ 审批通过后携 approvalId 完成实际创建[0m
+  [32m✔ 权限组策略更新成功[0m
+  [32m✔ T-12 变更触发 PUT 且四数组全发[0m
+  [32m✔ 目录下架检测（removed 命中）[0m
+  [32m✔ T-04 下架后受影响组收到裁剪后的 PUT 更新[0m
+  [32m✔ T-13 单次 403 自动恢复重试成功（对调用方透明）[0m
+  [32m✔ T-13 持续拒绝 → 重试仍失败计 error_rate[0m
+  [32m✔ meta.auditPersisted=false 透传给调用方[0m
+  [32m✔ T-28 平台补记审计[0m
+  [32m✔ P1-05 基线调用成功（健康组可用）[0m
+  [32m✔ P1-05 镜像失败 → 旧 oct_ 令牌立即吊销（DELETE 命中 stub，不静默放大窗口）[0m
+  [32m✔ P1-05 镜像失败期间组级 fail-closed → invoke 拒绝[0m
+  [32m✔ P1-05 授权后策略漂移（ledger 滞后当前策略）→ 执行侧拒绝按旧快照执行[0m
+  [32m✔ P1-05 镜像收敛后调用恢复（对齐账本哈希后正常执行）[0m
+  [32m✔ P2-02 admin 调用携敏感命名入参 → 拒绝开单（敏感值不入审批存储）[0m
+  [32m✔ P2-01 ODD 块声明入库[0m
+  [32m✔ P2-01 排除清单内 action → ODD 离域拒绝[0m
+  [32m✔ P2-01 离域事件落审计（ODD 离域可检索）[0m
+  [32m✔ P2-01 白名单内 action 正常执行[0m
+  [32m✔ T-16a 超 rateLimitPerMin → rate_limited 拒绝[0m
+  [32m✔ T-19 网关不可达 → invoke fail-closed（GATEWAY_UNAVAILABLE）[0m
+  [32m✔ T-19 fail-closed 原因入审计（unavailableReason 可检索）[0m
+  [32m✔ T-19 恢复后自动回 healthy 并可继续调用[0m
+  [32m✔ P3-01 故障① 网关 5xx → 调用显式失败（status=error 计入 error_rate）[0m
+  [32m✔ P3-01 故障① 注入解除后调用恢复[0m
+  [32m✔ P3-01 故障② sidecar 审计失联 → 平台补记且向调用方透出[0m
+  [32m✔ P3-01 故障③ 目录漂移（action 被移除）→ 调用拒绝[0m
+  [32m✔ P3-01 故障③ 目录回补后调用恢复[0m
+  [32m✔ P3-01 故障④ oct_ 令牌被吊销 → 自动重铸恢复调用[0m
+  » P95 分布（n=20）：登录 P50=18ms P95=20ms max=25ms ｜ connector invoke P50=1ms P95=2ms max=3ms
+  [32m✔ P3-01 登录换票 P95 ≤ 800ms[0m
+  [32m✔ P3-01 connector invoke P95 ≤ 1500ms[0m
+  [32m✔ T-21 巡检发现「令牌绑定 org 外连接」异常[0m
+  [32m✔ T-21 异常联动 warning 告警（org 巡检标题）[0m
+  [32m✔ T-01 runs 分页信封 {items,nextCursor}[0m
+  [32m✔ 对账首跑：正常 run 与平台计量近似一致（bypass 空）[0m
+  [32m✔ T-23 有 run 无 meter → 绕行 critical 告警命中 fake-bypass-run-0001[0m
+  [32m✔ T-23 cursor 重叠窗口去重（增量运行零新增，无重复放大）[0m
+  [32m✔ 绕行调用 critical 告警已入审计告警流[0m
+  [32m✔ T-29 合法 oct_ 直连非命中 action → 数据面 403 拒绝[0m
+  [32m✔ T-25 桥接 import 成功（reachable+online）[0m
+  [32m✔ 桥接服务带「bridgeFrom=open-connector」治理降级标记[0m
+  [32m✔ 经平台 MCP 网关调用桥接服务成功[0m
+  [32m✔ 工具桥 connector_perm_group_list 返回结构化组清单[0m
+  [32m✔ 工具桥 connector_execute 身份注入 + 放行[0m
+  [32m✔ 工具 schema 不再暴露 orgId / callerId（身份与 org 收敛移出参数层）[0m
+  [32m✔ 低权限用户伪造 args.orgId 无效（工具仅返回其归属组织连接）[0m
+  [32m✔ REST 路径同一套收敛（?orgId= 对非 * 用户无效）[0m
+  [32m✔ 外部机器（无资源归属）连接列表 fail-closed 返回空[0m
+  [32m✔ 外部机器权限组枚举同样 fail-closed（伪造 orgId 无效）[0m
+
+[36m━━ 审批 SLA 与公司级终审（WP-10：二次确认强制 / 终审可追溯 / 调用水印 / SLA 看板） ━━[0m
+  [32m✔ 终审探针：注册（entryUrl 免登通道过上线门禁）[0m
+  [32m✔ 终审探针：L4 上线审批单为高风险[0m
+  [32m✔ 终审探针：高风险通过缺二次确认被拒（服务端强制，非仅前端拦截）[0m
+  [32m✔ 终审探针：二次确认后通过并自动执行[0m
+  [32m✔ 终审探针：审批单落公司级终审标记（终审人 + 时间）[0m
+  [32m✔ 终审探针：终审标记审计可追溯（action=approval.final_review 指向本审批单）[0m
+  [32m✔ 组2 前置：工具桥审批探针 L4 高风险审批单就绪[0m
+  [32m✔ 组2 A8：approval_decide 工具 approve 缺 confirmed → isError（文案含二次确认语义，门禁不因工具桥旁路）[0m
+  [32m✔ 组2 A8：approval_decide 带 confirmed:true → 通过并自动执行（executed）[0m
+  [32m✔ 组2 A8：finalReview:true 经工具桥透传 → 终审痕迹审计可见（approval.final_review 指向本单）[0m
+  [32m✔ 终审水印：在线服务在册[0m
+  [32m✔ 终审水印：admin 授权权限组就绪[0m
+  [32m✔ 终审水印：MCP 服务公司级终审标记成功[0m
+  [32m✔ 终审水印：终审服务可正常调用[0m
+  [32m✔ 终审水印：该服务调用记录附带水印（watermark.finalReview=true）[0m
+  [32m✔ SLA 看板：≤2 工作日达成率可查（自测审批即时决策 → 100% 达标）[0m
+  [32m✔ SLA 看板：无 approval.read 被拒（dev 无该权限点）[0m
+
+[36m━━ 资产目录筛选（WP-12：纯函数三条件 + 1000 项性能断言） ━━[0m
+  [32m✔ 目录：纯函数筛选（类型/平台/关键词三条件，缺失平台归「未标注」）[0m
+  [32m✔ 目录：筛选性能断言（1000 项三条件 < 50ms，单栏卡片流无服务端二次请求）[0m
+
+[36m━━ 验收回归（offline 闭环 · 规则播种 · mcp 直调 execute） ━━[0m
+  [32m✔ 连接器告警规则已播种（error_rate=critical / latency=warning）[0m
+  [32m✔ gateway.offline 默认生成 L4 审批单[0m
+  [32m✔ 审批通过 → executor 落地下线（fail-closed，原因含维护说明）[0m
+  [32m✔ 维护态 invoke fail-closed 拒绝[0m
+  [32m✔ 恢复上线即真实探活回 healthy[0m
+  [32m✔ 连接 direct 下线立即生效（offlined 态留痕）[0m
+  [32m✔ 经由下线连接的调用被平台侧拒绝（连接级闸）[0m
+  [32m✔ 连接恢复后 sidecar 回查转 active[0m
+  [32m✔ POST /mcp 直调 connector_execute（身份注入 + runId 回执）[0m
+  [32m✔ 桥接 execute_action 规范调用成功（含 runId 回执）[0m
+
+[36m━━ /docs 静态发布（接入指南等文档直接可读） ━━[0m
+  [32m✔ /docs 目录索引页（HTML + 列出接入指南）[0m
+  [32m✔ /docs/app-sso-integration.md 可读（markdown + 正文）[0m
+  [32m✔ /docs 未知文档 404[0m
+  [32m✔ /docs 字面 .. 穿越 → SPA 兜底页（不泄露文件）[0m
+  [32m✔ /docs 编码 %2e%2e 穿越 → SPA 兜底页（不泄露文件）[0m
+  [32m✔ SPA 静态兜底不受影响（/ 仍返回控制台首页）[0m
+  [32m✔ /docs 白名单内 app-onboarding.md 可读（200 markdown）[0m
+  [32m✔ /docs 白名单外 deploy-enterprise.md → 404（内部 runbook 不随服务发布）[0m
+  [32m✔ /docs 白名单外 qa-report → 404（QA 报告走仓库私有分发）[0m
+  [32m✔ /docs 子路径形态（dev-log-connector/任意）→ 404（白名单键为单文件名，无目录伺服面）[0m
+  [32m✔ /docs %2F 编码穿越形态 → 404（越界/畸形编码落不进白名单集合）[0m
+  [32m✔ /docs 索引只列白名单（200 且不含 deploy-enterprise 字样）[0m
+  [32m✔ 保留前缀：/rq/panel/、/dsh-bridge/status、/auth/entry 无处理器 → 404 JSON（非 SPA HTML，集成方可诊断）[0m
+  [32m✔ 保留前缀：404 信封为 NOT_FOUND JSON（与 DEF-01 同口径）[0m
+  [32m✔ 非保留前缀未知路径仍回落 SPA（控制台 hash 路由不受 C-10 影响）[0m
+
+[36m━━ 统一入口：/panel 无尾斜杠 302 归一（相对资源解析防御） ━━[0m
+  [32m✔ /panel 302 → /panel/（独立形态；无归一时 index.html 的 ./js/* 会解析到 /js/* → 白屏）[0m
+  [32m✔ /panel/ 面板 SPA 正常伺服（归一目标可达）[0m
+  [32m✔ 落地分诊随包单测全绿（node --test）[0m
+  [32m✔ 登录回跳共享面随包单测全绿（node --test）[0m
+  [32m✔ 契约 lint 引擎构造性红/绿测试全绿（node --test）[0m
+  [32m✔ 契约比对真仓零红（路由/工具/权限双向一致，lint:manifests 通道）[0m
+  [32m✔ connect 远程代理契约化随包单测全绿（node --test）[0m
+  [32m✔ 平台总线管道随包单测全绿（node --test）[0m
+  [32m✔ 工具注册契约随包单测全绿（node --test）[0m
+  [32m✔ 连接器风险目录声明式化随包单测全绿（node --test）[0m
+  [32m✔ 审批卫生与补偿注册表随包单测全绿（node --test）[0m
+  [32m✔ ODD 域内判定随包单测全绿（node --test）[0m
+  [32m✔ 面板 boot 宿主直通走根绝对 /dsh-bridge/*（带 BASE 在挂载形态会 miss → 静默失效）[0m
+  [32m✔ 控制台启动链含宿主会话直通 + 落地分诊（exchangeBridgeSession/resolveLanding）[0m
+  [32m✔ 登录回跳接线（F 清单 P 节：消费面提升共享模块 next-redirect.js，login/app 双消费者同规则）[0m
+  [32m✔ 面板侧切换接线（管理控制台 data-landing 偏好 + 401 引导带 ?next= 回面板）[0m
+  [32m✔ 面板模型面接线（composer 模型切换 #chatModel + 模型配置界面 showModels + 回包模型徽标）[0m
+
+[36m━━ 宿主服务连接切换（前端多宿主 + 数据面跨域放行） ━━[0m
+  [32m✔ CORS 决议：* 放行任意来源[0m
+  [32m✔ CORS 决议：无 Origin（同源/curl）不放行[0m
+  [32m✔ CORS 决议：白名单命中精确回显[0m
+  [32m✔ CORS 决议：白名单未命中不发放[0m
+  [32m✔ CORS 决议：空列表=关闭[0m
+  [32m✔ CORS 决议：畸形 Origin 不发放[0m
+  [32m✔ API 预检 OPTIONS → 204 + allow-origin/methods/headers/max-age（先于鉴权中间件，不被 401 拦截）[0m
+  [32m✔ 公开端点跨域携带放行头（连接页测活可读）[0m
+  [32m✔ 鉴权端点 401 错误体同样携带放行头（远端页面可读失败原因）[0m
+  [32m✔ 携带 Bearer 的跨域业务请求正常返回（宿主切换后的主链路）[0m
+  [32m✔ 无 Origin 的 OPTIONS 不被预检分支劫持（同源行为不变）[0m
+  [32m✔ CORS 收紧：/api/auth/* 预检在 blanket * 下无 ACAO（跨站登录探测被浏览器拦截）[0m
+  [32m✔ CORS 收紧：/api/auth/* 直跨域响应同样不挂放行头（未进预检分支头也不发放）[0m
+  [32m✔ CORS 精确来源：/api/auth/login 按白名单回显放行（显式配置即放行，跨机器部署的正确姿势）[0m
+  [32m✔ CORS 精确来源：未命中白名单的来源对 /api/auth/* 仍不发放[0m
+  [32m✔ QA-01 回归：明文入口（x-forwarded-proto: http）308 下跳 HTTPS 且带 Location[0m
+  [32m✔ QA-01 回归：HTTPS 反代链路下发 HSTS（max-age 一年 + 含子域）[0m
+  [32m✔ QA-01 回归：未带转发协议头的本机直连不跳转、不下发 HSTS[0m
+  [32m✔ 连接管理纯函数随包单测全绿（node --test）[0m
+  [32m✔ api.js 动态 BASE + 会话按连接隔离 + 桥接直通仅本机（连接切换的三个承重点）[0m
+  [32m✔ 控制台接线：#/connections 会话前置独立渲染 + 外壳内 builders + 顶栏远程指示[0m
+  [32m✔ app.js 显式 import BASE（缺失时 NAV「部门面板」ext 点击 ReferenceError → 无响应，c0fca1a 回归守卫）[0m
+  [32m✔ QA-02 回归：工作台 CTA 按权限渲染（处理审批/查看 Agent/用量明细不再对无权角色裸露）[0m
+  [32m✔ QA-02 回归：页面 builder 全局错误兜底（首请求 403/网络失败渲染可重试错误卡而非留白）[0m
+
+[36m━━ 门户数据通道（plugin-portal：企业门户拉取已发布应用/Agent，非核心） ━━[0m
+  [32m✔ 公开访问 200（无 Bearer，门户前缀先于 console 鉴权中间件截获）[0m
+  [32m✔ 契约包装 {code:0, message, data} + no-cache（刷新即可见）[0m
+  [32m✔ CORS 放行生产门户来源[0m
+  [32m✔ 已上线应用进入 /apps（link=访问地址，tag/version/accent 契约齐全）[0m
+  [32m✔ launchDate 为上线当日（YYYY-MM-DD）[0m
+  [32m✔ /apps 与平台已上线应用一致（仅 online 进入门户，未上线/下架不出现）[0m
+  [32m✔ /employees：已上线 Agent=数字员工（内网 :8443 开发来源 CORS 同样放行）[0m
+  [32m✔ /skills：已上架 Skill 契约（downloadUrl 为门户登录下载端点绝对地址）[0m
+  [32m✔ downloadUrl 未登录被拒 401 契约错误（v1.1：必须登录）[0m
+  [32m✔ 无效令牌下载被拒 401（不泄露技能存在性）[0m
+  [32m✔ 携带登录令牌可下载（200 + zip 魔数 PK + attachment 头）[0m
+  [32m✔ 未上架/未知技能下载 404 契约错误（登录后）[0m
+  [32m✔ 下载审计落账（谁在下载：actor=登录用户）[0m
+  [32m✔ /stats：恰 4 卡且 value 为字符串（契约明确非数值）[0m
+  [32m✔ /stats 口径：已上线应用计数与 /apps 一致[0m
+  [32m✔ /solutions、/tools：暂无数据源 → 空数组（门户契约 §5：降级展示内置样板）[0m
+  [32m✔ OPTIONS 预检 204 + 放行方法/来源/authorization 请求头[0m
+  [32m✔ 未知端点 404 契约错误（门户展示错误与重试，不影响其他端点）[0m
+  [32m✔ 无 Origin 请求正常应答（仅不回 CORS 放行头）[0m
+  [32m✔ 写方法被拒 405（契约全只读）[0m
+
+[36m━━ 部门面板（plugin-panel-core：数据面 / 图谱 / 激活 / 计量 / 运行时） ━━[0m
+  [32m✔ 面板：五部门骨架（一套骨架五种皮肤的数据底座）[0m
+  [32m✔ 面板：制造部总览（行业激活 + 频道 + 阵容 + KPI/widget 来源徽标）[0m
+  [32m✔ 面板：未认证访问被拒（401）[0m
+  [32m✔ 面板：发消息落库（人 × 频道归属校验）[0m
+  [32m✔ 面板：演示卡片消息在库（Agent 操作卡片）[0m
+  [32m✔ 面板：卡片动作「确认派单」→ 生成任务（纯平台链）[0m
+  [32m✔ 面板：卡片动作幂等保护（重复执行被拒）[0m
+  [32m✔ 面板：任务创建（泳道 + 场景引用）[0m
+  [32m✔ 面板：任务泳道迁移（doing → done）[0m
+  [32m✔ 面板：非法泳道被拒[0m
+  [32m✔ 面板：部门知识沉淀与列表[0m
+  [32m✔ 面板：QB01 场景图谱下发（一图四清单全字段）[0m
+  [32m✔ 面板：未装载图谱 honest 400（不冒充数据）[0m
+  [32m✔ 面板：行业三态（QB01/GCJX 已激活，JQR/NEV/PCB 待授权）[0m
+  [32m✔ 面板：激活申请进入审批中心（industry.activation · high）[0m
+  [32m✔ 面板：申请后行业显示审批中（pending 三态）[0m
+  [32m✔ 面板：审批通过 → 激活执行器生效（active + grantCapabilities）[0m
+  [32m✔ 面板：激活后 NEV 三态转 active[0m
+  [32m✔ 面板：重复激活申请被拒（已是激活态）[0m
+  [32m✔ 面板：@Agent 未绑定资产 → 诚实降级回包（不造假回复）[0m
+  [32m✔ 面板：降级转人工待办落看板[0m
+  [32m✔ 面板：stub 模型 + Agent 资产就绪[0m
+  [32m✔ 面板：阵容绑定 agentRef（panel.config.write）[0m
+  [32m✔ 面板：@面板质检员 消息已发[0m
+  [32m✔ 面板：panelAgentRuntime 单轮真实调用（modelgw → 回包落库）[0m
+  [32m✔ 面板：协作计量落账（D1 键格式 panel:mfg.qb01，价格簿零费率放行）[0m
+  [32m✔ 面板：模型目录读取（GET /api/panel/models，直填 apiKey 脱敏不回显）[0m
+  [32m✔ 面板：模型登记 upsert（POST /api/panel/models，panel.config.write；回显脱敏）[0m
+  [32m✔ 面板：编辑模型留空 apiKey 保持既有密钥（不被默认 env 引用覆盖）[0m
+  [32m✔ 面板：模型连通性测试（真实走 modelgw.invoke 全链，失败如实回传不造假成功）[0m
+  [32m✔ 面板：对话框指定模型发送（POST messages 带 model）[0m
+  [32m✔ 面板：对话框模型切换生效（modelOverride 优先于资产 model，回包记录实际所用模型）[0m
+  [32m✔ 面板：对话框指定未登记模型被拒（400，诚实报错）[0m
+  [32m✔ 面板：模型删除（DELETE /api/panel/models/:id，登记移除后目录不含）[0m
+  [32m✔ 面板：widget 布局写入（含来源徽标声明）[0m
+  [32m✔ 面板：connector 源 widget 显式降级（绝不冒充真实业务面）[0m
+  [32m✔ 面板：widget 布局复原[0m
+  [32m✔ 面板：SSE 通道建立且事件推送（公开路径 + ?token= 自校验）[0m
+  [32m✔ 面板：SSE 无 token 被拒（fail-closed）[0m
+  [32m✔ 面板：降级轮询端点（消息/任务/未读）[0m
+  [32m✔ 面板：成员可读总览（panel.read 迁移生效）但改配置被拒（403）[0m
+  [32m✔ 面板：Agent 阵容联动资产状态（asset.status/model 实时解析自资源底座）[0m
+  [32m✔ 面板：部门绑定组织（PUT config，账号组织打通管理动作）[0m
+  [32m✔ 面板：组织子树成员可访问已绑定部门 + 成员名册随总览下发[0m
+  [32m✔ 面板：组织外成员被部门范围权限拒绝（403，组织治理双通道）[0m
+  [32m✔ 面板：部门清单带 allowed 徽标（外部成员视角 rd 锁定/mfg 开放）[0m
+  [32m✔ 面板：'*' 管理员跨部门直通（治理豁免）[0m
+  [32m✔ 面板：SSE 未知部门 404（握手即断，绝不先订阅）[0m
+  [32m✔ 面板：SSE 组织外成员 403（deptScopeAllowed 握手同规，QA BUG-A-01 根治）[0m
+  [32m✔ 面板：stream ticket 签发（Bearer + panel.read + 部门范围校验，H4）[0m
+  [32m✔ 面板：ticket 换流成功（URL 只出现一次性短时凭证，不再携带长效 access token）[0m
+  [32m✔ 面板：ticket 一次性消费（重放 401，消费即焚）[0m
+  [32m✔ 面板：组织外成员签发 ticket 被拒 403（签发端同规校验）[0m
+  [32m✔ 面板：未认证签发 ticket 被拒 401[0m
+  [32m✔ 面板：解除组织绑定恢复开放[0m
+
+[36m━━ J1 契约 v1：面板技能/Agent 点名直调（GET skills · POST skills/invoke · panel_*_invoke 工具） ━━[0m
+  [32m✔ J1：stub 模型就绪[0m
+  [32m✔ J1：直调技能上架就绪[0m
+  [32m✔ J1：可直调技能清单（published + 组织可见，行含 id/name/slug/version）[0m
+  [32m✔ J1：技能直调成功路径（200 + ok:true + reply + skill 元数据 + model 回显）[0m
+  [32m✔ J1/W3：直调应答携带 skillLoad 指纹（skillId=上架技能 id · version · sha256 contentHash 64 位 hex）[0m
+  [32m✔ J1：直调留痕——斜杠原文落频道（skipAgentDispatch）+ 应答落 ⚡ agent 消息（含 model）[0m
+  [32m✔ J1：未指定模型自动选「在线且已配 endpoint」模型（ghost-model 这类必败模型不被选中）[0m
+  [32m✔ J1：诚实降级——不存在技能 200 + ok:false + reason（降级是数据不是传输错误）[0m
+  [32m✔ J1：失败原因落系统行全频道可见（不静默）[0m
+  [32m✔ J1：panel_skill_invoke 工具面（与 REST 同一服务原语）[0m
+  [32m✔ J1/W3：panel_skill_invoke 工具面 skillLoad 同构（REST/工具两面同一 service 原语）[0m
+  [32m✔ J1：panel_agent_invoke 工具面（askAgent 同步应答，不落频道消息）[0m
+  [32m✔ J1：Agent 点名诚实降级（名册无此 Agent → ok:false + 可用阵容提示）[0m
+  [32m✔ J1：orgs 限定技能按调用人组织过滤（清单不含 + 直调 visibility 提示 ok:false）[0m
+
+[36m━━ 安全响应头（platform-core http.ts：nosniff / SAMEORIGIN / Referrer-Policy；SECURITY_HEADERS=off 关闭） ━━[0m
+  [32m✔ 安全响应头：静态页携带 nosniff / SAMEORIGIN / Referrer-Policy[0m
+  [32m✔ 安全响应头：401 API 响应同样携带（鉴权面不豁免）[0m
+  [32m✔ 安全响应头：/api/overview 携带基线 CSP（default-src 'self' 在位）[0m
+  [32m✔ 安全响应头：/api/* 数据面 cache-control no-store（鉴权/业务响应不进缓存层）[0m
+  [32m✔ 安全响应头：静态页同样携带基线 CSP[0m
+
+[36m━━ usage 保留策略（USAGE_RETENTION_DAYS 默认 730d；POST /api/usage/retention/purge 手动巡检） ━━[0m
+  [32m✔ 保留策略：出窗历史事件回填成功（occurred_at 显式指定，约 3 年前）[0m
+  [32m✔ 保留策略：默认窗口巡检清理出窗事件并回显 retentionDays[0m
+  [32m✔ 保留策略：出窗事件已不在流水，窗口内事件不受影响[0m
+  [32m✔ 保留策略：days=0 显式跳过（cutoff 为空，零清理）[0m
+  [32m✔ 保留策略：无 usage.admin 被拒 403[0m
+
+[36m━━ 钉钉桥接（plugin-dingtalk-bridge：群桥 / 出向投递 / 审批推送 / 告警通道 / 回决 fail-closed） ━━[0m
+  [32m✔ 桥接：连接器切 real（凭证单一来源=iam 连接器）[0m
+  [32m✔ 桥接：状态胶囊（连接器 real / 入向 R-SPIKE 停用声明 / 扫码绑定事实源）[0m
+  [32m✔ 桥接：频道群桥绑定（dingtalk.message.send）[0m
+  [32m✔ 桥接：运维告警群桥绑定（purpose=alerts）[0m
+  [32m✔ 桥接：群桥列表可查[0m
+  [32m✔ 桥接：消息带钉钉同步意图（ddSync=pending）[0m
+  [32m✔ 桥接：出向投递成功且回执回写（ddSync=sent）[0m
+  [32m✔ 桥接：场景卡同步钉钉（dd.push → 群投递）[0m
+  [32m✔ 桥接：告警经 purpose=alerts 群桥投递（补齐 channels:[dingtalk] 欠账）[0m
+  [32m✔ 桥接：审批单推送钉钉[0m
+  [32m✔ 桥接：未绑定 staffId 回决被拒（fail-closed）[0m
+  [32m✔ 桥接：合规回决写回（staffId↔identityLinks 反查 + confirmed）→ 审批执行[0m
+  [32m✔ 桥接：回决生效后 PCB 行业转 active[0m
+  [32m✔ 桥接：群桥解绑[0m
+  [32m✔ 桥接：连接器恢复 mock（自测收尾）[0m
+
+[36m━━ dsh 宿主挂载（单进程单入口 /rq 前缀） ━━[0m
+  [32m✔ bridge 向 webServer 注册挂载路由（/rq + /auth/entry + /dsh-bridge + /auth/oidc/*）[0m
+  [32m✔ externalBase 配置生效（/rq）[0m
+  [32m✔ M0-1 死信演练：消费连续 3 次失败入死信[0m
+  [32m✔ M0-1 死信重投：修复后重投成功且投影恰好一次[0m
+  [32m✔ M0-1 死信重投后 replay 不双计（消费水位幂等）[0m
+[bus] 监听器处理 plugin:com.selftest.demo:tick（plugin:com.selftest.demo:tick）第 1 次失败 Error: d19 注入失败
+    at file:///Users/ybkk/ybkkasi/scripts/selftest.mjs:6319:28
+    at Proxy.deliverToOne (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:383:43)
+    at Object.apply (file:///Users/ybkk/ybkkasi/node_modules/@deepseek-ai/cordis/lib/index.js:120:36)
+    at file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:376:66
+    at Array.map (<anonymous>)
+    at Proxy.deliver (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:376:38)
+    at Object.apply (file:///Users/ybkk/ybkkasi/node_modules/@deepseek-ai/cordis/lib/index.js:120:36)
+    at Proxy.drain (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:359:20)
+[bus] 监听器处理 plugin:com.selftest.demo:tick（plugin:com.selftest.demo:tick）第 2 次失败 Error: d19 注入失败
+    at file:///Users/ybkk/ybkkasi/scripts/selftest.mjs:6319:28
+    at Proxy.deliverToOne (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:383:43)
+    at async Promise.allSettled (index 0)
+    at async Proxy.deliver (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:376:5)
+    at async Proxy.drain (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:359:9)
+[bus] 监听器处理 plugin:com.selftest.demo:tick（plugin:com.selftest.demo:tick）第 3 次失败 Error: d19 注入失败
+    at file:///Users/ybkk/ybkkasi/scripts/selftest.mjs:6319:28
+    at Proxy.deliverToOne (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:383:43)
+    at async Promise.allSettled (index 0)
+    at async Proxy.deliver (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:376:5)
+    at async Proxy.drain (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:359:9)
+[bus] 监听器处理 plugin:com.selftest.demo:tick（plugin:com.selftest.demo:tick）第 4 次失败 Error: d19 注入失败
+    at file:///Users/ybkk/ybkkasi/scripts/selftest.mjs:6319:28
+    at Proxy.deliverToOne (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:383:43)
+    at async Promise.allSettled (index 0)
+    at async Proxy.deliver (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:376:5)
+    at async Proxy.drain (file:///Users/ybkk/ybkkasi/packages/platform-core/src/bus.ts:359:9)
+  [32m✔ 组5 死信：plugin: 来源事件 3 次重试失败入死信[0m
+  [32m✔ 组5 死信：死信记录携带 source（plugin: 前缀，结构性重投依据）[0m
+  [32m✔ 组5 死信：按原来源重投成功（redelivered≥1，监听器第 4 次消费成功，死信清空）[0m
+  [32m✔ H3 白盒：宽限内二次兑换签发兄弟对（不吊销链）[0m
+  [32m✔ H3 白盒：宽限窗口外旧 token 重放被拒并整链吊销（重放防线不变）[0m
+  [32m✔ H3 白盒：整链吊销覆盖轮转对与宽限兄弟对[0m
+  [32m✔ /rq/api/auth/login 可用（单入口下登录链路通）[0m
+  [32m✔ /rq/api/* 剥前缀后与独立形态路由等价（含 Bearer 鉴权链）[0m
+  [32m✔ /rq 302 归一到 /rq/（SPA 相对引用可解析）[0m
+  [32m✔ /rq/ 伺服控制台 index.html（SPA fallback）[0m
+  [32m✔ /rq/js/* 控制台静态资源按前缀命中[0m
+  [32m✔ /rq/panel/ 面板 SPA 经前缀挂载可达（宿主 web diff=0）[0m
+  [32m✔ /rq/panel 302 → /rq/panel/（externalBase 感知，与独立形态同语义）[0m
+  [32m✔ 非 /api 未命中回落 SPA（与独立形态一致）[0m
+  [32m✔ 未匹配 API 404 JSON 不落静态（DEF-01）[0m
+  [32m✔ 前缀外请求不进平台数据面（dsh 侧自有路由域不受影响）[0m
+  [32m✔ 免登引导脚本经 tapIndex 注入[0m
+  [32m✔ 基线初始化（挂载形态最小树）产出 admin[0m
+  [32m✔ /auth/entry 兑换 → 302 / + Set-Cookie rq_sid（HttpOnly/SameSite=Lax）[0m
+  [32m✔ /dsh-bridge/status 读 Cookie 返回绑定身份[0m
+  [32m✔ 无 Cookie 状态查询 → 未绑定（不作身份推断）[0m
+  [32m✔ 绑定自检原因码：无 Cookie → no_cookie（WP-04/A2 文案映射依据）[0m
+  [32m✔ 票据重放被拒（一次性消费，redeem 抛错→400）[0m
+  [32m✔ 会话绑定 200（Cookie 定身份 → sessionId 关联）[0m
+  [32m✔ 工具出站归因解析：会话绑定优先 / 未绑定回落最近绑定[0m
+  [32m✔ 账号停用 → 绑定实时失效（兑换面已校验 + 读取面再校验）[0m
+  [32m✔ 绑定自检原因码：停用账号 → account_inactive（可识别、可出文案）[0m
+  [32m✔ 绑定面同源收紧：跨站 Origin 403（对齐 dsh fence 语义）[0m
+  [32m✔ 宿主会话直通：Cookie 绑定身份兑换平台会话（token + user + permissions）[0m
+  [32m✔ 宿主会话直通：兑换令牌直通面板 RBAC 面（/rq/api/panel/depts 200）[0m
+  [32m✔ 宿主会话直通：无 Cookie 401（NOT_BOUND fail-closed，同源面统一收紧）[0m
+  [32m✔ behavior 投递：先写后发（消费方收到首投）[0m
+  [32m✔ behavior 投递：幂等重放不重发（消费水位跳过 + duplicated 标记）[0m
+  [32m✔ behavior 投递：消费方连续 3 次失败入死信[0m
+  [32m✔ behavior 投递：死信触发 critical 告警（audit.alert.fired）[0m
+  [32m✔ behavior 投递：replay 幂等（已消费事件不重投）[0m
+  [32m✔ behavior 投递：死信重投（故障消费方仍失败则保留死信）[0m
+  [32m✔ /auth/oidc/start 302 平台授权页（client_id + PKCE S256 + state）[0m
+  [32m✔ /auth/oidc/callback 坏 state 被拒 400（防 CSRF/重放）[0m
+
+[36m━━ 口令 KDF 升级（组1 A-09：scrypt 格式 / 旧 sha256 登录透明升级 / timingSafeEqual） ━━[0m
+  [32m✔ KDF 前置：预置旧 sha256 存储记录（裸 hex，无 scrypt$ 前缀）[0m
+  [32m✔ KDF：旧 sha256 口令登录成功[0m
+  [32m✔ KDF：登录后存储透明升级为 scrypt$（前缀 + passwordSalt 清空）[0m
+  [32m✔ KDF：scrypt 参数自描述（N=16384/r=8/p=1，OWASP 下限档；盐与哈希均为 base64）[0m
+  [32m✔ KDF：升级后同口令再登录成功（scrypt 复算路径）[0m
+  [32m✔ KDF：错误口令拒绝（timingSafeEqual 常数时间比较路径）[0m
+
+[36m━━ IAW 4-1/4-2：usage 成本摘要与反馈聚合（面板度量驾驶舱数据源） ━━[0m
+  [32m✔ 4-1：管理员查摘要（scope=platform，cost_cents/byResource 齐备）[0m
+  [32m✔ 4-1：month 窗口边界为当月 1 日（UTC 口径）[0m
+  [32m✔ 4-1：panel.read 成员强制收敛自身组织（传入 org=other 被忽略，scope=self-org）[0m
+  [32m✔ 4-1：无 panel.read 主体被拒 403[0m
+  [32m✔ 4-2：反馈落账（零价快照 up/down 各一条）[0m
+  [32m✔ 4-2：同键重放幂等（不重复计数）[0m
+  [32m✔ 4-2：采纳率聚合（自测行 up=2/down=1，adoptionRate≈0.667，scope 收敛自身组织）[0m
+  [32m✔ 4-2：usage.read 主体可跨组织聚合（scope=platform 且含同资源行）[0m
+
+[36m━━ IAW 5-1/5-2：结论级证据锚点 + 场景维度审计时间线 ━━[0m
+  [32m✔ 5-1：证据登记（2 锚点落库发 id，panel.write）[0m
+  [32m✔ 5-1：证据反查（锚点/时间窗/命中行数原样可读）[0m
+  [32m✔ 5-1：不存在的证据 404[0m
+  [32m✔ 5-1：非法锚点 kind 被拒 400[0m
+  [32m✔ 5-1：无 panel.write 主体登记被拒 403[0m
+  [32m✔ 5-2：带场景任务创建[0m
+  [32m✔ 5-2：任务流转[0m
+  [32m✔ 5-2：场景时间线含 create+transition（panel.read 可读，倒序）[0m
+  [32m✔ 5-2：无痕场景时间线为空（诚实空集）[0m
+  [32m✔ 5-2：无 panel.read 主体被拒 403[0m
+
+[36m━━ IAW 8-1：通知中心持久化（任务/告警落账 + since/已读游标） ━━[0m
+  [32m✔ 8-1：触发事件（任务创建→流转产生 panel.task.updated）[0m
+  [32m✔ 8-1：任务通知持久化并按组织范围可见（unread 递增）[0m
+  [32m✔ 8-1：越权探针（403 触发 permission_denied 链路）[0m
+  [32m✔ 8-1：告警通知落账（type=alert，全局范围）[0m
+  [32m✔ 8-1：已读游标推进[0m
+  [32m✔ 8-1：游标后 unread=0 且历史可见（游标语义非删除）[0m
+  [32m✔ 8-1：since 增量拉取（游标后零新增）[0m
+  [32m✔ 8-1：机器主体无个人通知面（空集诚实返回）[0m
+
+[36m━━ IAW 1-1..1-4：模型渠道分级路由 / 降级链 / 遥测 / 预算熔断 ━━[0m
+  [32m✔ 1-1：四渠道登记（public/secret-500/secret-ok/默认 internal）[0m
+  [32m✔ 1-1：秘密数据 → 公开级渠道被锁死拒绝（错误含原因）[0m
+  [32m✔ 1-1：秘密数据 → 秘密级渠道放行（真实应答）[0m
+  [32m✔ 1-2：渠道组登记（主/备/转人工）[0m
+  [32m✔ 1-2：主渠道 5xx → 备渠道自动接管（真实应答 + degradations 留痕）[0m
+  [32m✔ 1-3：主渠道遥测（failures>=1，availability<1，ttftMs=null 诚实缺列）[0m
+  [32m✔ 1-3：备用渠道遥测（degraded 标记 + TPS 代理口径）[0m
+  [32m✔ 1-3：未登记模型遥测 404[0m
+  [32m✔ 1-4：预算登记（日 1 分 block / 月 100 分）[0m
+  [32m✔ 1-4：日预算触达 → 调用前熔断（错误含「预算熔断」）[0m
+  [32m✔ 1-4：成本摘要携带预算进度（budget.daily.limitCents=1）[0m
+  [32m✔ 1-4：预算放宽（upsert 同键覆盖）[0m
+  [32m✔ 1-4b 前置：预算切回 block（日 0 分）[0m
+  [32m✔ 组3 B9：block 熔断中降级链调用 → 400 含「预算熔断」（首渠道即终止，不进降级）[0m
+  [32m✔ 组3 B9：备用渠道遥测 invocations 不增长（未调上游，熔断先于真实调用）[0m
+  [32m✔ 组3 B9：无新 usage 事件（block 态不入账）[0m
+  [32m✔ 1-4b：预算复原 warn（环境清理）[0m
+
+[36m━━ IAW 6-1：场景级授权策略（scene ABAC）与 iam.check 自检 ━━[0m
+  [32m✔ 6-1：策略登记（deny 导出 + 成员 allow，v1）[0m
+  [32m✔ 6-1：version 乐观锁冲突被拒 400[0m
+  [32m✔ 6-1：iam.check allow 命中（成员 allow 条目）[0m
+  [32m✔ 6-1：iam.check deny 优先命中（全员禁导出）[0m
+  [32m✔ 6-1：未配置策略场景回落 default（存量 RBAC 口径不变）[0m
+  [32m✔ 6-1：member 无 iam.org.read 策略列表被拒 403[0m
+  [32m✔ 6-1：机器代查被拒 403（无 iam.user.read）[0m
+  [32m✔ 6-1：策略删除（回滚自测环境）[0m
+  [32m✔ 6-1：删除后回落 default（fail-closed 随策略移除）[0m
+
+[36m━━ 组5 A-01：panel 任务创建 sceneGuard（场景策略 deny → 403 + audit.authz.denied） ━━[0m
+  [32m✔ A-01 前置：场景策略登记（deny admin 的 panel.task.create）[0m
+  [32m✔ 组5 A-01：带 sceneCode 建单命中 deny → 403 FORBIDDEN（场景授权拒绝）[0m
+  [32m✔ 组5 A-01：拒绝落审计（audit.authz.denied：scene:QB01-DENY-TASK#panel.task.create 可反查）[0m
+  [32m✔ 组5 A-01：不带 sceneCode 建单 200（守卫不阻断普通任务）[0m
+  [32m✔ 组5 A-01：机器主体不入场景域（带 sceneCode 也放行，RBAC 权限点已覆盖）[0m
+  [32m✔ 组5 A-01：策略删除后同场景建单恢复放行（环境清理即回滚验证）[0m
+
+[36m━━ IAW 2-1..2-4：数据要素域（数据集登记/质量分/血缘/指标字典仲裁） ━━[0m
+  [32m✔ 2-1：数据集登记（分级/来源/刷新/双场景）[0m
+  [32m✔ 2-1：按场景过滤 + upsert 幂等（sceneCount=1）[0m
+  [32m✔ QA-03 回归：资源管理员可读数据集清单（补 panel.read）[0m
+  [32m✔ QA-03 回归：资源管理员可读事务流模板（补 flow.read）[0m
+  [32m✔ 2-2：质量分四维登记（等权 overall=85）[0m
+  [32m✔ 2-2：越界质量分被拒 400[0m
+  [32m✔ 2-3：血缘边登记（派生→源）[0m
+  [32m✔ 2-3：反向追溯（B 的 upstream=A，A 的 downstream=B）[0m
+  [32m✔ 2-4：口径登记（首条 active；同内容幂等）[0m
+  [32m✔ 2-4：口径冲突并存（新定义 superseded 待仲裁）[0m
+  [32m✔ 2-4：定义列表双条（按时间倒序）[0m
+  [32m✔ 2-4：仲裁定版（口径二 active，取代 1 条）[0m
+  [32m✔ 组5 C-09：同口径不同键序重复登记 → 幂等返回同 id（conflict=false，键序归一）[0m
+  [32m✔ 组5 C-08：血缘成环登记被拒（400 含「成环」，沿既有边 DFS 可达即环）[0m
+  [32m✔ 组5 C-11：质量分过期 expectedVersion → 400 含「版本冲突」[0m
+  [32m✔ 组5 C-11：正确 expectedVersion → 登记成功且 revision 递增到 2[0m
+  [32m✔ 2-1：无 resource.dataset.write 被拒 403[0m
+
+[36m━━ IAW 3-1..3-4：事务流引擎（模板库 / TF 编排 / 步骤状态机 / SLA 进度） ━━[0m
+  [32m✔ 3-2：模板登记（3 步 + SLA + 上下文包）[0m
+  [32m✔ 3-2：按场景查模板（panel 成员 flow.read 可读）[0m
+  [32m✔ 3-2：member 无 flow.admin 被拒 403[0m
+  [32m✔ 3-1/3-2：TF 模板实例化（首步 running + contextPack 注入 + dueAt 折算）[0m
+  [32m✔ 3-1：步骤状态机拒绝跳序（pending 不可 complete）[0m
+  [32m✔ 3-1：s1 complete → s2 自动 running[0m
+  [32m✔ 3-1：s2 complete → s3 自动 running[0m
+  [32m✔ 3-1：s3 skip → TF completed（进度 100）[0m
+  [32m✔ 3-3/3-4：TF 详情（elapsedMinutes/finishedAt/步骤时间轴齐备，甘特数据源）[0m
+  [32m✔ 组5 C-07：模板 upsert slaMinutes=0 → 400 含「正数」（防出生即逾期）[0m
+  [32m✔ 组5 C-07：createFlow slaMinutes=0 → 400 含「正数」（入参与模板继承同口径）[0m
+  [32m✔ 组5 C-06 前置：三步流创建（首步 running）[0m
+  [32m✔ 组5 C-06：skip 唯一 running 步 → running 态保留 + stalledAt 落值（不自动重跑）[0m
+  [32m✔ 组5 C-06：详情派生 stalled=true（stalledAt + 派生标记齐备）[0m
+  [32m✔ 组5 C-06：flow.stalled 事件入总线（事件侧证：flowId/原因可查）[0m
+  [32m✔ 3-1：自由编排 + 取消（status=cancelled）[0m
+  [32m✔ 3-1：已结束 TF 步骤不可流转[0m
+  [32m✔ 3-1：TF 列表按场景+状态过滤（视图字段 progress/slaBreached 随行）[0m
+
+[36m━━ 执行中枢：目标血缘 / 任务执行锁 / 心跳唤醒 / 例行调度（R8/R9，E1-E7） ━━[0m
+  [32m✔ R8：创建目标（指标基线/目标/单位）[0m
+  [32m✔ R8：子目标挂父（目标树）[0m
+  [32m✔ R8：目标父链成环被拒[0m
+  [32m✔ E4：项目挂目标（repos 落库）[0m
+  [32m✔ E3 前置：存在运行态 Agent 可派发[0m
+  [32m✔ E2：任务创建（goalAncestry 写时物化 = 父目标→子目标→项目）[0m
+  [32m✔ E3：assign 触发源自动入队唤醒[0m
+  [32m✔ E3：tick 派发成功（治理前置全过后 woken≥1）[0m
+  [32m✔ E2：CAS 取锁成功（executionRunId 落值，任务 todo→in_progress）[0m
+  [32m✔ E2/E4：run 登记上下文包（为什么而干注入）[0m
+  [32m✔ E2/E3：同主体二唤幂等并入既有 run（coalesce：wake 状态 run + runId 即执行锁 run + 不新增 run + 延迟队列空）[0m
+  [32m✔ E3：同小时桶重复指派不重复唤醒（幂等键去重）[0m
+  [32m✔ E2/E3：跨主体二唤进延迟队列（deferred_issue_execution 具名态）[0m
+  [32m✔ E2：done 收尾自动完结 run 并释放执行锁[0m
+  [32m✔ E6：P0 任务执行前自动挂 exec.issue.run 审批（挂单不派发）[0m
+  [32m✔ E6：P0 审批异人通过（executed）[0m
+  [32m✔ E6：审批放行后派发（锁落值 in_progress）[0m
+  [32m✔ E7：webhook 例行登记（路径即凭证）[0m
+  [32m✔ E7：cron 表达式词法校验拒绝（5 段制）[0m
+  [32m✔ E7：webhook 匿名触发入队（200 + wakeId）[0m
+  [32m✔ E7：未登记路径 404 fail-closed（不泄露存在性）[0m
+  [32m✔ E2：僵尸锁靶任务先取锁[0m
+  [32m✔ E2：僵尸锁超时强制回收（旧 run 落 timeout 终态 + reclaimed 计数）[0m
+  [32m✔ E5：血缘视图（目标→项目→任务，exec_lineage 工具同源）[0m
+  [32m✔ R9：总览（健康度五档枚举 + 锁/唤醒计数齐备）[0m
+  [32m✔ R9：被派发 Agent 有心跳留痕（健康度 healthy/stale）[0m
+  [32m✔ R10：Agent 主体预算登记（0 元 block + freezeAgent 联动）[0m
+  [32m✔ R10：预算前置熔断 → 联动冻结（frozenAt 落值）[0m
+  [32m✔ R10：冻结联动生成 agent.unfreeze L4 审批单（orgId 自动推导）[0m
+  [32m✔ E6/R10：熔断唤醒失败留痕（lastError 含预算）[0m
+  [32m✔ E6：预算拒绝审计留痕（exec.wakeup.budget_denied）[0m
+  [32m✔ R10：解冻审批异人通过（executed）[0m
+  [32m✔ R10：审批执行器解冻生效（frozenAt 清空）[0m
+  [32m✔ R4：预算 DELETE 路由可用（联动验证后清理）[0m
+  [32m✔ R10：解冻后恢复派发（治理闭环回绿）[0m
+  [32m✔ R3 前置：登记自测模型[0m
+  [32m✔ R3 前置：登记 '*' 通配预算（QA 组织 0 元 block）[0m
+  [32m✔ 组3 B10：只配 modelSlug='*' block 预算的组织 → summary budget.daily.breached === true（通配计入 org 进度）[0m
+  [32m✔ R3：modelSlug='*' 通配命中任意模型（字面量模型名被通配预算熔断）[0m
+  [32m✔ R3 后续：删除通配预算后不再熔断（错误面走到上游调用层）[0m
+  [32m✔ R4 前置：创建自定义角色[0m
+  [32m✔ R4：无挂载自定义角色可删除[0m
+  [32m✔ R4：内置角色删除被拒[0m
+  [32m✔ R4：在职账号物理删除被拒（仅已注销可删）[0m
+  [32m✔ R11：非 * 管理员 Agent 台账按组织子树收敛[0m
+  [32m✔ R11：组织清单按子树收敛（dev 仅见本组织）[0m
+  [32m✔ R11：越界 ?org= 显式 403（不静默收窄）[0m
+  [32m✔ 执行中枢自测实体清理完成（目标树清空）[0m
+
+[36m━━ QA-20260912 修复批次回归（A-03 / A-04 / A-08 / B-04） ━━[0m
+  [32m✔ 弱口令建号被拒（QA A-08：≥8 位统一口径）[0m
+  [32m✔ QA部门管理员建号（org_admin，归属自测事业部）[0m
+  [32m✔ org_admin 可管理本组织子树内账号（QA A-03 正向）[0m
+  [32m✔ org_admin 跨组织接管被拒（QA A-03：服务层组织隔离）[0m
+  [32m✔ 组1 A2：org_admin REST freeze 他组织 → 403 + error code FORBIDDEN（manageScope 包扎）[0m
+  [32m✔ 组1 A3：org_admin 账号清单全部落在其管辖组织子树内（含子组织收敛）[0m
+  [32m✔ 组1 A3：他组织账号不出现在 org_admin 清单（admin/linxm/cascadeu01 零泄漏）[0m
+  [32m✔ 组1 A3：?orgId= 子树外 → 403 FORBIDDEN（越界不静默收窄）[0m
+  [32m✔ 组1 A3：?orgId= 子树内 → 正常返回（全部命中该组织）[0m
+  [32m✔ 组1 A1 前置：桥冻结靶子（org_admin 子树内）建号[0m
+  [32m✔ 组1 A1：org_admin 经工具桥冻结本组织子树内账号成功[0m
+  [32m✔ 组1 A1：伪造 args._actor={platformAdmin:true} 被剥离重注入（仍按服务端身份拒绝组织隔离）[0m
+  [32m✔ 组1 A1：伪造 _actor 不改变正常路径行为（子树内重置口令仍成功）[0m
+  [32m✔ QA回归应用创建（owner=admin）[0m
+  [32m✔ 非 owner 开发者改写他人应用被拒（QA A-04）[0m
+  [32m✔ 平台管理员/owner 可正常更新（QA A-04 正向）[0m
+  [32m✔ audit/cost days 参数生效（QA B-04：不再被静默丢弃）[0m
+  [32m✔ audit/cost 不带 days 保持全量口径（QA B-04 兼容）[0m
+
+[36m━━ 基线口令文件（组4 N2/N3：mode 0600 + ADMIN_PASSWORD 空串回落随机） ━━[0m
+  [32m✔ 组4 C17：ADMIN_PASSWORD='' 空串首启不抛错（实例健康就绪，随机生成路径）[0m
+  [32m✔ 组4 C17：bootstrap 报告初始口令待接管（initialPasswordPending=true，证明走了随机生成）[0m
+  [32m✔ 组4 C16：初始口令文件 mode 0o600（仅属主可读写，macOS APFS/Linux 均生效）[0m
+  [32m✔ 组4 C16：口令文件所载口令可登录 admin（随机路径端到端可用）[0m
+
+[36m━━ 数字员工工作闭环（组7：契约面/员工/任用/认领/步骤幂等/交付验收） ━━[0m
+  [32m✔ 契约面：workforce 挂载前端口未就绪（isReady()=false，缺省拒绝语义）[0m
+  [32m✔ 契约面：ctx.workforcePolicy 注册器随 platform-core 就位（窄端口横切面）[0m
+  [32m✔ 契约面：workforce 挂载后 isReady()=true（策略实现已登记）[0m
+  [32m✔ V29：注册器未登记时 port()=null / isReady()=false；register 后立即可用（不静默放行）[0m
+  [32m✔ 闭环夹具：console 基线初始化产出 admin（测试主管）[0m
+  [32m✔ 闭环夹具：测试组织创建[0m
+  [32m✔ 闭环夹具：测试 Agent×2 与机器凭证就位（refType=agent）[0m
+  [32m✔ 员工：创建员工档案（active + 主绑定 Agent 回填）[0m
+  [32m✔ 绑定：员工↔Agent 一对一有效绑定（active）[0m
+  [32m✔ 绑定：同 Agent 已被占用时再次绑定被拒绝（一对一约束）[0m
+  [32m✔ 任用：创建任用版本 v1（preparing 起步，组织不可空）[0m
+  [32m✔ 任用激活·探针失败路径：无真实 MCP 授权时保持 preparing（不签发 permit 的前提）[0m
+  [32m✔ 任用：生效后 activeForAppointment 清单非空（工具句柄可下发）[0m
+  [32m✔ 认领：机器主体首次认领成功（run/租约/permit/清单四件套齐备）[0m
+  [32m✔ 认领幂等：同主体同任务重复认领 idempotent=true 且 runId 一致（不产生第二租约）[0m
+  [32m✔ 认领排他：他人主体（另一 Agent 绑定）认领同任务被拒绝[0m
+  [32m✔ 受控调用：受控调用诚实落账（completed/denied/approval_required 等状态 + invocationId）[0m
+  [32m✔ 步骤幂等：同 run 同 stepKey 同参数重复调用 → 回放原结果（同 invocationId）[0m
+  [32m✔ 步骤幂等：同 stepKey 不同参数 → STEP_ARGUMENT_CONFLICT 冲突拒绝（不覆盖原动作）[0m
+  [32m✔ 交付：受控 artifact 上传（staging 元信息 + sha256 摘要 + 归属 run）[0m
+  [32m✔ 交付：submit 后 exec-hub 任务进入 review（技术完成≠验收完成）[0m
+  [32m✔ 验收：accept 决定后任务 done（真人验收权决定业务完成）[0m
+  [32m✔ 验收退回：退回后任务回退执行（review→in_progress）且调用事实保留[0m
+  [32m✔ 停职撤权：员工 suspend 后其全部 active permit 被撤销（revoked）[0m
+  [32m✔ 停职撤权：verifyPermit 对已撤 permit 抛错（fail-closed，V07）[0m
+  [32m✔ W5 运维面：maintenance run 将过期 active permit 落账 expired（仓库内唯一写 expired 处）[0m
+  [32m✔ W5 运维面：maintenance run 返回终态 run 盘点计数（封存不删行，只报告）[0m
+  [32m✔ 计量关联：usage.record 携带 invocationId → invocation_id 列落库且事件读回一致（不双计）[0m
+  [32m✔ REST 冒烟：独立最小树 /api/auth/login 可用（console 基线口令文件）[0m
+  [32m✔ REST 冒烟：GET /api/workforce/overview 200（workforce.read 权限令牌）[0m
+  [32m✔ REST 冒烟：无 workforce 权限令牌访问 /api/workforce/overview 403[0m
+  [32m✔ W5 运维面：status-batch 双员工停职 200 且 succeeded=2 failed=0[0m
+  [32m✔ W5 运维面：status-batch 后两员工 permit 全 revoked 且逐条聚合 revokedPermits=1[0m
+  [32m✔ W5 运维面：audit 报表 200 且含 employee/bindings/appointments/permits/invocations/deliverables/summary 键[0m
+  [32m✔ W5 运维面：无 workforce.admin 权限令牌访问 status-batch/audit/maintenance 全 403[0m
+  [32m✔ 灰度D-②：名单内组织认领正常（allowlist 不拦名单组织，run/permit 四件套）[0m
+  [32m✔ 灰度D-②：关闭组织认领被拒 WORKFORCE_DISABLED（中文灰度语义，非静默回落 legacy）[0m
+  [32m✔ 灰度D-②：拒绝发生在确认前（名单外任务无 run 投影、无 permit——不产生半开工作状态）[0m
+  [32m✔ 灰度D-②：workforce.gray.denied 事件可观测（surface=admission，payload 含 orgId/employeeId/at）[0m
+  [32m✔ 灰度D-②：port 侧同口径拒绝（authorizeWorkAction → WORKFORCE_DISABLED + surface=port 事件，三分支口径一致）[0m
+  [32m✔ 灰度D-②：观测面不拦（名单外员工身份仍可解析，拉取/状态查询保持开放）[0m
+  [32m✔ W2 夹具：托管演示服务注册+verify+全量上线[0m
+  [32m✔ W2 夹具：任用生效+认领成功（mcp 句柄入清单）[0m
+  [32m✔ W2：受管机器凭证经 REST 不带 work 索引 → TOOL_NOT_GRANTED（必须持 permit 经受控入口，V28）[0m
+  [32m✔ W2：携带 work 索引 → 受管闸门放行且调用成功（REST 面与 /mcp 工具面同凭证同约束，V01 完整态）[0m
+  [32m✔ W2：网关调用记录关联工作索引（work.permitId 落 mcp:calls，四入口等价可对账）[0m
+
+[36m━━ UI 全球化 i18n（内核 t() / 词典齐套 / /locales 端点 / 请求级协商） ━━[0m
+  [32m✔ i18n 内核导入（platform-i18n）[0m
+  [32m✔ t() zh-CN 原样 + 插值[0m
+  [32m✔ t() en-US 词典命中 + 插值[0m
+  [32m✔ t() en-US 未命中优雅降级中文[0m
+  [32m✔ locale 决议链（query > cookie > Accept-Language > env）[0m
+  [32m✔ 词典齐套：9 对 en/ja 文件 JSON 可解析且键集一致[0m
+  [32m✔ /locales/en-US 合并端点（catalog 含通用键，规模 >100）[0m
+  [32m✔ 请求级协商：?lang=en-US 鉴权 401 文案切英文，默认 zh 逐字节不变[0m
+
+[36m━━ 产品数字与装配一致性（加载屏三数绑定后端真实值） ━━[0m
+  [32m✔ 加载屏三数可从 index.html 解析（护栏前提）[0m
+  [32m✔ 加载屏插件包数 29 = packages/ 目录数 29（插件数口径防漂移）[0m
+  [32m✔ 加载屏权限点数 92 = 后端权限目录 92（权限点数防漂移）[0m
+  [32m✔ 加载屏 REST 路由数 448 = 去重路由数 448（路由数防漂移）[0m
+  [32m✔ /api/platform/info 插件清单取自实际装配树（pluginCount=29，非写死值）[0m
+
+[36m━━ 演示只读态（DEMO_MODE=1：免登只读 / 写方法 405 / Bearer 行为不变） ━━[0m
+  [32m✔ 演示白名单无写点泄漏（findWritePermissionLeaks 为空数组）[0m
+  [32m✔ 演示白名单含控制台只读基线 console.read（工作台首屏声明点）[0m
+  [32m✔ DEMO_MODE fail-closed：仅严格取值 '1' 启用（true/yes/on/缺省 均不启用）[0m
+  [32m✔ 演示只读面路由审计：GET/HEAD 声明点与白名单差集无缺口（demo-route-audit 零退出）[0m
+  [32m✔ 非演示态：/api/platform/demo 恒 {demo:false}（不含主体/权限任何字段）[0m
+  [32m✔ 非演示态：匿名 /api/overview 仍 401（默认关闭，不引入新鉴权面）[0m
+  [32m✔ 演示实例启动（DEMO_MODE=1 + DEMO_SEED=1，隔离实例）[0m
+  [32m✔ 演示态标记端点（公开）：{demo:true, principalId, name, readonlyPermissions[]}[0m
+  [32m✔ 演示态下发权限面与代码白名单逐项一致（防端点回显与常量双源漂移）[0m
+  [32m✔ 演示态匿名 GET /api/overview → 200（只读基线可达）[0m
+  [32m✔ 演示态匿名 GET /api/notifications → 200（只读基线可达）[0m
+  [32m✔ 演示态匿名 GET /api/platform/info → 200（只读基线可达）[0m
+  [32m✔ 演示态匿名 GET /api/tools/schemas → 200（只读基线可达）[0m
+  [32m✔ 演示态匿名 GET /api/usage/recent → 200（只读基线可达）[0m
+  [32m✔ 演示态写语义点路由 403（GET /api/panel/orgs → panel.config.write）[0m
+  [32m✔ 演示态匿名写请求 405 DEMO_READONLY（纵深防御第二道闸）[0m
+  [32m✔ 演示态：登录端点照常可用（PUBLIC_PATHS 先于演示分支，访客仍可注册登录）[0m
+  [32m✔ 演示态：带 Bearer 的真实用户照常读工作台（真登录路径不受演示分支影响）[0m
+  [32m✔ 演示态：带 Bearer 的真实用户照常执行写操作（不经 405 闸门）[0m
+
+[36m━━ 凭证零进平台（红线一 · T-24 全目录扫描） ━━[0m
+  [32m✔ T-24 数据目录 216 个文件全部扫描[0m
+  [32m✔ T-24 凭证原文零命中（API Key / OAuth client secret / 每个一次性 oct_ 值）[0m
+
+[36m━━ 启动健壮性探针（W2） ━━[0m
+  [32m✔ W2 正常装配 probeTree ok:true[0m
+  [32m✔ W2 双实例注入 probeTree 报 iam 不可达[0m
+  [32m✔ W2 formatTreeHealth 输出可读（拒绝启动 + 卡死插件 + 等待键）[0m
+  [32m✔ W2 污染 globalThis 后 assertSingleRoot 抛「双实例」[0m
+  [32m✔ W2 用例后清理 globalThis 污染（恢复登记）[0m
+  [32m✔ W2 良性败者 fiber（provide 已接管）不拦启动[0m
+
+[36m━━ 存储 SQLite 后端契约（ADR-0001） ━━[0m
+  [32m✔ 双后端对拍：insert 返回一致（自定义 createdAt 保留 + updatedAt 注入）[0m
+  [32m✔ 双后端对拍：重复 id 抛错文案逐字一致[0m
+  [32m✔ 双后端对拍：uniqueOn 冲突抛错文案逐字一致[0m
+  [32m✔ 双后端对拍：update 字段合并 + createdAt 保持[0m
+  [32m✔ 双后端对拍：remove/count/find/get/replaceAll 结果一致[0m
+  [32m✔ 双后端对拍：onChange 事件序列一致（authn:tokens 吊销广播语义不变的前提）[0m
+  [32m✔ 引擎级唯一：绕过「先查后插」的重复键写入被索引拒绝[0m
+  [32m✔ 引擎级唯一：update 抢占他人键被拒（自身键除外）[0m
+[storage] 恢复集合 ct:uniq 失败 Error: [storage] 集合 ct:uniq 回填对账失败：条数不一致（JSON 源 0 条 / SQLite 落库 2 条）
+    at assertBackfillParity (file:///Users/ybkk/ybkkasi/packages/platform-core/src/storage.ts:501:11)
+    at file:///Users/ybkk/ybkkasi/packages/platform-core/src/storage.ts:374:47
+    at file:///Users/ybkk/ybkkasi/packages/platform-core/src/storage-sqlite.ts:110:19
+    at SqliteCollectionBackend.txn (file:///Users/ybkk/ybkkasi/packages/platform-core/src/storage-sqlite.ts:59:22)
+    at SqliteCollectionBackend.backfill (file:///Users/ybkk/ybkkasi/packages/platform-core/src/storage-sqlite.ts:103:10)
+    at StorageService.restoreSqlite (file:///Users/ybkk/ybkkasi/packages/platform-core/src/storage.ts:374:13)
+    at async StorageService.restoreAll (file:///Users/ybkk/ybkkasi/packages/platform-core/src/storage.ts:409:9)
+    at async file:///Users/ybkk/ybkkasi/scripts/selftest.mjs:8171:7
+  [32m✔ sqlite 事务提交后重启恢复（已提交写入零丢失）[0m
+[storage] 集合 ct:legacy 已回填 2 条至 SQLite（/Users/ybkk/ybkkasi/data-selftest-storage-backfill/ct~legacy.json 保留为回滚源）
+  [32m✔ 首启回填：同名 JSON 集合文件自动导入 SQLite[0m
+  [32m✔ 二次启动：DB 为准（修改后记录不被旧 JSON 回灌）[0m
+  [32m✔ 回滚源保留：JSON 文件内容未被删除或改写[0m
+  [32m✔ PLATFORM_STORAGE=sqlite：常规集合走 SqliteCollectionImpl[0m
+  [32m✔ PLATFORM_STORAGE_JSON_KEEP：例外名单集合保留 JSON 实现[0m
+[storage] 未知 PLATFORM_STORAGE=not-a-backend，回退 json（可选：json | sqlite）
+[storage] PLATFORM_STORAGE_JSON_KEEP 仅在 PLATFORM_STORAGE=sqlite 下生效，当前忽略
+  [32m✔ 未知 PLATFORM_STORAGE 值：告警回退 json 不崩[0m
+[storage] PLATFORM_STORAGE_JSON_KEEP 仅在 PLATFORM_STORAGE=sqlite 下生效，当前忽略
+  [32m✔ 默认（未设置）：backend=json 向后兼容[0m
+  [32m✔ SQLite 子实例启动（PLATFORM_STORAGE=sqlite 透传到 main.ts）[0m
+  [32m✔ SQLite 子实例 admin 登录[0m
+  [31m✘ 遗留 JSON 角色回填后 API 可见（回填 → 插件 → REST 全链路）[0m  ← ["rol_mvg65e9lidm5hzhq","rol_mvg65e9lidm6qa23","rol_mvg65e9lidm73e1p","rol_mvg65e9lidm82ikg","rol_mvg65e9lidm9rx7t","rol_mvg65e9lidmai3ft","rol_mvg65wqkidmqcvda","rol_mvg65wqlidms4r7g","rol_mvg65wqmidmuj6hp","rol_mvg65wqnidmw9fm6","rol_mvg65wqnidmysuge","rol_mvg65wqoidn0ruub","rol_mvg65wqoidn2rfy9"]
+  [32m✔ SQLite 后端创建账号成功（写入即事务提交）[0m
+  [32m✔ kill -9 后子实例重启[0m
+  [32m✔ kill -9 零丢失：崩溃前创建的账号可登录（凭证哈希完整）[0m
+  [31m✘ kill -9 零丢失：回填的角色数据完整[0m  ← 
+  [32m✔ DEFAULT_JSON_KEEP 默认名单：第 3 批集合（market:*/update:state/resource:dependencies/iam:groupSnapshots）默认保留 JSON[0m
+  [32m✔ DEFAULT_JSON_KEEP 默认名单：名单外集合仍走 sqlite[0m
+  [32m✔ PLATFORM_STORAGE_JSON_KEEP 显式空串：完全覆盖默认名单（全部集合走 sqlite）[0m
+  [32m✔ PLATFORM_STORAGE_JSON_KEEP 显式名单：仅豁免名单内集合（market:demo 走 sqlite）[0m
+  [32m✔ sqlite iam：同 provider+providerUserId+corpId 二次绑定被引擎拒绝（唯一约束冲突）[0m
+  [32m✔ sqlite iam：同三方身份跨 corpId 绑定放行（唯一键含 corpId 维度）[0m
+  [32m✔ sqlite iam：同 tick 连发 6 次重复绑定恰一条成功、其余被唯一索引拒绝（引擎级一人一号）[0m
+  [32m✔ sqlite iam：绕过服务层直插 identityLinks 同键记录被唯一索引拒绝[0m
+  [32m✔ sqlite authn：refresh 轮转成功（tokens 集合 onChange insert 事件已维护 refreshIndex）[0m
+  [32m✔ sqlite authn：吊销广播在 sqlite 事务提交后仍经 onChange 送达（逐条 update 事件携带 revokedAt）[0m
+  [32m✔ sqlite authn：吊销后 refresh 被拒（吊销语义跨后端不降级）[0m
+
+[90m» 停止测试实例…[0m
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [1m自测结果：1538/1540 通过[0m
+
+  [31m失败项：[0m
+   ✘ [存储 SQLite 后端契约（ADR-0001）] 遗留 JSON 角色回填后 API 可见（回填 → 插件 → REST 全链路）
+   ✘ [存储 SQLite 后端契约（ADR-0001）] kill -9 零丢失：回填的角色数据完整

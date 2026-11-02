@@ -28,6 +28,21 @@ export function decideTransport({ sseOpened, sseError, supportsEventSource }) {
 }
 
 /**
+ * 动态文案翻译（零依赖纪律不变：不 import i18n.js——Node 测试环境直测本模块，
+ * 经 window.rqI18n 取浏览器注入的 i18n 运行时，缺失时回退原文并自行插值）。
+ */
+function tr(text, params) {
+  try {
+    if (typeof window !== 'undefined' && window.rqI18n && typeof window.rqI18n.t === 'function') {
+      return window.rqI18n.t(text, params)
+    }
+  } catch { /* 忽略 */ }
+  if (!params) return text
+  return text.replace(/\{(\w+)\}/g, (whole, name) =>
+    Object.prototype.hasOwnProperty.call(params, name) ? String(params[name]) : whole)
+}
+
+/**
  * 建立事件流：优先 EventSource(url)，失败自动降级为轮询 pollPath。
  *
  * @param {object} options
@@ -39,6 +54,9 @@ export function decideTransport({ sseOpened, sseError, supportsEventSource }) {
  * @param {(reason: string) => void} [options.onDowngrade] 降级回调（恰好一次）
  * @param {(error: Error, info: { consecutiveFailures: number, status?: number }) => void} [options.onPollError]
  *        轮询单轮失败回调（含网络异常与非 2xx 响应；consecutiveFailures 从 1 起计，成功即清零）
+ * @param {string[]} [options.eventNames]   需要转发的 SSE 具名事件（服务端 `event: xxx`）。
+ *        EventSource 的 onmessage 只收**无命名**事件；业务侧显式声明后，每个具名事件以
+ *        `{ event: '<name>', ...解析后的 data }` 交给 onMessage，与轮询响应同通道消费。
  * @param {object} [options.headers]        轮询请求头（如鉴权 authorization）
  * @param {typeof fetch} [options.fetchImpl] 轮询用 fetch（缺省取 globalThis.fetch）
  * @param {typeof EventSource} [options.EventSourceImpl] SSE 实现（缺省取 globalThis.EventSource）
@@ -53,6 +71,7 @@ export function createEventStream(options) {
     onMessage,
     onDowngrade,
     onPollError,
+    eventNames = [],
     headers,
     fetchImpl = globalThis.fetch ? globalThis.fetch.bind(globalThis) : undefined,
     EventSourceImpl = globalThis.EventSource,
@@ -102,7 +121,7 @@ export function createEventStream(options) {
       const res = await fetchImpl(pollPath, { headers })
       // 非 2xx 同样计入失败（旧实现静默吞掉 401/5xx，徽标照常宣称实时——BUG-U-02 根因之一）
       if (!res.ok) {
-        const err = new Error(`轮询响应异常：HTTP ${res.status}`)
+        const err = new Error(tr('轮询响应异常：HTTP {status}', { status: res.status }))
         err.status = res.status
         throw err
       }
@@ -160,6 +179,18 @@ export function createEventStream(options) {
   }
   es.onmessage = (event) => {
     emitMessage(parseMaybeJson(event.data))
+  }
+  // 具名事件：EventSource 不会把它们送进 onmessage，需按名显式 addEventListener。
+  // 每个事件统一包装为 { ...data, event: '<name>' }（event 最后写，避免载荷里的同名字段
+  // 覆盖通道判别）；非对象载荷包成 { event, data }，轮询降级路径的消费方按同一形状分支。
+  for (const eventName of eventNames) {
+    if (typeof es.addEventListener !== 'function') break
+    es.addEventListener(eventName, (event) => {
+      const payload = parseMaybeJson(event?.data)
+      emitMessage(payload && typeof payload === 'object' && !Array.isArray(payload)
+        ? { ...payload, event: eventName }
+        : { event: eventName, data: payload })
+    })
   }
   es.onerror = () => {
     downgrade('sse-error')

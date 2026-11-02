@@ -2,6 +2,10 @@
  * AI 应用本体属性表（方案 §6.1）：在 Agent 属性模型上扩展应用特有字段。
  */
 import type { ResourceTypeSpec } from '../../platform-core/src/index.ts'
+import { ASSET_CATEGORIES } from '../../platform-core/src/index.ts'
+
+/** 各资产板块统一业务分类选项（口径见 platform-core/src/taxonomy.ts）。 */
+const CATEGORY_OPTIONS = ASSET_CATEGORIES.map((value) => ({ value, label: value }))
 
 export const APP_TYPE_SPEC: ResourceTypeSpec = {
   type: 'app',
@@ -17,6 +21,7 @@ export const APP_TYPE_SPEC: ResourceTypeSpec = {
     ],
     fields: [
       { key: 'description', label: '描述', type: 'text', group: 'basic', required: true },
+      { key: 'category', label: '业务分类', type: 'enum', group: 'basic', defaultValue: '其他', options: CATEGORY_OPTIONS, hint: '各资产板块统一口径（财务/行政/人事/销售/运营/战略/生产/研发/质量/制造/其他）；列表页按此筛选' },
       { key: 'icon', label: '头像 / 图标', type: 'string', group: 'basic', defaultValue: '✨', placeholder: 'emoji 或图片 URL（https://…）', hint: '一个 emoji，或一张图片的 http(s) 地址（控制台与卡片按 URL 渲染头像）' },
       { key: 'developerName', label: '开发者', type: 'string', group: 'basic', hint: '开发者姓名；传 developerId 时以平台账号 displayName 为准' },
       { key: 'developerId', label: '开发者 ID', type: 'string', group: 'basic', hint: '平台用户 ID；注册/更新时校验存在并回填开发者姓名' },
