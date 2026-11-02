@@ -71,8 +71,16 @@ let refreshing = null
  *  个别慢端点（如模型连通性测试真实外呼）可用 timeoutMs 覆盖。 */
 export const DEFAULT_TIMEOUT_MS = 20_000
 
+/**
+ * 消费 refresh token 尝试换发新会话，返回三态（UXQA-R1-005）：
+ *   'ok'          已换发（或本来就有可用 access token 且无 refresh token 可消费）；
+ *   'expired'     刷新被服务端拒绝（refresh 也已失效）——页面内无法自愈，需重新登录；
+ *   'unreachable' 网络层失败（服务未恢复/超时/5xx）——可稍后重试，不是会话问题。
+ * 此前刷新只在 API 请求 401 时被动触发，SSE/轮询裸通道断连后页面内无恢复路径
+ * （只剩整页刷新走 boot 链）——实时通道重连与轮询 401 现在主动消费本函数自愈。
+ */
 async function tryRefresh() {
-  if (!session.refreshToken) return false
+  if (!session.refreshToken) return session.token ? 'ok' : 'expired'
   if (!refreshing) {
     refreshing = (async () => {
       try {
@@ -93,18 +101,26 @@ async function tryRefresh() {
           })
         }
         const payload = await response.json().catch(() => null)
-        if (!response.ok || payload?.ok === false) return false
+        if (!response.ok || payload?.ok === false) {
+          // 5xx/网络抖动归「不可达」（服务重启窗口），其余（401/403/404 双通道缺席）归「失效」
+          return response.status >= 500 ? 'unreachable' : 'expired'
+        }
         localStorage.setItem(scopedKey('gate01_token'), payload.data.token)
         localStorage.setItem(scopedKey('gate01_refresh'), payload.data.refreshToken)
-        return true
+        return 'ok'
       } catch {
-        return false
+        return 'unreachable'
       } finally {
         setTimeout(() => { refreshing = null }, 50)
       }
     })()
   }
   return refreshing
+}
+
+/** 主动刷新入口（实时通道重连/轮询 401 自愈用）：与 tryRefresh 同并发合并语义。 */
+export function refreshSessionNow() {
+  return tryRefresh()
 }
 
 /** 会话已不可恢复（刷新失败）：清场 + 广播（QA BUG-U-05）——此前只清 token 不广播，
@@ -148,7 +164,7 @@ async function request(method, path, body, opts = {}, retried = false) {
   let payload = null
   try { payload = await response.json() } catch { /* non-json */ }
   if (response.status === 401 && !retried) {
-    if (await tryRefresh()) return request(method, path, body, opts, true)
+    if ((await tryRefresh()) === 'ok') return request(method, path, body, opts, true)
     onSessionExpired()
   }
   if (!response.ok || payload?.ok === false) {

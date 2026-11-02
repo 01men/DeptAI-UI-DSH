@@ -635,8 +635,9 @@ function wireView(root, view, rerender) {
       renderToolDrawer()
     }
   })
-  root.querySelector('[data-mfgclearhistory]')?.addEventListener('click', () => {
-    mfg.history = []; writeStore('history', []); rerender()
+  root.querySelector('[data-mfgclearhistory]')?.addEventListener('click', (event) => {
+    // UXQA OBS-04：两步确认（不依赖原生 confirm——零弹窗铁律）
+    armClearButton(event.currentTarget, () => { mfg.history = []; writeStore('history', []); rerender() })
   })
   root.querySelector('[data-mfgretry]')?.addEventListener('click', () => { mfg.loaded = false; void rerender() })
   const search = root.querySelector('#mfgSearch')
@@ -701,6 +702,26 @@ export function closeMfgDrawer() {
   closeTool()
 }
 
+/**
+ * 两步确认清空（UXQA OBS-04，零弹窗铁律合规——不用 window.confirm）：
+ * 首次点击把按钮变成「确认清空？再点一次执行」（4s 内有效），二次点击才执行；
+ * 超时/失焦自动复原，不误伤误触。
+ */
+function armClearButton(btn, execute) {
+  if (btn.dataset.armed === '1') {
+    btn.dataset.armed = ''
+    execute()
+    return
+  }
+  btn.dataset.armed = '1'
+  const original = btn.textContent
+  btn.textContent = '⚠ 确认清空全部本机记录？再点一次执行'
+  btn.classList.add('mfg-clear-armed')
+  setTimeout(() => {
+    if (btn.isConnected) { btn.dataset.armed = ''; btn.textContent = original; btn.classList.remove('mfg-clear-armed') }
+  }, 4000)
+}
+
 /** 设置弹层（本机记录开关；与源项目「工作台设置」同语义）。showModal 为本工作台的 (title, body) 适配器。 */
 export function showMfgSettings(showModal) {
   showModal('制造工具箱设置', `<div class="mfg-settings">
@@ -714,5 +735,5 @@ export function showMfgSettings(showModal) {
   const checkbox = document.getElementById('mfgRemember')
   if (checkbox) checkbox.onchange = () => { mfg.remember = checkbox.checked; writeStore('remember', mfg.remember) }
   const clear = document.getElementById('mfgClearAll')
-  if (clear) clear.onclick = () => { mfg.history = []; writeStore('history', []); void renderMfgView('history') }
+  if (clear) clear.onclick = () => armClearButton(clear, () => { mfg.history = []; writeStore('history', []); void renderMfgView('history') })
 }

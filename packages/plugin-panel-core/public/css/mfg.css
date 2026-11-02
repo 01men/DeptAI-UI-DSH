@@ -210,8 +210,11 @@
 @keyframes mfg-pulse { 50% { box-shadow: 0 0 30px #559d7733; } }
 
 /* ---- 工具抽屉（三步工作流；沿用源项目 tool-dialog 版式语义） ---- */
-.mfg-scrim { position: fixed; inset: 0; background: #16272e66; backdrop-filter: blur(3px); z-index: 70; }
-.mfg-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(1020px, 100%); background: var(--mfg-bg); z-index: 71; display: flex; flex-direction: column; box-shadow: -20px 0 60px #0e242a2a; animation: mfg-slide .26s cubic-bezier(.2,0,0,1); }
+/* z-index 避让（UXQA-R1-004 根治）：原 70/71 低于顶栏（.iaw-topbar z-200）与场景抽屉（900/901）——
+   抽屉关闭钮 ✕ 中心点命中顶栏头像，点关闭误触「退出登录」确认；抬到 910/911（高于顶栏与
+   iaw 场景抽屉，低于通知卡 1400），抽屉自持有完整点击层。 */
+.mfg-scrim { position: fixed; inset: 0; background: #16272e66; backdrop-filter: blur(3px); z-index: 910; }
+.mfg-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(1020px, 100%); background: var(--mfg-bg); z-index: 911; display: flex; flex-direction: column; box-shadow: -20px 0 60px #0e242a2a; animation: mfg-slide .26s cubic-bezier(.2,0,0,1); }
 @keyframes mfg-slide { from { transform: translateX(28px); opacity: .6 } to { transform: none; opacity: 1 } }
 .mfg-dr-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: #fff; border-bottom: 1px solid var(--mfg-line); flex-shrink: 0; }
 .mfg-dr-head h2 { font-size: 17px; font-weight: 600; margin: 0 0 5px; color: #24323d; }
@@ -297,3 +300,5 @@
   .mfg-metrics { grid-template-columns: 1fr; }
   .mfg-card-foot { font-size: 8px; }
 }
+/* UXQA OBS-04：两步确认清空按钮武装态（4s 内二次点击才执行） */
+.mfg-clear-armed { background: var(--mfg-danger, #c24334) !important; color: #fff !important; border-color: transparent !important; }

@@ -136,7 +136,7 @@ function applyMfgModule(ctx, deps) {
       return result;
     } catch (error) {
       if (error instanceof MfgError) exchange.fail(error.status, error.code, error.message);
-      else exchange.fail(500, "INTERNAL_ERROR", error instanceof Error ? error.message : "\u6267\u884C\u5931\u8D25");
+      else exchange.fail(500, "INTERNAL_ERROR", "\u6267\u884C\u5931\u8D25\uFF1A\u5185\u90E8\u9519\u8BEF\u5DF2\u8BB0\u5F55\uFF0C\u8BF7\u91CD\u8BD5\u6216\u8054\u7CFB\u7BA1\u7406\u5458");
       return null;
     }
   });
@@ -153,7 +153,12 @@ function applyMfgModule(ctx, deps) {
       return null;
     }
     const format = body.format === "md" ? "md" : "json";
-    return format === "md" ? { filename: exportFileName(result, "md"), content: toMarkdown(result), mime: "text/markdown" } : { filename: exportFileName(result, "json"), content: JSON.stringify(result, null, 2), mime: "application/json" };
+    try {
+      return format === "md" ? { filename: exportFileName(result, "md"), content: toMarkdown(result), mime: "text/markdown" } : { filename: exportFileName(result, "json"), content: JSON.stringify(result, null, 2), mime: "application/json" };
+    } catch {
+      exchange.fail(400, "BAD_REQUEST", "\u5BFC\u51FA\u5185\u5BB9\u7ED3\u6784\u4E0D\u5B8C\u6574\uFF0C\u65E0\u6CD5\u751F\u6210\u6587\u4EF6\u2014\u2014\u8BF7\u91CD\u65B0\u8FD0\u884C\u5DE5\u5177\u540E\u518D\u5BFC\u51FA");
+      return null;
+    }
   });
   guarded("GET", "/api/panel/mfg/releases", "panel.read", () => {
     const identity = runtime.identity();

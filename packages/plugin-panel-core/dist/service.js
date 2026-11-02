@@ -22,6 +22,16 @@ const INDUSTRY_REGISTRY = [
 ];
 const TASK_LANES = ["todo", "doing", "review", "done"];
 const LANE_LABELS = { todo: "\u5F85\u529E", doing: "\u8FDB\u884C\u4E2D", review: "\u5F85\u5BA1", done: "\u5B8C\u6210" };
+class TaskLaneConflictError extends Error {
+  currentLane;
+  targetLane;
+  constructor(currentLane, targetLane) {
+    super(`\u4EFB\u52A1\u5DF2\u88AB\u4ED6\u4EBA\u6D41\u8F6C\uFF1A\u5F53\u524D\u6CF3\u9053\u300C${LANE_LABELS[currentLane]}\u300D\uFF0C\u4F60\u57FA\u4E8E\u8FC7\u671F\u89C6\u56FE\u8BF7\u6C42\u6D41\u8F6C\u5230\u300C${LANE_LABELS[targetLane]}\u300D\u2014\u2014\u8BF7\u5237\u65B0\u5230\u6700\u65B0\u72B6\u6001\u540E\u91CD\u8BD5`);
+    this.name = "TaskLaneConflictError";
+    this.currentLane = currentLane;
+    this.targetLane = targetLane;
+  }
+}
 class PanelService extends Service {
   static provide = "panel";
   streamSubscribers = /* @__PURE__ */ new Map();
@@ -914,10 +924,13 @@ ${sceneSummary}` : "",
   laneToIssueStatus(lane) {
     return lane === "doing" ? "in_progress" : lane;
   }
-  transitionTask(taskId, lane, actorId) {
+  transitionTask(taskId, lane, actorId, expectedLane) {
     const task = this.tasks().get(taskId);
     if (!task) throw new Error(`\u4EFB\u52A1\u4E0D\u5B58\u5728\uFF1A${taskId}`);
     if (!TASK_LANES.includes(lane)) throw new Error(`\u975E\u6CD5\u6CF3\u9053\uFF1A${lane}`);
+    if (expectedLane !== void 0 && task.lane !== expectedLane) {
+      throw new TaskLaneConflictError(task.lane, lane);
+    }
     const updated = this.tasks().update(taskId, { lane });
     let mirror = "";
     if (task.execIssueId) {
@@ -1132,6 +1145,7 @@ export {
   LANE_LABELS,
   PanelService,
   TASK_LANES,
+  TaskLaneConflictError,
   createThinkGate,
   extractMentions,
   stripThink

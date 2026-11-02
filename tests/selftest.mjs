@@ -1509,6 +1509,28 @@ try {
     }
     check('走查不变量：console+panel 前端零 window.open/alert/confirm/prompt 弹窗（dsh 完整页面）',
       popupHits.length === 0, JSON.stringify(popupHits))
+
+    // -- UXQA_R1 修复回归护栏（2026-11-02，uxqa-results/测试评估报告_UXQA_R1.md 问题卡） ----
+    // 静态锚定四项前台修复的关键语义，回退即红（行为面验收由 UXQA 复测承担）。
+    {
+      const panelAppJs = readFileSync('packages/plugin-panel-core/public/js/app.js', 'utf8')
+      const panelApiJs = readFileSync('packages/plugin-panel-core/public/js/api.js', 'utf8')
+      const mfgCss = readFileSync('packages/plugin-panel-core/public/css/mfg.css', 'utf8')
+      const mfgJs = readFileSync('packages/plugin-panel-core/public/js/mfg.js', 'utf8')
+      check('UXQA-R1-005 护栏：实时通道重连消费 refresh（refreshSessionNow + 轮询 401 自愈 + expired 引导重登）',
+        panelApiJs.includes('refreshSessionNow') && panelAppJs.includes('refreshSessionNow()')
+        && panelAppJs.includes("info.status === 401") && panelAppJs.includes('streamAuthHealing'))
+      check('UXQA-R1-002 护栏：流转请求携带期望泳道（expectedLane 乐观锁）+ 409 冲突刷新到权威态',
+        panelAppJs.includes('expectedLane') && panelAppJs.includes('data-from=') && panelAppJs.includes('error.status === 409'))
+      check('UXQA-R1-001 护栏：钉钉自动弹窗关闭记忆（panel_dd_prompt_off + onClose 回调链）',
+        panelAppJs.includes('panel_dd_prompt_off') && panelAppJs.includes('markDdPromptDismissed') && panelAppJs.includes('modalOnClose'))
+      check('UXQA-R1-003 护栏：写入口按权限收敛（composer 只读锁定 + 流转/新建按 panel.task.write 门控）',
+        panelAppJs.includes('只读身份——可浏览会话与看板') && /session\.can\('panel\.task\.write'\)/.test(panelAppJs))
+      check('UXQA-R1-004 护栏：制造抽屉 z-index 抬升避让顶栏（scrim/drawer ≥910）',
+        /\.mfg-scrim \{[^}]*z-index: 910/.test(mfgCss) && /\.mfg-drawer \{[^}]*z-index: 911/.test(mfgCss))
+      check('UXQA OBS-04 护栏：清空本机记录两步确认（armClearButton 武装态，零弹窗）',
+        mfgJs.includes('armClearButton') && mfgJs.includes('再点一次执行'))
+    }
   }
   section('usage 最近调用（WP-04/A3：工作台自见 ≤5）')
   {
@@ -6558,6 +6580,23 @@ try {
     check('面板：任务泳道迁移（doing → done）', taskMoved.ok && taskMoved.data.task.lane === 'done')
     const badLane = await api('POST', `/api/panel/tasks/${taskCreated.data.task.id}/transition`, { token: panelAdmin, body: { lane: 'archived' } })
     check('面板：非法泳道被拒', !badLane.ok)
+
+    // -- 泳道乐观并发锁（UXQA-R1-002 根治，2026-11-02）：并发双写不再静默覆盖 ----
+    // 契约三面：① 携带正确期望泳道 → 正常流转；② 携带过期期望泳道（并发输家视角）→ 409
+    // VERSION_CONFLICT + 权威泳道文案（不写库）；③ 不带期望泳道 → 原直通语义（Agent 工具桥向后兼容）。
+    const optTask = await api('POST', '/api/panel/mfg/tasks', { token: panelAdmin, body: { title: '自测任务：乐观锁并发演练', lane: 'todo' } })
+    check('乐观锁前置：演练任务就绪（todo）', optTask.ok && optTask.data.task.lane === 'todo')
+    const optMove1 = await api('POST', `/api/panel/tasks/${optTask.data.task.id}/transition`, { token: panelAdmin, body: { lane: 'doing', expectedLane: 'todo' } })
+    check('乐观锁：期望泳道命中（todo→doing）正常流转', optMove1.ok && optMove1.data.task.lane === 'doing', JSON.stringify(optMove1.error))
+    const optConflict = await api('POST', `/api/panel/tasks/${optTask.data.task.id}/transition`, { token: panelAdmin, body: { lane: 'review', expectedLane: 'todo' } })
+    check('乐观锁：过期期望泳道 409 VERSION_CONFLICT（并发输家收明确回执，不再静默覆盖）',
+      optConflict.status === 409 && optConflict.error?.code === 'VERSION_CONFLICT' && /已被他人流转/.test(optConflict.error?.message ?? ''),
+      JSON.stringify({ status: optConflict.status, error: optConflict.error }))
+    const optAfterConflict = await api('GET', `/api/panel/mfg/tasks`, { token: panelAdmin })
+    const optCurrent = (optAfterConflict.data?.tasks ?? []).find((task) => task.id === optTask.data.task.id)
+    check('乐观锁：409 不写库——权威泳道保持 doing（赢家动作零丢失）', optCurrent?.lane === 'doing', JSON.stringify({ lane: optCurrent?.lane }))
+    const optLegacy = await api('POST', `/api/panel/tasks/${optTask.data.task.id}/transition`, { token: panelAdmin, body: { lane: 'review' } })
+    check('乐观锁：未携带期望泳道保持直通（工具桥向后兼容，doing→review）', optLegacy.ok && optLegacy.data.task.lane === 'review', JSON.stringify(optLegacy.error))
 
     // -- 执行中枢投影（DSH issue#3/#4 修订，2026-10-29）：面板=exec-hub 投影，不复制权威状态 ----
     // 目标读透 / 泳道迁移镜像 / 验收裁决回写（唯一任务事实源红线）

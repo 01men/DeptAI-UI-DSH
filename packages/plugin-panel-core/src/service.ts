@@ -231,6 +231,21 @@ export const TASK_LANES = ['todo', 'doing', 'review', 'done'] as const
 export type TaskLane = (typeof TASK_LANES)[number]
 export const LANE_LABELS: Record<TaskLane, string> = { todo: '待办', doing: '进行中', review: '待审', done: '完成' }
 
+/**
+ * 泳道并发冲突（UXQA-R1-002 乐观锁回执）：携带当前权威泳道与请求目标泳道，
+ * REST 层映射 409 VERSION_CONFLICT（错误文案已在册：「版本冲突：数据已被他人修改」）。
+ */
+export class TaskLaneConflictError extends Error {
+  readonly currentLane: TaskLane
+  readonly targetLane: TaskLane
+  constructor(currentLane: TaskLane, targetLane: TaskLane) {
+    super(`任务已被他人流转：当前泳道「${LANE_LABELS[currentLane]}」，你基于过期视图请求流转到「${LANE_LABELS[targetLane]}」——请刷新到最新状态后重试`)
+    this.name = 'TaskLaneConflictError'
+    this.currentLane = currentLane
+    this.targetLane = targetLane
+  }
+}
+
 // ---------------------------------------------------------------------------
 // 服务
 // ---------------------------------------------------------------------------
@@ -1142,10 +1157,17 @@ export class PanelService extends Service {
     return lane === 'doing' ? 'in_progress' : lane
   }
 
-  transitionTask(taskId: string, lane: TaskLane, actorId: string): TaskRecord {
+  transitionTask(taskId: string, lane: TaskLane, actorId: string, expectedLane?: TaskLane): TaskRecord {
     const task = this.tasks().get(taskId)
     if (!task) throw new Error(`任务不存在：${taskId}`)
     if (!TASK_LANES.includes(lane)) throw new Error(`非法泳道：${lane}`)
+    // 乐观并发锁（UXQA-R1-002 根治）：携带期望泳道时先比对——此前并发双写双双 200、
+    // 后写静默覆盖先写（协作者动作无声丢失）；现在后到的写方收到明确冲突回执
+    // （REST 映射 409 VERSION_CONFLICT + 权威泳道），UI 刷新到权威状态后人工裁决。
+    // 未携带 expectedLane 的调用（Agent 工具桥等）保持原直通语义，向后兼容。
+    if (expectedLane !== undefined && task.lane !== expectedLane) {
+      throw new TaskLaneConflictError(task.lane, lane)
+    }
     const updated = this.tasks().update(taskId, { lane })
     // 泳道迁移镜像回写 exec-hub（唯一任务事实源；best-effort + 审计如实留痕，不阻塞本地流转）
     let mirror = ''

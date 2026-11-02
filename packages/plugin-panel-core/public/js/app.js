@@ -12,7 +12,7 @@
  * 进入只读预览——图谱为真实预置数据，会话/任务为图谱确定性派生的演示数据且全部带
  * 「演示」徽标（previewMessages/previewTasks），写操作 / 调用 / 交互一律拦截（previewLocked）。
  */
-import { api, session, setBase as apiSetBase, ApiError } from './api.js'
+import { api, session, setBase as apiSetBase, ApiError, refreshSessionNow } from './api.js'
 import { setBase as depsSetBase, ui as uiDep, realtime as realtimeDep } from './deps.js'
 // 制造工具箱空间（自「制造业 AI 工具集」并入，2026-10-19）：视图 + 导航清单 + 抽屉清理
 import { MFG_NAV, mfgNavBadges, renderMfgView, closeMfgDrawer, showMfgSettings } from './mfg.js'
@@ -195,8 +195,12 @@ function ensureModalSkeleton() {
   })
 }
 
-function showModal(title, bodyHtml) {
+/** 当前模态的关闭回调（仅经 showModal 的 opts 注入；hideModal 消费一次即清）。 */
+let modalOnClose = null
+
+function showModal(title, bodyHtml, opts) {
   ensureModalSkeleton()
+  modalOnClose = opts?.onClose ?? null
   $id('modalTitle').textContent = title
   $id('modalBody').innerHTML = bodyHtml
   $id('mask').classList.add('show')
@@ -205,6 +209,9 @@ function showModal(title, bodyHtml) {
 function hideModal() {
   stopDdLoginPoll()
   $id('mask')?.classList.remove('show')
+  const cb = modalOnClose
+  modalOnClose = null
+  if (cb) { try { cb() } catch { /* 关闭回调不阻断主流程 */ } }
 }
 
 // 平台零弹窗铁律（design-adaptation-spec §6，2026-10-29 架构统一合规化）：自持确认框
@@ -397,9 +404,12 @@ async function refreshDingtalk() {
 /**
  * 01门装态（dws 桥）激活弹窗（2026-09-11 用户需求：未登录或未绑定就弹激活指令）：
  * 进入面板后首次刷新即弹（每页面加载至多一次，用户关掉不缠人）；演示态只读不弹。
+ * UXQA-R1-001：「关掉不缠人」补全——用户关闭过一次即本浏览器记忆（localStorage），
+ * 之后不再自动弹（顶栏 ⇄ 始终可手动打开）；此前仅内存态 ddPromptShown，刷新即重弹。
  */
 function maybePromptDdActivation() {
   if (state.ddPromptShown || state.demoMode) return
+  try { if (localStorage.getItem('panel_dd_prompt_off') === '1') return } catch { /* 存储不可用则按未记忆处理 */ }
   const dd = state.ddStatus
   if (dd?.via !== 'dws-cli') return
   const needLogin = Boolean(dd.auth && !dd.auth.authenticated)
@@ -407,7 +417,12 @@ function maybePromptDdActivation() {
   if (!needLogin && !unbound) return
   if ($id('mask')?.classList.contains('show')) return
   state.ddPromptShown = true
-  void showBind()
+  void showBind({ auto: true })
+}
+
+/** UXQA-R1-001：自动弹窗被关闭即记忆（手动从顶栏打开的不走此回调，可随时再开）。 */
+function markDdPromptDismissed() {
+  try { localStorage.setItem('panel_dd_prompt_off', '1') } catch { /* 忽略 */ }
 }
 
 /** 模型目录（GET /api/panel/models）：失败时置空（协作栏退化为「未接入模型」提示）。 */
@@ -449,14 +464,16 @@ function connectStream() {
   renderStatus()
   const remote = Boolean(state.remoteHub)
   const streamBase = remote ? `${basePath()}/rqcard/proxy` : basePath()
-  const headers = session.token ? { authorization: `Bearer ${session.token}` } : {}
-  if (remote && session.token) headers['x-rqcard-call'] = '1'
   void (async () => {
     let url = `${streamBase}/api/panel/stream?dept=${state.dept}&token=${encodeURIComponent(session.token)}`
     try {
       const ticket = await api.post('/api/panel/stream-ticket', { dept: state.dept })
       if (ticket?.ticket) url = `${streamBase}/api/panel/stream?dept=${state.dept}&ticket=${encodeURIComponent(ticket.ticket)}`
     } catch { /* 票据面不可用：回落 token 通道 */ }
+    // UXQA-R1-005：轮询鉴权头在票据尝试之后再取——票据请求的 401 可能刚触发过刷新换发，
+    // 先取头会把已吊销的旧令牌锁进 30s 轮询（断连死循环的机械根因之一）。
+    const headers = session.token ? { authorization: `Bearer ${session.token}` } : {}
+    if (remote && session.token) headers['x-rqcard-call'] = '1'
     state.stream = (await realtimeDep()).createEventStream({
       url,
       pollPath: `${streamBase}/api/panel/${state.dept}/poll`,
@@ -468,6 +485,22 @@ function connectStream() {
         renderStatus()
       },
       onPollError: (_error, info) => {
+        // UXQA-R1-005：轮询 401 = access token 已失效——页面内直接消费 refresh 自愈重建，
+        // 不再等用户点重试（更不转死循环）；expired 分流到登录引导（目的地经 hash 保留）。
+        if (info.status === 401 && !streamAuthHealing) {
+          streamAuthHealing = true
+          void (async () => {
+            try {
+              const refreshed = await refreshSessionNow()
+              if (refreshed === 'ok') { void reconnectStream(); return }
+              if (refreshed === 'expired') { session.clear(); renderLoginGuide(); return }
+            } finally {
+              streamAuthHealing = false
+            }
+            if (info.consecutiveFailures >= POLL_FAIL_BADGE_THRESHOLD) renderStatus('down')
+          })()
+          return
+        }
         if (info.consecutiveFailures >= POLL_FAIL_BADGE_THRESHOLD) renderStatus('down')
       },
     })
@@ -475,11 +508,25 @@ function connectStream() {
   })().catch(() => { /* realtime 依赖装载失败：静默，消息刷新退化为操作后手动拉取 */ })
 }
 
-/** 手动重连：「连接中断」点击后重建通道并给观察窗。 */
-function reconnectStream() {
+/** 轮询 401 自愈单飞（UXQA-R1-005）：同一时刻至多一条刷新-重建链，防 401 风暴并发换发。 */
+let streamAuthHealing = false
+
+/**
+ * 手动重连（UXQA-R1-005 根治）：「连接中断」点击后先消费 refresh 再建通道——
+ * 此前只拿旧 access token 反复撞 401（死循环）；expired（双 token 均失效）则
+ * 保留目的地引导重登（登录成功整页刷新，hash 路由不丢）。
+ */
+async function reconnectStream() {
   if (state.stream) { try { state.stream.close() } catch { /* 已关闭 */ } }
   state.stream = null
   state.streamDept = ''
+  const refreshed = await refreshSessionNow()
+  if (refreshed === 'expired') {
+    session.clear()
+    renderLoginGuide()
+    return
+  }
+  // 'ok'（已换发）或 'unreachable'（服务未恢复）：都照常重建——后者由健康面如实示警
   state.lastRealtimeAt = Date.now()
   connectStream()
 }
@@ -802,7 +849,7 @@ function renderStatus(kind) {
       <span>主题：${esc(state.industry?.name ?? '—')} ${esc(state.industry?.code ?? '')}</span>
       <span>IAW v1.0</span>
     </div>`
-  $id('iawLive')?.addEventListener('click', () => { reconnectStream(); void toast('正在重建实时通道…') })
+  $id('iawLive')?.addEventListener('click', () => { void reconnectStream(); void toast('正在重建实时通道…') })
 }
 
 /** 演示预览横幅（locked/pending 行业只读可看）：行业说明 + 激活入口 + 退出预览。 */
@@ -1606,12 +1653,12 @@ function viewFlow() {
           ${t.execIssueId ? `<span class="scene" style="cursor:default" title="执行中枢血缘（面板=投影，权威在 exec-hub）">⛓ exec</span>` : ''}
           ${t.sceneCode ? `<span class="scene" data-scene="${esc(t.sceneCode)}">${esc(t.sceneCode)}</span>` : ''}
           <span style="margin-left:auto;display:flex;gap:4px">
-            ${!state.industryDemo && lane !== 'todo' ? `<button class="iaw-chip" data-move="${esc(t.id)}" data-to="${LANE_ORDER[LANE_ORDER.indexOf(lane) - 1]}" title="回退">←</button>` : ''}
-            ${!state.industryDemo && lane !== 'done' ? `<button class="iaw-chip" data-move="${esc(t.id)}" data-to="${LANE_ORDER[LANE_ORDER.indexOf(lane) + 1]}" title="推进">→</button>` : ''}
+            ${!state.industryDemo && session.can('panel.task.write') && lane !== 'todo' ? `<button class="iaw-chip" data-move="${esc(t.id)}" data-from="${esc(lane)}" data-to="${LANE_ORDER[LANE_ORDER.indexOf(lane) - 1]}" title="回退">←</button>` : ''}
+            ${!state.industryDemo && session.can('panel.task.write') && lane !== 'done' ? `<button class="iaw-chip" data-move="${esc(t.id)}" data-from="${esc(lane)}" data-to="${LANE_ORDER[LANE_ORDER.indexOf(lane) + 1]}" title="推进">→</button>` : ''}
           </span>
         </div></div>`
     }
-    h += `${state.industryDemo ? '' : `<button class="iaw-chip" data-addlane="${lane}" style="justify-content:center">＋ 新建</button>`}</div></div>`
+    h += `${state.industryDemo || !session.can('panel.task.write') ? '' : `<button class="iaw-chip" data-addlane="${lane}" style="justify-content:center">＋ 新建</button>`}</div></div>`
   }
   h += '</div>'
   h += '<div class="iaw-sect-title">事务流模板 / 甘特排程<span class="line"></span></div>'
@@ -1631,7 +1678,7 @@ function viewInbox() {
     <div class="eh">${esc(t.title)}</div>
     <ul><li>${esc(LANE_LABELS[t.lane] ?? t.lane)} · ${t.assigneeType === 'agent' ? 'Agent 产出' : '同事指派'}${t.sceneCode ? ` · 场景 ${esc(t.sceneCode)}` : ''}</li></ul>
     <div style="display:flex;gap:8px;margin-top:8px">
-      ${!state.industryDemo && t.lane !== 'done' ? `<button class="iaw-btn iaw-btn-primary iaw-btn-sm" data-move="${esc(t.id)}" data-to="${LANE_ORDER[LANE_ORDER.indexOf(t.lane) + 1]}">推进到「${LANE_LABELS[LANE_ORDER[LANE_ORDER.indexOf(t.lane) + 1]]}」</button>` : ''}
+      ${!state.industryDemo && session.can('panel.task.write') && t.lane !== 'done' ? `<button class="iaw-btn iaw-btn-primary iaw-btn-sm" data-move="${esc(t.id)}" data-from="${esc(t.lane)}" data-to="${LANE_ORDER[LANE_ORDER.indexOf(t.lane) + 1]}">推进到「${LANE_LABELS[LANE_ORDER[LANE_ORDER.indexOf(t.lane) + 1]]}」</button>` : ''}
       ${t.sceneCode ? `<button class="iaw-btn iaw-btn-ghost iaw-btn-sm" data-scene="${esc(t.sceneCode)}">查看场景</button>` : ''}
     </div></div>`).join('') || '<div class="iaw-empty" style="padding:20px">暂无待处理事项——任务被指派给你或停在待审时会出现在这里</div>'
   h += '</div>'
@@ -1804,7 +1851,7 @@ function viewNotice() {
   let h = `<div class="iaw-view"><div class="iaw-page-head"><div><h1>通知中心</h1><p>任务、门禁、未读、实时动态（内存保留最近 100 条）</p></div></div><div class="iaw-grid-2">`
   h += '<div class="iaw-panel"><div class="iaw-panel-h"><h3>门禁与未读</h3></div>'
   h += review.map((t) => `<div class="iaw-alert w"><span>▲</span><div class="sp"><b>任务待审：${esc(t.title)}</b><br>${t.assigneeType === 'agent' ? 'Agent 产出' : '同事提交'}${t.sceneCode ? ` · 场景 ${esc(t.sceneCode)}` : ''}</div>
-    ${state.industryDemo ? '' : `<button class="iaw-btn iaw-btn-primary iaw-btn-sm" data-move="${esc(t.id)}" data-to="done">确认通过</button>`}</div>`).join('')
+    ${state.industryDemo || !session.can('panel.task.write') ? '' : `<button class="iaw-btn iaw-btn-primary iaw-btn-sm" data-move="${esc(t.id)}" data-from="${esc(t.lane)}" data-to="done">确认通过</button>`}</div>`).join('')
   h += unreadChannels.map((c) => `<div class="iaw-alert i"><span>💬</span><div class="sp"><b># ${esc(c.name)}</b><br>${c.unread} 条未读消息</div><button class="iaw-btn iaw-btn-ghost iaw-btn-sm" data-channel="${esc(c.id)}">去查看</button></div>`).join('')
   h += (review.length + unreadChannels.length === 0) ? '<div class="iaw-empty" style="padding:16px">暂无待办通知</div>' : ''
   h += '</div>'
@@ -1884,10 +1931,18 @@ function wireView(host) {
       event.stopPropagation()
       if (previewLocked()) return
       try {
-        await api.post(`/api/panel/tasks/${el.dataset.move}/transition`, { lane: el.dataset.to })
+        // UXQA-R1-002：携带期望泳道（乐观锁）——服务端比对权威状态，并发冲突返回 409 而非静默覆盖
+        await api.post(`/api/panel/tasks/${el.dataset.move}/transition`, { lane: el.dataset.to, expectedLane: el.dataset.from })
         await refreshView()
         void refreshOverview()
-      } catch (error) { void toast(error.message, 'error') }
+      } catch (error) {
+        // 409 版本冲突：权威状态已被他人改变——刷新看板到权威态并明确告知（不静默吞掉对方动作）
+        if (error instanceof ApiError && error.status === 409) {
+          void toast('该任务刚被他人流转，看板已刷新到最新状态——请基于最新泳道再操作', 'error')
+          await refreshView()
+          void refreshOverview()
+        } else void toast(error.message, 'error')
+      }
     }
   })
   host.querySelectorAll('[data-addlane]').forEach((el) => {
@@ -2365,6 +2420,11 @@ function composerHtml(place) {
   // 演示预览态：输入区整体替换为锁定提示（不发请求、不可输入，交互面诚实缺席）
   if (state.industryDemo) {
     return `<div class="iaw-composer"><div class="box locked">🔒 演示预览（只读）——「${esc(state.industry?.name ?? '')}」激活后解锁发消息 / @数字同事 / 直调技能</div></div>`
+  }
+  // 只读身份（UXQA-R1-003）：写入口按权限收敛——无 panel.write 时输入区整体替换为只读说明，
+  // 不再渲染发送框/模型选择/钉钉开关/技能快捷（点击后 403 的困惑源；服务端权限仍是最终防线）
+  if (!session.can('panel.write')) {
+    return `<div class="iaw-composer"><div class="box locked">🔒 只读身份——可浏览会话与看板；发消息 / @数字同事 / 直调技能 / 钉钉同步需管理员开通写权限（panel.write）</div></div>`
   }
   const bound = Boolean(state.ddStatus?.bound)
   const onlineModels = state.models.filter((model) => model.status === 'online')
@@ -2922,8 +2982,9 @@ function dwsLoginStepHtml(auth) {
       ${done ? '' : '<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn dd" id="dwsLoginStart">🔑 发起登录</button><span id="dwsLoginBox" style="flex:1;min-width:220px"></span></div>'}</div></div>`
 }
 
-/** dws CLI 桥模式绑定面（装态无钉钉桥时）：安装 dws CLI → 登录钉钉 → 绑定目标群 → 测试投递。 */
-function showBindDws(status) {
+/** dws CLI 桥模式绑定面（装态无钉钉桥时）：安装 dws CLI → 登录钉钉 → 绑定目标群 → 测试投递。
+ *  opts.auto（UXQA-R1-001）：本次为自动激活弹窗——关闭即记忆「不再自动弹」；手动打开无此语义。 */
+function showBindDws(status, opts) {
   stopDdLoginPoll()
   const auth = status.auth
   const steps = [
@@ -2950,7 +3011,8 @@ function showBindDws(status) {
       <div style="margin-top:8px"><button class="btn" id="dwsTest" ${status.installed && status.bound ? '' : 'disabled'}>📤 发送测试消息</button></div></div></div>`,
   ]
   showModal('⇄ 钉钉连接（dws CLI 模式）', `${steps.join('')}
-    <p class="note">安全边界：钉钉授权态归 dws CLI 自身（本面板零凭证，登录走官方设备码授权）；安装/登录/绑群/投递全程审计留痕；投递失败会落到消息同步状态与告警，绝不静默丢消息。</p>`)
+    <p class="note">安全边界：钉钉授权态归 dws CLI 自身（本面板零凭证，登录走官方设备码授权）；安装/登录/绑群/投递全程审计留痕；投递失败会落到消息同步状态与告警，绝不静默丢消息。</p>`,
+    opts?.auto ? { onClose: markDdPromptDismissed } : undefined)
   const installBtn = $id('dwsInstall')
   if (installBtn) {
     installBtn.onclick = async (event) => {
@@ -2963,7 +3025,7 @@ function showBindDws(status) {
         void toast(error.message, 'error')
       }
       await refreshDingtalk()
-      showBindDws(state.ddStatus ?? status)
+      showBindDws(state.ddStatus ?? status, opts)
     }
   }
   const loginBtn = $id('dwsLoginStart')
@@ -2977,7 +3039,7 @@ function showBindDws(status) {
         if (result.already) {
           void toast(`dws 已处于登录态（${result.auth?.corpName ?? '钉钉'}）`)
           await refreshDingtalk()
-          showBindDws(state.ddStatus ?? status)
+          showBindDws(state.ddStatus ?? status, opts)
           return
         }
         if (!result.started) {
@@ -3001,7 +3063,7 @@ function showBindDws(status) {
               stopDdLoginPoll()
               void toast(`✓ 钉钉登录成功（${poll.auth?.corpName ?? 'dws'}${poll.auth?.userName ? ` · ${poll.auth.userName}` : ''}）`)
               await refreshDingtalk()
-              if ($id('mask')?.classList.contains('show')) showBindDws(state.ddStatus ?? status)
+              if ($id('mask')?.classList.contains('show')) showBindDws(state.ddStatus ?? status, opts)
               return
             }
             if (!poll.active && poll.message) {
@@ -3029,7 +3091,7 @@ function showBindDws(status) {
         await api.put('/api/panel/ddws/bind', { group })
         void toast(`已绑定钉钉群：${group}`)
         await refreshDingtalk()
-        showBindDws(state.ddStatus ?? status)
+        showBindDws(state.ddStatus ?? status, opts)
       } catch (error) {
         event.target.disabled = false
         void toast(error.message, 'error')
@@ -3043,7 +3105,7 @@ function showBindDws(status) {
         await api.delete('/api/panel/ddws/bind')
         void toast('已解绑钉钉群')
         await refreshDingtalk()
-        showBindDws(state.ddStatus ?? status)
+        showBindDws(state.ddStatus ?? status, opts)
       } catch (error) {
         void toast(error.message, 'error')
       }
@@ -3064,9 +3126,10 @@ function showBindDws(status) {
   }
 }
 
-async function showBind() {
+/** opts.auto（UXQA-R1-001）：本次为自动激活弹窗——关闭即记忆「不再自动弹」；顶栏手动打开无此语义。 */
+async function showBind(opts) {
   const status = state.ddStatus
-  if (status?.via === 'dws-cli') return showBindDws(status)
+  if (status?.via === 'dws-cli') return showBindDws(status, opts)
   const connectorOk = status?.connector?.configured
   const bound = status?.bound
   showModal('⇄ 钉钉身份绑定与消息桥接', `
@@ -3085,7 +3148,8 @@ async function showBind() {
       <div class="st-t">频道群桥（管理员）</div>
       <div class="st-d">绑定钉钉群会话后，开启「钉钉同步」的消息将投递到群。</div></div></div>
     <p class="note">安全边界：身份绑定事实源为 iam identityLinks（扫码授权）；出向投递凭证单一来源=连接器配置（本面板零凭证）；
-    高风险审批钉钉回决必须二次确认（fail-closed）。</p>`)
+    高风险审批钉钉回决必须二次确认（fail-closed）。</p>`,
+    opts?.auto ? { onClose: markDdPromptDismissed } : undefined)
   const startBtn = $id('bindStart')
   if (startBtn) {
     startBtn.onclick = async () => {

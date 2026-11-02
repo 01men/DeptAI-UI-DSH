@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { PlatformEvents } from "../../platform-core/dist/bus.js";
 import { newId } from "../../platform-core/dist/ids.js";
-import { PanelService, TASK_LANES } from "./service.js";
+import { PanelService, TASK_LANES, TaskLaneConflictError } from "./service.js";
 import { CardpackService, CARD_PLATFORMS, filterCards } from "./cardpacks.js";
 import { CardpackService as CardpackService2, CARD_PLATFORMS as CARD_PLATFORMS2, filterCards as filterCards2 } from "./cardpacks.js";
 import { seedPanel, DEMO_ORG_ID } from "./seed/seed.js";
@@ -640,10 +640,20 @@ function apply(ctx, config = {}) {
     return { task };
   });
   guarded("POST", "/api/panel/tasks/:id/transition", "panel.task.write", (exchange) => {
-    const lane = body(exchange).lane;
+    const input = body(exchange);
+    const lane = input.lane;
     if (!lane || !TASK_LANES.includes(lane)) throw new Error(`\u975E\u6CD5\u6CF3\u9053\uFF1A${lane}`);
+    if (input.expectedLane !== void 0 && !TASK_LANES.includes(input.expectedLane)) throw new Error(`\u975E\u6CD5\u671F\u671B\u6CF3\u9053\uFF1A${input.expectedLane}`);
     const info = caller(exchange);
-    return { task: panel.transitionTask(String(exchange.params.id), lane, info.userId ?? info.principalId) };
+    try {
+      return { task: panel.transitionTask(String(exchange.params.id), lane, info.userId ?? info.principalId, input.expectedLane) };
+    } catch (error) {
+      if (error instanceof TaskLaneConflictError) {
+        exchange.fail(409, "VERSION_CONFLICT", error.message);
+        return null;
+      }
+      throw error;
+    }
   });
   guarded("GET", "/api/panel/:dept/goals", "panel.read", (exchange) => {
     const dept = deptOf(exchange);

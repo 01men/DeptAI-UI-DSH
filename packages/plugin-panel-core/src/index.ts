@@ -21,7 +21,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { HttpExchange } from '../../platform-core/src/index.ts'
 import { PlatformEvents } from '../../platform-core/src/bus.ts'
 import { newId } from '../../platform-core/src/ids.ts'
-import { PanelService, TASK_LANES, type TaskLane, type DeptWidget, type DeptKpi, type DeptAgent } from './service.ts'
+import { PanelService, TASK_LANES, TaskLaneConflictError, type TaskLane, type DeptWidget, type DeptKpi, type DeptAgent } from './service.ts'
 import { CardpackService, CARD_PLATFORMS, filterCards, type CardPlatform } from './cardpacks.ts'
 export { CardpackService, CARD_PLATFORMS, filterCards } from './cardpacks.ts'
 import { seedPanel, DEMO_ORG_ID } from './seed/seed.ts'
@@ -775,10 +775,21 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
   })
 
   guarded('POST', '/api/panel/tasks/:id/transition', 'panel.task.write', (exchange) => {
-    const lane = body<{ lane?: string }>(exchange).lane
+    const input = body<{ lane?: string; expectedLane?: string }>(exchange)
+    const lane = input.lane
     if (!lane || !TASK_LANES.includes(lane as TaskLane)) throw new Error(`非法泳道：${lane}`)
+    if (input.expectedLane !== undefined && !TASK_LANES.includes(input.expectedLane as TaskLane)) throw new Error(`非法期望泳道：${input.expectedLane}`)
     const info = caller(exchange)
-    return { task: panel.transitionTask(String(exchange.params.id), lane as TaskLane, info.userId ?? info.principalId) }
+    // UXQA-R1-002：乐观锁冲突回执——并发流转不再后写静默覆盖先写（409 + 权威泳道，UI 刷新裁决）
+    try {
+      return { task: panel.transitionTask(String(exchange.params.id), lane as TaskLane, info.userId ?? info.principalId, input.expectedLane as TaskLane | undefined) }
+    } catch (error) {
+      if (error instanceof TaskLaneConflictError) {
+        exchange.fail(409, 'VERSION_CONFLICT', error.message)
+        return null
+      }
+      throw error
+    }
   })
 
   // -- 执行中枢投影（DSH issue#3/#4 修订，2026-10-29） -----------------------------------------

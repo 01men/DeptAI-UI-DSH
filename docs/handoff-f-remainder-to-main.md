@@ -307,3 +307,19 @@ README 从「底座平台说明 + 三A~三H 迭代流水账」收缩为 01门 �
 （承接 H 节口径）；`assets/` 不在 npm files 闭包内，零代码 / 装配改动，fresh-install 不变量不受影响。
 验证：selftest 1367/1367 绿 + lint:manifests 105/105 + 场景图谱 14/14（2026-10-29 实测）；
 SVG 经浏览器在 GitHub 明暗两种底色 900px 宽下目检通过。
+
+## S. 上游合并收尾与 Windows 实证根治（2026-11-02，合并 4e8fc36 后自检批次）
+
+本分支合并 main@4e8fc36（57660ac）后全量回归暴露并根治 13 项合并回归（收尾提交 2d2b329，
+selftest 1999/1999 全绿）。涉底座面、建议 main 评估采纳的条目：
+
+| # | 域 | 建议 | 说明 |
+|---|---|---|---|
+| S-1 | plugin-app `credentials.purge` / plugin-mcp `secret-broker.delete` | ✅ **建议尽快采纳（安全）** | Windows 实证 `fs.rmSync` 对**单文件**静默失效：无异常、返回成功、文件仍在（本机项目树稳定复现；`unlinkSync` 一切正常）。「删除即销毁」的安全语义被静默打破——改 unlinkSync + EPERM/EBUSY/EACCES 有界重试 + 耗尽响亮失败（不静默残留）。main 侧同名方法同形暴露 |
+| S-2 | plugin-panel-core 01门装态基线种子 | ✅ **建议尽快采纳（fresh-install 级）** | main 的 QA A-03（iam 写操作强制可归因 actor）使面板种子 `createOrg/createUser` 无参调用被静默吞掉 → 全新 01门装态首启无 admin 可登录（面板自持登录面 401 连锁）。种子属内部系统链路，须传 `SYSTEM_ACTOR`（main 的 console/seed.ts 已对齐、面板种子被漏） |
+| S-3 | console errors.js +5 面板轨原因码文案 | ◑ 面板轨特有 | PROXY_PATH_DENIED / NOT_REMOTE / HUB_UNREACHABLE / HUB_BAD_RESPONSE / WIZARD_CALL_HEADER_REQUIRED——本分支 rq-card hostlink 特有（main 收编的 rq-card 无此发射点）；若 main 后续收编 hostlink 远端代理/向导面，文案同批自然对齐，当前 main 不消费 |
+| S-4 | console launch/index.html 断言数 1819→1999 | ❌ 各自口径（豁免登记） | 落地页断言数须等于**各自分支** selftest 实际断言总数（本分支 tests/selftest.mjs 1999；main 的 scripts/selftest.mjs 计数体系不同）——与 I 节同性质（产品身份固有分叉），main 保持其自身计数，不回流 |
+| S-5 | tests/selftest.mjs Windows 加固组 | ◑ 建议对照移植 | main 的 selftest 若需在 Windows 开发机跑通，以下加固均实证必要：① SQLite 契约段句柄未关即 rm 必 EBUSY（flushTimer→flushNow→close 顺序 + rm maxRetries；裸 Context 无 dispose 的台架不关库不删目录，防「database is not open」定时器洪流）；② C16 文件 mode 0o600 断言 win32 豁免；③ i18n 词典 .pathname→fileURLToPath（CJK 路径 percent-encode 全 miss）；④ 告警 read-all 断言前加总线异步落地稳定化；⑤ 收尾 stub closeAllConnections + 看门狗（存活台架巡检令目录 rm 重试拖尾悬停）；⑥ 向导 DOM 随零弹窗合规化改 `__panelNavHook` 捕获缝（jsdom 无法拦截 location 赋值） |
+| S-6 | UXQA_R1 面板五缺陷修复（005/002/001/003/004） | ◑ 面板域专项 | 详见 `uxqa-results/修复回执_UXQA_R1.md`；002 乐观锁（expectedLane → 409 VERSION_CONFLICT）与 005 断连 refresh 自愈若 main 收编面板前端，建议随面板域专项一并评估 |
+
+未采纳项按既有口径处理（S-4 豁免登记）；S-1/S-2 为安全/可用性缺陷，请 main 优先落地。

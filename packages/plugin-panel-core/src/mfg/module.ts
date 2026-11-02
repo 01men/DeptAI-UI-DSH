@@ -194,7 +194,8 @@ export function applyMfgModule(ctx: Context, deps: MfgDeps): void {
       return result
     } catch (error) {
       if (error instanceof MfgError) exchange.fail(error.status, error.code, error.message)
-      else exchange.fail(500, 'INTERNAL_ERROR', error instanceof Error ? error.message : '执行失败')
+      // UXQA OBS-05：500 不回显内部异常文本（与 http 层生产安全口径一致）；细节由服务端日志承接
+      else exchange.fail(500, 'INTERNAL_ERROR', '执行失败：内部错误已记录，请重试或联系管理员')
       return null
     }
   })
@@ -213,9 +214,16 @@ export function applyMfgModule(ctx: Context, deps: MfgDeps): void {
       return null
     }
     const format = body.format === 'md' ? 'md' : 'json'
-    return format === 'md'
-      ? { filename: exportFileName(result, 'md'), content: toMarkdown(result), mime: 'text/markdown' }
-      : { filename: exportFileName(result, 'json'), content: JSON.stringify(result, null, 2), mime: 'application/json' }
+    // UXQA OBS-05：畸形 blocks 不回显内部异常文本（TypeError 原文属实现细节）——
+    // 导出失败统一给可行动中文文案，与 http 层「500 不回传内部异常」同纪律
+    try {
+      return format === 'md'
+        ? { filename: exportFileName(result, 'md'), content: toMarkdown(result), mime: 'text/markdown' }
+        : { filename: exportFileName(result, 'json'), content: JSON.stringify(result, null, 2), mime: 'application/json' }
+    } catch {
+      exchange.fail(400, 'BAD_REQUEST', '导出内容结构不完整，无法生成文件——请重新运行工具后再导出')
+      return null
+    }
   })
 
   // ---- 放行与评估面（写动词需 config 权限：放行是治理动作，不是普通使用） -----------------
