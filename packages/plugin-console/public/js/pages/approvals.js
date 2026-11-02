@@ -159,6 +159,7 @@ export async function renderApprovals(content, params, ctx) {
               <div class="tnum mono fs-11 text-3" style="margin-top:2px">${esc(timeAgo(approval.decidedAt))} · ${esc(approval.approverName ?? '')}</div>
               ${approval.opinion ? `<div class="fs-12-5 text-2" style="margin-top:4px;line-height:1.6">${esc(rqI18n.t('意见：{opinion}', { opinion: approval.opinion }))}</div>` : ''}
               ${approval.execution ? `<div class="fs-12 mono" style="margin-top:4px;word-break:break-all">${esc(approval.execution.error ?? approval.execution.result)}</div>` : ''}
+              ${approval.supersededBy ? `<div class="fs-12 text-3" style="margin-top:4px">收口依据：<a href="#/approvals?focus=${esc(approval.supersededBy)}" class="mono">${esc(approval.supersededBy)}</a></div>` : ''}
             </div>
           </div>
           ${approval.finalReview ? `
@@ -217,7 +218,7 @@ function pickReason(payload) {
 }
 
 function decisionTitle(status) {
-  return { approved: '审批通过', executed: '审批通过并已执行', rejected: '已驳回', failed: '审批通过但执行失败' }[status] ?? status
+  return { approved: '审批通过', executed: '审批通过并已执行', rejected: '已驳回', failed: '审批通过但执行失败', superseded: '已自动收口（同目标审批单已执行）' }[status] ?? status
 }
 
 function decidedCopy(approval) {
@@ -226,6 +227,9 @@ function decidedCopy(approval) {
   }
   if (approval.status === 'failed') {
     return `<span style="font-size:13px;font-weight:500;color:var(--danger)">本单已通过但执行失败 · 失败原因已回写，可重新发起</span>`
+  }
+  if (approval.status === 'superseded') {
+    return `<span style="font-size:13px;font-weight:500;color:var(--text-3)">本单已自动收口 · 同目标审批单已执行、诉求已满足，无需处理</span>`
   }
   return `<span style="font-size:13px;font-weight:500;color:#047857">本单已通过 · 结果已回写并通知申请人</span>`
 }

@@ -123,3 +123,105 @@ test('补偿注册表⑥：mask 类 kind 携敏感入参 → 掩码入库且 mas
   assert.equal(stored.payload.accessToken, '***')
   assert.deepEqual(stored.payload.maskedKeys, ['accessToken'])
 })
+
+// ---------------------------------------------------------------------------
+// 同目标在途单收口（2026-11-02）：幂等复用 / 执行成功收口 / 失败不收口 / 启动期自愈 / SLA 口径
+// 背景：人工提交 Agent 上线单后治理 Agent 又对同一 agentId 另开一张并批掉，人工那张永久挂 pending。
+// ---------------------------------------------------------------------------
+
+/** 带谓词的集合替身（基础桩的 find 忽略谓词，收口逻辑依赖谓词过滤，故另起一套）。 */
+function makeTargetStubAudit() {
+  const ctx = new Context()
+  const events = []
+  const records = []
+  ctx.platformBus = { on: () => () => {}, emit: (name, payload) => events.push({ name, payload }) }
+  ctx.usage = { consume: () => () => {} }
+  const audit = new AuditService(ctx)
+  const store = new Map()
+  audit.approvals = () => ({
+    insert: (record) => (store.set(record.id, record), record),
+    get: (id) => store.get(id),
+    update: (id, patch) => Object.assign(store.get(id), patch),
+    all: () => [...store.values()],
+    find: (pred) => [...store.values()].filter(pred),
+    findOne: (pred) => [...store.values()].find(pred),
+  })
+  audit.record = (entry) => records.push(entry)
+  audit.registerExecutor('agent.online', async (payload) => ({ onlined: payload.agentId }))
+  const seed = (id, patch) => store.set(id, {
+    id, kind: 'agent.online', title: 'Agent 上线：x', payload: { agentId: 'agt_1' },
+    requesterId: 'usr_a', requesterName: '甲', status: 'pending', createdAt: '2026-01-01T00:00:00.000Z', ...patch,
+  })
+  return { audit, store, events, records, seed }
+}
+
+test('同目标收口①：同 agentId 在途单再次发起 → 幂等复用原单，不新增，留痕 approval.reuse', () => {
+  const { audit, store, records } = makeTargetStubAudit()
+  const first = audit.createApproval({ kind: 'agent.online', title: 't', payload: { agentId: 'agt_1', requesterId: 'usr_a' }, requesterId: 'usr_a', requesterName: '甲' })
+  const again = audit.createApproval({ kind: 'agent.online', title: 't', payload: { agentId: 'agt_1', requesterId: 'pri_b' }, requesterId: 'pri_b', requesterName: '治理执行官' })
+  assert.equal(again.id, first.id, '复用原单')
+  assert.equal(store.size, 1, '不新增')
+  const reuse = records.find((r) => r.action === 'approval.reuse')
+  assert.ok(reuse && reuse.resourceId === first.id && reuse.actorType === 'machine', '复用留痕且机器主体按 pri_ 前缀识别')
+})
+
+test('同目标收口②：不同 agentId / 未登记 kind 互不影响（各自独立开单）', () => {
+  const { audit, store } = makeTargetStubAudit()
+  const a = audit.createApproval({ kind: 'agent.online', title: 't', payload: { agentId: 'agt_1' }, requesterId: 'u', requesterName: 'u' })
+  const b = audit.createApproval({ kind: 'agent.online', title: 't', payload: { agentId: 'agt_2' }, requesterId: 'u', requesterName: 'u' })
+  const c = audit.createApproval({ kind: 'kind.other', title: 't', payload: { agentId: 'agt_1' }, requesterId: 'u', requesterName: 'u' })
+  const d = audit.createApproval({ kind: 'kind.other', title: 't', payload: { agentId: 'agt_1' }, requesterId: 'u', requesterName: 'u' })
+  assert.notEqual(a.id, b.id)
+  assert.notEqual(c.id, d.id, '未登记 kind 不参与去重')
+  assert.equal(store.size, 4)
+})
+
+test('同目标收口③：某张执行成功 → 其余同目标 pending 单自动 superseded（引擎署名、依据可追溯、不发 ApprovalDecided）', async () => {
+  const { audit, store, events, records, seed } = makeTargetStubAudit()
+  seed('apr_human', { requesterId: 'usr_a', requesterName: '师圆圆' })
+  seed('apr_agent', { requesterId: 'pri_op', requesterName: '治理执行官', createdAt: '2026-01-01T00:10:00.000Z' })
+  seed('apr_other', { payload: { agentId: 'agt_9' } })
+  const decided = await audit.decideApproval('apr_agent', 'approve', 'pri_rv', '治理评审官', '批准')
+  assert.equal(decided.status, 'executed')
+  const human = store.get('apr_human')
+  assert.equal(human.status, 'superseded')
+  assert.equal(human.supersededBy, 'apr_agent')
+  assert.equal(human.approverName, '审批引擎')
+  assert.ok(human.decidedAt && human.opinion.includes('apr_agent'))
+  assert.equal(store.get('apr_other').status, 'pending', '不同目标不受影响')
+  assert.equal(records.filter((r) => r.action === 'approval.superseded').length, 1)
+  assert.equal(events.filter((e) => e.name === 'approval.decided').length, 1, '收口不发 ApprovalDecided（只有执行单那一次）')
+})
+
+test('同目标收口④：登记 kind 执行失败不收口（兄弟单保留重试面）', async () => {
+  const { audit, store, seed } = makeTargetStubAudit()
+  seed('apr_a')
+  seed('apr_b', { createdAt: '2026-01-01T00:10:00.000Z' })
+  audit.registerExecutor('agent.online', async () => { throw new Error('状态机拒绝') })
+  const decided = await audit.decideApproval('apr_b', 'approve', 'pri_rv', '审批人')
+  assert.equal(decided.status, 'failed')
+  assert.equal(store.get('apr_a').status, 'pending')
+})
+
+test('同目标收口⑤：启动期自愈——执行前发起的孤儿单收口、执行后新开的合法单保留、幂等', () => {
+  const { audit, store, seed } = makeTargetStubAudit()
+  seed('apr_orphan', { createdAt: '2026-10-31T06:32:15.866Z' })
+  seed('apr_done', { status: 'executed', createdAt: '2026-10-31T06:45:44.514Z', decidedAt: '2026-10-31T06:45:44.532Z', requesterId: 'pri_op' })
+  seed('apr_later', { createdAt: '2026-11-01T00:00:00.000Z' })
+  assert.equal(audit.reconcileSupersededApprovals(), 1)
+  assert.equal(store.get('apr_orphan').status, 'superseded')
+  assert.equal(store.get('apr_orphan').supersededBy, 'apr_done')
+  assert.equal(store.get('apr_later').status, 'pending', '执行之后新开的同目标单是合法新诉求')
+  assert.equal(audit.reconcileSupersededApprovals(), 0, '二次执行零写入')
+})
+
+test('同目标收口⑥：superseded 不计入 SLA 分母', async () => {
+  const { audit, seed } = makeTargetStubAudit()
+  const now = new Date().toISOString()
+  seed('apr_a', { createdAt: now })
+  seed('apr_b', { createdAt: now })
+  await audit.decideApproval('apr_b', 'approve', 'pri_rv', '审批人')
+  const sla = audit.slaReport(30)
+  assert.equal(sla.decided, 1, '仅执行单计入已决')
+  assert.equal(sla.total, 2)
+})

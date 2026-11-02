@@ -133,13 +133,16 @@ export interface ApprovalRecord extends RecordBase {
   payload: Record<string, unknown>
   requesterId: string
   requesterName: string
-  status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed'
+  /** superseded（2026-11-02 同目标收口）：本单目标已由另一张同目标审批单执行完成，自动收口、无需处理。 */
+  status: 'pending' | 'approved' | 'rejected' | 'executed' | 'failed' | 'superseded'
   approverId?: string
   approverName?: string
   opinion?: string
   createdAt: string
   decidedAt?: string
   execution?: { result: string; error?: string; at: string }
+  /** 同目标收口依据：使本单失去意义的那张已执行审批单 id（status=superseded 时必有）。 */
+  supersededBy?: string
   /** 风险级（WP-10/L1）：high 级审批通过需二次确认（服务端强制），且默认落公司级终审标记。 */
   riskLevel?: 'high' | 'medium' | 'low'
   /** 公司级终审标记（WP-10/L1，additive）：终审人与时间在审计可追溯（action=approval.final_review）。 */
@@ -222,6 +225,27 @@ const HIGH_RISK_APPROVAL_KINDS = new Set([
   'connector.offline', 'connector.connect', 'connector.action.admin',
   'mcp.offline', 'nas.share', 'panel.card-action', 'industry.activation',
 ])
+
+/**
+ * 同目标在途单收口（2026-11-02）：生命周期类审批对「同一资源 + 同一动作」只应有一张在途单。
+ * 背景：人工提交 Agent 上线单后，治理 Agent 又对同一 agentId 另开一张并批掉——资源已 online，
+ * 人工那张却永久挂在待审批（再点通过会被状态机拒绝而落 failed），控制台看起来像「数据未同步」。
+ * 两道闸：开单命中在途同目标单直接复用（幂等，不再新增，留痕 approval.reuse）；某张执行成功后
+ * 其余同目标在途单自动置 superseded（留痕 approval.superseded）。仅登记「执行效果只取决于资源 id」
+ * 的 kind——connector.action.admin 等带独立入参的动作单不参与（不同入参是不同动作，不能合并）。
+ */
+const APPROVAL_TARGET_FIELD: Record<string, string> = {
+  'agent.online': 'agentId', 'agent.offline': 'agentId', 'agent.unfreeze': 'agentId',
+  'app.online': 'appId', 'app.offline': 'appId',
+  'mcp.offline': 'serviceId',
+}
+
+/** 同目标键：kind + 目标资源 id；未登记 kind 或负载缺目标 id → undefined（不参与收口）。 */
+export function approvalTargetKey(kind: string, payload: Record<string, unknown> | undefined): string | undefined {
+  const field = APPROVAL_TARGET_FIELD[kind]
+  const value = field ? payload?.[field] : undefined
+  return typeof value === 'string' && value ? `${kind}:${value}` : undefined
+}
 
 // ---------------------------------------------------------------------------
 // 服务
@@ -869,6 +893,21 @@ export class AuditService extends Service {
     if (rule.sensitiveInputPolicy === 'reject' && sensitivePaths.length > 0) {
       throw new Error(t('审批拒绝：该类审批以原文入参执行，检出敏感命名入参（{paths}）。敏感值不得进入审批存储，请调整入参后重试（OPT-P2-02）', { paths: sensitivePaths.join('、') }))
     }
+    // 同目标在途单幂等复用（APPROVAL_TARGET_FIELD）：已有 pending 同目标单则直接返回该单、不再新增——
+    // 留痕 approval.reuse 记录第二位申请人的意图；后续 approval_decide 自然收敛到同一张单
+    const targetKey = approvalTargetKey(input.kind, input.payload)
+    const existing = targetKey
+      ? this.approvals().findOne((item) => item.status === 'pending' && approvalTargetKey(item.kind, item.payload) === targetKey)
+      : undefined
+    if (existing) {
+      this.record({
+        type: 'change', actorType: input.requesterId.startsWith('pri_') ? 'machine' : 'human',
+        actorId: input.requesterId, actorName: input.requesterName,
+        action: 'approval.reuse', resourceType: 'approval', resourceId: existing.id, resourceName: existing.title,
+        result: 'ok', detail: `同目标在途审批单复用（${targetKey}）：${input.requesterName} 再次发起，沿用 ${existing.requesterName} 提交的 ${existing.id}，未新增审批单`,
+      })
+      return existing
+    }
     const { masked, maskedKeys } = maskSensitivePayload(input.payload)
     const riskLevel = input.riskLevel ?? (HIGH_RISK_APPROVAL_KINDS.has(input.kind) ? 'high' as const : undefined)
     // R11：组织归属——显式传入优先；agent.* 类单未传时按平台稳定键读 Agent 的 orgId 兜底
@@ -986,6 +1025,8 @@ export class AuditService extends Service {
         result: 'ok', detail: `公司级终审标记（风险级 ${approval.riskLevel ?? 'medium'}），审批单 ${id} 终审通过`,
       })
     }
+    // 同目标收口：本单执行成功 → 其余同目标在途单的诉求已被满足，自动置 superseded（失败不收口，保留重试面）
+    if (status === 'executed') this.supersedeSiblings(updated)
     this.ctx.platformBus.emit(PlatformEvents.ApprovalDecided, {
       approvalId: id, title: approval.title, approved: true, approverId, approverName,
     })
@@ -1006,6 +1047,53 @@ export class AuditService extends Service {
   }
 
   /**
+   * 同目标收口（APPROVAL_TARGET_FIELD）：executed 单执行成功后，其余同目标、且在其决策时刻之前
+   * 发起的 pending 单诉求已被满足（再批会被状态机拒绝而落 failed），自动置 superseded 并留痕。
+   * 不发 ApprovalDecided——收口既非通过也非驳回，避免下游把它当驳回通知申请人。
+   * 「决策时刻之前发起」的边界让启动期自愈可复用本方法：执行之后新开的同目标单是合法新诉求
+   * （如上线→下线→再上线），不得误收。返回收口条数。
+   */
+  supersedeSiblings(executed: Pick<ApprovalRecord, 'id' | 'kind' | 'payload' | 'decidedAt'>): number {
+    const targetKey = approvalTargetKey(executed.kind, executed.payload)
+    if (!targetKey) return 0
+    const bound = executed.decidedAt ?? new Date().toISOString()
+    const siblings = this.approvals().find((item) => item.id !== executed.id && item.status === 'pending'
+      && item.createdAt <= bound && approvalTargetKey(item.kind, item.payload) === targetKey)
+    const now = new Date().toISOString()
+    for (const sibling of siblings) {
+      this.approvals().update(sibling.id, {
+        status: 'superseded', supersededBy: executed.id, decidedAt: now,
+        approverId: 'approval-engine', approverName: '审批引擎',
+        opinion: t('同目标审批单 {id} 已执行，本单诉求已满足，自动收口（无需处理）', { id: executed.id }),
+      })
+      this.record({
+        type: 'change', actorType: 'machine', actorId: 'approval-engine', actorName: '审批引擎',
+        action: 'approval.superseded', resourceType: 'approval', resourceId: sibling.id, resourceName: sibling.title,
+        result: 'ok', detail: `同目标在途单收口（${targetKey}）：${executed.id} 已执行，${sibling.id}（${sibling.requesterName} 提交）自动置 superseded`,
+      })
+    }
+    return siblings.length
+  }
+
+  /**
+   * 启动期存量自愈（2026-11-02）：收口机制上线前已产生的孤儿单——同目标已有 executed 单且本单在其
+   * 决策之前发起、至今仍 pending——按同一口径补置 superseded。每个目标取最晚执行单为依据；幂等
+   * （无孤儿时零写入）。返回收口条数。
+   */
+  reconcileSupersededApprovals(): number {
+    const latestExecuted = new Map<string, ApprovalRecord>()
+    for (const item of this.approvals().find((item) => item.status === 'executed' && Boolean(item.decidedAt))) {
+      const key = approvalTargetKey(item.kind, item.payload)
+      if (!key) continue
+      const prev = latestExecuted.get(key)
+      if (!prev || item.decidedAt! > prev.decidedAt!) latestExecuted.set(key, item)
+    }
+    let count = 0
+    for (const executed of latestExecuted.values()) count += this.supersedeSiblings(executed)
+    return count
+  }
+
+  /**
    * 审批 SLA 报表（WP-10）：窗口内已决审批的「≤2 个工作日」达成率与分项。
    * 工作日口径：跳过周六/周日后按自然日差累计（法定节假日不做日历——v1 口径在响应中声明）。
    */
@@ -1019,8 +1107,9 @@ export class AuditService extends Service {
     calendarNote: string
   } {
     const since = new Date(Date.now() - windowDays * 24 * 3600_000).toISOString()
+    // superseded 为引擎自动收口（非人工决策），不计入 SLA 分母
     const decidedRecords = this.approvals().all()
-      .filter((item) => item.decidedAt && item.decidedAt >= since)
+      .filter((item) => item.decidedAt && item.decidedAt >= since && item.status !== 'superseded')
     const businessDaysBetween = (fromIso: string, toIso: string): number => {
       let days = 0
       const cursor = new Date(fromIso)
@@ -1067,4 +1156,14 @@ export const inject = ['opsStorage', 'platformBus', 'resourceCore', 'iam', 'usag
 export function apply(ctx: Context) {
   ctx.plugin(AuditService)
   ctx.plugin(auditTools)
+  // 启动期存量自愈：收口机制上线前产生的同目标孤儿单（2026-11-02）。本插件不能注入自身服务
+  //（循环等待），以子插件声明 inject 等 audit 就绪后执行一次
+  ctx.plugin({
+    name: 'audit-approval-reconcile',
+    inject: ['audit'],
+    apply(child: Context) {
+      const count = child.audit.reconcileSupersededApprovals()
+      if (count > 0) child.logger('audit').info(`存量审批单自愈：${count} 张同目标孤儿单已收口（superseded）`)
+    },
+  })
 }

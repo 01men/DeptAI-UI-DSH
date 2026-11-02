@@ -62,6 +62,7 @@ const STATUS_MAP = {
   degraded: ['badge-warn', '降级'], offline: ['badge-warn', '已下线'], down: ['badge-danger', '不可用'], unhealthy: ['badge-danger', '异常'],
   rejected: ['badge-danger', '已驳回'], error: ['badge-danger', '失败'], denied: ['badge-danger', '拒绝'], frozen: ['badge-danger', '已冻结'],
   deactivated: ['badge-muted', '已注销'], approved: ['badge-ok', '已通过'], executed: ['badge-ok', '已执行'], failed: ['badge-danger', '执行失败'],
+  superseded: ['badge-muted', '已收口'],
 }
 export function statusBadge(status, label) {
   const [cls, text] = STATUS_MAP[status] ?? ['badge-muted', status]

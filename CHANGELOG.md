@@ -3,6 +3,25 @@
 本文件记录对外可感知的版本节点。过程性批次明细（QA 报告、交接单、批次计划）见
 `docs/internal/`（不构成对外契约）；早期完整发布说明见 `docs/internal/release-notes-*.md`。
 
+## [Unreleased] · 审批中心同目标在途单收口（2026-11-02）
+
+线上事实：负责人提交「Agent 上线：workbudyy-ybkk-macmini」后，治理执行官 Agent 对同一 agentId
+另开一张上线单并由评审官批掉——Agent 已 online，负责人那张却永久挂在待审批（再点通过会被状态机
+拒绝而落 failed），控制台看起来像「数据未同步」。根因是审批引擎对同一资源同一动作允许多张在途单。
+
+- **开单幂等复用**：`createApproval` 命中同目标（kind + 资源 id）在途 pending 单直接返回该单、
+  不再新增，审计 `approval.reuse` 记录第二位申请人；自治闭环 `agent_transition → approval_list →
+  approval_decide` 自然收敛到同一张单。
+- **执行后自动收口**：某张执行成功（executed）后，其余同目标在途单置新状态 **`superseded`**
+  （`supersededBy` 指向执行单，审批引擎署名，审计 `approval.superseded` 入哈希链）；执行失败不收口，
+  保留重试面。收口不发 `ApprovalDecided`（既非通过也非驳回，不误通知申请人）。
+- **启动期自愈**：收口机制上线前的存量孤儿单（同目标已有 executed 单且本单在其决策之前发起）按同
+  口径补置 superseded；执行之后新开的同目标单是合法新诉求不动；幂等。
+- 收口口径只登记「执行效果仅取决于资源 id」的 kind（agent.online/offline/unfreeze、app.online/
+  offline、mcp.offline）；connector.action.admin 等带独立入参的动作单不参与。
+- 控制台：`superseded` 徽标「已收口」、时间线文案与收口依据可点跳转；SLA 看板不把收口计入已决分母；
+  MCP `approval_list` 状态枚举同步。随包单测 +6（`approval.test.mjs` 15 例）。
+
 ## [Unreleased] · 演示一键免密入场 01门工作台 + 控制台 01门入口（2026-11-01）
 
 demo.ybkkasi.com 挂上 01门（DeptAI-UI-DSH，dsh demo profile :7778，远端绑定演示底座）后，

@@ -80,7 +80,7 @@ export function apply(ctx: Context) {
     description: '查询审批列表（待办/已决/已执行），自治治理闭环入口：先 approval_list 发现待办，再 approval_decide 决策。默认最新在前。',
     permission: 'approval.read',
     parameters: {
-      status: { type: 'string', enum: ['pending', 'approved', 'rejected', 'executed', 'failed'], description: '状态过滤（缺省全部）' },
+      status: { type: 'string', enum: ['pending', 'approved', 'rejected', 'executed', 'failed', 'superseded'], description: '状态过滤（缺省全部）' },
       kind: { type: 'string', description: '审批类型精确过滤（如 agent.online / mcp.offline / skill.publish）' },
       q: { type: 'string', description: '标题关键字' },
       limit: { type: 'number', description: '返回条数，默认 50' },
