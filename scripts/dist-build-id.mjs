@@ -20,9 +20,10 @@ import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
-/** 6 随附包（plan-gate01 §一 产物构成 + 2026-09-11 可用性补环）：底座面基座 4 + 面板面 2。 */
+/** 随附包（plan-gate01 §一 产物构成 + 2026-09-11 可用性补环 + 2026-11-02 上游合并：+platform-i18n 三语文案库，6 随附包 src 跨包引用的共享底座 lib）。 */
 export const DIST_PACKAGES = [
   'platform-core',
+  'platform-i18n',
   'plugin-iam',
   'plugin-authn',
   'plugin-dsh-bridge',

@@ -65,7 +65,7 @@ function parseYaml(text) {
       pos++;
       if (rest === "") {
         result.push(pos < lines.length && indentOf(lines[pos]) > ind ? parseBlock(indentOf(lines[pos])) : null);
-      } else if (/^[^:]+:\s*/.test(rest) && !rest.startsWith('"') && !rest.startsWith("'")) {
+      } else if (/^[^:]+:(\s|$)/.test(rest) && !rest.startsWith('"') && !rest.startsWith("'")) {
         const virtualIndent = ind + 2;
         lines.splice(pos, 0, " ".repeat(virtualIndent) + rest);
         result.push(parseMap(virtualIndent));

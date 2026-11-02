@@ -1237,8 +1237,13 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
       clearInterval(seedTimer)
       if (iamNow.orgs().count() > 0) return
       try {
+        // 系统身份（2026-11-02 合并回归修复）：上游 QA A-03 起 iam 写操作强制可归因调用者，
+        // 无 actor 调用 createOrg/createUser 一律抛错（种子静默失败 → 01门装态首启无 admin 可登录）。
+        // 种子属内部系统链路——与 plugin-iam SYSTEM_ACTOR 同形（{ permissions: ['*'] }；
+        // 面板轨不硬引 iam 模块，按 soft() 软读同纪律内联同形常量并注明语义来源）。
+        const SYSTEM_ACTOR = { permissions: ['*'] }
         iamNow.ensureBuiltinRoles()
-        const root = iamNow.createOrg({ name: process.env.ORG_NAME ?? '元冰可集团' })
+        const root = iamNow.createOrg({ name: process.env.ORG_NAME ?? '元冰可集团' }, SYSTEM_ACTOR)
         const roleSuper = iamNow.roles().findOne((role: { code: string }) => role.code === 'super_admin')!
         const { user, initialPassword } = iamNow.createUser({
           username: 'admin',
@@ -1247,7 +1252,7 @@ export function apply(ctx: Context, config: PanelConfig = {}) {
           title: '平台管理员',
           roleIds: [roleSuper.id],
           password: process.env.ADMIN_PASSWORD,
-        })
+        }, SYSTEM_ACTOR)
         iamNow.users().update(user.id, { status: 'active' })
         void user
         if (initialPassword) {

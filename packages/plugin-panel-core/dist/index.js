@@ -11,6 +11,7 @@ import { seedPanel, DEMO_ORG_ID } from "./seed/seed.js";
 import { resolvePanelModelGateway } from "./llm-bridge.js";
 import { DwsCli } from "./dws.js";
 import { applyMfgModule } from "./mfg/module.js";
+const PANEL_CONTRACT_VERSION = 1;
 const name = "panel-core";
 const inject = [
   "httpServer",
@@ -134,6 +135,23 @@ function apply(ctx, config = {}) {
     const info = caller(exchange);
     const iam = soft(ctx, "iam");
     return (info.userId ? iam?.users().get(info.userId)?.orgId : void 0) ?? iam?.orgs().find((org) => org.parentId === null).at(0)?.id ?? DEMO_ORG_ID;
+  };
+  const sceneGuard = (exchange, sceneCode, action) => {
+    if (!sceneCode?.trim()) return true;
+    const info = caller(exchange);
+    if (!info.userId) return true;
+    const iam = soft(ctx, "iam");
+    if (!iam) return true;
+    const decision = iam.checkScene(info.userId, sceneCode, action);
+    if (decision.decision !== "deny") return true;
+    ctx.platformBus.emit("audit.authz.denied", {
+      actorId: info.userId,
+      actorName: info.name,
+      point: `scene:${sceneCode}#${action}`,
+      path: exchange.path
+    });
+    exchange.fail(403, "FORBIDDEN", `\u573A\u666F\u6388\u6743\u62D2\u7EDD\uFF08${sceneCode} \xB7 ${action}\uFF09\uFF1A${decision.reason}`);
+    return false;
   };
   guarded("GET", "/api/panel/depts", "panel.read", (exchange) => {
     const info = caller(exchange);
@@ -592,7 +610,7 @@ function apply(ctx, config = {}) {
       ...result.model ? { replyModel: result.model } : {},
       ...trace.sceneCode ? { sceneCode: trace.sceneCode } : {}
     });
-    return { ok: true, reply: result.reply, model: result.model, skill: result.skill, message: trace, replyMessage: reply };
+    return { ok: true, reply: result.reply, model: result.model, skill: result.skill, message: trace, replyMessage: reply, skillLoad: result.skillLoad };
   });
   guarded("GET", "/api/panel/:dept/tasks", "panel.read", (exchange) => ({
     tasks: panel.tasks().find((item) => item.dept === deptOf(exchange).id)
@@ -602,6 +620,7 @@ function apply(ctx, config = {}) {
     const input = body(exchange);
     if (!input.title?.trim()) throw new Error("\u4EFB\u52A1\u6807\u9898\u5FC5\u586B");
     if (input.lane !== void 0 && !TASK_LANES.includes(input.lane)) throw new Error(`\u975E\u6CD5\u6CF3\u9053\uFF1A${input.lane}`);
+    if (!sceneGuard(exchange, input.sceneCode, "panel.task.create")) return;
     const info = caller(exchange);
     const task = panel.createTask({
       dept: dept.id,
@@ -611,6 +630,11 @@ function apply(ctx, config = {}) {
       ...input.assigneeType === "agent" ? { assigneeType: "agent" } : {},
       ...input.assigneeName ? { assigneeName: input.assigneeName } : {},
       ...input.sceneCode ? { sceneCode: input.sceneCode } : {},
+      // 执行中枢血缘（DSH issue#3 修订）：携带即投影 exec-hub 权威，缺席/不存在诚实 400
+      ...input.execIssueId?.trim() ? { execIssueId: input.execIssueId.trim() } : {},
+      ...input.goalId?.trim() ? { goalId: input.goalId.trim() } : {},
+      ...Array.isArray(input.evidenceRefs) && input.evidenceRefs.length ? { evidenceRefs: input.evidenceRefs.map(String) } : {},
+      ...input.reworkOf?.trim() ? { reworkOf: input.reworkOf.trim() } : {},
       createdBy: info.userId ?? info.principalId
     });
     return { task };
@@ -620,6 +644,18 @@ function apply(ctx, config = {}) {
     if (!lane || !TASK_LANES.includes(lane)) throw new Error(`\u975E\u6CD5\u6CF3\u9053\uFF1A${lane}`);
     const info = caller(exchange);
     return { task: panel.transitionTask(String(exchange.params.id), lane, info.userId ?? info.principalId) };
+  });
+  guarded("GET", "/api/panel/:dept/goals", "panel.read", (exchange) => {
+    const dept = deptOf(exchange);
+    const projection = panel.deptGoalsProjection(dept);
+    if (!projection) return degraded(exchange, "\u6267\u884C\u4E2D\u67A2");
+    return projection;
+  });
+  guarded("POST", "/api/panel/tasks/:id/verdict", "panel.task.write", (exchange) => {
+    const input = body(exchange);
+    if (input.verdict !== "accepted" && input.verdict !== "rework") throw new Error("verdict \u5FC5\u586B\u4E14\u53EA\u80FD\u662F 'accepted'\uFF08\u7B7E\u8BA4\u5173\u95ED\uFF09\u6216 'rework'\uFF08\u6253\u56DE\u8FD4\u5DE5\uFF09");
+    const info = caller(exchange);
+    return { task: panel.taskVerdict(String(exchange.params.id), input.verdict, { actorId: info.userId ?? info.principalId, ...input.opinion ? { opinion: input.opinion } : {} }) };
   });
   guarded("GET", "/api/panel/:dept/artifacts", "panel.read", (exchange) => ({
     artifacts: panel.artifacts().find((item) => item.dept === deptOf(exchange).id).slice(-100).reverse()
@@ -944,12 +980,16 @@ function apply(ctx, config = {}) {
       }
     });
     guarded("POST", "/api/panel/ddws/pull", "panel.write", async (exchange) => {
-      const dept = deptOf(exchange);
       const input = body(exchange);
-      const channelId = input.channelId || panel.channels().find((item) => item.dept === dept.id).at(0)?.id;
-      if (!channelId) throw new Error("\u90E8\u95E8\u6682\u65E0\u9891\u9053\uFF0C\u8BF7\u5148\u521B\u5EFA");
-      const channel = panel.channels().get(channelId);
-      if (!channel || channel.dept !== dept.id) throw new Error(`\u9891\u9053\u4E0D\u5B58\u5728\u6216\u4E0D\u5C5E\u4E8E\u8BE5\u90E8\u95E8\uFF1A${channelId}`);
+      if (!input.channelId?.trim()) throw new Error("channelId \u5FC5\u586B\uFF08\u62C9\u53D6\u843D\u5165\u7684\u76EE\u6807\u9891\u9053\uFF09");
+      const channel = panel.channels().get(input.channelId);
+      if (!channel) throw new Error(`\u9891\u9053\u4E0D\u5B58\u5728\uFF1A${input.channelId}`);
+      const dept = panel.dept(channel.dept);
+      if (!panel.deptScopeAllowed(caller(exchange), dept)) {
+        exchange.fail(403, "FORBIDDEN", `\u90E8\u95E8\u8303\u56F4\u53D7\u9650\uFF1A${dept.label} \u5DF2\u7ED1\u5B9A\u7EC4\u7EC7\u6CBB\u7406\uFF0C\u4EC5\u8BE5\u7EC4\u7EC7\u5B50\u6811\u6210\u5458\u53EF\u8BBF\u95EE`, { permission: "panel.read", deptScope: dept.orgId });
+        return;
+      }
+      const channelId = channel.id;
       const info = caller(exchange);
       try {
         const incoming = await dws.pullLatestMessages(Math.floor(Number(input.limit) || 20));
@@ -991,7 +1031,7 @@ function apply(ctx, config = {}) {
     });
     ctx.logger("panel-core").info(`01\u95E8\u672C\u5730\u9489\u9489\u9762\u5DF2\u6302\u8F7D\uFF1Adws CLI \u6865\uFF08/api/panel/ddws/*\uFF0C\u5BBF\u4E3B\u6865${dingtalkBridgePresent ? "\u5728\u573A\u5171\u5B58" : "\u7F3A\u5E2D\u72EC\u4EFB"}\uFF1BddSync \u6295\u9012\u6309\u7FA4\u6865\u5F52\u5C5E\u88C1\u51B3\uFF09`);
   }
-  {
+  if (demoAuth) {
     let seedTries = 0;
     const seedTimer = setInterval(() => {
       seedTries += 1;
@@ -1006,8 +1046,9 @@ function apply(ctx, config = {}) {
       clearInterval(seedTimer);
       if (iamNow.orgs().count() > 0) return;
       try {
+        const SYSTEM_ACTOR = { permissions: ["*"] };
         iamNow.ensureBuiltinRoles();
-        const root = iamNow.createOrg({ name: process.env.ORG_NAME ?? "\u5143\u51B0\u53EF\u96C6\u56E2" });
+        const root = iamNow.createOrg({ name: process.env.ORG_NAME ?? "\u5143\u51B0\u53EF\u96C6\u56E2" }, SYSTEM_ACTOR);
         const roleSuper = iamNow.roles().findOne((role) => role.code === "super_admin");
         const { user, initialPassword } = iamNow.createUser({
           username: "admin",
@@ -1016,7 +1057,7 @@ function apply(ctx, config = {}) {
           title: "\u5E73\u53F0\u7BA1\u7406\u5458",
           roleIds: [roleSuper.id],
           password: process.env.ADMIN_PASSWORD
-        });
+        }, SYSTEM_ACTOR);
         iamNow.users().update(user.id, { status: "active" });
         void user;
         if (initialPassword) {
@@ -1288,6 +1329,7 @@ ${initialPassword}
 export {
   CARD_PLATFORMS2 as CARD_PLATFORMS,
   CardpackService2 as CardpackService,
+  PANEL_CONTRACT_VERSION,
   apply,
   filterCards2 as filterCards,
   inject,

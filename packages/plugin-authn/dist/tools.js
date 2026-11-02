@@ -1,4 +1,5 @@
 import { defineTool } from "../../platform-core/dist/index.js";
+import { t as translate } from "../../platform-i18n/dist/index.js";
 const name = "authn-tools";
 const inject = ["tools", "authn"];
 function apply(ctx) {
@@ -40,6 +41,7 @@ function apply(ctx) {
   t.register(defineTool({
     name: "authn_token_list",
     description: "\u67E5\u8BE2\u4E3B\u4F53\u4EE4\u724C\u5217\u8868\uFF08\u542B\u540A\u9500\u72B6\u6001\uFF09\u3002",
+    permission: "authn.principal.read",
     parameters: {
       principalId: { type: "string", description: "\u6309\u4E3B\u4F53\u8FC7\u6EE4" },
       activeOnly: { type: "boolean", description: "\u4EC5\u672A\u540A\u9500" }
@@ -59,7 +61,8 @@ function apply(ctx) {
           issuedAt: token.issuedAt,
           expiresAt: token.expiresAt,
           revokedAt: token.revokedAt ?? null,
-          issuedBy: token.issuedBy
+          issuedBy: token.issuedBy,
+          ...token.label !== void 0 ? { label: token.label } : {}
         }))
       };
     }
@@ -86,7 +89,7 @@ function apply(ctx) {
         principalId: created.principal.id,
         clientId: created.clientId,
         clientSecret: created.clientSecret,
-        note: "clientSecret \u4EC5\u6B64\u4E00\u6B21\u8FD4\u56DE\uFF0C\u8BF7\u59A5\u5584\u4FDD\u7BA1"
+        note: translate("clientSecret \u4EC5\u6B64\u4E00\u6B21\u8FD4\u56DE\uFF0C\u8BF7\u59A5\u5584\u4FDD\u7BA1")
       };
     }
   }));
@@ -103,7 +106,7 @@ function apply(ctx) {
       const principal = ctx.authn.updateMachineScopes(args.principalId, { scopes: args.scopes });
       const { clientSecretHash, ...safe } = principal;
       void clientSecretHash;
-      return { ...safe, note: "\u5B58\u91CF\u4EE4\u724C\u5DF2\u5168\u90E8\u540A\u9500\uFF0C\u673A\u5668\u4FA7\u9700\u7528\u51ED\u8BC1\u91CD\u65B0\u6362\u724C" };
+      return { ...safe, note: translate("\u5B58\u91CF\u4EE4\u724C\u5DF2\u5168\u90E8\u540A\u9500\uFF0C\u673A\u5668\u4FA7\u9700\u7528\u51ED\u8BC1\u91CD\u65B0\u6362\u724C") };
     }
   }));
   t.register(defineTool({
@@ -119,7 +122,7 @@ function apply(ctx) {
       return {
         clientId: rotated.principal.clientId,
         clientSecret: rotated.clientSecret,
-        note: "\u65B0 clientSecret \u4EC5\u6B64\u4E00\u6B21\u8FD4\u56DE\uFF0C\u65E7\u503C\u7ACB\u5373\u5931\u6548\uFF0C\u5B58\u91CF\u4EE4\u724C\u5DF2\u5168\u90E8\u540A\u9500"
+        note: translate("\u65B0 clientSecret \u4EC5\u6B64\u4E00\u6B21\u8FD4\u56DE\uFF0C\u65E7\u503C\u7ACB\u5373\u5931\u6548\uFF0C\u5B58\u91CF\u4EE4\u724C\u5DF2\u5168\u90E8\u540A\u9500")
       };
     }
   }));

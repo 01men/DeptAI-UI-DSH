@@ -2,6 +2,11 @@ import { createHash, randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Service } from "@deepseek-ai/cordis";
+import { t } from "../../platform-i18n/dist/index.js";
+import {
+  HostBridgeRegistry,
+  createHostWebPort
+} from "../../platform-core/dist/host-bridge.js";
 const name = "dsh-bridge";
 const inject = ["webServer", "httpServer", "opsStorage"];
 const softRead = (ctx, key) => {
@@ -159,17 +164,24 @@ function apply(ctx, config = {}) {
   }
   const bindingService = prebound ?? new IdentityBindingService(ctx, { cookieName: config.cookieName, bindTtlSeconds: config.bindTtlSeconds });
   if (!mountPath.startsWith("/") || mountPath === "/") {
-    throw new Error(`dsh-bridge mountPath \u975E\u6CD5\uFF1A${JSON.stringify(config.mountPath)}\uFF08\u987B\u4E3A\u4EE5 / \u5F00\u5934\u7684\u975E\u6839\u8DEF\u5F84\uFF09`);
+    throw new Error(t("dsh-bridge mountPath \u975E\u6CD5\uFF1A{value}\uFF08\u987B\u4E3A\u4EE5 / \u5F00\u5934\u7684\u975E\u6839\u8DEF\u5F84\uFF09", { value: JSON.stringify(config.mountPath) }));
   }
   const webServer = ctx.webServer;
   const httpServer = ctx.httpServer;
   if (!webServer || typeof webServer.register !== "function") {
-    throw new Error("dsh-bridge \u9700\u8981 ctx.webServer\uFF08\u4EC5\u5728\u5B8C\u6574 dsh web \u5BBF\u4E3B\u4E0B\u88C5\u914D\u672C\u63D2\u4EF6\uFF09");
+    throw new Error(t("dsh-bridge \u9700\u8981 ctx.webServer\uFF08\u4EC5\u5728\u5B8C\u6574 dsh web \u5BBF\u4E3B\u4E0B\u88C5\u914D\u672C\u63D2\u4EF6\uFF09"));
   }
   if (!httpServer) {
-    throw new Error("dsh-bridge \u9700\u8981 ctx.httpServer\uFF08platform-core \u5FC5\u987B\u5148\u4E8E\u672C\u63D2\u4EF6\u88C5\u914D\uFF09");
+    throw new Error(t("dsh-bridge \u9700\u8981 ctx.httpServer\uFF08platform-core \u5FC5\u987B\u5148\u4E8E\u672C\u63D2\u4EF6\u88C5\u914D\uFF09"));
   }
-  webServer.register({
+  const hostWeb = createHostWebPort(webServer);
+  try {
+    const existing = softRead(ctx, "hostBridge");
+    const registry = existing && typeof existing.registerWebPort === "function" ? existing : new HostBridgeRegistry(ctx);
+    registry.registerWebPort(hostWeb);
+  } catch {
+  }
+  hostWeb.register({
     kind: "prefix",
     path: mountPath,
     handler(req, res) {
@@ -192,7 +204,7 @@ function apply(ctx, config = {}) {
   }
   const redeemTicket = (ticket) => {
     const entryTickets = entryTicketsAt();
-    if (!entryTickets) throw new Error("entryTickets \u670D\u52A1\u672A\u5C31\u7EEA\uFF08\u88C5\u914D\u8FDB\u884C\u4E2D\uFF09\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+    if (!entryTickets) throw new Error(t("entryTickets \u670D\u52A1\u672A\u5C31\u7EEA\uFF08\u88C5\u914D\u8FDB\u884C\u4E2D\uFF09\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5"));
     return entryTickets.redeem(ticket, "dsh-bridge");
   };
   const sameOrigin = (req) => {
@@ -217,7 +229,7 @@ function apply(ctx, config = {}) {
     }
   };
   const cookieAttrs = (token, maxAge) => `${config.cookieName ?? DEFAULT_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
-  webServer.register({
+  hostWeb.register({
     kind: "exact",
     path: "/auth/entry",
     handler(req, res) {
@@ -228,17 +240,17 @@ function apply(ctx, config = {}) {
         return;
       }
       try {
-        const bound = binding.bindByTicket((t) => redeemTicket(t), ticket);
+        const bound = binding.bindByTicket((t2) => redeemTicket(t2), ticket);
         res.writeHead(302, {
           "set-cookie": cookieAttrs(bound.token, config.bindTtlSeconds ?? DEFAULT_TTL_SECONDS),
           location: "/"
         }).end();
       } catch (error) {
-        res.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end(`entry_ticket \u65E0\u6548\u6216\u5DF2\u8FC7\u671F\uFF1A${error instanceof Error ? error.message : String(error)}`);
+        res.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end(t("entry_ticket \u65E0\u6548\u6216\u5DF2\u8FC7\u671F\uFF1A{reason}", { reason: error instanceof Error ? error.message : String(error) }));
       }
     }
   });
-  webServer.register({
+  hostWeb.register({
     kind: "prefix",
     path: "/dsh-bridge",
     handler(req, res) {
@@ -259,7 +271,7 @@ function apply(ctx, config = {}) {
             return;
           }
           try {
-            const bound = binding.bindByTicket((t) => redeemTicket(t), ticket);
+            const bound = binding.bindByTicket((t2) => redeemTicket(t2), ticket);
             json(200, { ok: true, data: { identity: bound.identity } }, {
               "set-cookie": cookieAttrs(bound.token, config.bindTtlSeconds ?? DEFAULT_TTL_SECONDS)
             });
@@ -295,7 +307,7 @@ function apply(ctx, config = {}) {
         void (async () => {
           const status = binding.bindingStatus(req.headers.cookie);
           if (!status.bound || !status.identity) {
-            json(401, { ok: false, error: { code: "NOT_BOUND", message: `\u5BBF\u4E3B\u4F1A\u8BDD\u672A\u7ED1\u5B9A\uFF08${status.reason ?? "unknown"}\uFF09\u2014\u2014\u8BF7\u4ECE dsh \u5BBF\u4E3B\u5165\u53E3\u8FDB\u5165\u6216\u4F7F\u7528\u5165\u573A\u7968\u636E` } });
+            json(401, { ok: false, error: { code: "NOT_BOUND", message: t("\u5BBF\u4E3B\u4F1A\u8BDD\u672A\u7ED1\u5B9A\uFF08{reason}\uFF09\u2014\u2014\u8BF7\u4ECE dsh \u5BBF\u4E3B\u5165\u53E3\u8FDB\u5165\u6216\u4F7F\u7528\u5165\u573A\u7968\u636E", { reason: status.reason ?? "unknown" }) } });
             return;
           }
           const deps = {
@@ -310,12 +322,12 @@ function apply(ctx, config = {}) {
             }
           };
           if (!deps.authn || !deps.iam) {
-            json(503, { ok: false, error: { code: "AUTHN_UNAVAILABLE", message: "authn \u670D\u52A1\u4E0D\u53EF\u7528\uFF08\u6302\u8F7D\u5F62\u6001\u88C5\u914D\u4E0D\u5B8C\u6574\uFF09" } });
+            json(503, { ok: false, error: { code: "AUTHN_UNAVAILABLE", message: t("authn \u670D\u52A1\u4E0D\u53EF\u7528\uFF08\u6302\u8F7D\u5F62\u6001\u88C5\u914D\u4E0D\u5B8C\u6574\uFF09") } });
             return;
           }
           const user = deps.iam.users().get(String(status.identity.sub));
           if (!user || user.status !== void 0 && user.status !== "active") {
-            json(401, { ok: false, error: { code: "ACCOUNT_INACTIVE", message: "\u7ED1\u5B9A\u8D26\u53F7\u5DF2\u51BB\u7ED3\u6216\u4E0D\u5B58\u5728\uFF08fail-closed\uFF09" } });
+            json(401, { ok: false, error: { code: "ACCOUNT_INACTIVE", message: t("\u7ED1\u5B9A\u8D26\u53F7\u5DF2\u51BB\u7ED3\u6216\u4E0D\u5B58\u5728\uFF08fail-closed\uFF09") } });
             return;
           }
           const principal = deps.authn.ensureHumanPrincipal(user.id, user.displayName);
@@ -332,9 +344,9 @@ function apply(ctx, config = {}) {
             action: "dsh_bridge.cookie.session",
             resourceType: "dsh_bridge",
             resourceId: "rq_sid",
-            resourceName: "\u5BBF\u4E3B\u4F1A\u8BDD",
+            resourceName: t("\u5BBF\u4E3B\u4F1A\u8BDD"),
             result: "ok",
-            detail: "\u5BBF\u4E3B Cookie \u7ED1\u5B9A\u8EAB\u4EFD\u5151\u6362\u5E73\u53F0\u4F1A\u8BDD\uFF08\u514D\u767B\u76F4\u8FBE\u5143\u51B0\u53EF\u6570\u636E\u9762\uFF09"
+            detail: t("\u5BBF\u4E3B Cookie \u7ED1\u5B9A\u8EAB\u4EFD\u5151\u6362\u5E73\u53F0\u4F1A\u8BDD\uFF08\u514D\u767B\u76F4\u8FBE\u5143\u51B0\u53EF\u6570\u636E\u9762\uFF09")
           });
           json(200, {
             ok: true,
@@ -356,7 +368,7 @@ function apply(ctx, config = {}) {
         })();
         return;
       }
-      json(404, { ok: false, error: { code: "NOT_FOUND", message: `\u672A\u77E5\u7AEF\u70B9\uFF1A${req.method} /dsh-bridge/${endpoint}` } });
+      json(404, { ok: false, error: { code: "NOT_FOUND", message: t("\u672A\u77E5\u7AEF\u70B9\uFF1A{method} /dsh-bridge/{endpoint}", { method: req.method ?? "", endpoint }) } });
     }
   });
   const oidc = softRead(ctx, "oidc");
@@ -372,7 +384,7 @@ function apply(ctx, config = {}) {
     } catch {
     }
     if (oidcClient) {
-      webServer.register({
+      hostWeb.register({
         kind: "exact",
         path: "/auth/oidc/start",
         handler(req, res) {
@@ -388,7 +400,7 @@ function apply(ctx, config = {}) {
           for (const [key, value] of pendingOidc) {
             if (Date.now() - value.issuedAt > OIDC_PENDING_TTL) pendingOidc.delete(key);
           }
-          const authorize = new URL(`${oidc.issuer()}/oauth/authorize`);
+          const authorize = new URL(`${oidc.issuer({ headers: req.headers })}/oauth/authorize`);
           authorize.searchParams.set("response_type", "code");
           authorize.searchParams.set("client_id", oidcClient.clientId);
           authorize.searchParams.set("redirect_uri", redirectUri);
@@ -399,7 +411,7 @@ function apply(ctx, config = {}) {
           res.writeHead(302, { location: authorize.toString() }).end();
         }
       });
-      webServer.register({
+      hostWeb.register({
         kind: "exact",
         path: "/auth/oidc/callback",
         handler(req, res) {
@@ -410,11 +422,11 @@ function apply(ctx, config = {}) {
             const pending = pendingOidc.get(state);
             pendingOidc.delete(state);
             if (!code || !pending || Date.now() - pending.issuedAt > OIDC_PENDING_TTL) {
-              res.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end("OIDC \u56DE\u8DF3\u65E0\u6548\u6216\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u53D1\u8D77\u767B\u5F55");
+              res.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end(t("OIDC \u56DE\u8DF3\u65E0\u6548\u6216\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u53D1\u8D77\u767B\u5F55"));
               return;
             }
             try {
-              const tokenRes = await fetch(`${oidc.issuer()}/oauth/token`, {
+              const tokenRes = await fetch(`${oidc.issuer({ headers: req.headers })}/oauth/token`, {
                 method: "POST",
                 headers: {
                   "content-type": "application/x-www-form-urlencoded",
@@ -429,10 +441,10 @@ function apply(ctx, config = {}) {
               });
               const tokenPayload = await tokenRes.json().catch(() => null);
               const accessToken = tokenPayload?.access_token;
-              if (!tokenRes.ok || !accessToken) throw new Error(tokenPayload?.error_description ?? `token \u7AEF\u70B9\u5931\u8D25\uFF08${tokenRes.status}\uFF09`);
-              const userinfoRes = await fetch(`${oidc.issuer()}/oauth/userinfo`, { headers: { authorization: `Bearer ${accessToken}` } });
+              if (!tokenRes.ok || !accessToken) throw new Error(tokenPayload?.error_description ?? t("token \u7AEF\u70B9\u5931\u8D25\uFF08{status}\uFF09", { status: tokenRes.status }));
+              const userinfoRes = await fetch(`${oidc.issuer({ headers: req.headers })}/oauth/userinfo`, { headers: { authorization: `Bearer ${accessToken}` } });
               const userinfo = await userinfoRes.json().catch(() => null);
-              if (!userinfoRes.ok || !userinfo?.sub) throw new Error("userinfo \u6362\u53D6\u5931\u8D25");
+              if (!userinfoRes.ok || !userinfo?.sub) throw new Error(t("userinfo \u6362\u53D6\u5931\u8D25"));
               const identity = {
                 sub: String(userinfo.sub),
                 name: typeof userinfo.name === "string" ? userinfo.name : void 0,
@@ -445,7 +457,7 @@ function apply(ctx, config = {}) {
                 location: "/"
               }).end();
             } catch (error) {
-              res.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end(`OIDC \u767B\u5F55\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`);
+              res.writeHead(400, { "content-type": "text/plain; charset=utf-8" }).end(t("OIDC \u767B\u5F55\u5931\u8D25\uFF1A{reason}", { reason: error instanceof Error ? error.message : String(error) }));
             }
           })();
         }
@@ -457,9 +469,9 @@ function apply(ctx, config = {}) {
   } else {
     ctx.logger("dsh-bridge").info(`OIDC \u51ED\u8BC1\u6587\u4EF6\u4E0D\u5B58\u5728\uFF08${credFile ?? "\u672A\u914D\u7F6E"}\uFF09\uFF0C\u6388\u6743\u7801\u901A\u9053\u672A\u542F\u7528\u2014\u2014\u53EF\u5148\u8FD0\u884C register-dsh-agent.mjs`);
   }
-  const tapIndex = webServer.tapIndex;
+  const tapIndex = hostWeb.tapIndex;
   if (typeof tapIndex === "function") {
-    tapIndex.call(webServer, (html) => {
+    tapIndex((html) => {
       const script = `<script>(function(){try{var m=(location.hash||'').match(/[#&]entry_ticket=([^&]+)/);if(!m)return;fetch('/dsh-bridge/redeem',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({ticket:decodeURIComponent(m[1])})}).then(function(r){return r.json()}).then(function(j){try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}if(j&&j.ok)location.reload();}).catch(function(){});}catch(e){}})();<\/script>`;
       const head = html.indexOf("<head>");
       if (head !== -1) return `${html.slice(0, head + 6)}${script}${html.slice(head + 6)}`;

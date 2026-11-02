@@ -7,7 +7,7 @@
  * bundle 纯度门禁——platform-core 不进浏览器产物）。
  * dsh 升级 API 漂移时只改本文件 + 重跑契约测试
  * （npm run test:contracts 的 plugin-rq-card 段）。
- * @module @dsh-ops/plugin-rq-card/client/host-port
+ * @module @ybkk/plugin-rq-card/client/host-port
  */
 import type { ClientContext, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
 // Type-only：拉入 ui-conversation 的 SlotMap merge（assistant-actions 条目形态）。

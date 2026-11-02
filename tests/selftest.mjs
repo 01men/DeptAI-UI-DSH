@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto'
 import { rm, mkdir } from 'node:fs/promises'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { pathToFileURL, fileURLToPath } from 'node:url'
 // 进程内插件树（dsh 宿主挂载分节：伪造 webServer 模拟 dsh 前缀分发，不经子进程）
 import { Context } from '@deepseek-ai/cordis'
 
@@ -2754,7 +2754,20 @@ try {
   const appCredGetDeleted = await api('GET', `/api/apps/${appCredAppId}/credentials/kizuna-admin-token/value`, { token: admin })
   check('删除后取值 404（删除即失效）', appCredDel.ok && appCredDel.data.removed === true && appCredGetDeleted.status === 404, JSON.stringify(appCredDel.error ?? appCredGetDeleted.error).slice(0, 160))
   const appCredAppDel = await api('DELETE', `/api/apps/${appCredAppId}`, { token: admin, body: {} })
-  check('验收应用删除联动清库（密钥文件整体消失）', appCredAppDel.ok && !existsSync(join(DATA_DIR, 'secrets', 'app', `${appCredAppId}.json`)), JSON.stringify(appCredAppDel.error ?? '').slice(0, 160))
+  check('验收应用删除联动清库（密钥文件整体消失）', appCredAppDel.ok && !existsSync(join(DATA_DIR, 'secrets', 'app', `${appCredAppId}.json`)),
+    // 诊断增强（2026-11-02 合并回归排查）：失败时带上 HTTP 状态/错误/残留文件/目录清单/应用存否五要素，避免空详情死胡同
+    (() => {
+      const secretsDir = join(DATA_DIR, 'secrets', 'app')
+      let dirList = '<missing>'
+      try { dirList = readdirSync(secretsDir).join(',') } catch { /* 目录不存在 */ }
+      const keyPath = join(secretsDir, `${appCredAppId}.json`)
+      let head = ''
+      try { head = readFileSync(keyPath, 'utf8').replaceAll(/\s+/g, ' ').slice(0, 80) } catch { /* 无残留 */ }
+      return JSON.stringify({
+        status: appCredAppDel.status, error: appCredAppDel.error ?? null,
+        residual: existsSync(keyPath), head, dir: dirList.slice(0, 120), deleted: appCredAppDel.data?.deleted,
+      }).slice(0, 400)
+    })())
 
   mcpStub.close()
   ddStub.close()
@@ -4262,14 +4275,28 @@ try {
   check('创建告警规则', ruleCreate.ok)
 
   // 告警已读体系：单条已读 → 一键全部已读 → 未读清零（403 探测放最后，避免中途触发新告警干扰计数）
-  const alertsBefore = await api('GET', '/api/audit/alerts', { token: admin })
+  // 异步落地稳定化（2026-11-02 Windows 合并回归）：平台总线派发为异步串行（bus.ts OPT-P1-04），
+  // 快照之前已 fire 的告警可能尚未落入 alerts() 集合——直接快照会把晚落地的一条算进 read-all，
+  // 造成「返回条数 ≠ 快照未读-1」假失败。快照前轮询至未读数连续两次相等（在途事件落地完毕）。
+  let alertsBefore = await api('GET', '/api/audit/alerts', { token: admin })
+  for (let i = 0; i < 20; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 400))
+    const again = await api('GET', '/api/audit/alerts', { token: admin })
+    if (!again.ok) break
+    const settled = again.data.alerts.filter((a) => !a.read).length === alertsBefore.data.alerts.filter((a) => !a.read).length
+    alertsBefore = again
+    if (settled) break
+  }
   const unreadBefore = alertsBefore.data.alerts.filter((a) => !a.read)
   check('告警中心存在未读告警（前置）', alertsBefore.ok && unreadBefore.length >= 1)
   const oneRead = await api('POST', `/api/audit/alerts/${unreadBefore[0].id}/read`, { token: admin })
   check('单条告警标记已读', oneRead.ok && oneRead.data.read === true)
   const readAll = await api('POST', '/api/audit/alerts/read-all', { token: admin })
   const alertsAfter = await api('GET', '/api/audit/alerts?unread=1', { token: admin })
-  check('一键全部已读（返回条数 = 剩余未读，且未读清零）', readAll.ok && readAll.data.read === unreadBefore.length - 1 && alertsAfter.data.alerts.length === 0)
+  check('一键全部已读（返回条数 = 剩余未读，且未读清零）',
+    readAll.ok && readAll.data.read === unreadBefore.length - 1 && alertsAfter.data.alerts.length === 0,
+    // 诊断（2026-11-02 合并回归）：快照未读/本次已读/读后未读三计数，定位异步落地竞态
+    JSON.stringify({ before: unreadBefore.length, read: readAll.data?.read, afterUnread: alertsAfter.data?.alerts?.length, ok: readAll.ok }))
   const readAllAgain = await api('POST', '/api/audit/alerts/read-all', { token: admin })
   check('重复一键已读幂等（返回 0）', readAllAgain.ok && readAllAgain.data.read === 0)
   const toolReadAll = await api('POST', '/api/tools/execute', { token: admin, body: { name: 'audit_alerts_read_all', args: {} } })
@@ -8255,8 +8282,11 @@ try {
         pwBootstrapRaw?.data?.initialPasswordPending === true, JSON.stringify(pwBootstrapRaw ?? {}))
       const pwFile = join(pwDataDir, 'admin-initial-password.txt')
       const pwStat = existsSync(pwFile) ? statSync(pwFile) : undefined
-      check('组4 C16：初始口令文件 mode 0o600（仅属主可读写，macOS APFS/Linux 均生效）',
-        Boolean(pwStat) && (pwStat.mode & 0o777) === 0o600, pwStat ? `mode=${(pwStat.mode & 0o777).toString(8)}` : '文件未生成')
+      // Windows 无 POSIX 权限位语义（chmod 仅切换只读属性，stat 恒 666）——0o600 断言仅在
+      // POSIX 平台生效；win32 下只验文件存在与内容可用（下一条登录断言兜底），不造假通过。
+      check('组4 C16：初始口令文件 mode 0o600（仅属主可读写，macOS APFS/Linux 均生效；win32 豁免模式位断言）',
+        Boolean(pwStat) && (process.platform === 'win32' || (pwStat.mode & 0o777) === 0o600),
+        pwStat ? `mode=${(pwStat.mode & 0o777).toString(8)} platform=${process.platform}` : '文件未生成')
       const pwText = pwStat ? readFileSync(pwFile, 'utf8') : ''
       const pwValue = pwText.split('\n').map((line) => line.trim()).filter((line) => line && !line.startsWith('平台管理员'))[0] ?? ''
       const pwLogin = await fetch(`http://127.0.0.1:${PW_PORT}/api/auth/login`, {
@@ -8833,7 +8863,9 @@ try {
       && i18n.resolveRequestLocale({ acceptLanguage: 'fr-FR,ja;q=0.5' }) === 'ja-JP'
       && i18n.resolveRequestLocale({ env: 'en-GB' }) === 'en-US')
     // 词典齐套：全部 locale 目录 JSON 可解析 + en/ja 键集逐对一致
-    const localeRoot = new URL('../packages/platform-i18n/locales/', import.meta.url).pathname
+    // fileURLToPath（2026-11-02 Windows 合并回归）：.pathname 在 win32 带前导斜杠且 CJK 路径
+    // 被 percent-encode（元冰可产品 → %E5%85%83…）——existsSync 全 miss、词典对数=4 假失败。
+    const localeRoot = fileURLToPath(new URL('../packages/platform-i18n/locales/', import.meta.url))
     const dictParityFails = []
     let dictPairs = 0
     // 面板 SPA 词典层已随 2026-10-29 架构统一摘除（IAW 工作台为中文直出 SPA，无 locales 目录）
@@ -9619,405 +9651,6 @@ try {
       `${patAgentTr?.permission} / ${patAppTr?.permission}`)
   }
 
-  section('凭证零进平台（红线一 · T-24 全目录扫描）')
-  // SIGTERM 触发 main.ts 的 flushNow（把内存中的待写集合全部原子落盘）后退出，
-  // 再扫描数据目录——保证连「尚未刷盘的最新写入」也在扫描覆盖之内。
-  proc.kill('SIGTERM')
-  let stopped = false
-  for (let i = 0; i < 30; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    try { await fetch(`${BASE}/api/health`); } catch { stopped = true; break }
-  }
-  if (!stopped) proc.kill('SIGKILL')
-  const bannedSecrets = ['ghp_selftestSecret123', 'client-supersecret-oauth-xyz', ...new Set(ocMintedValues)]
-  const bannedHits = []
-  const walkFiles = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
-    entry.isDirectory() ? walkFiles(join(dir, entry.name)) : [join(dir, entry.name)])
-  let dataFiles = []
-  try { dataFiles = walkFiles(DATA_DIR) } catch { /* 目录已被清理则跳过扫描 */ }
-  for (const file of dataFiles) {
-    try {
-      const text = readFileSync(file).toString('latin1')
-      for (const secret of bannedSecrets) {
-        if (text.includes(secret)) bannedHits.push({ file: file.split(/[\\/]/).slice(-2).join('/'), secret })
-      }
-    } catch { /* 二进制读失败跳过 */ }
-  }
-  check(`T-24 数据目录 ${dataFiles.length} 个文件全部扫描`, dataFiles.length > 5, `files=${dataFiles.length}`)
-  check('T-24 凭证原文零命中（API Key / OAuth client secret / 每个一次性 oct_ 值）',
-    bannedHits.length === 0 && ocMintedValues.length >= 3, JSON.stringify(bannedHits))
-
-  // ================================================================ 启动健壮性探针（W2）
-  // 纯进程内：双实例断言 / 插件树体检 / 错误文案 / 良性败者豁免。不占端口、不写数据目录。
-  section('启动健壮性探针（W2）')
-  {
-    const ROOT_KEY = Symbol.for('ybkk.cordis.root')
-    const clearRoot = () => Reflect.deleteProperty(globalThis, ROOT_KEY)
-    // ① 正常路径：提供者 + 注入消费者，probeTree 应全绿
-    const okCtx = new Context()
-    platformCore.assertSingleRoot(okCtx)
-    await okCtx.plugin((ctx) => ctx.provide('iam', { source: 'selftest' }))
-    await okCtx.plugin({ inject: ['iam'], apply: () => {} })
-    const okHealth = platformCore.probeTree(okCtx, ['iam'])
-    check('W2 正常装配 probeTree ok:true',
-      okHealth.ok === true && okHealth.unreachable.length === 0 && okHealth.stuck.length === 0,
-      JSON.stringify(okHealth))
-    clearRoot()
-
-    // ② 故障注入：另一 root Context 注册 iam → 当前 ctx 永不可达，消费者 fiber 静默 PENDING（根因形态）
-    const badCtx = new Context()
-    const otherRoot = new Context()
-    await otherRoot.plugin((ctx) => ctx.provide('iam', { source: 'other-root' }))
-    badCtx.plugin({ inject: ['iam'], apply: () => {} })
-    const badHealth = platformCore.probeTree(badCtx, ['iam'])
-    check('W2 双实例注入 probeTree 报 iam 不可达',
-      !badHealth.ok && badHealth.unreachable.includes('iam')
-        && badHealth.stuck.some((f) => f.state === 'PENDING' && f.waiting.includes('iam')),
-      JSON.stringify(badHealth))
-    const badText = platformCore.formatTreeHealth(badHealth)
-    check('W2 formatTreeHealth 输出可读（拒绝启动 + 卡死插件 + 等待键）',
-      badText.includes('插件树未健康') && badText.includes('PENDING') && badText.includes('iam'),
-      badText)
-    clearRoot()
-
-    // ③ 污染 globalThis → assertSingleRoot 必须抛「双实例」
-    globalThis[ROOT_KEY] = { polluted: true }
-    let probeThrew = null
-    try { platformCore.assertSingleRoot(new Context()) } catch (error) { probeThrew = error }
-    check('W2 污染 globalThis 后 assertSingleRoot 抛「双实例」',
-      probeThrew instanceof Error && probeThrew.message.includes('双实例'), String(probeThrew))
-    clearRoot()
-
-    // ④ 用例后清理污染：恢复登记能力，且不残留 globalThis 键
-    let afterClean = null
-    const recoverCtx = new Context()
-    try { platformCore.assertSingleRoot(recoverCtx) } catch (error) { afterClean = error }
-    check('W2 用例后清理 globalThis 污染（恢复登记）',
-      afterClean === null && globalThis[ROOT_KEY] === recoverCtx.root, String(afterClean))
-    clearRoot()
-
-    // ⑤ 附加（固化门禁偏离语义）：双注册习语的良性败者（声明 provide 已被其他 ACTIVE fiber
-    //    接管）不拦启动，仅入诊断清单——panel-core/flow-core 当前习语下 W2 必须放行
-    const decoyCtx = new Context()
-    platformCore.assertSingleRoot(decoyCtx)
-    const decoy = (ctx) => ctx.provide('iam', { source: 'decoy' })
-    decoy.provide = 'iam'
-    await decoyCtx.plugin({
-      name: 'decoy-module',
-      apply(ctx) {
-        ctx.plugin(decoy)
-        ctx.provide('iam', { source: 'module' })
-      },
-    })
-    const decoyHealth = platformCore.probeTree(decoyCtx, ['iam'])
-    check('W2 良性败者 fiber（provide 已接管）不拦启动',
-      decoyHealth.ok === true
-        && decoyHealth.stuck.some((f) => f.state === 'FAILED' && f.blocking === false),
-      JSON.stringify(decoyHealth))
-    clearRoot()
-  }
-
-  // ================================================================ 存储 SQLite 后端契约（ADR-0001 第一期）
-  // 主实例全程跑默认 json 后端；本节单独验证 sqlite 后端：与 json 的契约对拍、
-  // 引擎级唯一索引、JSON 回填幂等、后端开关环境变量、平台级 kill -9 零丢失。
-  section('存储 SQLite 后端契约（ADR-0001）')
-  {
-    const storageJsonDir = `${DATA_DIR}-storage-json`
-    const storageSqliteDir = `${DATA_DIR}-storage-sqlite`
-    const priorStorage = process.env.PLATFORM_STORAGE
-    const priorKeep = process.env.PLATFORM_STORAGE_JSON_KEEP
-
-    // ---- 1. 双后端同序列对拍：Collection<T> 契约一致性（插件零感知的硬保证）----
-    const runContract = async (backend) => {
-      const dir = backend === 'json' ? storageJsonDir : storageSqliteDir
-      await rm(dir, { recursive: true, force: true })
-      const svc = new platformCore.StorageService(new Context(), { dataDir: dir, backend })
-      const col = svc.collection('ct:items')
-      const out = { events: [] }
-      const off = col.onChange((change) => out.events.push(`${change.kind}:${change.record?.id ?? ''}`))
-      out.insert = col.insert({ id: 'x1', kind: 'a', tag: 'T', createdAt: '2026-01-01T00:00:00.000Z' })
-      out.dupIdError = (() => { try { col.insert({ id: 'x1', kind: 'a' }); return '' } catch (error) { return error.message } })()
-      col.uniqueOn('tag', (record) => record.tag ?? '')
-      out.uniqueError = (() => { try { col.insert({ id: 'x2', kind: 'a', tag: 'T' }); return '' } catch (error) { return error.message } })()
-      out.update = col.update('x1', { kind: 'b' })
-      col.insert({ id: 'x3', kind: 'c', tag: 'X' })
-      out.removed = col.remove('x3')
-      out.countAfterRemove = col.count()
-      out.findLen = col.find((record) => record.kind === 'b').length
-      out.getKind = col.get('x1').kind
-      col.replaceAll([{ id: 'r1', kind: 'z', tag: 'R', createdAt: '2026-02-02T00:00:00.000Z', updatedAt: '2026-02-02T00:00:00.000Z' }])
-      out.countAfterReplace = col.count()
-      off()
-      await svc.flushNow()
-      return out
-    }
-    const jsonOut = await runContract('json')
-    const sqliteOut = await runContract('sqlite')
-    check('双后端对拍：insert 返回一致（自定义 createdAt 保留 + updatedAt 注入）',
-      sqliteOut.insert.createdAt === jsonOut.insert.createdAt && Boolean(sqliteOut.insert.updatedAt) === Boolean(jsonOut.insert.updatedAt))
-    check('双后端对拍：重复 id 抛错文案逐字一致', sqliteOut.dupIdError === jsonOut.dupIdError && jsonOut.dupIdError.includes('已存在'), JSON.stringify({ json: jsonOut.dupIdError, sqlite: sqliteOut.dupIdError }))
-    check('双后端对拍：uniqueOn 冲突抛错文案逐字一致', sqliteOut.uniqueError === jsonOut.uniqueError && jsonOut.uniqueError.includes('唯一约束冲突'))
-    check('双后端对拍：update 字段合并 + createdAt 保持', sqliteOut.update.kind === 'b' && sqliteOut.update.createdAt === '2026-01-01T00:00:00.000Z')
-    check('双后端对拍：remove/count/find/get/replaceAll 结果一致',
-      sqliteOut.removed === jsonOut.removed && sqliteOut.countAfterRemove === jsonOut.countAfterRemove
-      && sqliteOut.findLen === jsonOut.findLen && sqliteOut.getKind === jsonOut.getKind
-      && sqliteOut.countAfterReplace === jsonOut.countAfterReplace,
-      JSON.stringify({ json: { c: jsonOut.countAfterRemove, f: jsonOut.findLen, r: jsonOut.countAfterReplace }, sqlite: { c: sqliteOut.countAfterRemove, f: sqliteOut.findLen, r: sqliteOut.countAfterReplace } }))
-    check('双后端对拍：onChange 事件序列一致（authn:tokens 吊销广播语义不变的前提）',
-      sqliteOut.events.join('|') === jsonOut.events.join('|') && sqliteOut.events.length === 5, JSON.stringify({ json: jsonOut.events, sqlite: sqliteOut.events }))
-
-    // ---- 2. sqlite 引擎级唯一索引（「一人一号」红线的执行方式：非应用层扫描）----
-    const engineDir = `${DATA_DIR}-storage-engine`
-    await rm(engineDir, { recursive: true, force: true })
-    {
-      const svc = new platformCore.StorageService(new Context(), { dataDir: engineDir, backend: 'sqlite' })
-      const col = svc.collection('ct:uniq')
-      col.insert({ id: 'a1', tag: 'K' })
-      col.uniqueOn('tag', (record) => record.tag ?? '')
-      let engineRejected = false
-      try { col.insert({ id: 'a2', tag: 'K' }) } catch { engineRejected = true }
-      check('引擎级唯一：绕过「先查后插」的重复键写入被索引拒绝', engineRejected)
-      col.insert({ id: 'a3', tag: 'K3' })
-      let stealRejected = false
-      try { col.update('a3', { tag: 'K' }) } catch { stealRejected = true }
-      check('引擎级唯一：update 抢占他人键被拒（自身键除外）', stealRejected)
-    }
-    {
-      const svc2 = new platformCore.StorageService(new Context(), { dataDir: engineDir, backend: 'sqlite' })
-      await svc2.restoreAll()
-      check('sqlite 事务提交后重启恢复（已提交写入零丢失）', svc2.collection('ct:uniq').count() === 2, `count=${svc2.collection('ct:uniq').count()}`)
-    }
-
-    // ---- 3. JSON → SQLite 首启自动回填（幂等 + DB 为准 + JSON 保留为回滚源）----
-    {
-      const dir = `${DATA_DIR}-storage-backfill`
-      await rm(dir, { recursive: true, force: true })
-      await mkdir(dir, { recursive: true })
-      const legacy = [
-        { id: 'l1', name: '旧一', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
-        { id: 'l2', name: '旧二', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
-      ]
-      writeFileSync(join(dir, 'ct~legacy.json'), JSON.stringify(legacy))
-      const svc = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
-      await svc.restoreAll()
-      check('首启回填：同名 JSON 集合文件自动导入 SQLite', svc.collection('ct:legacy').count() === 2 && svc.collection('ct:legacy').get('l2').name === '旧二')
-      svc.collection('ct:legacy').update('l1', { name: 'DB新值' })
-      const svc2 = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
-      await svc2.restoreAll()
-      check('二次启动：DB 为准（修改后记录不被旧 JSON 回灌）', svc2.collection('ct:legacy').get('l1').name === 'DB新值' && svc2.collection('ct:legacy').count() === 2)
-      check('回滚源保留：JSON 文件内容未被删除或改写', JSON.parse(readFileSync(join(dir, 'ct~legacy.json'), 'utf8'))[0].name === '旧一')
-      await rm(dir, { recursive: true, force: true })
-    }
-
-    // ---- 4. 后端开关与环境变量（默认 json 向后兼容）----
-    {
-      const dir = `${DATA_DIR}-storage-env`
-      await rm(dir, { recursive: true, force: true })
-      process.env.PLATFORM_STORAGE = 'sqlite'
-      process.env.PLATFORM_STORAGE_JSON_KEEP = 'ct:keep*'
-      const svc = new platformCore.StorageService(new Context(), { dataDir: dir })
-      check('PLATFORM_STORAGE=sqlite：常规集合走 SqliteCollectionImpl', svc.collection('ct:direct').constructor.name === 'SqliteCollectionImpl')
-      check('PLATFORM_STORAGE_JSON_KEEP：例外名单集合保留 JSON 实现', svc.collection('ct:keepme').constructor.name === 'CollectionImpl')
-      process.env.PLATFORM_STORAGE = 'not-a-backend'
-      check('未知 PLATFORM_STORAGE 值：告警回退 json 不崩', new platformCore.StorageService(new Context(), { dataDir: dir }).backend === 'json')
-      delete process.env.PLATFORM_STORAGE
-      check('默认（未设置）：backend=json 向后兼容', new platformCore.StorageService(new Context(), { dataDir: dir }).backend === 'json')
-      if (priorStorage === undefined) delete process.env.PLATFORM_STORAGE; else process.env.PLATFORM_STORAGE = priorStorage
-      if (priorKeep === undefined) delete process.env.PLATFORM_STORAGE_JSON_KEEP; else process.env.PLATFORM_STORAGE_JSON_KEEP = priorKeep
-      await rm(dir, { recursive: true, force: true })
-    }
-
-    // ---- 5. 平台级 kill -9 零丢失（隔离子实例 · PLATFORM_STORAGE=sqlite）----
-    {
-      const dir = `${DATA_DIR}-storage-platform`
-      const port = (await freePort()) ?? 7322
-      const base = `http://127.0.0.1:${port}`
-      await rm(dir, { recursive: true, force: true })
-      await mkdir(dir, { recursive: true })
-      // 预置遗留 JSON 集合：同时验证「回填 → 插件读取 → REST API」全链路
-      writeFileSync(join(dir, 'iam~roles.json'), JSON.stringify([
-        { id: 'role_legacy1', code: 'legacy_one', name: '遗留角色一', permissions: ['iam.user.read'], builtin: false, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
-        { id: 'role_legacy2', code: 'legacy_two', name: '遗留角色二', permissions: ['iam.user.read'], builtin: false, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
-      ]))
-      const childEnv = { ...process.env, PLATFORM_STORAGE: 'sqlite', ADMIN_PASSWORD: 'Ybk@2026' }
-      const spawnInstance = () => spawn(process.execPath, ['src/main.ts', '--port', String(port), '--data', dir], { stdio: ['ignore', 'pipe', 'pipe'], env: childEnv })
-      const waitReady = async () => {
-        for (let i = 0; i < 60; i++) {
-          await new Promise((resolve) => setTimeout(resolve, 500))
-          try {
-            const res = await fetch(`${base}/api/overview`)
-            if (res.status === 401 || res.status === 200) return true
-          } catch { /* 未就绪 */ }
-        }
-        return false
-      }
-      const login = async (username, password) => {
-        const res = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username, password }) }).then((r) => r.json())
-        return res.ok ? res.data.token : ''
-      }
-      let child = spawnInstance()
-      check('SQLite 子实例启动（PLATFORM_STORAGE=sqlite 透传到 main.ts）', await waitReady())
-      const token = await login('admin', 'Ybk@2026')
-      check('SQLite 子实例 admin 登录', Boolean(token))
-      const auth = { authorization: `Bearer ${token}`, 'content-type': 'application/json' }
-      const rolesBefore = await fetch(`${base}/api/iam/roles`, { headers: { authorization: auth.authorization } }).then((r) => r.json())
-      check('遗留 JSON 角色回填后 API 可见（回填 → 插件 → REST 全链路）',
-        rolesBefore.ok && rolesBefore.data.roles.filter((role) => String(role.id).startsWith('role_legacy')).length === 2,
-        JSON.stringify(rolesBefore.data?.roles?.map((role) => role.id)))
-      const orgs = await fetch(`${base}/api/iam/orgs`, { headers: { authorization: auth.authorization } }).then((r) => r.json())
-      const orgId = Array.isArray(orgs.data) ? orgs.data[0]?.id : orgs.data?.orgs?.[0]?.id
-      const created = await fetch(`${base}/api/iam/users`, { method: 'POST', headers: auth, body: JSON.stringify({ username: 'sqlitekill9', displayName: 'kill9 持久化验证', orgId }) }).then((r) => r.json())
-      check('SQLite 后端创建账号成功（写入即事务提交）', created.ok && typeof created.data.initialPassword === 'string', JSON.stringify(created.error))
-
-      child.kill('SIGKILL') // 模拟断电级死亡：无 flushNow、无优雅退出
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      child = spawnInstance()
-      check('kill -9 后子实例重启', await waitReady())
-      const token2 = await login('admin', 'Ybk@2026')
-      const relogin = await login('sqlitekill9', created.data.initialPassword)
-      check('kill -9 零丢失：崩溃前创建的账号可登录（凭证哈希完整）', Boolean(token2) && Boolean(relogin))
-      const rolesAfter = await fetch(`${base}/api/iam/roles`, { headers: { authorization: `Bearer ${token2}` } }).then((r) => r.json())
-      check('kill -9 零丢失：回填的角色数据完整', rolesAfter.ok && rolesAfter.data.roles.filter((role) => String(role.id).startsWith('role_legacy')).length === 2)
-      child.kill('SIGKILL')
-      await rm(dir, { recursive: true, force: true }).catch(() => {})
-    }
-
-    // ---- 6. 默认 JSON 豁免名单（QA W4 缺口①：ADR-0001 §五第 3 批在 sqlite 后端下默认生效）----
-    {
-      const dir = `${DATA_DIR}-storage-keep-default`
-      await rm(dir, { recursive: true, force: true })
-      const priorKeepLocal = process.env.PLATFORM_STORAGE_JSON_KEEP
-      try {
-        delete process.env.PLATFORM_STORAGE_JSON_KEEP
-        // 默认名单生效（环境变量未设置）：第三批低频配置集合保留 JSON，其余集合走 sqlite
-        const svc = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
-        const kindOf = (name) => svc.collection(name).constructor.name
-        check('DEFAULT_JSON_KEEP 默认名单：第 3 批集合（market:*/update:state/resource:dependencies/iam:groupSnapshots）默认保留 JSON',
-          kindOf('market:demo') === 'CollectionImpl' && kindOf('update:state') === 'CollectionImpl'
-          && kindOf('resource:dependencies') === 'CollectionImpl' && kindOf('iam:groupSnapshots') === 'CollectionImpl',
-          JSON.stringify({ market: kindOf('market:demo'), update: kindOf('update:state'), resource: kindOf('resource:dependencies'), snapshot: kindOf('iam:groupSnapshots') }))
-        check('DEFAULT_JSON_KEEP 默认名单：名单外集合仍走 sqlite', kindOf('ct:regular') === 'SqliteCollectionImpl', kindOf('ct:regular'))
-        // 显式环境变量完全覆盖默认名单（空串 = 一个都不豁免，语义见 parseKeepEnv 注释）
-        process.env.PLATFORM_STORAGE_JSON_KEEP = ''
-        const svc2 = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
-        check('PLATFORM_STORAGE_JSON_KEEP 显式空串：完全覆盖默认名单（全部集合走 sqlite）',
-          svc2.collection('market:demo').constructor.name === 'SqliteCollectionImpl' && svc2.collection('iam:groupSnapshots').constructor.name === 'SqliteCollectionImpl')
-        // 显式名单同样整体覆盖默认（不与默认名单叠加）
-        process.env.PLATFORM_STORAGE_JSON_KEEP = 'iam:groupSnapshots'
-        const svc3 = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
-        check('PLATFORM_STORAGE_JSON_KEEP 显式名单：仅豁免名单内集合（market:demo 走 sqlite）',
-          svc3.collection('iam:groupSnapshots').constructor.name === 'CollectionImpl' && svc3.collection('market:demo').constructor.name === 'SqliteCollectionImpl')
-      } finally {
-        if (priorKeepLocal === undefined) delete process.env.PLATFORM_STORAGE_JSON_KEEP; else process.env.PLATFORM_STORAGE_JSON_KEEP = priorKeepLocal
-      }
-      await rm(dir, { recursive: true, force: true })
-    }
-
-    // ---- 7. sqlite 后端 iam「一人一号」攻击演练（QA W4 缺口③）----
-    // 进程内最小插件树（同 dsh 宿主挂载分节先例）：sqlite 后端 + iam + authn；
-    // platformCore 装配期经 PLATFORM_STORAGE 环境变量取后端（PlatformCoreConfig 无 backend 字段），
-    // 故本子块以 try/finally 自持环境变量恢复，不动既有 priorStorage/priorKeep 机制。
-    {
-      const dir = `${DATA_DIR}-storage-iam-attack`
-      await rm(dir, { recursive: true, force: true })
-      const priorStorageLocal = process.env.PLATFORM_STORAGE
-      try {
-        process.env.PLATFORM_STORAGE = 'sqlite'
-        const atkCtx = new Context()
-        await atkCtx.plugin(platformCore, { dataDir: dir, http: { port: 0 }, startHttp: false })
-        await atkCtx.plugin(iam)
-        await atkCtx.plugin(authn)
-        const org = atkCtx.iam.createOrg({ name: 'sqlite 攻击演练组织' }, iam.SYSTEM_ACTOR)
-        const { user } = atkCtx.iam.createUser({ username: 'atk_link_user', displayName: '一人一号演练', orgId: org.id }, iam.SYSTEM_ACTOR)
-        const atkProfile = (corpId) => ({ provider: 'dingtalk', providerUserId: 'atk-ding-1', corpId, displayName: `绑定@${corpId}` })
-
-        // 7.1 引擎拒绝二次绑定：同 provider + providerUserId + corpId（identity_link_active 唯一键）
-        atkCtx.iam.linkIdentity(user.id, atkProfile('corpA'), 'selftest')
-        let secondError = ''
-        try { atkCtx.iam.linkIdentity(user.id, atkProfile('corpA'), 'selftest') } catch (error) { secondError = error.message }
-        check('sqlite iam：同 provider+providerUserId+corpId 二次绑定被引擎拒绝（唯一约束冲突）', secondError.includes('唯一约束冲突'), secondError)
-
-        // 7.2 corpId 维度：同三方身份跨主体是不同键，放行（钉钉 unionId 跨企业同人语义）
-        let crossCorpOk = true
-        try { atkCtx.iam.linkIdentity(user.id, atkProfile('corpB'), 'selftest') } catch { crossCorpOk = false }
-        check('sqlite iam：同三方身份跨 corpId 绑定放行（唯一键含 corpId 维度）', crossCorpOk)
-
-        // 7.3 同 tick 连发（Promise.all）重复插入：恰一条成功、其余真实被 UNIQUE INDEX 拒绝
-        //（node:sqlite 同步执行,经 Promise.resolve().then 入微任务队列连发,拒绝由 allSettled 收集）
-        const burst = await Promise.allSettled(Array.from({ length: 6 }, () => Promise.resolve().then(() =>
-          atkCtx.iam.linkIdentity(user.id, { provider: 'feishu', providerUserId: 'atk-fs-1', corpId: 'corpA', displayName: '连发绑定' }, 'selftest'))))
-        const burstOk = burst.filter((r) => r.status === 'fulfilled').length
-        const burstRejected = burst.filter((r) => r.status === 'rejected' && String(r.reason?.message ?? r.reason).includes('唯一约束冲突')).length
-        check('sqlite iam：同 tick 连发 6 次重复绑定恰一条成功、其余被唯一索引拒绝（引擎级一人一号）',
-          burstOk === 1 && burstRejected === 5, JSON.stringify({ ok: burstOk, rejected: burstRejected }))
-
-        // 7.4 绕过服务层直插集合同键记录：仍被拒（红线在引擎约束而非应用层检查的证据）
-        let bypassRejected = false
-        try {
-          atkCtx.opsStorage.collection('iam:identityLinks').insert({
-            id: 'idl_bypass', provider: 'dingtalk', providerUserId: 'atk-ding-1', corpId: 'corpA',
-            userId: user.id, displayName: '旁路插入', linkedAt: new Date().toISOString(), linkedBy: 'attacker',
-          })
-        } catch { bypassRejected = true }
-        check('sqlite iam：绕过服务层直插 identityLinks 同键记录被唯一索引拒绝', bypassRejected)
-
-        // 7.5 authn 侧：签发 refresh 会话后轮转成功（onChange insert 事件已驱动 refreshIndex）
-        const principal = atkCtx.authn.ensureHumanPrincipal(user.id, '一人一号演练')
-        const session = atkCtx.authn.issueSessionPair(principal.id, { issuedBy: 'selftest-attack' })
-        const rotated = atkCtx.authn.refreshSession(session.refreshToken)
-        check('sqlite authn：refresh 轮转成功（tokens 集合 onChange insert 事件已维护 refreshIndex）', Boolean(rotated.refreshToken))
-
-        // 7.6 吊销广播：吊销全部令牌后，带 revokedAt 的 update 事件经 sqlite 事务提交送达 onChange
-        const revocationEvents = []
-        const offTokens = atkCtx.opsStorage.collection('authn:tokens').onChange((change) => {
-          if (change.kind === 'update' && change.record?.revokedAt) revocationEvents.push(change.record.jti)
-        })
-        const revokedCount = atkCtx.authn.revokePrincipalTokens(principal.id, '演练吊销')
-        offTokens()
-        let revokedRefreshError = ''
-        try { atkCtx.authn.refreshSession(rotated.refreshToken) } catch (error) { revokedRefreshError = error.message }
-        check('sqlite authn：吊销广播在 sqlite 事务提交后仍经 onChange 送达（逐条 update 事件携带 revokedAt）',
-          revokedCount >= 3 && revocationEvents.length === revokedCount, `revoked=${revokedCount} events=${revocationEvents.length}`)
-        check('sqlite authn：吊销后 refresh 被拒（吊销语义跨后端不降级）', revokedRefreshError.includes('吊销'), revokedRefreshError)
-
-        try { await atkCtx.dispose?.() } catch { /* 生命周期 API 差异不影响断言 */ }
-      } finally {
-        if (priorStorageLocal === undefined) delete process.env.PLATFORM_STORAGE; else process.env.PLATFORM_STORAGE = priorStorageLocal
-      }
-      await rm(dir, { recursive: true, force: true })
-    }
-
-    await rm(storageJsonDir, { recursive: true, force: true })
-    await rm(storageSqliteDir, { recursive: true, force: true })
-    await rm(engineDir, { recursive: true, force: true })
-  }
-
-} finally {
-  // ---------------------------------------------------------------- 收尾
-  console.log('\n\x1b[90m» 停止测试实例…\x1b[0m')
-  proc.kill('SIGKILL')
-  await new Promise((resolve) => ghStub.close(resolve))
-  await new Promise((resolve) => nasGwStub.close(resolve))
-  await new Promise((resolve) => ocStub.close(resolve))
-  await rm(DATA_DIR, { recursive: true, force: true }).catch(() => {})
-}
-
-// ================================================================ 断言数自校验（落地页对外承诺）
-// 落地页写「N assertions green」，N 必须等于本次实际断言总数。本条自身也计入 results，
-// 因此比较对象是 results.length + 1。断言数随每次新增断言变化，这是唯一不会说谎的口径。
-section('落地页对外数字（与本次实际断言数自校验）')
-{
-  const { readFileSync: readLaunch } = await import('node:fs')
-  const { join: joinPath } = await import('node:path')
-  const launchHtml = readLaunch(joinPath(process.cwd(), 'packages/plugin-console/public/launch/index.html'), 'utf8')
-  const claimed = Number(launchHtml.match(/<b>(\d+)<\/b><span>assertions green<\/span>/)?.[1] ?? NaN)
-  const actual = results.length + 1
-  check(`落地页断言数 ${Number.isNaN(claimed) ? '缺失' : claimed} = 本次实际断言总数 ${actual}（断言数防漂移）`,
-    claimed === actual, `落地页=${claimed} 实际=${actual}`)
-}
-
-// ================================================================ 合并移植：本仓面板轨独有测试段（2026-11-02 上游合并回植）
-// 说明：插在「断言数防漂移」检查之后——上游落地页断言计数器不受本仓段落影响。
   // ================================================================ fresh-install 装机模拟（插件化铁律）
   // 目标：把「全新 dsh 上 dsh plugin add → 安装、启动、完整体验」拆成可在推送前自动断言的
   // 不变量——装机清单可解析可导入、三条装载链一致、浏览器半 bundle 新鲜、files 覆盖运行期资产。
@@ -10060,7 +9693,8 @@ section('落地页对外数字（与本次实际断言数自校验）')
     }
     check('patch 全部 entry 解析到本地模块并成功导入', broken.length === 0, broken.join(' | '))
 
-    // -- 2. 三链一致（plan-gate01 Phase 3 收缩后规则；2026-09-16 吸收上游 flow-core 后 21/23）：patch(6) id 集 ⊆ cordis.yml(23)；
+    // -- 2. 三链一致（plan-gate01 Phase 3 收缩后规则；2026-09-16 吸收上游 flow-core 后 21/23；
+    //        2026-11-02 上游合并（执行中枢/A2A/UHP/workforce/connector 等收编）后 26/27）：patch(6) id 集 ⊆ cordis.yml(27)；
     //        boot-all ↔ cordis.yml 服务面双射维持不变（防「加了包漏登记」）--
     const entryDir = (name) => {
       if (name === '@ybkk/gate-01') return 'plugin-rq-card' // rq-card 条目 = 根包名（issue #1 修复）
@@ -10080,19 +9714,19 @@ section('落地页对外数字（与本次实际断言数自校验）')
     const cordisDirs = cordisEntries.map((entry) => entryDir(String(entry?.name ?? ''))).filter(Boolean)
     const patchOnly = patchDirs.filter((dir) => !DSH_ONLY.has(dir) && !bootDirs.includes(dir))
     const patchNotInCordis = patchDirs.filter((dir) => !cordisDirs.includes(dir))
-    check('三链一致：patch(6) 服务面 ⊆ boot-all（dsh 专属条目豁免）且 ⊆ cordis.yml(23)',
+    check('三链一致：patch(6) 服务面 ⊆ boot-all（dsh 专属条目豁免）且 ⊆ cordis.yml(27)',
       patchOnly.length === 0 && patchNotInCordis.length === 0,
       `patchOnly=${patchOnly} patchNotInCordis=${patchNotInCordis}`)
     const cordisOnly = cordisDirs.filter((dir) => !DSH_ONLY.has(dir) && !bootDirs.includes(dir))
     const bootOnly = bootDirs.filter((dir) => !cordisDirs.includes(dir))
     check('三链一致：boot-all ↔ cordis.yml 服务面双射维持（dsh 专属条目豁免）',
-      cordisOnly.length === 0 && bootOnly.length === 0 && bootDirs.length === 21,
+      cordisOnly.length === 0 && bootOnly.length === 0 && bootDirs.length === 26,
       `cordisOnly=${cordisOnly} bootOnly=${bootOnly} bootCount=${bootDirs.length}`)
     const cordisIds = new Set(cordisEntries.map((entry) => entry?.id))
     const patchIds = new Set(patchEntries.map((entry) => entry?.id))
     const idMissing = [...patchIds].filter((id) => !cordisIds.has(id))
-    check('三链一致：patch(6) 插件 id 集 ⊆ cordis.yml(23)',
-      cordisEntries.length === 23 && idMissing.length === 0 && patchIds.size === 6,
+    check('三链一致：patch(6) 插件 id 集 ⊆ cordis.yml(27)',
+      cordisEntries.length === 27 && idMissing.length === 0 && patchIds.size === 6,
       `cordis=${cordisEntries.length} missing=${idMissing}`)
 
     // -- 3. rq-card 浏览器半 bundle 新鲜度（改 src/client 忘重建 = 过期装机包）--
@@ -10109,12 +9743,13 @@ section('落地页对外数字（与本次实际断言数自校验）')
     const stale = DIST_PACKAGES.map((pkg) => [pkg, readDistBuildId(process.cwd(), pkg)])
       .filter(([, built]) => built !== expectedDistId)
       .map(([pkg, built]) => `${pkg}(built=${built ?? 'missing'} expected=${expectedDistId})`)
-    check('随附包 dist 预构建产物新鲜（6 包 build-id 与 src 树指纹一致）', stale.length === 0, stale.join(' | '))
+    check('随附包 dist 预构建产物新鲜（7 包 build-id 与 src 树指纹一致）', stale.length === 0, stale.join(' | '))
 
     // -- 4. 装机 files 覆盖：运行期资产必须落在根 package.json files 根之下 --
     const rootPkg = JSON.parse(readFileSync('package.json', 'utf8'))
     // plan-gate01 Phase 3 精确清单：安装产物=01门 4 entry 所需的最小闭包（源码开发形态根 src/cordis.yml 不随包）
-    const expectedFiles = ['cordis.patch.yml', 'index.js', 'packages/platform-core', 'packages/plugin-iam', 'packages/plugin-authn', 'packages/plugin-dsh-bridge', 'packages/plugin-panel-core', 'packages/plugin-rq-card', 'README.md', 'LICENSE'].sort()
+    // 2026-11-02 上游合并：+packages/platform-i18n（上游内核 t() 三语文案库被 6 随附包 src 跨包引用，不随包则装机缺依赖）
+    const expectedFiles = ['cordis.patch.yml', 'index.js', 'packages/platform-core', 'packages/platform-i18n', 'packages/plugin-iam', 'packages/plugin-authn', 'packages/plugin-dsh-bridge', 'packages/plugin-panel-core', 'packages/plugin-rq-card', 'README.md', 'LICENSE'].sort()
     const actualFiles = [...(rootPkg.files ?? [])].sort()
     check('根 package.json files 精确覆盖 01门 装机闭包（多列/少列都红）',
       JSON.stringify(expectedFiles) === JSON.stringify(actualFiles),
@@ -10263,8 +9898,6 @@ section('落地页对外数字（与本次实际断言数自校验）')
       declared.join(','))
   }
 
-  // ================================================================ 基础与认证
-  section('平台健康与登录')
 
   section('卡片包与五平台主题（WP-05：角色×平台下发 / ref 存活 / 主题属性差）')
   {
@@ -10288,39 +9921,6 @@ section('落地页对外数字（与本次实际断言数自校验）')
   }
 
   section('rbac endpoint matrix（WP-04/A1：普通成员直调管理端点 100% 被拒，矩阵驱动）')
-
-  section('console ticket redeem（WP-02：票据免登控制台，零二次登录）')
-  {
-    const issue = await api('POST', `/api/agents/${selfAgent.id}/entry-ticket`, { token: admin, body: {} })
-    check('免登：领票（复用既有签发端点，一次性 etk_ 票据）', issue.ok && issue.data.ticket.startsWith('etk_'), JSON.stringify(issue.error))
-    const redeemSession = await rawReq('POST', '/api/auth/entry-ticket-session', {
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ticket: issue.data.ticket }),
-    })
-    const sessionBody = jsonBody(redeemSession)
-    check('免登：票据兑换成功建立控制台会话（dst1 令牌 + refresh + 用户档案）',
-      redeemSession.status === 200 && typeof sessionBody.data?.token === 'string' && sessionBody.data.token.startsWith('dst1.')
-      && Boolean(sessionBody.data?.refreshToken) && Boolean(sessionBody.data?.user?.id),
-      `${redeemSession.status} ${JSON.stringify(sessionBody).slice(0, 200)}`)
-    const freeOverview = await api('GET', '/api/overview', { token: sessionBody.data.token })
-    check('免登：兑换所得会话可直接调用工作台聚合（打开即工作台）', freeOverview.ok, JSON.stringify(freeOverview.error))
-    const sessionReplay = await rawReq('POST', '/api/auth/entry-ticket-session', {
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ticket: issue.data.ticket }),
-    })
-    check('免登：重放票据被拒（一次性消费防重放）', sessionReplay.status === 400, String(sessionReplay.status))
-    const sessionForged = await api('POST', '/api/auth/entry-ticket-session', { body: { ticket: 'etk_forged_0000000000000000000000000000000000000000' } })
-    check('免登：伪造票据被拒', sessionForged.status === 400)
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    const serverLog = serverLogChunks.join('')
-    check('免登：票据本体零进服务端日志（stdout/stderr 全量扫描）', Boolean(issue.data.ticket) && !serverLog.includes(issue.data.ticket), '票据本体出现在服务端日志')
-    const auditSession = await api('GET', '/api/audit/logs?q=' + encodeURIComponent('entry.ticket.session'), { token: admin })
-    check('免登：兑换入审计（*.entry.ticket.session 可检索，且审计不含票据本体）',
-      auditSession.ok && (auditSession.data.items ?? []).some((log) => log.action === 'agent.entry.ticket.session' && !JSON.stringify(log).includes(issue.data.ticket)),
-      JSON.stringify(auditSession.error ?? auditSession.data?.total))
-  }
-  section('Agent ↔ SSO 打通（OIDC-agent 关联，dev-plan-agent-host-unification M2）')
-
   section('战略看板与目录瘦身（WP-12：portal 只读聚合 / 漏斗可测 / 纯函数筛选）')
   {
     // 双轨迁移回归：portal board 端点已拆除（看板聚合迁往 /api/panel/board），portal 收敛到上游原样
@@ -10615,8 +10215,11 @@ section('落地页对外数字（与本次实际断言数自校验）')
     // -- OIDC 授权码通道（start 302 → PKCE；callback 坏 state 拒绝） -----------------
     const oidcStart = await fetch(`${simOrigin}/auth/oidc/start`, { redirect: 'manual' })
     const oidcLocation = oidcStart.headers.get('location') ?? ''
+    // issuer 断言口径（2026-11-02 合并回归）：#15 请求派生 issuer = 请求 host + externalBase（/gate01）。
+    // 无参 issuer() 在本台架回落 http://127.0.0.1:0/gate01（port=0），不能与请求派生值比对——
+    // 改断「请求 host:port + /gate01」前缀（与 deriveIssuerFromRequest 同口径）。
     check('/auth/oidc/start 302 平台授权页（client_id + PKCE S256 + state）',
-      oidcStart.status === 302 && oidcLocation.startsWith(`${mountCtx.oidc.issuer()}/oauth/authorize`)
+      oidcStart.status === 302 && oidcLocation.startsWith(`${simOrigin}/gate01/oauth/authorize`)
       && oidcLocation.includes('client_id=oc-selftest-bridge') && oidcLocation.includes('code_challenge_method=S256') && oidcLocation.includes('state='),
       `${oidcStart.status} ${oidcLocation}`)
     const oidcCallbackBad = await fetch(`${simOrigin}/auth/oidc/callback?code=x&state=bogus`, { redirect: 'manual' })
@@ -10818,6 +10421,11 @@ section('落地页对外数字（与本次实际断言数自校验）')
           const dom = new JSDOM('<!doctype html><html><body><div id="app"></div></body></html>', {
             url: `${simOrigin}/gate01/panel/`, pretendToBeVisual: true, virtualConsole: vc,
           })
+          // 导航捕获（2026-11-02 合并回归）：面板已合规化「零弹窗铁律」——钉钉登录等入口改整页
+          // 跳转（location.href），不再 window.open；jsdom 的 location 为非配置属性、导航错误又不
+          // 携带目标 URL——改由产品侧测试缝 __panelNavHook 捕获（wizard.js 内有对应注释）。
+          const navigatedUrls = []
+          dom.window.__panelNavHook = (url) => { navigatedUrls.push(String(url)) }
           const openedUrls = []
           dom.window.open = (url) => { openedUrls.push(String(url)); return null }
           const savedGlobals = {
@@ -10853,7 +10461,7 @@ section('落地页对外数字（与本次实际断言数自校验）')
             await connectHub(hubB)
             document.querySelector('#wzLoginDd').click()
             check('向导DOM：连独立宿主，钉钉登录地址不多拼 /rq 且携带 next 回跳（问题1 回归）',
-              openedUrls.at(-1) === `${hubB}/?next=${g1Next}#/login`, openedUrls.at(-1))
+              navigatedUrls.at(-1) === `${hubB}/?next=${g1Next}#/login`, navigatedUrls.at(-1))
             // 回导校验降级：无本机会话时点击 → 如实说明（宿主扫码会话无法跨站带回）并导向账号登录
             document.querySelector('#wzLoginCheck').click()
             await waitForDom(() => /无法跨站带回/.test(document.querySelector('#wzLoginErr')?.textContent ?? ''))
@@ -10863,7 +10471,7 @@ section('落地页对外数字（与本次实际断言数自校验）')
             await connectHub(hubA)
             document.querySelector('#wzLoginDd').click()
             check('向导DOM：连 dsh 挂载宿主，钉钉登录地址正确携带 /rq 与 next 回跳',
-              openedUrls.at(-1) === `${hubA}/rq/?next=${g1Next}#/login`, openedUrls.at(-1))
+              navigatedUrls.at(-1) === `${hubA}/rq/?next=${g1Next}#/login`, navigatedUrls.at(-1))
 
             // plan-gate01 决策 1：场景 B（本机初始化令牌落默认键）随形态 B 下线退役——
             // 写令牌统一经远端登录代理通道（作用域键），默认键只由票据兑换/直登通道写入。
@@ -11230,45 +10838,6 @@ section('落地页对外数字（与本次实际断言数自校验）')
       mfgToolList.data?.isError === false && mfgToolRun.data?.isError === false && mfgToolRoadmap.data?.isError === false)
   }
 
-  // ================================================================ QA-20260912 修复批次回归（A-03 / A-04 / A-08 / B-04）
-  console.log('\n\x1b[36m━━ QA-20260912 修复批次回归（A-03 / A-04 / A-08 / B-04） ━━\x1b[0m')
-
-  // A-08：建号口令强度（'123' 不可建号，与重置口径统一）
-  const weakPwCreate = await api('POST', '/api/iam/users', { token: admin, body: { username: 'qaweak01', displayName: '弱口令靶子', orgId: newOrg.data.id, password: '123' } })
-  check('弱口令建号被拒（QA A-08：≥8 位统一口径）', !weakPwCreate.ok && /8 位/.test(weakPwCreate.error?.message ?? ''), JSON.stringify(weakPwCreate.error ?? {}))
-
-  // A-03：org_admin 组织隔离（服务层补栏）
-  const roleListQa = (await api('GET', '/api/iam/roles', { token: admin })).data.roles
-  const orgAdminRole = roleListQa.find((role) => role.code === 'org_admin')
-  const qaOrgAdminCreate = await api('POST', '/api/iam/users', { token: admin, body: { username: 'qaorgadmin', displayName: 'QA部门管理员', orgId: newOrg.data.id, password: 'Ybk@2026', roleIds: [orgAdminRole.id] } })
-  check('QA部门管理员建号（org_admin，归属自测事业部）', qaOrgAdminCreate.ok, JSON.stringify(qaOrgAdminCreate.error ?? {}))
-  const qaOrgAdminLogin = await api('POST', '/api/auth/login', { body: { username: 'qaorgadmin', password: 'Ybk@2026' } })
-  const qaOrgAdmin = qaOrgAdminLogin.data.token
-  const qaBatch01 = (await api('GET', '/api/iam/users?q=' + encodeURIComponent('batch01'), { token: admin })).data.users[0]
-  const qaInsideReset = await api('POST', `/api/iam/users/${qaBatch01.id}/reset-password`, { token: qaOrgAdmin })
-  check('org_admin 可管理本组织子树内账号（QA A-03 正向）', qaInsideReset.ok && typeof qaInsideReset.data.initialPassword === 'string', JSON.stringify(qaInsideReset.error ?? {}))
-  const qaCascadeUser = (await api('GET', '/api/iam/users?q=' + encodeURIComponent('cascadeu01'), { token: admin })).data.users[0]
-  const qaOutsideReset = await api('POST', `/api/iam/users/${qaCascadeUser.id}/reset-password`, { token: qaOrgAdmin })
-  check('org_admin 跨组织接管被拒（QA A-03：服务层组织隔离）', !qaOutsideReset.ok && /组织隔离|组织子树/.test(qaOutsideReset.error?.message ?? ''), JSON.stringify(qaOutsideReset.error ?? {}))
-
-  // A-04：非 owner 开发者不可改写他人应用
-  const qaOwnerApp = await api('POST', '/api/apps', { token: admin, body: { name: 'QA回归-Owner校验', attrs: { description: 'QA 修复批次回归用应用（owner=admin）', appType: 'web', riskLevel: 'low' } } })
-  check('QA回归应用创建（owner=admin）', qaOwnerApp.ok && Boolean(qaOwnerApp.data.app?.id), JSON.stringify(qaOwnerApp.error ?? {}))
-  const qaForeignPatch = await api('PATCH', `/api/apps/${qaOwnerApp.data.app.id}`, { token: otherDev, body: { name: '越权改名' } })
-  check('非 owner 开发者改写他人应用被拒（QA A-04）', !qaForeignPatch.ok && /owner|负责人/.test(qaForeignPatch.error?.message ?? ''), JSON.stringify(qaForeignPatch.error ?? {}))
-  const qaOwnerPatch = await api('PATCH', `/api/apps/${qaOwnerApp.data.app.id}`, { token: admin, body: { name: 'QA回归-Owner校验（已更新）' } })
-  check('平台管理员/owner 可正常更新（QA A-04 正向）', qaOwnerPatch.ok, JSON.stringify(qaOwnerPatch.error ?? {}))
-
-  // B-04：audit/cost 的 days 参数真实生效
-  const qaCostDays = await api('GET', '/api/audit/cost?days=14', { token: admin })
-  check('audit/cost days 参数生效（QA B-04：不再被静默丢弃）', qaCostDays.ok && qaCostDays.data.days === 14 && Array.isArray(qaCostDays.data.rows), JSON.stringify(qaCostDays.data ?? qaCostDays.error).slice(0, 160))
-  const qaCostBare = await api('GET', '/api/audit/cost', { token: admin })
-  check('audit/cost 不带 days 保持全量口径（QA B-04 兼容）', qaCostBare.ok && qaCostBare.data.days === undefined)
-  // ================================================================ 01门 5 键装态（plan-gate01 Phase 2）
-  // 等价于 cordis.patch.yml 4-entry 装配的最小形态：仅数据面基座（platform-core 5 键）+ panel-core。
-  // iam/authn/audit/usage/modelgw/mcp/skillhub 全缺席——spike 定稿：裸访问=硬抛 without inject，
-  // 任何漏改的访问点都会在这里以 500/400 现形；demoAuth 的 fail-closed 边界也在这里断言。
-  section('01门 5 键装态（可选服务缺席不炸 + demoAuth fail-closed）')
 
   section('01门 5 键装态（可选服务缺席不炸 + demoAuth fail-closed）')
   {
@@ -11367,7 +10936,10 @@ section('落地页对外数字（与本次实际断言数自校验）')
     await ddGate.plugin(platformCore, { dataDir: ddDir, http: { port: 7397, host: '127.0.0.1' }, startHttp: true })
     await ddGate.plugin(iam)
     await ddGate.plugin(authn)
-    await ddGate.plugin(panelCore)
+    // demoAuth（2026-11-02 合并回归）：01门装态基线管理员种子自 2026-10-29 回植起以 demoAuth
+    // 门控（全量形态种子权归 console）——本 gate 无 console，与 cordis.patch.yml 同声明 demoAuth=true，
+    // 否则无 admin 可登录（面板自持登录面 401 连锁失败）。
+    await ddGate.plugin(panelCore, { demoAuth: true })
     const G3 = 'http://127.0.0.1:7397'
     const g3 = async (method, path, init = {}) => { const r = await fetch(`${G3}${path}`, { method, ...init }); return { status: r.status, body: await r.json().catch(() => null) } }
     let ddToken = ''
@@ -11397,12 +10969,467 @@ section('落地页对外数字（与本次实际断言数自校验）')
     const ddCancel = await g3('DELETE', '/api/panel/ddws/login', { headers: ddHeaders })
     check('ddws login 取消：幂等可取消', ddCancel.status === 200 && ddCancel.body?.data?.cancelled === true, JSON.stringify(ddCancel.body))
     const ddNoAuth = await g3('GET', '/api/panel/ddws/login')
-    check('ddws 面：无凭证 → 401 fail-closed', ddNoAuth.status === 401, JSON.stringify(ddNoAuth.body))
+    // 无凭证读动词（2026-11-02 合并回归）：demoAuth 装态下只读动词按演示访客放行（demo:true
+    // 诚实降级标记，不假装真实数据）——与 cordis.patch.yml 的 01门 装态声明同语义；fail-closed
+    // 边界在写动词（下一条断言 403），不在只读。
+    check('ddws 面：无凭证 GET → 演示只读（demoAuth 诚实降级 demo:true）',
+      ddNoAuth.status === 200 && ddNoAuth.body?.data?.demo === true, JSON.stringify(ddNoAuth.body))
+    const ddNoAuthWrite = await g3('POST', '/api/panel/ddws/login', { headers: { 'content-type': 'application/json' }, body: '{}' })
+    check('ddws 面：无凭证写动词 → 403 fail-closed（demoAuth 只读边界）', ddNoAuthWrite.status === 403, JSON.stringify(ddNoAuthWrite.body))
     await rm(ddDir, { recursive: true, force: true }).catch(() => {})
   }
 
-  // ================================================================ 收尾终检：凭证零进平台（红线一，T-24）
   section('凭证零进平台（红线一 · T-24 全目录扫描）')
+  // SIGTERM 触发 main.ts 的 flushNow（把内存中的待写集合全部原子落盘）后退出，
+  // 再扫描数据目录——保证连「尚未刷盘的最新写入」也在扫描覆盖之内。
+  proc.kill('SIGTERM')
+  let stopped = false
+  for (let i = 0; i < 30; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    try { await fetch(`${BASE}/api/health`); } catch { stopped = true; break }
+  }
+  if (!stopped) proc.kill('SIGKILL')
+  const bannedSecrets = ['ghp_selftestSecret123', 'client-supersecret-oauth-xyz', ...new Set(ocMintedValues)]
+  const bannedHits = []
+  const walkFiles = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walkFiles(join(dir, entry.name)) : [join(dir, entry.name)])
+  let dataFiles = []
+  try { dataFiles = walkFiles(DATA_DIR) } catch { /* 目录已被清理则跳过扫描 */ }
+  for (const file of dataFiles) {
+    try {
+      const text = readFileSync(file).toString('latin1')
+      for (const secret of bannedSecrets) {
+        if (text.includes(secret)) bannedHits.push({ file: file.split(/[\\/]/).slice(-2).join('/'), secret })
+      }
+    } catch { /* 二进制读失败跳过 */ }
+  }
+  check(`T-24 数据目录 ${dataFiles.length} 个文件全部扫描`, dataFiles.length > 5, `files=${dataFiles.length}`)
+  check('T-24 凭证原文零命中（API Key / OAuth client secret / 每个一次性 oct_ 值）',
+    bannedHits.length === 0 && ocMintedValues.length >= 3, JSON.stringify(bannedHits))
+
+  // ================================================================ 启动健壮性探针（W2）
+  // 纯进程内：双实例断言 / 插件树体检 / 错误文案 / 良性败者豁免。不占端口、不写数据目录。
+  section('启动健壮性探针（W2）')
+  {
+    const ROOT_KEY = Symbol.for('ybkk.cordis.root')
+    const clearRoot = () => Reflect.deleteProperty(globalThis, ROOT_KEY)
+    // ① 正常路径：提供者 + 注入消费者，probeTree 应全绿
+    const okCtx = new Context()
+    platformCore.assertSingleRoot(okCtx)
+    await okCtx.plugin((ctx) => ctx.provide('iam', { source: 'selftest' }))
+    await okCtx.plugin({ inject: ['iam'], apply: () => {} })
+    const okHealth = platformCore.probeTree(okCtx, ['iam'])
+    check('W2 正常装配 probeTree ok:true',
+      okHealth.ok === true && okHealth.unreachable.length === 0 && okHealth.stuck.length === 0,
+      JSON.stringify(okHealth))
+    clearRoot()
+
+    // ② 故障注入：另一 root Context 注册 iam → 当前 ctx 永不可达，消费者 fiber 静默 PENDING（根因形态）
+    const badCtx = new Context()
+    const otherRoot = new Context()
+    await otherRoot.plugin((ctx) => ctx.provide('iam', { source: 'other-root' }))
+    badCtx.plugin({ inject: ['iam'], apply: () => {} })
+    const badHealth = platformCore.probeTree(badCtx, ['iam'])
+    check('W2 双实例注入 probeTree 报 iam 不可达',
+      !badHealth.ok && badHealth.unreachable.includes('iam')
+        && badHealth.stuck.some((f) => f.state === 'PENDING' && f.waiting.includes('iam')),
+      JSON.stringify(badHealth))
+    const badText = platformCore.formatTreeHealth(badHealth)
+    check('W2 formatTreeHealth 输出可读（拒绝启动 + 卡死插件 + 等待键）',
+      badText.includes('插件树未健康') && badText.includes('PENDING') && badText.includes('iam'),
+      badText)
+    clearRoot()
+
+    // ③ 污染 globalThis → assertSingleRoot 必须抛「双实例」
+    globalThis[ROOT_KEY] = { polluted: true }
+    let probeThrew = null
+    try { platformCore.assertSingleRoot(new Context()) } catch (error) { probeThrew = error }
+    check('W2 污染 globalThis 后 assertSingleRoot 抛「双实例」',
+      probeThrew instanceof Error && probeThrew.message.includes('双实例'), String(probeThrew))
+    clearRoot()
+
+    // ④ 用例后清理污染：恢复登记能力，且不残留 globalThis 键
+    let afterClean = null
+    const recoverCtx = new Context()
+    try { platformCore.assertSingleRoot(recoverCtx) } catch (error) { afterClean = error }
+    check('W2 用例后清理 globalThis 污染（恢复登记）',
+      afterClean === null && globalThis[ROOT_KEY] === recoverCtx.root, String(afterClean))
+    clearRoot()
+
+    // ⑤ 附加（固化门禁偏离语义）：双注册习语的良性败者（声明 provide 已被其他 ACTIVE fiber
+    //    接管）不拦启动，仅入诊断清单——panel-core/flow-core 当前习语下 W2 必须放行
+    const decoyCtx = new Context()
+    platformCore.assertSingleRoot(decoyCtx)
+    const decoy = (ctx) => ctx.provide('iam', { source: 'decoy' })
+    decoy.provide = 'iam'
+    await decoyCtx.plugin({
+      name: 'decoy-module',
+      apply(ctx) {
+        ctx.plugin(decoy)
+        ctx.provide('iam', { source: 'module' })
+      },
+    })
+    const decoyHealth = platformCore.probeTree(decoyCtx, ['iam'])
+    check('W2 良性败者 fiber（provide 已接管）不拦启动',
+      decoyHealth.ok === true
+        && decoyHealth.stuck.some((f) => f.state === 'FAILED' && f.blocking === false),
+      JSON.stringify(decoyHealth))
+    clearRoot()
+  }
+
+  // Windows 句柄纪律（2026-11-02 合并回归）：SQLite 连接持有 .db/.db-shm/.db-wal 句柄，
+  // 同进程未 close 就 rm 目录必 EBUSY（Linux 无此约束，上游 CI 不可见）。每个用完的
+  // StorageService 先 flushNow + 关闭 sqliteBackend（TS private 编译后仍可访问），再删目录；
+  // 子进程目录则等待句柄释放后重试。定义在存储分节之外，收尾 finally 亦复用。
+  const closeStorageSvc = async (svc) => {
+    // 与 storage.ts ctx.effect 清理同序：先停防抖计时器，再落盘，最后关库——
+    // 颠倒会让挂起的 flushTimer 在关库后触发（「database is not open」迟到 rejection）
+    try { if (svc?.flushTimer) { clearTimeout(svc.flushTimer); svc.flushTimer = undefined } } catch { /* 忽略 */ }
+    try { await svc?.flushNow?.() } catch { /* 忽略 */ }
+    try { svc?.sqliteBackend?.close?.() } catch { /* 忽略 */ }
+  }
+  const rmDirWin = async (dir) => rm(dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 250 })
+
+  // ================================================================ 存储 SQLite 后端契约（ADR-0001 第一期）
+  // 主实例全程跑默认 json 后端；本节单独验证 sqlite 后端：与 json 的契约对拍、
+  // 引擎级唯一索引、JSON 回填幂等、后端开关环境变量、平台级 kill -9 零丢失。
+  section('存储 SQLite 后端契约（ADR-0001）')
+  {
+    const storageJsonDir = `${DATA_DIR}-storage-json`
+    const storageSqliteDir = `${DATA_DIR}-storage-sqlite`
+    const priorStorage = process.env.PLATFORM_STORAGE
+    const priorKeep = process.env.PLATFORM_STORAGE_JSON_KEEP
+
+    // ---- 1. 双后端同序列对拍：Collection<T> 契约一致性（插件零感知的硬保证）----
+    const runContract = async (backend) => {
+      const dir = backend === 'json' ? storageJsonDir : storageSqliteDir
+      await rm(dir, { recursive: true, force: true })
+      const svc = new platformCore.StorageService(new Context(), { dataDir: dir, backend })
+      const col = svc.collection('ct:items')
+      const out = { events: [] }
+      const off = col.onChange((change) => out.events.push(`${change.kind}:${change.record?.id ?? ''}`))
+      out.insert = col.insert({ id: 'x1', kind: 'a', tag: 'T', createdAt: '2026-01-01T00:00:00.000Z' })
+      out.dupIdError = (() => { try { col.insert({ id: 'x1', kind: 'a' }); return '' } catch (error) { return error.message } })()
+      col.uniqueOn('tag', (record) => record.tag ?? '')
+      out.uniqueError = (() => { try { col.insert({ id: 'x2', kind: 'a', tag: 'T' }); return '' } catch (error) { return error.message } })()
+      out.update = col.update('x1', { kind: 'b' })
+      col.insert({ id: 'x3', kind: 'c', tag: 'X' })
+      out.removed = col.remove('x3')
+      out.countAfterRemove = col.count()
+      out.findLen = col.find((record) => record.kind === 'b').length
+      out.getKind = col.get('x1').kind
+      col.replaceAll([{ id: 'r1', kind: 'z', tag: 'R', createdAt: '2026-02-02T00:00:00.000Z', updatedAt: '2026-02-02T00:00:00.000Z' }])
+      out.countAfterReplace = col.count()
+      off()
+      await svc.flushNow()
+      await closeStorageSvc(svc)
+      return out
+    }
+    const jsonOut = await runContract('json')
+    const sqliteOut = await runContract('sqlite')
+    check('双后端对拍：insert 返回一致（自定义 createdAt 保留 + updatedAt 注入）',
+      sqliteOut.insert.createdAt === jsonOut.insert.createdAt && Boolean(sqliteOut.insert.updatedAt) === Boolean(jsonOut.insert.updatedAt))
+    check('双后端对拍：重复 id 抛错文案逐字一致', sqliteOut.dupIdError === jsonOut.dupIdError && jsonOut.dupIdError.includes('已存在'), JSON.stringify({ json: jsonOut.dupIdError, sqlite: sqliteOut.dupIdError }))
+    check('双后端对拍：uniqueOn 冲突抛错文案逐字一致', sqliteOut.uniqueError === jsonOut.uniqueError && jsonOut.uniqueError.includes('唯一约束冲突'))
+    check('双后端对拍：update 字段合并 + createdAt 保持', sqliteOut.update.kind === 'b' && sqliteOut.update.createdAt === '2026-01-01T00:00:00.000Z')
+    check('双后端对拍：remove/count/find/get/replaceAll 结果一致',
+      sqliteOut.removed === jsonOut.removed && sqliteOut.countAfterRemove === jsonOut.countAfterRemove
+      && sqliteOut.findLen === jsonOut.findLen && sqliteOut.getKind === jsonOut.getKind
+      && sqliteOut.countAfterReplace === jsonOut.countAfterReplace,
+      JSON.stringify({ json: { c: jsonOut.countAfterRemove, f: jsonOut.findLen, r: jsonOut.countAfterReplace }, sqlite: { c: sqliteOut.countAfterRemove, f: sqliteOut.findLen, r: sqliteOut.countAfterReplace } }))
+    check('双后端对拍：onChange 事件序列一致（authn:tokens 吊销广播语义不变的前提）',
+      sqliteOut.events.join('|') === jsonOut.events.join('|') && sqliteOut.events.length === 5, JSON.stringify({ json: jsonOut.events, sqlite: sqliteOut.events }))
+
+    // ---- 2. sqlite 引擎级唯一索引（「一人一号」红线的执行方式：非应用层扫描）----
+    const engineDir = `${DATA_DIR}-storage-engine`
+    await rm(engineDir, { recursive: true, force: true })
+    {
+      const svc = new platformCore.StorageService(new Context(), { dataDir: engineDir, backend: 'sqlite' })
+      const col = svc.collection('ct:uniq')
+      col.insert({ id: 'a1', tag: 'K' })
+      col.uniqueOn('tag', (record) => record.tag ?? '')
+      let engineRejected = false
+      try { col.insert({ id: 'a2', tag: 'K' }) } catch { engineRejected = true }
+      check('引擎级唯一：绕过「先查后插」的重复键写入被索引拒绝', engineRejected)
+      col.insert({ id: 'a3', tag: 'K3' })
+      let stealRejected = false
+      try { col.update('a3', { tag: 'K' }) } catch { stealRejected = true }
+      check('引擎级唯一：update 抢占他人键被拒（自身键除外）', stealRejected)
+      await closeStorageSvc(svc)
+    }
+    {
+      const svc2 = new platformCore.StorageService(new Context(), { dataDir: engineDir, backend: 'sqlite' })
+      await svc2.restoreAll()
+      check('sqlite 事务提交后重启恢复（已提交写入零丢失）', svc2.collection('ct:uniq').count() === 2, `count=${svc2.collection('ct:uniq').count()}`)
+      await closeStorageSvc(svc2)
+      await rmDirWin(engineDir)
+    }
+
+    // ---- 3. JSON → SQLite 首启自动回填（幂等 + DB 为准 + JSON 保留为回滚源）----
+    {
+      const dir = `${DATA_DIR}-storage-backfill`
+      await rm(dir, { recursive: true, force: true })
+      await mkdir(dir, { recursive: true })
+      const legacy = [
+        { id: 'l1', name: '旧一', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'l2', name: '旧二', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      ]
+      writeFileSync(join(dir, 'ct~legacy.json'), JSON.stringify(legacy))
+      const svc = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
+      await svc.restoreAll()
+      check('首启回填：同名 JSON 集合文件自动导入 SQLite', svc.collection('ct:legacy').count() === 2 && svc.collection('ct:legacy').get('l2').name === '旧二')
+      svc.collection('ct:legacy').update('l1', { name: 'DB新值' })
+      const svc2 = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
+      await svc2.restoreAll()
+      check('二次启动：DB 为准（修改后记录不被旧 JSON 回灌）', svc2.collection('ct:legacy').get('l1').name === 'DB新值' && svc2.collection('ct:legacy').count() === 2)
+      check('回滚源保留：JSON 文件内容未被删除或改写', JSON.parse(readFileSync(join(dir, 'ct~legacy.json'), 'utf8'))[0].name === '旧一')
+      await closeStorageSvc(svc)
+      await closeStorageSvc(svc2)
+      await rmDirWin(dir)
+    }
+
+    // ---- 4. 后端开关与环境变量（默认 json 向后兼容）----
+    {
+      const dir = `${DATA_DIR}-storage-env`
+      await rm(dir, { recursive: true, force: true })
+      process.env.PLATFORM_STORAGE = 'sqlite'
+      process.env.PLATFORM_STORAGE_JSON_KEEP = 'ct:keep*'
+      const svc = new platformCore.StorageService(new Context(), { dataDir: dir })
+      check('PLATFORM_STORAGE=sqlite：常规集合走 SqliteCollectionImpl', svc.collection('ct:direct').constructor.name === 'SqliteCollectionImpl')
+      check('PLATFORM_STORAGE_JSON_KEEP：例外名单集合保留 JSON 实现', svc.collection('ct:keepme').constructor.name === 'CollectionImpl')
+      process.env.PLATFORM_STORAGE = 'not-a-backend'
+      check('未知 PLATFORM_STORAGE 值：告警回退 json 不崩', new platformCore.StorageService(new Context(), { dataDir: dir }).backend === 'json')
+      delete process.env.PLATFORM_STORAGE
+      check('默认（未设置）：backend=json 向后兼容', new platformCore.StorageService(new Context(), { dataDir: dir }).backend === 'json')
+      if (priorStorage === undefined) delete process.env.PLATFORM_STORAGE; else process.env.PLATFORM_STORAGE = priorStorage
+      if (priorKeep === undefined) delete process.env.PLATFORM_STORAGE_JSON_KEEP; else process.env.PLATFORM_STORAGE_JSON_KEEP = priorKeep
+      await closeStorageSvc(svc)
+      await rmDirWin(dir)
+    }
+
+    // ---- 5. 平台级 kill -9 零丢失（隔离子实例 · PLATFORM_STORAGE=sqlite）----
+    {
+      const dir = `${DATA_DIR}-storage-platform`
+      const port = (await freePort()) ?? 7322
+      const base = `http://127.0.0.1:${port}`
+      await rm(dir, { recursive: true, force: true })
+      await mkdir(dir, { recursive: true })
+      // 预置遗留 JSON 集合：同时验证「回填 → 插件读取 → REST API」全链路
+      writeFileSync(join(dir, 'iam~roles.json'), JSON.stringify([
+        { id: 'role_legacy1', code: 'legacy_one', name: '遗留角色一', permissions: ['iam.user.read'], builtin: false, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+        { id: 'role_legacy2', code: 'legacy_two', name: '遗留角色二', permissions: ['iam.user.read'], builtin: false, createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      ]))
+      const childEnv = { ...process.env, PLATFORM_STORAGE: 'sqlite', ADMIN_PASSWORD: 'Ybk@2026' }
+      const spawnInstance = () => spawn(process.execPath, ['src/main.ts', '--port', String(port), '--data', dir], { stdio: ['ignore', 'pipe', 'pipe'], env: childEnv })
+      const waitReady = async () => {
+        for (let i = 0; i < 60; i++) {
+          await new Promise((resolve) => setTimeout(resolve, 500))
+          try {
+            const res = await fetch(`${base}/api/overview`)
+            if (res.status === 401 || res.status === 200) return true
+          } catch { /* 未就绪 */ }
+        }
+        return false
+      }
+      const login = async (username, password) => {
+        const res = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username, password }) }).then((r) => r.json())
+        return res.ok ? res.data.token : ''
+      }
+      let child = spawnInstance()
+      check('SQLite 子实例启动（PLATFORM_STORAGE=sqlite 透传到 main.ts）', await waitReady())
+      const token = await login('admin', 'Ybk@2026')
+      check('SQLite 子实例 admin 登录', Boolean(token))
+      const auth = { authorization: `Bearer ${token}`, 'content-type': 'application/json' }
+      const rolesBefore = await fetch(`${base}/api/iam/roles`, { headers: { authorization: auth.authorization } }).then((r) => r.json())
+      check('遗留 JSON 角色回填后 API 可见（回填 → 插件 → REST 全链路）',
+        rolesBefore.ok && rolesBefore.data.roles.filter((role) => String(role.id).startsWith('role_legacy')).length === 2,
+        JSON.stringify(rolesBefore.data?.roles?.map((role) => role.id)))
+      const orgs = await fetch(`${base}/api/iam/orgs`, { headers: { authorization: auth.authorization } }).then((r) => r.json())
+      const orgId = Array.isArray(orgs.data) ? orgs.data[0]?.id : orgs.data?.orgs?.[0]?.id
+      const created = await fetch(`${base}/api/iam/users`, { method: 'POST', headers: auth, body: JSON.stringify({ username: 'sqlitekill9', displayName: 'kill9 持久化验证', orgId }) }).then((r) => r.json())
+      check('SQLite 后端创建账号成功（写入即事务提交）', created.ok && typeof created.data.initialPassword === 'string', JSON.stringify(created.error))
+
+      child.kill('SIGKILL') // 模拟断电级死亡：无 flushNow、无优雅退出
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      child = spawnInstance()
+      check('kill -9 后子实例重启', await waitReady())
+      const token2 = await login('admin', 'Ybk@2026')
+      const relogin = await login('sqlitekill9', created.data.initialPassword)
+      check('kill -9 零丢失：崩溃前创建的账号可登录（凭证哈希完整）', Boolean(token2) && Boolean(relogin))
+      const rolesAfter = await fetch(`${base}/api/iam/roles`, { headers: { authorization: `Bearer ${token2}` } }).then((r) => r.json())
+      check('kill -9 零丢失：回填的角色数据完整', rolesAfter.ok && rolesAfter.data.roles.filter((role) => String(role.id).startsWith('role_legacy')).length === 2)
+      child.kill('SIGKILL')
+      await new Promise((resolve) => setTimeout(resolve, 500)) // Windows：子进程句柄释放略有延迟
+      await rmDirWin(dir).catch(() => {})
+    }
+
+    // ---- 6. 默认 JSON 豁免名单（QA W4 缺口①：ADR-0001 §五第 3 批在 sqlite 后端下默认生效）----
+    {
+      const dir = `${DATA_DIR}-storage-keep-default`
+      await rm(dir, { recursive: true, force: true })
+      const priorKeepLocal = process.env.PLATFORM_STORAGE_JSON_KEEP
+      try {
+        delete process.env.PLATFORM_STORAGE_JSON_KEEP
+        // 默认名单生效（环境变量未设置）：第三批低频配置集合保留 JSON，其余集合走 sqlite
+        const svc = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
+        const kindOf = (name) => svc.collection(name).constructor.name
+        check('DEFAULT_JSON_KEEP 默认名单：第 3 批集合（market:*/update:state/resource:dependencies/iam:groupSnapshots）默认保留 JSON',
+          kindOf('market:demo') === 'CollectionImpl' && kindOf('update:state') === 'CollectionImpl'
+          && kindOf('resource:dependencies') === 'CollectionImpl' && kindOf('iam:groupSnapshots') === 'CollectionImpl',
+          JSON.stringify({ market: kindOf('market:demo'), update: kindOf('update:state'), resource: kindOf('resource:dependencies'), snapshot: kindOf('iam:groupSnapshots') }))
+        check('DEFAULT_JSON_KEEP 默认名单：名单外集合仍走 sqlite', kindOf('ct:regular') === 'SqliteCollectionImpl', kindOf('ct:regular'))
+        // 显式环境变量完全覆盖默认名单（空串 = 一个都不豁免，语义见 parseKeepEnv 注释）
+        process.env.PLATFORM_STORAGE_JSON_KEEP = ''
+        const svc2 = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
+        check('PLATFORM_STORAGE_JSON_KEEP 显式空串：完全覆盖默认名单（全部集合走 sqlite）',
+          svc2.collection('market:demo').constructor.name === 'SqliteCollectionImpl' && svc2.collection('iam:groupSnapshots').constructor.name === 'SqliteCollectionImpl')
+        // 显式名单同样整体覆盖默认（不与默认名单叠加）
+        process.env.PLATFORM_STORAGE_JSON_KEEP = 'iam:groupSnapshots'
+        const svc3 = new platformCore.StorageService(new Context(), { dataDir: dir, backend: 'sqlite' })
+        check('PLATFORM_STORAGE_JSON_KEEP 显式名单：仅豁免名单内集合（market:demo 走 sqlite）',
+          svc3.collection('iam:groupSnapshots').constructor.name === 'CollectionImpl' && svc3.collection('market:demo').constructor.name === 'SqliteCollectionImpl')
+        await closeStorageSvc(svc)
+        await closeStorageSvc(svc2)
+        await closeStorageSvc(svc3)
+      } finally {
+        if (priorKeepLocal === undefined) delete process.env.PLATFORM_STORAGE_JSON_KEEP; else process.env.PLATFORM_STORAGE_JSON_KEEP = priorKeepLocal
+      }
+      await rmDirWin(dir)
+    }
+
+    // ---- 7. sqlite 后端 iam「一人一号」攻击演练（QA W4 缺口③）----
+    // 进程内最小插件树（同 dsh 宿主挂载分节先例）：sqlite 后端 + iam + authn；
+    // platformCore 装配期经 PLATFORM_STORAGE 环境变量取后端（PlatformCoreConfig 无 backend 字段），
+    // 故本子块以 try/finally 自持环境变量恢复，不动既有 priorStorage/priorKeep 机制。
+    {
+      const dir = `${DATA_DIR}-storage-iam-attack`
+      await rm(dir, { recursive: true, force: true })
+      const priorStorageLocal = process.env.PLATFORM_STORAGE
+      try {
+        process.env.PLATFORM_STORAGE = 'sqlite'
+        const atkCtx = new Context()
+        await atkCtx.plugin(platformCore, { dataDir: dir, http: { port: 0 }, startHttp: false })
+        await atkCtx.plugin(iam)
+        await atkCtx.plugin(authn)
+        const org = atkCtx.iam.createOrg({ name: 'sqlite 攻击演练组织' }, iam.SYSTEM_ACTOR)
+        const { user } = atkCtx.iam.createUser({ username: 'atk_link_user', displayName: '一人一号演练', orgId: org.id }, iam.SYSTEM_ACTOR)
+        const atkProfile = (corpId) => ({ provider: 'dingtalk', providerUserId: 'atk-ding-1', corpId, displayName: `绑定@${corpId}` })
+
+        // 7.1 引擎拒绝二次绑定：同 provider + providerUserId + corpId（identity_link_active 唯一键）
+        atkCtx.iam.linkIdentity(user.id, atkProfile('corpA'), 'selftest')
+        let secondError = ''
+        try { atkCtx.iam.linkIdentity(user.id, atkProfile('corpA'), 'selftest') } catch (error) { secondError = error.message }
+        check('sqlite iam：同 provider+providerUserId+corpId 二次绑定被引擎拒绝（唯一约束冲突）', secondError.includes('唯一约束冲突'), secondError)
+
+        // 7.2 corpId 维度：同三方身份跨主体是不同键，放行（钉钉 unionId 跨企业同人语义）
+        let crossCorpOk = true
+        try { atkCtx.iam.linkIdentity(user.id, atkProfile('corpB'), 'selftest') } catch { crossCorpOk = false }
+        check('sqlite iam：同三方身份跨 corpId 绑定放行（唯一键含 corpId 维度）', crossCorpOk)
+
+        // 7.3 同 tick 连发（Promise.all）重复插入：恰一条成功、其余真实被 UNIQUE INDEX 拒绝
+        //（node:sqlite 同步执行,经 Promise.resolve().then 入微任务队列连发,拒绝由 allSettled 收集）
+        const burst = await Promise.allSettled(Array.from({ length: 6 }, () => Promise.resolve().then(() =>
+          atkCtx.iam.linkIdentity(user.id, { provider: 'feishu', providerUserId: 'atk-fs-1', corpId: 'corpA', displayName: '连发绑定' }, 'selftest'))))
+        const burstOk = burst.filter((r) => r.status === 'fulfilled').length
+        const burstRejected = burst.filter((r) => r.status === 'rejected' && String(r.reason?.message ?? r.reason).includes('唯一约束冲突')).length
+        check('sqlite iam：同 tick 连发 6 次重复绑定恰一条成功、其余被唯一索引拒绝（引擎级一人一号）',
+          burstOk === 1 && burstRejected === 5, JSON.stringify({ ok: burstOk, rejected: burstRejected }))
+
+        // 7.4 绕过服务层直插集合同键记录：仍被拒（红线在引擎约束而非应用层检查的证据）
+        let bypassRejected = false
+        try {
+          atkCtx.opsStorage.collection('iam:identityLinks').insert({
+            id: 'idl_bypass', provider: 'dingtalk', providerUserId: 'atk-ding-1', corpId: 'corpA',
+            userId: user.id, displayName: '旁路插入', linkedAt: new Date().toISOString(), linkedBy: 'attacker',
+          })
+        } catch { bypassRejected = true }
+        check('sqlite iam：绕过服务层直插 identityLinks 同键记录被唯一索引拒绝', bypassRejected)
+
+        // 7.5 authn 侧：签发 refresh 会话后轮转成功（onChange insert 事件已驱动 refreshIndex）
+        const principal = atkCtx.authn.ensureHumanPrincipal(user.id, '一人一号演练')
+        const session = atkCtx.authn.issueSessionPair(principal.id, { issuedBy: 'selftest-attack' })
+        const rotated = atkCtx.authn.refreshSession(session.refreshToken)
+        check('sqlite authn：refresh 轮转成功（tokens 集合 onChange insert 事件已维护 refreshIndex）', Boolean(rotated.refreshToken))
+
+        // 7.6 吊销广播：吊销全部令牌后，带 revokedAt 的 update 事件经 sqlite 事务提交送达 onChange
+        const revocationEvents = []
+        const offTokens = atkCtx.opsStorage.collection('authn:tokens').onChange((change) => {
+          if (change.kind === 'update' && change.record?.revokedAt) revocationEvents.push(change.record.jti)
+        })
+        const revokedCount = atkCtx.authn.revokePrincipalTokens(principal.id, '演练吊销')
+        offTokens()
+        let revokedRefreshError = ''
+        try { atkCtx.authn.refreshSession(rotated.refreshToken) } catch (error) { revokedRefreshError = error.message }
+        check('sqlite authn：吊销广播在 sqlite 事务提交后仍经 onChange 送达（逐条 update 事件携带 revokedAt）',
+          revokedCount >= 3 && revocationEvents.length === revokedCount, `revoked=${revokedCount} events=${revocationEvents.length}`)
+        check('sqlite authn：吊销后 refresh 被拒（吊销语义跨后端不降级）', revokedRefreshError.includes('吊销'), revokedRefreshError)
+
+        try { await atkCtx.dispose?.() } catch { /* 裸 Context 无 dispose（cordis 实测），仅防御性调用 */ }
+        // Windows 句柄纪律（2026-11-02 合并回归）：本段插件树（iam 自动同步 60s 巡检等定时器）
+        // 在裸 Context 上无法整体关停——关库会让存活定时器持续打已关的 SQLite（「database is
+        // not open」洪流），删目录则 EBUSY。正确处置：不关库、不删目录，定时器已 unref，
+        // 进程退出时句柄随 OS 释放；目录由下次运行的段首 rm 自清（跨进程无锁）。
+      } finally {
+        if (priorStorageLocal === undefined) delete process.env.PLATFORM_STORAGE; else process.env.PLATFORM_STORAGE = priorStorageLocal
+      }
+    }
+
+    await rmDirWin(storageJsonDir)
+    await rmDirWin(storageSqliteDir)
+    await rmDirWin(engineDir)
+  }
+
+} finally {
+  // ---------------------------------------------------------------- 收尾
+  console.log('\n\x1b[90m» 停止测试实例…\x1b[0m')
+  // 收尾看门狗（2026-11-02 合并回归）：任何收尾 await 悬停都不得吞掉汇总与退出码——
+  // 30s 未走完即放弃剩余清理直接跳到汇总（清理本是尽力而为，进程退出后 OS 回收句柄；
+  // Windows 上进程内台架的存活巡检持续写入令目录 rm 重试常超 15s，30s 覆盖正常慢而不放无限等）。
+  const FINISH = Symbol('cleanup-watchdog')
+  const watchdog = new Promise((resolve) => setTimeout(() => resolve(FINISH), 30_000))
+  const cleanup = (async () => {
+    proc.kill('SIGKILL')
+    // stub 关闭防线（2026-11-02 合并回归）：server.close() 会等待在途/长连接（selftest 进程内
+    // undici keep-alive、上游慢响应），Node 19+ 的 close 不再主动断空闲 keep-alive——先
+    // closeAllConnections 强断，再给 3s 超时兜底，避免收尾悬停吞掉汇总输出与退出码。
+    const closeStub = async (stub) => {
+      try { stub.closeAllConnections?.() } catch { /* 旧 Node 无此 API */ }
+      await Promise.race([
+        new Promise((resolve) => { try { stub.close(resolve) } catch { resolve() } }),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ])
+    }
+    console.log('\x1b[90m» 收尾：关 stub…\x1b[0m')
+    await closeStub(ghStub)
+    await closeStub(nasGwStub)
+    await closeStub(ocStub)
+    console.log('\x1b[90m» 收尾：清理数据目录…\x1b[0m')
+    // Windows：子进程句柄（含 SQLite WAL）释放略有延迟，rm 需等待+重试（EBUSY 防线）。
+    //  retries 压到 3×200ms（2026-11-02 实证）：进程内 ddws/workforce 台架（裸 Context 无 dispose）
+    //  的 60s 巡检定时器持续向 DATA_DIR 写入，10×300ms 的重试每次都撞上新内容、走完超 15s——
+    //  清不干净就留给下次运行的启动 rm（跨进程无锁必净），收尾不容许拖住退出码。
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    await rm(DATA_DIR, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }).catch(() => {})
+    console.log('\x1b[90m» 收尾：完成\x1b[0m')
+  })()
+  const finished = await Promise.race([cleanup, watchdog])
+  if (finished === FINISH) console.log('\x1b[33m! 收尾看门狗超时（30s）：剩余清理放弃（不影响断言结果与退出码）\x1b[0m')
+}
+
+// ================================================================ 断言数自校验（落地页对外承诺）
+// 落地页写「N assertions green」，N 必须等于本次实际断言总数。本条自身也计入 results，
+// 因此比较对象是 results.length + 1。断言数随每次新增断言变化，这是唯一不会说谎的口径。
+section('落地页对外数字（与本次实际断言数自校验）')
+{
+  const { readFileSync: readLaunch } = await import('node:fs')
+  const { join: joinPath } = await import('node:path')
+  const launchHtml = readLaunch(joinPath(process.cwd(), 'packages/plugin-console/public/launch/index.html'), 'utf8')
+  const claimed = Number(launchHtml.match(/<b>(\d+)<\/b><span>assertions green<\/span>/)?.[1] ?? NaN)
+  const actual = results.length + 1
+  check(`落地页断言数 ${Number.isNaN(claimed) ? '缺失' : claimed} = 本次实际断言总数 ${actual}（断言数防漂移）`,
+    claimed === actual, `落地页=${claimed} 实际=${actual}`)
+}
+
 
 // ================================================================ 汇总
 const failed = results.filter((item) => !item.pass)

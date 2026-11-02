@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Service } from "@deepseek-ai/cordis";
 import { PlatformEvents, sha256Hex, newId, generateSecret } from "../../platform-core/dist/index.js";
+import { t } from "../../platform-i18n/dist/index.js";
 class OidcEndpointError extends Error {
   status;
   error;
@@ -28,8 +29,8 @@ class OidcService extends Service {
   constructor(ctx) {
     super(ctx, "oidc");
     if (!process.env.OIDC_ISSUER) {
-      ctx.logger("oidc").warn(
-        "\u672A\u914D\u7F6E OIDC_ISSUER\uFF0Cissuer \u56DE\u843D\u4E3A http://127.0.0.1:<port>\uFF0C\u4EC5\u4F9B\u672C\u673A\u8C03\u8BD5\uFF1B\u8DE8\u673A/\u5185\u7F51\u90E8\u7F72\u5FC5\u987B\u663E\u5F0F\u58F0\u660E\u5BF9\u5916\u5730\u5740\uFF08\u89C1 docs/app-sso-integration.md\uFF09\uFF0C\u5426\u5219\u8DE8\u673A\u6D4F\u89C8\u5668\u65E0\u6CD5\u8BBF\u95EE\u6388\u6743\u9875"
+      ctx.logger("oidc").info(
+        "\u672A\u914D\u7F6E OIDC_ISSUER\uFF1Aissuer \u6309\u8BF7\u6C42 Host/X-Forwarded-* \u5934\u6D3E\u751F\uFF08\u53CD\u4EE3/\u516C\u7F51\u57DF\u540D\u90E8\u7F72\u5F00\u7BB1\u53EF\u7528\uFF0C#15\uFF09\uFF1B\u591A\u57DF\u540D\u6216\u9700\u8981\u56FA\u5B9A issuer \u951A\u70B9\u7684\u90E8\u7F72\u8BF7\u663E\u5F0F\u58F0\u660E OIDC_ISSUER\uFF08\u89C1 docs/app-sso-integration.md\uFF09"
       );
     }
     this.keys = this.loadOrCreateKeys();
@@ -37,16 +38,16 @@ class OidcService extends Service {
     this.cleanupExpired();
     this.cleanupTimer = setInterval(() => this.cleanupExpired(), 24 * 36e5);
     this.cleanupTimer.unref?.();
-    ctx.effect(() => {
+    ctx.effect(() => () => {
       if (this.cleanupTimer) clearInterval(this.cleanupTimer);
     });
     ctx.platformBus.on(PlatformEvents.AppOfflined, (payload) => {
       const { id } = payload;
-      for (const client of this.clientsForApp(id)) this.disableClient(client.id, "\u5E94\u7528\u4E0B\u7EBF\u8054\u52A8");
+      for (const client of this.clientsForApp(id)) this.disableClient(client.id, t("\u5E94\u7528\u4E0B\u7EBF\u8054\u52A8"));
     });
     ctx.platformBus.on(PlatformEvents.AppArchived, (payload) => {
       const { id } = payload;
-      for (const client of this.clientsForApp(id)) this.disableClient(client.id, "\u5E94\u7528\u5F52\u6863\u8054\u52A8");
+      for (const client of this.clientsForApp(id)) this.disableClient(client.id, t("\u5E94\u7528\u5F52\u6863\u8054\u52A8"));
     });
     ctx.platformBus.on(PlatformEvents.AppOnlined, (payload) => {
       const { id } = payload;
@@ -58,7 +59,7 @@ class OidcService extends Service {
     });
     ctx.platformBus.on(PlatformEvents.AgentOfflined, (payload) => {
       const { id } = payload;
-      for (const client of this.clientsForAgent(id)) this.disableClient(client.id, "Agent \u4E0B\u7EBF\u8054\u52A8");
+      for (const client of this.clientsForAgent(id)) this.disableClient(client.id, t("Agent \u4E0B\u7EBF\u8054\u52A8"));
     });
     ctx.platformBus.on(PlatformEvents.AgentOnlined, (payload) => {
       const { id } = payload;
@@ -66,11 +67,54 @@ class OidcService extends Service {
     });
     ctx.platformBus.on(PlatformEvents.UserFrozen, (payload) => {
       const { userId, reason } = payload;
-      this.revokeUserRefreshChains(userId, `\u8D26\u53F7\u51BB\u7ED3\u8054\u52A8\uFF1A${reason}`);
+      this.revokeUserRefreshChains(userId, t("\u8D26\u53F7\u51BB\u7ED3\u8054\u52A8\uFF1A{reason}", { reason }));
     });
   }
-  issuer() {
-    return process.env.OIDC_ISSUER ?? `http://127.0.0.1:${this.ctx.httpServer.port}${this.ctx.httpServer.externalBase}`;
+  /**
+   * 签发方 issuer（#15，2026-10-29）：解析优先级——
+   *   1. OIDC_ISSUER 显式声明（多域名/严格部署的固定锚点，最高优先）；
+   *   2. 按请求派生：x-forwarded-host/host + x-forwarded-proto（反代场景，与 console requestOrigin
+   *      同口径）+ externalBase 前缀——公网域名部署时 discovery/签发/校验自动对齐，远程 SSO 开箱可用；
+   *   3. 回落 http://127.0.0.1:<port><base>（本机调试）。
+   * 不传请求上下文时保持旧行为（env ?? 环回）——非请求面调用（测试/内部校验）零感知。
+   *
+   * 安全审查 P1-06（2026-10-31）：请求派生受外部头（x-forwarded-host/host）影响，公网上可被
+   * 伪造头改写 discovery 元数据。收敛规则：
+   *   - OIDC_ISSUER 已设 → 永远返回固定值，不再按请求派生（固定发行方）；
+   *   - 未设时仅当派生 host 命中 OIDC_TRUSTED_HOSTS 白名单（逗号分隔精确匹配）才采信，
+   *     否则回落环回（fail-closed）——公网部署必须二选一显式配置。
+   */
+  issuer(origin) {
+    if (process.env.OIDC_ISSUER) return process.env.OIDC_ISSUER;
+    const derived = this.deriveIssuerFromRequest(origin);
+    return derived ?? `http://127.0.0.1:${this.ctx.httpServer.port}${this.ctx.httpServer.externalBase}`;
+  }
+  /** 按请求头派生对外 issuer（host 缺失/不在可信白名单返回 undefined 走回落）。 */
+  deriveIssuerFromRequest(origin) {
+    if (!origin) return void 0;
+    const header = (name) => {
+      const value = origin.headers[name];
+      return value === void 0 ? void 0 : String(Array.isArray(value) ? value[0] : value);
+    };
+    const host = header("x-forwarded-host") ?? header("host");
+    if (!host) return void 0;
+    const trusted = new Set(String(process.env.OIDC_TRUSTED_HOSTS ?? "").split(",").map((item) => item.trim().toLowerCase()).filter(Boolean));
+    let hostname = "";
+    try {
+      hostname = new URL(`http://${host}`).hostname.toLowerCase();
+    } catch {
+      hostname = "";
+    }
+    const loopback = hostname === "localhost" || hostname === "::1" || hostname === "0.0.0.0" || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
+    if (!loopback && !trusted.has(hostname)) return void 0;
+    const proto = header("x-forwarded-proto") ?? "http";
+    return `${proto}://${host}${this.webBase()}`;
+  }
+  /** JWT 校验可接受的 issuer 集合：OIDC_ISSUER 已设即仅固定值；未设时并入可信白名单派生值。 */
+  acceptedIssuers(origin) {
+    const staticIssuer = this.issuer();
+    const derived = this.deriveIssuerFromRequest(origin);
+    return derived !== void 0 && derived !== staticIssuer ? [staticIssuer, derived] : [staticIssuer];
   }
   /** 平台 SPA 内部页面的对外前缀（独立形态 ''，dsh 挂载形态 '/rq'）。 */
   webBase() {
@@ -144,16 +188,16 @@ class OidcService extends Service {
   /** 轮换 secret：旧值立即失效，新值仅本次返回。 */
   rotateSecret(id) {
     const client = this.clients().get(id);
-    if (!client) throw new Error(`OIDC \u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728\uFF1A${id}`);
-    if ((client.clientType ?? "confidential") === "public") throw new Error("public \u5BA2\u6237\u7AEF\u65E0 secret\uFF0C\u65E0\u9700\u8F6E\u6362");
+    if (!client) throw new Error(t("OIDC \u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728\uFF1A{id}", { id }));
+    if ((client.clientType ?? "confidential") === "public") throw new Error(t("public \u5BA2\u6237\u7AEF\u65E0 secret\uFF0C\u65E0\u9700\u8F6E\u6362"));
     const clientSecret = generateSecret("ocs");
     const updated = this.clients().update(id, { clientSecretHash: sha256Hex(clientSecret) });
     return { client: this.publicClient(updated), clientSecret };
   }
   disableClient(id, reason) {
     const client = this.clients().get(id);
-    if (!client) throw new Error(`OIDC \u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728\uFF1A${id}`);
-    this.revokeClientRefreshChains(client.clientId, `\u5BA2\u6237\u7AEF\u7981\u7528\u8054\u52A8\uFF1A${reason}`);
+    if (!client) throw new Error(t("OIDC \u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728\uFF1A{id}", { id }));
+    this.revokeClientRefreshChains(client.clientId, t("\u5BA2\u6237\u7AEF\u7981\u7528\u8054\u52A8\uFF1A{reason}", { reason }));
     return this.publicClient(this.clients().update(id, { status: "disabled" }));
   }
   enableClient(id) {
@@ -165,7 +209,7 @@ class OidcService extends Service {
   /** 授权码格式校验（S256 应为 43-128 位 base64url）。 */
   static assertPkceChallenge(challenge) {
     if (challenge === void 0 || !/^[A-Za-z0-9_-]{43,128}$/.test(challenge)) {
-      throw new OidcEndpointError(302, "invalid_request", "\u7F3A\u5C11\u6216\u975E\u6CD5\u7684 code_challenge\uFF08\u672C Provider \u5F3A\u5236 PKCE S256\uFF0C43-128 \u4F4D base64url\uFF09");
+      throw new OidcEndpointError(302, "invalid_request", t("\u7F3A\u5C11\u6216\u975E\u6CD5\u7684 code_challenge\uFF08\u672C Provider \u5F3A\u5236 PKCE S256\uFF0C43-128 \u4F4D base64url\uFF09"));
     }
   }
   /**
@@ -174,21 +218,21 @@ class OidcService extends Service {
    */
   beginAuthorization(input) {
     if (input.responseType !== "code") {
-      throw new OidcEndpointError(302, "unsupported_response_type", `response_type \u4EC5\u652F\u6301 code\uFF08\u6536\u5230\uFF1A${input.responseType ?? "\u7F3A\u5931"}\uFF09`);
+      throw new OidcEndpointError(302, "unsupported_response_type", t("response_type \u4EC5\u652F\u6301 code\uFF08\u6536\u5230\uFF1A{received}\uFF09", { received: input.responseType ?? t("\u7F3A\u5931") }));
     }
-    if (!input.state) throw new OidcEndpointError(302, "invalid_request", "state \u5FC5\u586B\uFF08CSRF \u9632\u62A4\uFF09");
+    if (!input.state) throw new OidcEndpointError(302, "invalid_request", t("state \u5FC5\u586B\uFF08CSRF \u9632\u62A4\uFF09"));
     const client = this.clientByClientId(String(input.clientId ?? ""));
-    if (!client) throw new OidcEndpointError(302, "unauthorized_client", `OIDC \u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728\uFF1A${input.clientId ?? "\u7F3A\u5931"}`);
-    if (!OidcService.isClientActive(client)) throw new OidcEndpointError(302, "unauthorized_client", "OIDC \u5BA2\u6237\u7AEF\u5DF2\u7981\u7528\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458");
+    if (!client) throw new OidcEndpointError(302, "unauthorized_client", t("OIDC \u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728\uFF1A{id}", { id: input.clientId ?? t("\u7F3A\u5931") }));
+    if (!OidcService.isClientActive(client)) throw new OidcEndpointError(302, "unauthorized_client", t("OIDC \u5BA2\u6237\u7AEF\u5DF2\u7981\u7528\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458"));
     const redirectUri = input.redirectUri ?? client.redirectUris[0];
     if (!redirectUri || !client.redirectUris.includes(redirectUri)) {
-      throw new OidcEndpointError(302, "invalid_request", "redirect_uri \u672A\u767B\u8BB0\u5728\u5BA2\u6237\u7AEF\u767D\u540D\u5355");
+      throw new OidcEndpointError(302, "invalid_request", t("redirect_uri \u672A\u767B\u8BB0\u5728\u5BA2\u6237\u7AEF\u767D\u540D\u5355"));
     }
     const scopes = (input.scope ?? "openid profile").split(/\s+/).filter(Boolean);
     const offender = scopes.find((scope) => !OidcService.ALLOWED_SCOPES.includes(scope));
-    if (offender) throw new OidcEndpointError(302, "invalid_scope", `scope \u672A\u83B7\u6388\u6743\uFF1A${offender}\uFF08\u5141\u8BB8\uFF1A${OidcService.ALLOWED_SCOPES.join(" ")}\uFF09`);
+    if (offender) throw new OidcEndpointError(302, "invalid_scope", t("scope \u672A\u83B7\u6388\u6743\uFF1A{scope}\uFF08\u5141\u8BB8\uFF1A{allowed}\uFF09", { scope: offender, allowed: OidcService.ALLOWED_SCOPES.join(" ") }));
     if (input.codeChallengeMethod !== void 0 && input.codeChallengeMethod !== "S256") {
-      throw new OidcEndpointError(302, "invalid_request", "code_challenge_method \u4EC5\u652F\u6301 S256");
+      throw new OidcEndpointError(302, "invalid_request", t("code_challenge_method \u4EC5\u652F\u6301 S256"));
     }
     OidcService.assertPkceChallenge(input.codeChallenge);
     return this.authRequests().insert({
@@ -208,10 +252,10 @@ class OidcService extends Service {
   authRequestInfo(reqId) {
     const req = this.authRequests().get(reqId);
     if (!req || req.consumedAt || new Date(req.expiresAt).getTime() < Date.now()) {
-      throw new Error("\u6388\u6743\u8BF7\u6C42\u65E0\u6548\u3001\u5DF2\u4F7F\u7528\u6216\u5DF2\u8FC7\u671F");
+      throw new Error(t("\u6388\u6743\u8BF7\u6C42\u65E0\u6548\u3001\u5DF2\u4F7F\u7528\u6216\u5DF2\u8FC7\u671F"));
     }
     const client = this.clientByClientId(req.clientId);
-    if (!client || !OidcService.isClientActive(client)) throw new Error("OIDC \u5BA2\u6237\u7AEF\u4E0D\u53EF\u7528");
+    if (!client || !OidcService.isClientActive(client)) throw new Error(t("OIDC \u5BA2\u6237\u7AEF\u4E0D\u53EF\u7528"));
     const appRef = client.refType === "app" && client.refId ? (() => {
       const app = this.ctx.resourceCore?.get("app", client.refId);
       return app ? { id: app.id, name: app.name } : void 0;
@@ -228,19 +272,19 @@ class OidcService extends Service {
    * 校验授权请求 →（需要同意时必须显式 consent）→ 签发一次性 code → 返回回跳地址。
    * consent 显式为 false → access_denied 回跳 + denied 事件；缺省 → 400（未表达同意）。
    */
-  completeAuthorization(input) {
+  completeAuthorization(input, origin) {
     const req = this.authRequests().get(input.reqId);
-    if (!req) throw new Error("\u6388\u6743\u8BF7\u6C42\u65E0\u6548\uFF08reqId \u9519\u8BEF\u6216\u5DF2\u88AB\u6E05\u7406\uFF09");
-    if (req.consumedAt) throw new Error("\u6388\u6743\u8BF7\u6C42\u5DF2\u88AB\u4F7F\u7528\uFF08\u5355\u6B21\u6D88\u8D39\uFF0C\u9632\u91CD\u653E\uFF09");
-    if (new Date(req.expiresAt).getTime() < Date.now()) throw new Error("\u6388\u6743\u8BF7\u6C42\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u4ECE\u5E94\u7528\u91CD\u65B0\u53D1\u8D77");
+    if (!req) throw new Error(t("\u6388\u6743\u8BF7\u6C42\u65E0\u6548\uFF08reqId \u9519\u8BEF\u6216\u5DF2\u88AB\u6E05\u7406\uFF09"));
+    if (req.consumedAt) throw new Error(t("\u6388\u6743\u8BF7\u6C42\u5DF2\u88AB\u4F7F\u7528\uFF08\u5355\u6B21\u6D88\u8D39\uFF0C\u9632\u91CD\u653E\uFF09"));
+    if (new Date(req.expiresAt).getTime() < Date.now()) throw new Error(t("\u6388\u6743\u8BF7\u6C42\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u4ECE\u5E94\u7528\u91CD\u65B0\u53D1\u8D77"));
     const client = this.clientByClientId(req.clientId);
-    if (!client) throw new Error("\u6388\u6743\u8BF7\u6C42\u6307\u5411\u7684\u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728");
-    if (!OidcService.isClientActive(client)) throw new Error("OIDC \u5BA2\u6237\u7AEF\u5DF2\u7981\u7528\uFF0C\u65E0\u6CD5\u5B8C\u6210\u6388\u6743");
+    if (!client) throw new Error(t("\u6388\u6743\u8BF7\u6C42\u6307\u5411\u7684\u5BA2\u6237\u7AEF\u4E0D\u5B58\u5728"));
+    if (!OidcService.isClientActive(client)) throw new Error(t("OIDC \u5BA2\u6237\u7AEF\u5DF2\u7981\u7528\uFF0C\u65E0\u6CD5\u5B8C\u6210\u6388\u6743"));
     const user = this.ctx.iam.users().get(input.userId);
-    if (!user) throw new Error("\u7528\u6237\u4E0D\u5B58\u5728");
-    if (user.status !== "active") throw new Error("\u8D26\u53F7\u72B6\u6001\u5F02\u5E38\uFF0C\u65E0\u6CD5\u6388\u6743");
+    if (!user) throw new Error(t("\u7528\u6237\u4E0D\u5B58\u5728"));
+    if (user.status !== "active") throw new Error(t("\u8D26\u53F7\u72B6\u6001\u5F02\u5E38\uFF0C\u65E0\u6CD5\u6388\u6743"));
     if (client.consentRequired === true && input.consent !== true) {
-      if (input.consent === void 0) throw new Error("\u8BE5\u5E94\u7528\u8981\u6C42\u663E\u5F0F\u540C\u610F\u540E\u624D\u80FD\u6388\u6743");
+      if (input.consent === void 0) throw new Error(t("\u8BE5\u5E94\u7528\u8981\u6C42\u663E\u5F0F\u540C\u610F\u540E\u624D\u80FD\u6388\u6743"));
       this.authRequests().update(req.id, { consumedAt: (/* @__PURE__ */ new Date()).toISOString() });
       this.ctx.platformBus.emit(PlatformEvents.OidcAuthorizeDenied, {
         reqId: req.id,
@@ -249,7 +293,7 @@ class OidcService extends Service {
         userId: user.id,
         userName: user.displayName
       });
-      return { location: withQuery(req.redirectUri, { error: "access_denied", error_description: "\u7528\u6237\u62D2\u7EDD\u6388\u6743", state: req.state }) };
+      return { location: withQuery(req.redirectUri, { error: "access_denied", error_description: t("\u7528\u6237\u62D2\u7EDD\u6388\u6743"), state: req.state }) };
     }
     const code = this.issueCode({ ...req, userId: user.id });
     this.authRequests().update(req.id, { consumedAt: (/* @__PURE__ */ new Date()).toISOString() });
@@ -261,7 +305,7 @@ class OidcService extends Service {
       userName: user.displayName,
       scope: req.scope
     });
-    return { location: withQuery(req.redirectUri, { code, state: req.state, iss: this.issuer() }) };
+    return { location: withQuery(req.redirectUri, { code, state: req.state, iss: this.issuer(origin) }) };
   }
   issueCode(req) {
     const code = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
@@ -283,15 +327,15 @@ class OidcService extends Service {
   /** 客户端认证：Basic 与 Post 双形态；public 客户端免 secret。失败计入暴力破解锁定。 */
   authenticateClient(clientId, clientSecret) {
     const invalidClient = (description) => new OidcEndpointError(401, "invalid_client", description, { "www-authenticate": 'Basic realm="dsh-ops-oidc"' });
-    if (!clientId) throw invalidClient("\u7F3A\u5C11 client_id");
+    if (!clientId) throw invalidClient(t("\u7F3A\u5C11 client_id"));
     const client = this.clientByClientId(clientId);
-    if (!client) throw invalidClient(`client_id \u4E0D\u5B58\u5728\uFF1A${clientId}`);
-    if (!OidcService.isClientActive(client)) throw invalidClient("OIDC \u5BA2\u6237\u7AEF\u5DF2\u7981\u7528");
+    if (!client) throw invalidClient(t("client_id \u4E0D\u5B58\u5728\uFF1A{clientId}", { clientId }));
+    if (!OidcService.isClientActive(client)) throw invalidClient(t("OIDC \u5BA2\u6237\u7AEF\u5DF2\u7981\u7528"));
     if ((client.clientType ?? "confidential") === "confidential") {
-      if (!clientSecret) throw invalidClient("\u7F3A\u5C11 client_secret");
+      if (!clientSecret) throw invalidClient(t("\u7F3A\u5C11 client_secret"));
       if (client.clientSecretHash !== sha256Hex(clientSecret)) {
         this.ctx.authn.recordLoginFailure(`oidc-token:${clientId}`);
-        throw invalidClient("client_secret \u9519\u8BEF");
+        throw invalidClient(t("client_secret \u9519\u8BEF"));
       }
     }
     this.ctx.authn.recordLoginSuccess(`oidc-token:${clientId}`);
@@ -300,59 +344,60 @@ class OidcService extends Service {
   /**
    * /oauth/token：authorization_code（PKCE 强制校验、code 单次消费）与 refresh_token（轮转 + 重放整链吊销）。
    */
-  token(input) {
+  token(input, origin) {
     const client = this.authenticateClient(input.clientId, input.clientSecret);
-    if (input.grantType === "authorization_code") return this.authorizationCodeGrant(client, input);
-    if (input.grantType === "refresh_token") return this.refreshGrant(client, input);
-    throw new OidcEndpointError(400, "unsupported_grant_type", `\u4E0D\u652F\u6301\u7684 grant_type\uFF1A${input.grantType}`);
+    if (input.grantType === "authorization_code") return this.authorizationCodeGrant(client, input, origin);
+    if (input.grantType === "refresh_token") return this.refreshGrant(client, input, origin);
+    throw new OidcEndpointError(400, "unsupported_grant_type", t("\u4E0D\u652F\u6301\u7684 grant_type\uFF1A{grantType}", { grantType: input.grantType }));
   }
-  authorizationCodeGrant(client, input) {
+  authorizationCodeGrant(client, input, origin) {
     const bad = (description) => new OidcEndpointError(400, "invalid_grant", description);
-    if (!input.code) throw new OidcEndpointError(400, "invalid_request", "code \u5FC5\u586B");
+    if (!input.code) throw new OidcEndpointError(400, "invalid_request", t("code \u5FC5\u586B"));
     const record = this.codes().get(input.code);
-    if (!record) throw bad("\u6388\u6743\u7801\u65E0\u6548");
-    if (record.usedAt) throw bad("\u6388\u6743\u7801\u5DF2\u88AB\u4F7F\u7528\uFF08\u5355\u6B21\u6D88\u8D39\uFF0C\u9632\u91CD\u653E\uFF09");
-    if (new Date(record.expiresAt).getTime() < Date.now()) throw bad("\u6388\u6743\u7801\u5DF2\u8FC7\u671F");
-    if (record.clientId !== client.clientId) throw bad("\u6388\u6743\u7801\u4E0E\u5BA2\u6237\u7AEF\u4E0D\u5339\u914D");
-    if (input.redirectUri && input.redirectUri !== record.redirectUri) throw bad("redirect_uri \u4E0E\u6388\u6743\u65F6\u4E0D\u4E00\u81F4");
-    if (!record.codeChallenge) throw bad("\u6388\u6743\u672A\u767B\u8BB0 PKCE challenge");
-    if (!input.codeVerifier) throw bad("\u6388\u6743\u4F7F\u7528\u4E86 PKCE\uFF0Ctoken \u8BF7\u6C42\u5FC5\u987B\u643A\u5E26 code_verifier");
+    if (!record) throw bad(t("\u6388\u6743\u7801\u65E0\u6548"));
+    if (record.usedAt) throw bad(t("\u6388\u6743\u7801\u5DF2\u88AB\u4F7F\u7528\uFF08\u5355\u6B21\u6D88\u8D39\uFF0C\u9632\u91CD\u653E\uFF09"));
+    if (new Date(record.expiresAt).getTime() < Date.now()) throw bad(t("\u6388\u6743\u7801\u5DF2\u8FC7\u671F"));
+    if (record.clientId !== client.clientId) throw bad(t("\u6388\u6743\u7801\u4E0E\u5BA2\u6237\u7AEF\u4E0D\u5339\u914D"));
+    if (input.redirectUri && input.redirectUri !== record.redirectUri) throw bad(t("redirect_uri \u4E0E\u6388\u6743\u65F6\u4E0D\u4E00\u81F4"));
+    if (!record.codeChallenge) throw bad(t("\u6388\u6743\u672A\u767B\u8BB0 PKCE challenge"));
+    if (!input.codeVerifier) throw bad(t("\u6388\u6743\u4F7F\u7528\u4E86 PKCE\uFF0Ctoken \u8BF7\u6C42\u5FC5\u987B\u643A\u5E26 code_verifier"));
     const derived = createHash("sha256").update(input.codeVerifier).digest("base64url");
-    if (derived !== record.codeChallenge) throw bad("PKCE \u6821\u9A8C\u5931\u8D25\uFF1Acode_verifier \u4E0D\u5339\u914D");
+    if (derived !== record.codeChallenge) throw bad(t("PKCE \u6821\u9A8C\u5931\u8D25\uFF1Acode_verifier \u4E0D\u5339\u914D"));
     this.codes().update(record.id, { usedAt: (/* @__PURE__ */ new Date()).toISOString() });
     const user = this.ctx.iam.users().get(record.userId);
-    if (!user || user.status !== "active") throw bad("\u7528\u6237\u72B6\u6001\u5F02\u5E38\uFF0C\u65E0\u6CD5\u7B7E\u53D1\u4EE4\u724C");
-    return this.issueTokenSet(client, { userId: record.userId, scope: record.scope, ...record.nonce !== void 0 ? { nonce: record.nonce } : {} });
+    if (!user || user.status !== "active") throw bad(t("\u7528\u6237\u72B6\u6001\u5F02\u5E38\uFF0C\u65E0\u6CD5\u7B7E\u53D1\u4EE4\u724C"));
+    return this.issueTokenSet(client, { userId: record.userId, scope: record.scope, ...record.nonce !== void 0 ? { nonce: record.nonce } : {} }, origin);
   }
-  refreshGrant(client, input) {
+  refreshGrant(client, input, origin) {
     const bad = (description) => new OidcEndpointError(400, "invalid_grant", description);
-    if (!input.refreshToken) throw new OidcEndpointError(400, "invalid_request", "refresh_token \u5FC5\u586B");
-    if ((client.clientType ?? "confidential") === "public") throw bad("public \u5BA2\u6237\u7AEF\u4E0D\u7B7E\u53D1 refresh token");
+    if (!input.refreshToken) throw new OidcEndpointError(400, "invalid_request", t("refresh_token \u5FC5\u586B"));
+    if ((client.clientType ?? "confidential") === "public") throw bad(t("public \u5BA2\u6237\u7AEF\u4E0D\u7B7E\u53D1 refresh token"));
     const hash = sha256Hex(input.refreshToken);
     const record = this.refreshTokens().findOne((item) => item.tokenHash === hash);
-    if (!record || record.clientId !== client.clientId) throw bad("refresh token \u65E0\u6548");
-    if (record.revokedAt) throw bad("refresh token \u5DF2\u540A\u9500\uFF1A" + (record.revokedReason ?? ""));
-    if (new Date(record.expiresAt).getTime() < Date.now()) throw bad("refresh token \u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u6388\u6743");
+    if (!record || record.clientId !== client.clientId) throw bad(t("refresh token \u65E0\u6548"));
+    if (record.revokedAt) throw bad(t("refresh token \u5DF2\u540A\u9500\uFF1A{reason}", { reason: record.revokedReason ?? "" }));
+    if (new Date(record.expiresAt).getTime() < Date.now()) throw bad(t("refresh token \u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u6388\u6743"));
     if (record.rotatedAt) {
-      this.revokeRefreshChain(record.chainId, `refresh token \u91CD\u653E\u68C0\u6D4B\uFF08\u539F\u8F6E\u8F6C\u4E8E ${record.rotatedAt}\uFF09`);
-      throw bad("\u68C0\u6D4B\u5230 refresh token \u91CD\u653E\uFF1A\u8BE5\u6388\u6743\u94FE\u5DF2\u6574\u4F53\u540A\u9500\uFF0C\u8BF7\u91CD\u65B0\u53D1\u8D77\u6388\u6743");
+      this.revokeRefreshChain(record.chainId, t("refresh token \u91CD\u653E\u68C0\u6D4B\uFF08\u539F\u8F6E\u8F6C\u4E8E {at}\uFF09", { at: record.rotatedAt }));
+      throw bad(t("\u68C0\u6D4B\u5230 refresh token \u91CD\u653E\uFF1A\u8BE5\u6388\u6743\u94FE\u5DF2\u6574\u4F53\u540A\u9500\uFF0C\u8BF7\u91CD\u65B0\u53D1\u8D77\u6388\u6743"));
     }
     const user = this.ctx.iam.users().get(record.userId);
-    if (!user || user.status !== "active") throw bad("\u7528\u6237\u72B6\u6001\u5F02\u5E38\uFF08\u51BB\u7ED3/\u79BB\u804C\u8054\u52A8\u5931\u6548\uFF09");
+    if (!user || user.status !== "active") throw bad(t("\u7528\u6237\u72B6\u6001\u5F02\u5E38\uFF08\u51BB\u7ED3/\u79BB\u804C\u8054\u52A8\u5931\u6548\uFF09"));
     const granted = record.scope.split(/\s+/).filter(Boolean);
     const requested = input.scope !== void 0 ? input.scope.split(/\s+/).filter(Boolean) : granted;
     const widened = requested.find((scope2) => !granted.includes(scope2));
-    if (widened) throw new OidcEndpointError(400, "invalid_scope", `refresh \u53EA\u5141\u8BB8\u6536\u7A84 scope\uFF1A${widened} \u672A\u5728\u539F\u6388\u6743\u8303\u56F4\u5185`);
+    if (widened) throw new OidcEndpointError(400, "invalid_scope", t("refresh \u53EA\u5141\u8BB8\u6536\u7A84 scope\uFF1A{scopes} \u672A\u5728\u539F\u6388\u6743\u8303\u56F4\u5185", { scopes: widened }));
     const scope = requested.join(" ");
     this.refreshTokens().update(record.id, { rotatedAt: (/* @__PURE__ */ new Date()).toISOString() });
-    const tokenSet = this.issueTokenSet(client, { userId: record.userId, scope, chainId: record.chainId });
+    const tokenSet = this.issueTokenSet(client, { userId: record.userId, scope, chainId: record.chainId }, origin);
     return tokenSet;
   }
-  issueTokenSet(client, granted) {
+  issueTokenSet(client, granted, origin) {
     const nowSec = Math.floor(Date.now() / 1e3);
     const user = this.ctx.iam.users().get(granted.userId);
     const payload = {
-      iss: this.issuer(),
+      // #15：iss 按请求面派生（env 显式声明优先），与 discovery 对齐
+      iss: this.issuer(origin),
       sub: granted.userId,
       aud: client.clientId,
       azp: client.clientId,
@@ -413,23 +458,23 @@ class OidcService extends Service {
     return count;
   }
   /** RFC 7009 /oauth/revoke：access（jti 黑名单）或 refresh（整链）；恒 200。 */
-  revokeToken(input) {
+  revokeToken(input, origin) {
     const client = this.authenticateClient(input.clientId, input.clientSecret);
     if (!input.token) return;
     if (input.token.startsWith("otr_") || input.tokenTypeHint === "refresh_token") {
       const hash = sha256Hex(input.token);
       const record = this.refreshTokens().findOne((item) => item.tokenHash === hash);
-      if (record && record.clientId === client.clientId) this.revokeRefreshChain(record.chainId, "\u5BA2\u6237\u7AEF\u4E3B\u52A8\u540A\u9500\uFF08RFC 7009\uFF09");
+      if (record && record.clientId === client.clientId) this.revokeRefreshChain(record.chainId, t("\u5BA2\u6237\u7AEF\u4E3B\u52A8\u540A\u9500\uFF08RFC 7009\uFF09"));
       return;
     }
     try {
-      const claims = this.verifyJwt(input.token, { audience: void 0 });
+      const claims = this.verifyJwt(input.token, { audience: void 0, ...origin !== void 0 ? { origin } : {} });
       if (claims.aud !== client.clientId) return;
       this.deniedJtis().insert({
         id: newId("odj"),
         jti: String(claims.jti ?? ""),
         expiresAt: new Date((typeof claims.exp === "number" ? claims.exp : Math.floor(Date.now() / 1e3)) * 1e3).toISOString(),
-        reason: "\u5BA2\u6237\u7AEF\u4E3B\u52A8\u540A\u9500\uFF08RFC 7009\uFF09"
+        reason: t("\u5BA2\u6237\u7AEF\u4E3B\u52A8\u540A\u9500\uFF08RFC 7009\uFF09")
       });
     } catch {
     }
@@ -446,19 +491,19 @@ class OidcService extends Service {
    * 未携带 post_logout_redirect_uri 时（轻量 RP 只传 id_token_hint），若该 client 仅登记了
    * 一个登出回跳地址，按其登记意图回跳——仍受白名单约束，显式传参非法依旧拒绝（防开放重定向）。
    */
-  endSession(input) {
-    if (!input.idTokenHint) throw new OidcEndpointError(302, "invalid_request", "\u7F3A\u5C11 id_token_hint");
+  endSession(input, origin) {
+    if (!input.idTokenHint) throw new OidcEndpointError(302, "invalid_request", t("\u7F3A\u5C11 id_token_hint"));
     let claims;
     try {
-      claims = this.verifyJwt(input.idTokenHint, { audience: void 0 });
+      claims = this.verifyJwt(input.idTokenHint, { audience: void 0, ...origin !== void 0 ? { origin } : {} });
     } catch (error) {
-      throw new OidcEndpointError(302, "invalid_request", `id_token_hint \u9A8C\u7B7E\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`);
+      throw new OidcEndpointError(302, "invalid_request", t("id_token_hint \u9A8C\u7B7E\u5931\u8D25\uFF1A{message}", { message: error instanceof Error ? error.message : String(error) }));
     }
     const client = this.clientByClientId(String(claims.aud ?? ""));
-    if (!client) throw new OidcEndpointError(302, "invalid_request", "id_token_hint \u53D7\u4F17\uFF08aud\uFF09\u672A\u547D\u4E2D\u5DF2\u767B\u8BB0\u5BA2\u6237\u7AEF");
+    if (!client) throw new OidcEndpointError(302, "invalid_request", t("id_token_hint \u53D7\u4F17\uFF08aud\uFF09\u672A\u547D\u4E2D\u5DF2\u767B\u8BB0\u5BA2\u6237\u7AEF"));
     const userId = String(claims.sub ?? "");
     for (const record of this.refreshTokens().find((item) => item.clientId === client.clientId && item.userId === userId && !item.revokedAt)) {
-      this.refreshTokens().update(record.id, { revokedAt: (/* @__PURE__ */ new Date()).toISOString(), revokedReason: "RP \u53D1\u8D77\u767B\u51FA\u8054\u52A8" });
+      this.refreshTokens().update(record.id, { revokedAt: (/* @__PURE__ */ new Date()).toISOString(), revokedReason: t("RP \u53D1\u8D77\u767B\u51FA\u8054\u52A8") });
     }
     const logoutParams = new URLSearchParams({
       ...input.postLogoutRedirectUri !== void 0 ? { post_logout_redirect_uri: input.postLogoutRedirectUri } : {},
@@ -475,21 +520,21 @@ class OidcService extends Service {
       return { location: logoutPage };
     }
     if (!whitelist.includes(input.postLogoutRedirectUri)) {
-      throw new OidcEndpointError(302, "invalid_request", "post_logout_redirect_uri \u672A\u767B\u8BB0\u5728\u5BA2\u6237\u7AEF\u767B\u51FA\u767D\u540D\u5355");
+      throw new OidcEndpointError(302, "invalid_request", t("post_logout_redirect_uri \u672A\u767B\u8BB0\u5728\u5BA2\u6237\u7AEF\u767B\u51FA\u767D\u540D\u5355"));
     }
     return { location: logoutPage };
   }
   // -- userinfo ---------------------------------------------------------------
-  /** userinfo：仅接受 access token（token_use 校验）+ aud 必须命中有效 client + 用户实时状态。 */
-  userinfo(accessToken) {
-    const claims = this.verifyJwt(accessToken, { audience: void 0 });
-    if (claims.token_use !== "access") throw new Error("\u8BE5\u7AEF\u70B9\u4EC5\u63A5\u53D7 access token\uFF08id_token \u4E0D\u80FD\u76F4\u63A5\u8C03 userinfo\uFF09");
+  /** userinfo：仅接受 access token（token_use 校验）+ aud 必须命中有效 client + 用户实时状态；origin 提供时 iss 同步接受请求面派生值（#15）。 */
+  userinfo(accessToken, origin) {
+    const claims = this.verifyJwt(accessToken, { audience: void 0, ...origin !== void 0 ? { origin } : {} });
+    if (claims.token_use !== "access") throw new Error(t("\u8BE5\u7AEF\u70B9\u4EC5\u63A5\u53D7 access token\uFF08id_token \u4E0D\u80FD\u76F4\u63A5\u8C03 userinfo\uFF09"));
     const client = this.clientByClientId(String(claims.aud ?? ""));
-    if (!client || !OidcService.isClientActive(client)) throw new Error("token \u53D7\u4F17\uFF08aud\uFF09\u4E0D\u662F\u6709\u6548\u5BA2\u6237\u7AEF");
-    if (this.isJtiDenied(claims.jti)) throw new Error("token \u5DF2\u88AB\u540A\u9500\uFF08RFC 7009\uFF09");
+    if (!client || !OidcService.isClientActive(client)) throw new Error(t("token \u53D7\u4F17\uFF08aud\uFF09\u4E0D\u662F\u6709\u6548\u5BA2\u6237\u7AEF"));
+    if (this.isJtiDenied(claims.jti)) throw new Error(t("token \u5DF2\u88AB\u540A\u9500\uFF08RFC 7009\uFF09"));
     const user = this.ctx.iam.users().get(claims.sub ?? "");
-    if (!user) throw new Error("\u7528\u6237\u4E0D\u5B58\u5728");
-    if (user.status !== "active") throw new Error("\u7528\u6237\u72B6\u6001\u5F02\u5E38\uFF08\u51BB\u7ED3/\u79BB\u804C\u8054\u52A8\u5931\u6548\uFF09");
+    if (!user) throw new Error(t("\u7528\u6237\u4E0D\u5B58\u5728"));
+    if (user.status !== "active") throw new Error(t("\u7528\u6237\u72B6\u6001\u5F02\u5E38\uFF08\u51BB\u7ED3/\u79BB\u804C\u8054\u52A8\u5931\u6548\uFF09"));
     const org = this.ctx.iam.orgs().get(user.orgId);
     const scopes = String(claims.scope ?? "").split(/\s+/);
     return {
@@ -521,35 +566,36 @@ class OidcService extends Service {
   }
   /**
    * JWT 校验：签名 + header.kid 匹配 JWKS 公布密钥 + iss 归属本 Provider + exp 有效；
-   * options.audience 指定时校验受众（azp/aud 必须命中）。
+   * options.audience 指定时校验受众（azp/aud 必须命中）；
+   * options.origin 指定时 iss 同时接受请求面派生值（#15：公网域名签发的令牌在同域名校验通过）。
    */
   verifyJwt(token, options = {}) {
     const parts = token.split(".");
-    if (parts.length !== 3) throw new Error("JWT \u683C\u5F0F\u4E0D\u5408\u6CD5");
+    if (parts.length !== 3) throw new Error(t("JWT \u683C\u5F0F\u4E0D\u5408\u6CD5"));
     let header;
     try {
       header = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"));
     } catch {
-      throw new Error("JWT \u5934\u90E8\u89E3\u6790\u5931\u8D25");
+      throw new Error(t("JWT \u5934\u90E8\u89E3\u6790\u5931\u8D25"));
     }
     const key = this.keys.find((item) => item.kid === header.kid);
-    if (!key) throw new Error("JWT kid \u4E0E JWKS \u516C\u5E03\u5BC6\u94A5\u4E0D\u5339\u914D");
+    if (!key) throw new Error(t("JWT kid \u4E0E JWKS \u516C\u5E03\u5BC6\u94A5\u4E0D\u5339\u914D"));
     if (key.retiredAt !== void 0 && Date.now() - new Date(key.retiredAt).getTime() >= KEY_GRACE_MS) {
-      throw new Error("JWT \u7B7E\u540D\u5BC6\u94A5\u5DF2\u8FC7\u5BBD\u9650\u671F");
+      throw new Error(t("JWT \u7B7E\u540D\u5BC6\u94A5\u5DF2\u8FC7\u5BBD\u9650\u671F"));
     }
     const valid = rsVerify("RSA-SHA256", Buffer.from(`${parts[0]}.${parts[1]}`), key.publicPem, Buffer.from(parts[2], "base64url"));
-    if (!valid) throw new Error("JWT \u7B7E\u540D\u6821\u9A8C\u5931\u8D25\uFF08RS256\uFF09");
+    if (!valid) throw new Error(t("JWT \u7B7E\u540D\u6821\u9A8C\u5931\u8D25\uFF08RS256\uFF09"));
     let claims;
     try {
       claims = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
     } catch {
-      throw new Error("JWT \u8F7D\u8377\u89E3\u6790\u5931\u8D25");
+      throw new Error(t("JWT \u8F7D\u8377\u89E3\u6790\u5931\u8D25"));
     }
-    if (claims.iss !== this.issuer()) throw new Error("JWT \u7B7E\u53D1\u65B9\uFF08iss\uFF09\u6821\u9A8C\u5931\u8D25");
-    if (typeof claims.exp === "number" && claims.exp * 1e3 < Date.now()) throw new Error("JWT \u5DF2\u8FC7\u671F");
+    if (!this.acceptedIssuers(options.origin).includes(String(claims.iss ?? ""))) throw new Error(t("JWT \u7B7E\u53D1\u65B9\uFF08iss\uFF09\u6821\u9A8C\u5931\u8D25"));
+    if (typeof claims.exp === "number" && claims.exp * 1e3 < Date.now()) throw new Error(t("JWT \u5DF2\u8FC7\u671F"));
     if (options.audience !== void 0) {
       const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-      if (!aud.includes(options.audience)) throw new Error(`JWT \u53D7\u4F17\uFF08aud\uFF09\u6821\u9A8C\u5931\u8D25\uFF1A\u671F\u671B ${options.audience}`);
+      if (!aud.includes(options.audience)) throw new Error(t("JWT \u53D7\u4F17\uFF08aud\uFF09\u6821\u9A8C\u5931\u8D25\uFF1A\u671F\u671B {expected}", { expected: options.audience }));
     }
     return claims;
   }
@@ -582,15 +628,16 @@ class OidcService extends Service {
     this.saveKeys();
     return { graceHours: KEY_GRACE_MS / 36e5, kid: material.kid };
   }
-  discovery() {
+  discovery(origin) {
+    const issuer = this.issuer(origin);
     return {
-      issuer: this.issuer(),
-      jwks_uri: `${this.issuer()}/.well-known/jwks.json`,
-      authorization_endpoint: `${this.issuer()}/oauth/authorize`,
-      token_endpoint: `${this.issuer()}/oauth/token`,
-      userinfo_endpoint: `${this.issuer()}/oauth/userinfo`,
-      revocation_endpoint: `${this.issuer()}/oauth/revoke`,
-      end_session_endpoint: `${this.issuer()}/oauth/end_session`,
+      issuer,
+      jwks_uri: `${issuer}/.well-known/jwks.json`,
+      authorization_endpoint: `${issuer}/oauth/authorize`,
+      token_endpoint: `${issuer}/oauth/token`,
+      userinfo_endpoint: `${issuer}/oauth/userinfo`,
+      revocation_endpoint: `${issuer}/oauth/revoke`,
+      end_session_endpoint: `${issuer}/oauth/end_session`,
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token"],
       code_challenge_methods_supported: ["S256"],
@@ -708,7 +755,7 @@ class OidcService extends Service {
       http.register("OPTIONS", pattern, preflight);
     }
     http.register("GET", "/.well-known/openid-configuration", (exchange) => {
-      raw(exchange, 200, this.discovery());
+      raw(exchange, 200, this.discovery(exchange));
     });
     http.register("GET", "/.well-known/jwks.json", (exchange) => {
       raw(exchange, 200, this.jwks());
@@ -751,19 +798,19 @@ class OidcService extends Service {
       const input = exchange.body ?? {};
       const info = exchange.principal;
       if (!info) {
-        raw(exchange, 401, { error: "invalid_request", error_description: "\u7F3A\u5C11 Bearer \u4F1A\u8BDD\uFF0C\u8BF7\u5148\u767B\u5F55\u5E73\u53F0" });
+        raw(exchange, 401, { error: "invalid_request", error_description: t("\u7F3A\u5C11 Bearer \u4F1A\u8BDD\uFF0C\u8BF7\u5148\u767B\u5F55\u5E73\u53F0") });
         return;
       }
       if (info.kind !== "human" || !info.userId) {
-        raw(exchange, 403, { error: "invalid_request", error_description: "\u6388\u6743\u786E\u8BA4\u4EC5\u9650\u767B\u5F55\u7528\u6237\uFF08human\uFF09\uFF0C\u673A\u5668\u8EAB\u4EFD\u4E0D\u53EF\u4EE3\u66FF\u7528\u6237\u6388\u6743" });
+        raw(exchange, 403, { error: "invalid_request", error_description: t("\u6388\u6743\u786E\u8BA4\u4EC5\u9650\u767B\u5F55\u7528\u6237\uFF08human\uFF09\uFF0C\u673A\u5668\u8EAB\u4EFD\u4E0D\u53EF\u4EE3\u66FF\u7528\u6237\u6388\u6743") });
         return;
       }
       if (!input.reqId) {
-        raw(exchange, 400, { error: "invalid_request", error_description: "reqId \u5FC5\u586B" });
+        raw(exchange, 400, { error: "invalid_request", error_description: t("reqId \u5FC5\u586B") });
         return;
       }
       try {
-        const result = this.completeAuthorization({ reqId: input.reqId, userId: info.userId, ...input.consent !== void 0 ? { consent: input.consent } : {} });
+        const result = this.completeAuthorization({ reqId: input.reqId, userId: info.userId, ...input.consent !== void 0 ? { consent: input.consent } : {} }, exchange);
         raw(exchange, 200, result);
       } catch (error) {
         raw(exchange, 400, { error: "consent_required", error_description: error instanceof Error ? error.message : String(error) });
@@ -793,7 +840,7 @@ class OidcService extends Service {
           ...bodyInput["code_verifier"] !== void 0 ? { codeVerifier: bodyInput["code_verifier"] } : {},
           ...bodyInput["refresh_token"] !== void 0 ? { refreshToken: bodyInput["refresh_token"] } : {},
           ...bodyInput["scope"] !== void 0 ? { scope: bodyInput["scope"] } : {}
-        });
+        }, exchange);
         raw(exchange, 200, result, { "cache-control": "no-store", pragma: "no-cache" });
       } catch (error) {
         const err = error instanceof OidcEndpointError ? error : new OidcEndpointError(400, "invalid_grant", error instanceof Error ? error.message : String(error));
@@ -807,11 +854,11 @@ class OidcService extends Service {
         raw(exchange, 401, { error: "invalid_token", error_description: description }, { "www-authenticate": `Bearer error="invalid_token", error_description="${headerSafe(description)}"` });
       };
       if (!header.startsWith("Bearer ")) {
-        raw(exchange, 401, { error: "invalid_token", error_description: "\u7F3A\u5C11 Bearer access token" }, { "www-authenticate": "Bearer" });
+        raw(exchange, 401, { error: "invalid_token", error_description: t("\u7F3A\u5C11 Bearer access token") }, { "www-authenticate": "Bearer" });
         return;
       }
       try {
-        raw(exchange, 200, this.userinfo(header.slice(7)));
+        raw(exchange, 200, this.userinfo(header.slice(7), exchange));
       } catch (error) {
         deny(error instanceof Error ? error.message : String(error));
       }
@@ -823,7 +870,7 @@ class OidcService extends Service {
           idTokenHint: q.get("id_token_hint") ?? void 0,
           postLogoutRedirectUri: q.get("post_logout_redirect_uri") ?? void 0,
           state: q.get("state") ?? void 0
-        });
+        }, exchange);
         redirect(exchange, result.location);
       } catch (error) {
         const err = error instanceof OidcEndpointError ? error : new OidcEndpointError(302, "invalid_request", error instanceof Error ? error.message : String(error));
@@ -850,7 +897,7 @@ class OidcService extends Service {
           clientSecret: basicSecret ?? bodyInput["client_secret"],
           token: bodyInput["token"],
           tokenTypeHint: bodyInput["token_type_hint"]
-        });
+        }, exchange);
         raw(exchange, 200, {});
       } catch (error) {
         const err = error instanceof OidcEndpointError ? error : new OidcEndpointError(400, "unsupported_token_type", error instanceof Error ? error.message : String(error));

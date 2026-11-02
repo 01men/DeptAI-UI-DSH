@@ -12,7 +12,7 @@
  *
  * 【降级防御】对 block/content 的运行时访问全部带形状守卫：上游快照结构变化时
  * 卡片宁可少渲染，也不抛错——slot 边界（reportEntryError）之外再叠一层自律。
- * @module @dsh-ops/plugin-rq-card/client/ExecutionCard
+ * @module @ybkk/plugin-rq-card/client/ExecutionCard
  */
 
 import type { ExecutionState, ExecutionStateInput } from './state.ts'

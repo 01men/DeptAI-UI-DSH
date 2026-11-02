@@ -4,6 +4,7 @@ import { stat } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Service } from "@deepseek-ai/cordis";
+import { parseCookieHeader, resolveRequestLocale, runWithLocale, t } from "../../platform-i18n/dist/index.js";
 const isApiPattern = (pattern) => pattern === "/api" || pattern.startsWith("/api/");
 function corsAllowOriginFor(allowOrigins, originHeader) {
   if (!originHeader || allowOrigins.length === 0) return void 0;
@@ -34,6 +35,9 @@ const MIME = {
   ".md": "text/markdown; charset=utf-8",
   ".map": "application/json"
 };
+const CONTENT_SECURITY_POLICY = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http: https:";
+const RESERVED_PATH_PREFIXES = ["/api", "/rq", "/dsh-bridge", "/auth/entry", "/oauth", "/.well-known", "/mcp", "/docs"];
+const isReservedPath = (pathname) => RESERVED_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 class HttpServerService extends Service {
   static provide = "httpServer";
   routes = [];
@@ -158,10 +162,30 @@ class HttpServerService extends Service {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
     const pathSegments = url.pathname.split("/").filter(Boolean).map((s) => s);
     const method = (req.method ?? "GET").toUpperCase();
+    const requestLocale = resolveRequestLocale({
+      query: url.searchParams.get("lang"),
+      cookie: parseCookieHeader(req.headers.cookie)["rq_lang"],
+      acceptLanguage: req.headers["accept-language"],
+      env: process.env.PLATFORM_LOCALE
+    });
+    const forwardedProto = (req.headers["x-forwarded-proto"] ?? "").split(",")[0]?.trim() ?? "";
+    if (forwardedProto === "http") {
+      res.statusCode = 308;
+      res.setHeader("location", `https://${req.headers.host ?? url.host}${url.pathname}${url.search}`);
+      res.end();
+      return;
+    }
     if (this.securityHeaders) {
       res.setHeader("x-content-type-options", "nosniff");
       res.setHeader("x-frame-options", "SAMEORIGIN");
       res.setHeader("referrer-policy", "strict-origin-when-cross-origin");
+      res.setHeader("content-security-policy", CONTENT_SECURITY_POLICY);
+      if (forwardedProto === "https" || req.socket.encrypted) {
+        res.setHeader("strict-transport-security", "max-age=31536000; includeSubDomains");
+      }
+    }
+    if (isApiPattern(url.pathname)) {
+      res.setHeader("cache-control", "no-store");
     }
     const blanketCorsExempt = url.pathname.startsWith("/api/portal/") || url.pathname.startsWith("/api/authn/oidc/") || this.corsAllowOrigins.includes("*") && url.pathname.startsWith("/api/auth/");
     const blanketCorsPath = url.pathname.startsWith("/api/") && !blanketCorsExempt;
@@ -240,54 +264,77 @@ class HttpServerService extends Service {
       }
     };
     try {
-      for (const middleware of this.middlewares) {
-        const blocked = await middleware(exchange);
-        if (blocked === true) return;
-        if (res.writableEnded) return;
-      }
-      const matched = this.match(method, pathSegments);
-      if (matched) {
-        exchange.params = matched.params;
-        await matched.route.handler(exchange);
-        return;
-      }
-      const staticCandidates = this.staticDirs.map((entry) => ({ entry, prefix: entry.prefix.replace(/\/$/, "") })).filter(({ prefix }) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)).sort((a, b) => b.prefix.length - a.prefix.length);
-      if (staticCandidates.length > 0) {
-        if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
-          exchange.fail(404, "NOT_FOUND", `\u8DEF\u7531\u4E0D\u5B58\u5728\uFF1A${method} ${url.pathname}`);
-          return;
-        }
-        const best = staticCandidates[0];
-        await this.serveFromDir(exchange, best.entry, url.pathname.slice(best.prefix.length));
-        return;
-      }
-      if (this.staticDirs.length > 0) {
-        if (!url.pathname.startsWith("/api/")) {
-          const entry = this.staticDirs[0];
-          await this.serveFromDir(exchange, entry, entry.fallback ?? "/index.html");
-          return;
-        }
-      }
-      exchange.fail(404, "NOT_FOUND", `\u8DEF\u7531\u4E0D\u5B58\u5728\uFF1A${method} ${url.pathname}`);
+      await runWithLocale(requestLocale, () => this.dispatchInner(exchange, method, pathSegments, url));
     } catch (error) {
       if (!res.writableEnded) {
-        exchange.fail(500, "INTERNAL", "\u670D\u52A1\u5668\u5185\u90E8\u9519\u8BEF\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u6216\u8054\u7CFB\u7BA1\u7406\u5458");
+        exchange.fail(500, "INTERNAL", t("\u670D\u52A1\u5668\u5185\u90E8\u9519\u8BEF\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u6216\u8054\u7CFB\u7BA1\u7406\u5458"));
       }
       console.error(`[http] ${method} ${url.pathname} \u5904\u7406\u5F02\u5E38`, error);
     }
   }
+  /** dispatch 的内层（请求级 locale 上下文内执行）：中间件链 → 路由匹配 → 静态目录/SPA 兜底。 */
+  async dispatchInner(exchange, method, pathSegments, url) {
+    const res = exchange.res;
+    for (const middleware of this.middlewares) {
+      const blocked = await middleware(exchange);
+      if (blocked === true) return;
+      if (res.writableEnded) return;
+    }
+    const matched = this.match(method, pathSegments);
+    if (matched) {
+      exchange.params = matched.params;
+      await matched.route.handler(exchange);
+      return;
+    }
+    const staticCandidates = this.staticDirs.map((entry) => ({ entry, prefix: entry.prefix.replace(/\/$/, "") })).filter(({ prefix }) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)).sort((a, b) => b.prefix.length - a.prefix.length);
+    if (staticCandidates.length > 0) {
+      const handledByStatic = staticCandidates.some(({ prefix }) => prefix !== "" && (url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)));
+      if (isReservedPath(url.pathname) && !handledByStatic) {
+        exchange.fail(404, "NOT_FOUND", t("\u8DEF\u7531\u4E0D\u5B58\u5728\uFF1A{method} {path}", { method, path: url.pathname }));
+        return;
+      }
+      const best = staticCandidates[0];
+      await this.serveFromDir(exchange, best.entry, url.pathname.slice(best.prefix.length));
+      return;
+    }
+    if (this.staticDirs.length > 0) {
+      if (!isReservedPath(url.pathname)) {
+        const entry = this.staticDirs[0];
+        await this.serveFromDir(exchange, entry, entry.fallback ?? "/index.html");
+        return;
+      }
+    }
+    exchange.fail(404, "NOT_FOUND", t("\u8DEF\u7531\u4E0D\u5B58\u5728\uFF1A{method} {path}", { method, path: url.pathname }));
+  }
   async serveFromDir(exchange, entry, relative) {
-    let target = join(entry.dir, normalize(relative).replace(/^([/\\])+/, ""));
+    let rel = relative;
+    try {
+      rel = relative.split("/").map((segment) => {
+        const decoded = decodeURIComponent(segment);
+        if (decoded.includes("/") || decoded.includes("\\") || decoded === "..") throw new Error("unsafe segment");
+        return decoded;
+      }).join("/");
+    } catch {
+    }
+    let target = join(entry.dir, normalize(rel).replace(/^([/\\])+/, ""));
     if (relative === "" || relative === "/") target = join(entry.dir, "index.html");
     try {
       const info = await stat(target);
       if (info.isDirectory()) target = join(target, "index.html");
     } catch {
+      if (hasFileExtension(rel)) {
+        exchange.fail(404, "NOT_FOUND", t("\u8DEF\u7531\u4E0D\u5B58\u5728\uFF1A{method} {path}", { method: exchange.method, path: exchange.path }));
+        return;
+      }
       const fallback = entry.fallback ?? "/index.html";
       target = join(entry.dir, fallback.replace(/^\/+/, ""));
     }
     exchange.file(target);
   }
+}
+function hasFileExtension(pathname) {
+  const last = pathname.split("/").filter(Boolean).at(-1) ?? "";
+  return /\.[a-zA-Z0-9]{1,8}$/.test(last);
 }
 function assetDir(importMeta, ...relative) {
   return join(fileURLToPath(importMeta.url), "..", "..", ...relative);
@@ -295,5 +342,6 @@ function assetDir(importMeta, ...relative) {
 export {
   HttpServerService,
   assetDir,
-  corsAllowOriginFor
+  corsAllowOriginFor,
+  hasFileExtension
 };

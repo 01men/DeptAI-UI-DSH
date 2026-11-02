@@ -1,5 +1,5 @@
 /**
- * @dsh-ops/plugin-dingtalk-bridge —— 钉钉桥接（review-dsh-agent-panel-v2 Phase 3）。
+ * @ybkk/plugin-dingtalk-bridge —— 钉钉桥接（review-dsh-agent-panel-v2 Phase 3）。
  *
  * 职责（出向优先，R-SPIKE 未决不做入向硬编码）：
  *   - 群桥绑定：panel 频道 ↔ 钉钉群会话（openConversationId + robotCode），purpose=channel/alerts

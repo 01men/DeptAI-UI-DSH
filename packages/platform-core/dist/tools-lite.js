@@ -4,6 +4,7 @@ class ToolRuntimeLite extends Service {
   static provide = "tools";
   definitions = /* @__PURE__ */ new Map();
   guards = [];
+  contextualGuards = [];
   interceptors = [];
   constructor(ctx) {
     super(ctx, "tools");
@@ -33,6 +34,19 @@ class ToolRuntimeLite extends Service {
     return () => {
       const index = this.guards.indexOf(guard);
       if (index >= 0) this.guards.splice(index, 1);
+    };
+  }
+  /**
+   * 上下文型 guard 注册器（D02/D03 additive）：注册的 guard 在旧 guard 链全部通过后
+   * 运行，按注册顺序执行并注入 principal/callId。任一返回拒绝原因即短路（与旧 guard
+   * 同款失败形态：isError + 中文拒绝文案）。返回注销函数。
+   */
+  guardContext(guard) {
+    if (typeof guard !== "function") throw new TypeError("[tools] guardContext \u7684 guard \u5FC5\u987B\u662F\u51FD\u6570");
+    this.contextualGuards.push(guard);
+    return () => {
+      const index = this.contextualGuards.indexOf(guard);
+      if (index >= 0) this.contextualGuards.splice(index, 1);
     };
   }
   /**
@@ -86,6 +100,12 @@ class ToolRuntimeLite extends Service {
     }
     for (const guard of this.guards) {
       const reason = guard({ name, arguments: args });
+      if (reason) {
+        return { ...base, isError: true, content: [{ type: "text", text: `\u8C03\u7528\u88AB\u62D2\u7EDD\uFF1A${reason}` }], error: { message: reason }, durationMs: Date.now() - started };
+      }
+    }
+    for (const guard of this.contextualGuards) {
+      const reason = guard({ name, arguments: args, ...input.principal ? { principal: input.principal } : {}, callId });
       if (reason) {
         return { ...base, isError: true, content: [{ type: "text", text: `\u8C03\u7528\u88AB\u62D2\u7EDD\uFF1A${reason}` }], error: { message: reason }, durationMs: Date.now() - started };
       }

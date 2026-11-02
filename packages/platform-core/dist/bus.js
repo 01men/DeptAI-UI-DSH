@@ -5,6 +5,7 @@ import { Service } from "@deepseek-ai/cordis";
 const PlatformEvents = {
   UserFrozen: "iam.user.frozen",
   UserActivated: "iam.user.activated",
+  UserPasswordReset: "iam.user.password-reset",
   OrgChanged: "iam.org.changed",
   PermissionChanged: "iam.permission.changed",
   TokenIssued: "authn.token.issued",
@@ -13,6 +14,12 @@ const PlatformEvents = {
   McpOfflined: "mcp.offlined",
   McpUnhealthy: "mcp.unhealthy",
   McpInvoked: "mcp.invoked",
+  // W1-T2（MCP 治理 §6）：Secret Broker 凭证读取留痕（payload 仅 serviceId/credentialRef，绝不带值）
+  McpSecretAccess: "mcp.secret.access",
+  // 应用外部凭证托管（issue #19）：取值留痕（payload 仅 appId/key/result，绝不带值）
+  AppSecretAccess: "app.secret.access",
+  // 资产使用凭证（2026-10-31）：Agent 使用 skill/MCP 后主动提报的使用事实（逐次审计订阅落账）
+  UsageAssetReported: "usage.asset.reported",
   // 连接器纳管（open-connector 融合；前缀已在本文件预留清单）
   ConnectorOddExit: "connector.odd_exit",
   ConnectorPolicyMirrorFailed: "connector.policy_mirror_failed",
@@ -81,9 +88,22 @@ const PlatformEvents = {
   FlowCreated: "flow.created",
   FlowStepUpdated: "flow.step.updated",
   FlowCompleted: "flow.completed",
+  // TF 停滞告警（C-06）：running 态但 running 步=0——只告警不自动重跑，推进仍须显式调用
+  FlowStalled: "flow.stalled",
   FlowTemplateChanged: "flow.template.changed",
   // Agent 域（IAW 交接 7-1）：A2A 跨运行时调用
   AgentA2aInvoked: "agent.a2a.invoked",
+  // Agent 冻结联动（R10，2026-10-14）：预算超限冻结（plugin-agent 落 attrs 软态 + 解冻审批）
+  AgentFrozen: "agent.frozen",
+  AgentUnfrozen: "agent.unfrozen",
+  // 执行中枢（ybkk-MATRIX 目标四，2026-10-14）：目标血缘 / 唤醒队列 / run 收尾 / 锁回收 / 心跳 / 例行
+  ExecGoalChanged: "exec.goal.changed",
+  ExecIssueChanged: "exec.issue.changed",
+  ExecWakeEnqueued: "exec.wake.enqueued",
+  ExecRunCompleted: "exec.run.completed",
+  ExecLockReclaimed: "exec.lock.reclaimed",
+  ExecHeartbeatRecorded: "exec.heartbeat.recorded",
+  ExecRoutineChanged: "exec.routine.changed",
   // 总线自观察（OPT-P1-04）：监听器异常与死信——丢事件=丢证据，异常必须显式可查
   BusListenerError: "bus.listener_error",
   BusDeadLetter: "bus.dead_letter"
@@ -117,7 +137,9 @@ const PLATFORM_RESERVED_PREFIXES = [
   // 模型网关治理 / 事务流引擎 / 数据要素（IAW 交接批次 2026-09-11）
   "modelgw.",
   "flow.",
-  "resource."
+  "resource.",
+  // 执行中枢（2026-10-14）
+  "exec."
 ];
 const RING_CAPACITY = 300;
 const LISTENER_TIMEOUT_MS = 5e3;
@@ -264,7 +286,7 @@ class PlatformBusService extends Service {
     const retained = [];
     for (const record of records) {
       try {
-        this.emit(record.eventName, record.payload);
+        this.emit(record.eventName, record.payload, record.source !== void 0 ? { source: record.source } : {});
         redelivered++;
       } catch (error) {
         retained.push({ ...record, error: `${record.error}\uFF1B\u91CD\u6295\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}` });
@@ -288,7 +310,8 @@ class PlatformBusService extends Service {
       listener,
       error,
       attempts,
-      at: (/* @__PURE__ */ new Date()).toISOString()
+      at: (/* @__PURE__ */ new Date()).toISOString(),
+      ...event.source !== void 0 ? { source: event.source } : {}
     };
     this.appendDeadLetter(record);
     if (options.suppressAlert) return;
@@ -313,30 +336,35 @@ class PlatformBusService extends Service {
       if (this.queue.length > 0) this.scheduleDrain();
     }
   }
-  /** 单事件派发：逐监听器隔离，超时/异常按次计失败，指数退避重试 3 次后入死信。 */
+  /**
+   * 单事件派发（C-05）：事件间仍按队列 FIFO 串行（drain 逐事件等待 allSettled），
+   * 同一事件的各监听器并发隔离——单监听器失败/挂起（至多 LISTENER_TIMEOUT_MS）不再拖慢
+   * 同事件其他监听器；每监听器超时/异常按次计失败，指数退避重试 3 次后入死信（既有语义不变）。
+   */
   async deliver(event) {
     const targets = [];
     for (const cb of this.listeners.get(event.name) ?? []) targets.push({ cb, label: event.name });
     for (const cb of this.wildcard) targets.push({ cb, label: "*" });
-    for (const { cb, label } of targets) {
-      let delivered = false;
-      for (let attempt = 1; attempt <= RETRY_BACKOFF_MS.length + 1 && !delivered; attempt++) {
-        try {
-          await withTimeout(Promise.resolve(cb(event.payload, event)), LISTENER_TIMEOUT_MS);
-          delivered = true;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.error(`[bus] \u76D1\u542C\u5668\u5904\u7406 ${event.name}\uFF08${label}\uFF09\u7B2C ${attempt} \u6B21\u5931\u8D25`, error);
-          if (FEEDBACK_EVENTS.has(event.name)) {
-            this.enterDeadLetter(event, label, `\u53CD\u9988\u4E8B\u4EF6\u76D1\u542C\u5668\u5931\u8D25\uFF08\u4E0D\u56DE\u6388\uFF0CQA C-01\uFF09\uFF1A${message}`, attempt, { suppressAlert: true });
-            break;
-          }
-          this.emit(PlatformEvents.BusListenerError, { event: event.name, listener: label, attempt, error: message, at: (/* @__PURE__ */ new Date()).toISOString() });
-          if (attempt <= RETRY_BACKOFF_MS.length) {
-            await sleep(RETRY_BACKOFF_MS[attempt - 1]);
-          } else {
-            this.enterDeadLetter(event, label, `3 \u6B21\u91CD\u8BD5\u5747\u5931\u8D25\uFF1A${message}`, attempt);
-          }
+    await Promise.allSettled(targets.map(({ cb, label }) => this.deliverToOne(event, cb, label)));
+  }
+  /** 单监听器派发链：失败逐次落 bus.listener_error（回授断路见 FEEDBACK_EVENTS），重试耗尽入死信。 */
+  async deliverToOne(event, cb, label) {
+    for (let attempt = 1; attempt <= RETRY_BACKOFF_MS.length + 1; attempt++) {
+      try {
+        await withTimeout(Promise.resolve(cb(event.payload, event)), LISTENER_TIMEOUT_MS);
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`[bus] \u76D1\u542C\u5668\u5904\u7406 ${event.name}\uFF08${label}\uFF09\u7B2C ${attempt} \u6B21\u5931\u8D25`, error);
+        if (FEEDBACK_EVENTS.has(event.name)) {
+          this.enterDeadLetter(event, label, `\u53CD\u9988\u4E8B\u4EF6\u76D1\u542C\u5668\u5931\u8D25\uFF08\u4E0D\u56DE\u6388\uFF0CQA C-01\uFF09\uFF1A${message}`, attempt, { suppressAlert: true });
+          return;
+        }
+        this.emit(PlatformEvents.BusListenerError, { event: event.name, listener: label, attempt, error: message, at: (/* @__PURE__ */ new Date()).toISOString() });
+        if (attempt <= RETRY_BACKOFF_MS.length) {
+          await sleep(RETRY_BACKOFF_MS[attempt - 1]);
+        } else {
+          this.enterDeadLetter(event, label, `3 \u6B21\u91CD\u8BD5\u5747\u5931\u8D25\uFF1A${message}`, attempt);
         }
       }
     }

@@ -20,7 +20,7 @@
  *     等元数据，绝不带值），plugin-audit 订阅落 app.credential.access；
  *   - 回显：列表/详情只回 masked（长度≥8 保留末 4 位）+ lastRotatedAt 等元数据。
  */
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
@@ -263,12 +263,31 @@ export class AppCredentialService extends Service {
   /**
    * 应用删除联动清库（AppRegistryService.purge 调用）：整个密钥文件删除——
    * 应用不存在则凭证无归属，绝不允许残留（安全：删除即销毁，非「禁用」）。
+   *
+   * Windows 部署形态根治（2026-11-02 合并回归）：本机实证 fs.rmSync 对单文件静默失效——
+   * 无异常、返回成功但文件仍在（项目树内稳定复现；fs.unlinkSync 一切正常）。
+   * 「删除即销毁」的安全语义不允许静默残留：
+   *   ① 单文件删除一律 unlinkSync（rmSync 面向目录树，不再用于单文件）；
+   *   ② 刚写入的密钥文件可能被杀毒/索引器短暂占用（EPERM/EBUSY/EACCES）——有界重试吸收瞬态，
+   *      重试耗尽即抛出（响亮失败 > 静默残留，调用方路由得 500 而非 200 假象）；
+   *   ③ ENOENT 视为目标态达成（并发窗口幂等）。
    */
   purge(appId: string): boolean {
     const file = this.fileOf(appId)
     if (!existsSync(file)) return false
-    rmSync(file)
-    return true
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        unlinkSync(file)
+        return true
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException)?.code
+        if (code === 'ENOENT') return true
+        if (attempt === 5 || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) throw error
+        // 罕见管理路径的有界同步退避（≤1.5s 总量级），吸收杀毒/索引器瞬态锁
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50 * (attempt + 1))
+      }
+    }
+    return !existsSync(file)
   }
 
   /** 取用留痕（每次 resolve emit；payload 绝不带值，plugin-audit 订阅落 app.credential.access）。 */

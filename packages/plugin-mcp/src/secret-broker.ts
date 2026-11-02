@@ -12,7 +12,7 @@
  * 每次成功 resolve emit PlatformEvents.McpSecretAccess（'mcp.secret.access'），
  * payload 只含 serviceId/credentialRef/at 等元数据，绝不带值（plugin-audit 订阅落审计）。
  */
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
@@ -245,12 +245,25 @@ export class SecretBroker extends Service {
     }
   }
 
-  /** 删除（服务删除联动/凭证清空）：文件不存在返回 false。 */
+  /** 删除（服务删除联动/凭证清空）：文件不存在返回 false。
+   *  Windows 根治（2026-11-02 合并回归）：rmSync 对单文件在本机项目树静默失效（无异常不删除，
+   *  实证），unlinkSync 正常——凭证销毁语义必须真实落盘；瞬态锁（杀毒/索引器）有界重试，
+   *  耗尽即抛出（响亮失败 > 静默残留）。 */
   delete(serviceId: string): boolean {
     const file = this.fileOf(serviceId)
     if (!existsSync(file)) return false
-    rmSync(file)
-    return true
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        unlinkSync(file)
+        return true
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException)?.code
+        if (code === 'ENOENT') return true
+        if (attempt === 5 || (code !== 'EPERM' && code !== 'EBUSY' && code !== 'EACCES')) throw error
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50 * (attempt + 1))
+      }
+    }
+    return !existsSync(file)
   }
 
   /** 访问留痕（契约 §6：每次 resolve emit；payload 绝不带 secret 值，audit 订阅落 mcp.credential.access）。

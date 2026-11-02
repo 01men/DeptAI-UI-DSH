@@ -19,6 +19,7 @@
     "cordis.patch.yml",
     "index.js",
     "packages/platform-core",
+    "packages/platform-i18n",
     "packages/plugin-iam",
     "packages/plugin-authn",
     "packages/plugin-dsh-bridge",

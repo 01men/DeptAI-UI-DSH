@@ -265,7 +265,11 @@ function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
     <div id="wzLoginErr" class="wz-err"></div>`
   body.querySelector('#wzLoginDd').onclick = () => {
     // 零弹窗铁律合规（2026-10-29 架构统一）：整页跳转宿主登录页；登录成功后按 next 回跳本机面板
-    window.location.href = `${hubPanelBase}/?next=${encodeURIComponent(localPanelUrl)}#/login`
+    // __panelNavHook 为自测台架捕获缝（jsdom 的 location 是非配置属性、导航错误不带目标 URL，
+    // 台架无法拦截真实跳转目标）——生产环境恒 undefined，走原生整页跳转。
+    const navTarget = `${hubPanelBase}/?next=${encodeURIComponent(localPanelUrl)}#/login`
+    if (typeof window.__panelNavHook === 'function') window.__panelNavHook(navTarget)
+    else window.location.href = navTarget
   }
   // 回导校验（G1 未采纳期的诚实降级）：本机面板与宿主跨源，浏览器同源隔离使宿主页扫码会话
   // 无法直接带回——这里只校验「本机是否已持有该连接的有效会话」：有效即进工作台；无效则如实

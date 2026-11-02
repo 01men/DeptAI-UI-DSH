@@ -1,5 +1,33 @@
-var module = { exports: {} }; var exports = module.exports;
-window.__ModuleLoader__.load({ id: "@dsh-ops/plugin-rq-card", factory: (require) => {
+/* rq-card-build-id: 511ccec91894d151 */
+(function () {
+  var PLUGIN_ID = "@ybkk/gate-01";
+  var DIAG = window.__RQ_CARD_DIAG__ = window.__RQ_CARD_DIAG__ || { installed: false, attempts: [] };
+  var note = function (stage, error) {
+    var entry = { at: new Date().toISOString(), stage: stage };
+    if (error !== undefined) entry.error = String((error && error.message) || error);
+    DIAG.attempts.push(entry);
+    if (DIAG.attempts.length > 50) DIAG.attempts.shift();
+  };
+  var badge = function (text) {
+    try {
+      if (document.querySelector(".rq-card-diag-badge")) return;
+      var el = document.createElement("button");
+      el.type = "button";
+      el.className = "rq-card-diag-badge";
+      el.textContent = text;
+      el.title = "01门卡片注入失败——诊断信息见 window.__RQ_CARD_DIAG__，请截图反馈给管理员。点击刷新重试。";
+      el.setAttribute("style", "position:fixed;right:12px;bottom:12px;z-index:2147483000;padding:6px 12px;border-radius:14px;border:1px solid #f59e0b;background:#fffbeb;color:#92400e;font-size:12px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12)");
+      el.onclick = function () { location.reload(); };
+      (document.body || document.documentElement).appendChild(el);
+    } catch (e) { /* 无 document 环境（Node 自测）忽略 */ }
+  };
+  var mount = function () {
+    var loader = window.__ModuleLoader__;
+    if (!loader || typeof loader.load !== "function") return false;
+    try {
+      loader.load({ id: PLUGIN_ID, factory: function (require) {
+        var module = { exports: {} }; var exports = module.exports;
+        try { var stale = document.querySelector(".rq-card-diag-badge"); if (stale && stale.parentNode) stale.parentNode.removeChild(stale); } catch (e) {}
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -22,41 +50,11 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var index_exports = {};
 __export(index_exports, {
   apply: () => apply,
-  applyViaPort: () => applyViaPort,
   deriveExecutionState: () => deriveExecutionState,
   inject: () => inject
 });
 module.exports = __toCommonJS(index_exports);
-var import_react2 = require("react");
-
-// src/client/host-port.ts
-function createClientHostPort(ctx) {
-  const slots = ctx.slots;
-  const locale = ctx.locale;
-  const root = ctx;
-  const port = {
-    slots: {
-      inject: (slot, factory) => slots.inject(slot, factory),
-      register: (spec, component) => slots.register(spec, component)
-    },
-    locale: {
-      register: (namespace, dictionaries) => locale.register(namespace, dictionaries)
-    },
-    effect: (action, name) => root.effect(action, name)
-  };
-  if (typeof slots.specDynamic === "function") {
-    const specDynamic = slots.specDynamic.bind(ctx.slots);
-    port.slots.specDynamic = (name) => {
-      try {
-        const spec = specDynamic(name);
-        return typeof spec === "object" && spec !== null ? spec : void 0;
-      } catch {
-        return void 0;
-      }
-    };
-  }
-  return port;
-}
+var import_react4 = require("react");
 
 // src/client/state.ts
 function blocked(reason) {
@@ -79,14 +77,25 @@ function deriveExecutionState(input) {
 }
 
 // src/wire.ts
-var CONSOLE_BASE = "/rq";
+var CONSOLE_BASE = "/gate01";
 var FEEDBACK_ENDPOINT = `${CONSOLE_BASE}/api/usage/feedback`;
 var SLOT_TOOLVIEW = "tool.call.toolview";
 var SLOT_ASSISTANT_ACTIONS = "conversation.chat.assistant-actions";
 var SLOT_OVERLAY = "shell.overlay";
+var SLOT_SETTINGS = "settings.section";
+var SLOT_VIEW = "conversation.view";
+var SLOT_MAIN = "main";
+var SLOT_PANELLIST = "sidebar.panellist";
+var LINK_ENDPOINT = `${CONSOLE_BASE}/rqcard/link`;
+var PANEL_URL = `${CONSOLE_BASE}/panel/`;
+var PANEL_EMBED_URL = `${PANEL_URL}?embed=1`;
+var PANEL_ID = "rq-gate01";
+var PANEL_SIDEBAR_ORDER = 20;
+var RQCARD_CALL_HEADER = "x-rqcard-call";
 var FEEDBACK_ENTRY_ID = "rq-feedback";
 var TOOLVIEW_ENTRY_PREFIX = "rq-tool-";
 var DEGRADED_BADGE_ID = "rq-card-degraded";
+var UNLINKED_BADGE_ID = "rq-card-unlinked";
 
 // src/client/controller.ts
 var INITIAL_VIEW = Object.freeze({
@@ -141,7 +150,12 @@ var RqFeedbackController = class {
     const current = this.view.items.get(messageId);
     if (current?.score === score) return Promise.resolve();
     this.commit(messageId, score);
-    return postFeedback({ messageId, score, ...note === void 0 ? {} : { note } }).then((result) => {
+    return postFeedback({
+      resource: `chat:message:${messageId}`,
+      messageId,
+      score,
+      ...note === void 0 ? {} : { note }
+    }).then((result) => {
       if (!result.ok) {
         console.debug("[rq-card] feedback not recorded:", result.error.message);
       }
@@ -335,6 +349,213 @@ function RqFeedback(props) {
   ] });
 }
 
+// src/client/RqSettings.tsx
+var import_react2 = require("react");
+var import_jsx_runtime3 = require("react/jsx-runtime");
+function RqSettings({ select, open, refresh, t }) {
+  const [link, setLink] = (0, import_react2.useState)(void 0);
+  const reload = (0, import_react2.useCallback)(async () => {
+    setLink(await refresh());
+  }, [refresh]);
+  (0, import_react2.useEffect)(() => {
+    void reload();
+  }, [reload]);
+  const mode = link?.mode;
+  const modeText = mode === "remote" ? t("settings.mode.remote") : mode === "local" ? t("settings.mode.local") : mode === "none" ? t("settings.mode.none") : "\u2026";
+  const probeText = link?.mode === "remote" ? link.probe?.reachable === true ? t("settings.probe.ok") : t("settings.probe.fail") : null;
+  const gotoWorkbench = (0, import_react2.useCallback)(() => {
+    if (select()) return;
+    open(PANEL_URL);
+  }, [select, open]);
+  return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "rq-set", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: "rq-set-row", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("span", { className: `rq-set-mode rq-set-mode-${mode ?? "unknown"}`, children: modeText }),
+      link?.mode === "remote" && link.hubBase ? /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("span", { className: "rq-set-hub", children: [
+        String(link.hubBase),
+        probeText ? ` \xB7 ${probeText}` : ""
+      ] }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn", onClick: () => void reload(), children: t("settings.refresh") })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("p", { className: "rq-set-hint", children: t("settings.hint") }),
+    /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("div", { className: "rq-set-row", children: mode === "none" ? /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn rq-set-primary", onClick: gotoWorkbench, children: t("settings.open.wizard") }) : /* @__PURE__ */ (0, import_jsx_runtime3.jsx)("button", { type: "button", className: "rq-set-btn rq-set-primary", onClick: gotoWorkbench, children: t("settings.open.panel") }) })
+  ] });
+}
+
+// src/client/RqWorkbench.tsx
+var import_jsx_runtime4 = require("react/jsx-runtime");
+function RqWorkbench({ t }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "rq-wb", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: "rq-wb-bar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("span", { className: "rq-wb-title", children: [
+        "\u{1F333} ",
+        t("view.workbench")
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("a", { className: "rq-wb-link", href: PANEL_EMBED_URL.replace("?embed=1", ""), target: "_blank", rel: "noreferrer", children: [
+        t("view.open.external"),
+        " \u2197"
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      "iframe",
+      {
+        className: "rq-wb-frame",
+        src: PANEL_EMBED_URL,
+        title: t("view.workbench"),
+        referrerPolicy: "same-origin"
+      }
+    )
+  ] });
+}
+
+// src/client/GatePanelPage.tsx
+var import_react3 = require("react");
+var import_jsx_runtime5 = require("react/jsx-runtime");
+var PANEL_TITLE_MARK = "01\u95E8";
+var LOAD_TIMEOUT_MS = 25e3;
+var CSS = `
+.rgp-root{height:100%;min-width:0;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary)}
+.rgp-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 16px;height:40px;box-sizing:border-box;
+  border-bottom:.5px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-base)}
+.rgp-bar-title{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;line-height:20px;
+  font-weight:500;color:var(--dsw-alias-label-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rgp-bar-sub{font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rgp-bar-actions{display:flex;align-items:center;gap:8px;flex:none}
+.rgp-btn{height:28px;padding:0 10px;border-radius:var(--dsw-radius-md);font-size:13px;cursor:pointer;
+  border:.5px solid var(--dsw-alias-border-l4);background:var(--dsw-alias-bg-layer-2);
+  color:var(--dsw-alias-label-primary);transition:background-color .14s ease-out;
+  display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap}
+.rgp-btn:hover{background:var(--dsw-alias-interactive-bg-hover)}
+.rgp-btn:active{transform:translateY(1px)}
+.rgp-btn:focus-visible{outline:var(--dsw-focus-ring-width,2px) solid
+  var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}
+.rgp-frame-wrap{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-base)}
+.rgp-frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:var(--dsw-alias-bg-base)}
+.rgp-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;padding:24px;text-align:center;background:var(--dsw-alias-bg-base)}
+.rgp-overlay-title{font-size:15px;line-height:22px;font-weight:500;margin:0;
+  color:var(--dsw-alias-label-primary)}
+.rgp-overlay-desc{font-size:13px;line-height:20px;margin:0;max-width:420px;
+  color:var(--dsw-alias-label-secondary)}
+.rgp-overlay-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
+.rgp-spinner{width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--dsw-alias-border-l3);border-top-color:var(--dsw-alias-state-business-primary);
+  animation:rgp-spin .8s linear infinite}
+@keyframes rgp-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rgp-spinner{animation:none}}
+`;
+function GatePanelPage({ t }) {
+  const [phase, setPhase] = (0, import_react3.useState)("loading");
+  const [nonce, setNonce] = (0, import_react3.useState)(0);
+  const frameRef = (0, import_react3.useRef)(null);
+  const reload = (0, import_react3.useCallback)(() => {
+    setPhase("loading");
+    setNonce((value) => value + 1);
+  }, []);
+  const onFrameLoad = (0, import_react3.useCallback)(() => {
+    let ok = false;
+    try {
+      const doc = frameRef.current?.contentDocument;
+      const title = doc?.title ?? "";
+      ok = title.includes(PANEL_TITLE_MARK);
+    } catch {
+      ok = false;
+    }
+    setPhase(ok ? "ready" : "failed");
+  }, []);
+  (0, import_react3.useEffect)(() => {
+    const timer = setTimeout(() => {
+      setPhase((current) => current === "loading" ? "failed" : current);
+    }, LOAD_TIMEOUT_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [nonce]);
+  const frameSrc = nonce === 0 ? PANEL_EMBED_URL : `${PANEL_EMBED_URL}&_r=${String(nonce)}`;
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-root", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("style", { children: CSS }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("header", { className: "rgp-bar", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-bar-title", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t("page.title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "rgp-bar-sub", children: t("page.embed.note") })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-bar-actions", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "rgp-btn", onClick: reload, children: t("page.reload") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("a", { className: "rgp-btn", href: PANEL_URL, target: "_blank", rel: "noreferrer", children: t("page.open.external") })
+      ] })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-frame-wrap", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "iframe",
+        {
+          ref: frameRef,
+          className: "rgp-frame",
+          src: frameSrc,
+          title: t("page.title"),
+          referrerPolicy: "same-origin",
+          allow: "popups",
+          onLoad: onFrameLoad
+        }
+      ),
+      phase === "loading" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-overlay", role: "status", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: "rgp-spinner", "aria-hidden": "true" }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-title", children: t("page.loading") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-desc", children: t("page.loading.hint") })
+      ] }) : null,
+      phase === "failed" ? /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-overlay", role: "alert", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-title", children: t("page.failed.title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { className: "rgp-overlay-desc", children: t("page.failed.hint") }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: "rgp-overlay-actions", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: "rgp-btn", onClick: reload, children: t("state.retry") }),
+          /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("a", { className: "rgp-btn", href: PANEL_URL, target: "_blank", rel: "noreferrer", children: t("page.open.external") })
+        ] })
+      ] }) : null
+    ] })
+  ] });
+}
+
+// src/client/GateIcon.tsx
+var import_jsx_runtime6 = require("react/jsx-runtime");
+var strokeProps = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.5,
+  strokeLinecap: "round",
+  strokeLinejoin: "round"
+};
+function GatePanelIcon({ size, active }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(
+    "svg",
+    {
+      width: size,
+      height: size,
+      viewBox: "0 0 20 20",
+      "aria-hidden": "true",
+      ...strokeProps,
+      opacity: active ? 1 : 0.9,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M14.5 17.5h-9a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h9" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { d: "M10 2.5v15" }),
+        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "12.4", cy: "10", r: "0.9", fill: "currentColor", stroke: "none" })
+      ]
+    }
+  );
+}
+
+// src/client/hostStatus.ts
+async function fetchHostLink() {
+  try {
+    const response = await fetch(LINK_ENDPOINT, { headers: { [RQCARD_CALL_HEADER]: "1" } });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.ok !== true) return null;
+    return payload?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // src/client/locales.ts
 var zh = {
   // ── 执行卡：状态徽标 ──
@@ -361,7 +582,7 @@ var zh = {
   "card.blocked.down": "\u670D\u52A1\u6682\u4E0D\u53EF\u7528\uFF0C\u6062\u590D\u540E\u5373\u53EF\u91CD\u8BD5",
   "card.blocked.binding-invalid": "\u8EAB\u4EFD\u7ED1\u5B9A\u5DF2\u5931\u6548\uFF0C\u8BF7\u91CD\u65B0\u7ED1\u5B9A",
   "card.blocked.invoke-error": "\u6267\u884C\u51FA\u9519\uFF0C\u8BE6\u89C1\u7ED3\u679C\u4FE1\u606F",
-  // ── 执行卡：阻断行动按钮（跳 /rq 控制台对应页，同源带登录态）──
+  // ── 执行卡：阻断行动按钮（跳 /gate01 控制台对应页，同源带登录态）──
   "card.action.nas-authz-deny": "\u7533\u8BF7\u8BBF\u95EE",
   "card.action.quota-exhausted": "\u7533\u8BF7\u989D\u5EA6",
   "card.action.pdp-unreachable": "\u67E5\u770B\u5E73\u53F0\u72B6\u6001",
@@ -373,8 +594,37 @@ var zh = {
   "fb.like": "\u6709\u5E2E\u52A9",
   "fb.dislike": "\u6CA1\u5E2E\u52A9",
   "fb.done": "\u5DF2\u8BB0\u5F55\uFF0C\u611F\u8C22\u53CD\u9988",
-  // ── 降级角标（shell.overlay）──
-  "badge.degraded": "\u5143\u51B0\u53EF\u5361\u7247\u672A\u751F\u6548\uFF08\u7EAF\u6587\u672C\u6A21\u5F0F\uFF09"
+  // ── 设置分区「01门宿主」（M2）──
+  "settings.nav": "01\u95E8\u5BBF\u4E3B",
+  "settings.mode.local": "\u672C\u673A\u5373\u5BBF\u4E3B",
+  "settings.mode.remote": "\u5DF2\u8FDE\u63A5\u8FDC\u7AEF\u5BBF\u4E3B",
+  "settings.mode.none": "\u672A\u8FDE\u63A5\u5BBF\u4E3B",
+  "settings.probe.ok": "\u53EF\u8FBE",
+  "settings.probe.fail": "\u4E0D\u53EF\u8FBE",
+  "settings.refresh": "\u5237\u65B0\u72B6\u6001",
+  "settings.open.wizard": "\u6253\u5F00\u8FDE\u63A5\u5411\u5BFC",
+  "settings.open.panel": "\u6253\u5F00\u884C\u4E1A AI \u5DE5\u4F5C\u53F0",
+  "settings.hint": "\u8FDE\u63A5\u5BBF\u4E3B\uFF08\u9009\u62E9 IP\uFF09\u5E76\u5728\u5DE5\u4F5C\u53F0\u5B8C\u6210\u9489\u9489/\u8D26\u53F7\u767B\u5F55\uFF1B\u5DE5\u4F5C\u53F0\u5DF2\u5185\u5D4C\u4E8E dsh \u4E3B\u754C\u9762\u3002",
+  // ── 会话视图 Tab「01门工作台」（M3）──
+  "view.workbench": "\u884C\u4E1A AI \u5DE5\u4F5C\u53F0",
+  "view.open.external": "\u5728\u6D4F\u89C8\u5668\u6253\u5F00",
+  // ── 未连接角标（M3，shell.overlay）──
+  "overlay.unlinked": "01\u95E8\uFF1A\u672A\u8FDE\u63A5\u5BBF\u4E3B\uFF0C\u70B9\u51FB\u6253\u5F00\u5411\u5BFC",
+  // ── 原生面板页（M5：侧栏入口 + main 整页内嵌完整工作台，2026-10-29）──
+  "panel": "01\u95E8",
+  "page.title": "01\u95E8 \xB7 \u884C\u4E1A AI \u5DE5\u4F5C\u53F0",
+  "page.intro": "AI \u4EE3\u7406\u4E0E\u4EBA\u7C7B\u7684\u534F\u4F5C\u524D\u53F0\u2014\u2014\u884C\u4E1A\u7A7A\u95F4\u3001\u6218\u7565\u770B\u677F\u4E0E\u5236\u9020\u5DE5\u5177\u7BB1\u3002",
+  "page.open.external": "\u5728\u6D4F\u89C8\u5668\u6253\u5F00",
+  "page.embed.note": "\u5DF2\u5185\u5D4C\u4E8E dsh \u4E3B\u754C\u9762",
+  "page.reload": "\u91CD\u65B0\u52A0\u8F7D",
+  "page.loading": "\u6B63\u5728\u52A0\u8F7D\u884C\u4E1A AI \u5DE5\u4F5C\u53F0\u2026",
+  "page.loading.hint": "\u9996\u6B21\u8FDB\u5165\u9700\u5B8C\u6210\u5DE5\u4F5C\u53F0\u521D\u59CB\u5316\uFF0C\u901A\u5E38\u6570\u79D2\u5185\u5B8C\u6210\u3002",
+  "page.failed.title": "\u5DE5\u4F5C\u53F0\u52A0\u8F7D\u5931\u8D25",
+  "page.failed.hint": "\u5185\u5D4C\u89C6\u56FE\u672A\u80FD\u8F7D\u5165\uFF08\u6570\u636E\u9762\u672A\u6302\u8F7D\u6216\u521D\u59CB\u5316\u5F02\u5E38\uFF09\u3002\u53EF\u91CD\u65B0\u52A0\u8F7D\uFF0C\u6216\u5728\u72EC\u7ACB\u7A97\u53E3\u6253\u5F00\u5B8C\u6574\u5DE5\u4F5C\u53F0\u3002",
+  "state.loading": "\u52A0\u8F7D\u4E2D\u2026",
+  "state.error": "\u52A0\u8F7D\u5931\u8D25",
+  "state.retry": "\u91CD\u8BD5",
+  "state.empty": "\u6682\u65E0\u5185\u5BB9"
 };
 var en = {
   "card.state.calling": "Calling",
@@ -406,87 +656,123 @@ var en = {
   "fb.like": "Helpful",
   "fb.dislike": "Not helpful",
   "fb.done": "Recorded \u2014 thanks for the feedback",
-  "badge.degraded": "RongQi cards inactive (plain-text mode)"
-};
-var ja = {
-  "card.state.calling": "\u547C\u3073\u51FA\u3057\u4E2D",
-  "card.state.executing": "\u5B9F\u884C\u4E2D",
-  "card.state.done": "\u5B8C\u4E86",
-  "card.state.blocked": "\u30D6\u30ED\u30C3\u30AF\u4E2D",
-  "card.state.idle": "\u5F85\u6A5F\u4E2D",
-  "card.args.summary": "\u547C\u3073\u51FA\u3057\u5F15\u6570",
-  "card.result.title": "\u5B9F\u884C\u7D50\u679C",
-  "card.result.truncated": "\uFF08\u5185\u5BB9\u304C\u9577\u3044\u305F\u3081\u5207\u308A\u6368\u3066\u307E\u3057\u305F\uFF09",
-  "card.console.link": "\u30B3\u30F3\u30BD\u30FC\u30EB\u3067\u958B\u304F",
-  "card.cancel.button": "\u30AD\u30E3\u30F3\u30BB\u30EB",
-  "card.cancel.hint": "\u30AD\u30E3\u30F3\u30BB\u30EB\u306F\u30DB\u30B9\u30C8\u5074\u306E\u63A5\u7D9A\u5F8C\u306B\u6709\u52B9\u306B\u306A\u308A\u307E\u3059",
-  "card.degraded.hint": "\u6642\u9593\u304C\u304B\u304B\u3063\u3066\u3044\u307E\u3059\u3002\u30D0\u30C3\u30AF\u30B0\u30E9\u30A6\u30F3\u30C9\u3067\u51E6\u7406\u4E2D\u3067\u3059",
-  "card.blocked.nas-authz-deny": "\u30A2\u30AF\u30BB\u30B9\u6A29\u304C\u3042\u308A\u307E\u305B\u3093\u3002\u5148\u306B\u6A29\u9650\u3092\u7533\u8ACB\u3057\u3066\u304F\u3060\u3055\u3044",
-  "card.blocked.quota-exhausted": "\u30A6\u30A9\u30EC\u30C3\u30C8\u6B8B\u9AD8\u3092\u4F7F\u3044\u5207\u308A\u307E\u3057\u305F\u3002\u8FFD\u52A0\u3092\u7533\u8ACB\u3057\u3066\u304F\u3060\u3055\u3044",
-  "card.blocked.pdp-unreachable": "\u30DD\u30EA\u30B7\u30FC\u5224\u5B9A\u30DD\u30A4\u30F3\u30C8\uFF08PDP\uFF09\u306B\u5230\u9054\u3067\u304D\u306A\u3044\u305F\u3081\u3001\u4FDD\u8B77\u7684\u306B\u4E00\u6642\u505C\u6B62\u4E2D\u3067\u3059",
-  "card.blocked.breaker-open": "\u30B5\u30FC\u30AD\u30C3\u30C8\u30D6\u30EC\u30FC\u30AB\u30FC\u304C\u4F5C\u52D5\u4E2D\u3067\u3059\u3002\u5FA9\u65E7\u5F8C\u306B\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044",
-  "card.blocked.down": "\u30B5\u30FC\u30D3\u30B9\u306F\u73FE\u5728\u5229\u7528\u3067\u304D\u307E\u305B\u3093\u3002\u5FA9\u65E7\u5F8C\u306B\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044",
-  "card.blocked.binding-invalid": "ID \u30D0\u30A4\u30F3\u30C7\u30A3\u30F3\u30B0\u306E\u6709\u52B9\u671F\u9650\u304C\u5207\u308C\u3066\u3044\u307E\u3059\u3002\u518D\u30D0\u30A4\u30F3\u30C9\u3057\u3066\u304F\u3060\u3055\u3044",
-  "card.blocked.invoke-error": "\u5B9F\u884C\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u8A73\u7D30\u306F\u7D50\u679C\u60C5\u5831\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044",
-  "card.action.nas-authz-deny": "\u30A2\u30AF\u30BB\u30B9\u7533\u8ACB",
-  "card.action.quota-exhausted": "\u6B8B\u9AD8\u3092\u7533\u8ACB",
-  "card.action.pdp-unreachable": "\u30D7\u30E9\u30C3\u30C8\u30D5\u30A9\u30FC\u30E0\u72B6\u614B\u3092\u78BA\u8A8D",
-  "card.action.breaker-open": "\u30B5\u30FC\u30D3\u30B9\u72B6\u614B\u3092\u78BA\u8A8D",
-  "card.action.down": "\u30B5\u30FC\u30D3\u30B9\u72B6\u614B\u3092\u78BA\u8A8D",
-  "card.action.binding-invalid": "\u518D\u30D0\u30A4\u30F3\u30C9",
-  "card.action.invoke-error": "\u30D7\u30E9\u30C3\u30C8\u30D5\u30A9\u30FC\u30E0\u72B6\u614B\u3092\u78BA\u8A8D",
-  "fb.like": "\u5F79\u306B\u7ACB\u3063\u305F",
-  "fb.dislike": "\u5F79\u306B\u7ACB\u305F\u306A\u304B\u3063\u305F",
-  "fb.done": "\u8A18\u9332\u3057\u307E\u3057\u305F\u3002\u30D5\u30A3\u30FC\u30C9\u30D0\u30C3\u30AF\u3042\u308A\u304C\u3068\u3046\u3054\u3056\u3044\u307E\u3059",
-  "badge.degraded": "RongQi \u30AB\u30FC\u30C9\u304C\u7121\u52B9\u3067\u3059\uFF08\u30C6\u30AD\u30B9\u30C8\u30E2\u30FC\u30C9\uFF09"
+  "settings.nav": "Yuanbingke host",
+  "settings.mode.local": "This machine is the host",
+  "settings.mode.remote": "Connected to remote host",
+  "settings.mode.none": "Host not linked",
+  "settings.probe.ok": "reachable",
+  "settings.probe.fail": "unreachable",
+  "settings.refresh": "Refresh",
+  "settings.open.wizard": "Open connect wizard",
+  "settings.open.panel": "Open Industry AI Workbench",
+  "settings.hint": "Link a host (pick an IP) and sign in with DingTalk/account on the workbench; the workbench is embedded in the dsh main view.",
+  "view.workbench": "Industry AI Workbench",
+  "view.open.external": "Open in browser",
+  "overlay.unlinked": "Yuanbingke: host not linked \u2014 click to open the wizard",
+  "panel": "Gate 01",
+  "page.title": "Gate 01 \xB7 Industry AI Workbench",
+  "page.intro": "The collaboration front stage for AI agents and humans \u2014 industry spaces, strategy board and manufacturing toolbox.",
+  "page.open.external": "Open in browser",
+  "page.embed.note": "Embedded in the dsh main view",
+  "page.reload": "Reload",
+  "page.loading": "Loading the Industry AI Workbench\u2026",
+  "page.loading.hint": "First entry runs the workbench bootstrap \u2014 usually a few seconds.",
+  "page.failed.title": "Workbench failed to load",
+  "page.failed.hint": "The embedded view could not be loaded (data plane not mounted, or bootstrap failed). Reload, or open the full workbench in its own window.",
+  "state.loading": "Loading\u2026",
+  "state.error": "Failed to load",
+  "state.retry": "Retry",
+  "state.empty": "Nothing here yet"
 };
 
 // src/client/styles.ts
-var PLUGIN_ID = "@dsh-ops/plugin-rq-card";
+var PLUGIN_ID = "@ybkk/plugin-rq-card";
 var SHEET = `
-.rq-ecard{border:1px solid var(--rq-edge,#e2e6ee);border-radius:10px;padding:8px 12px;
-  margin:4px 0;font-size:var(--fs-13,13px);line-height:1.5;background:var(--rq-surface,#fff);max-width:640px}
-.rq-ecard-head{display:flex;align-items:center;gap:8px;font-weight:600}
-.rq-ecard-chip{font-weight:400;font-size:var(--fs-11,11px);padding:1px 8px;border-radius:999px;
-  background:var(--rq-muted-bg,#eef1f6);color:var(--rq-muted-fg,#5b6472)}
-.rq-ecard[data-state="calling"] .rq-ecard-chip{background:var(--rq-info-bg,#e8f1fd);color:var(--rq-info-fg,#2563c4)}
-.rq-ecard[data-state="executing"] .rq-ecard-chip{background:var(--rq-ok-bg,#e6f5ee);color:var(--rq-ok-fg,#177a4c)}
-.rq-ecard[data-state="done"] .rq-ecard-chip{background:var(--rq-ok-bg,#e6f5ee);color:var(--rq-ok-fg,#177a4c)}
-.rq-ecard[data-state="blocked"]{border-color:var(--rq-danger,#e5484d);box-shadow:inset 3px 0 0 var(--rq-danger,#e5484d)}
-.rq-ecard[data-state="blocked"] .rq-ecard-chip{background:var(--rq-danger-bg,#fdebec);color:var(--rq-danger-fg,#c62a2f)}
+.rq-ecard{border:1px solid var(--rq-ecard-edge,#dde3ea);border-radius:10px;padding:9px 12px;
+  margin:4px 0;font-size:13px;line-height:1.55;background:var(--rq-ecard-bg,#fff);max-width:640px;
+  box-shadow:0 1px 2px rgba(27,39,51,.06)}
+.rq-ecard-head{display:flex;align-items:center;gap:8px;font-weight:600;color:#1b2733}
+.rq-ecard-chip{font-weight:500;font-size:11px;padding:2px 9px;border-radius:999px;
+  background:#eef2f6;color:#5b6a79;display:inline-flex;align-items:center;gap:5px}
+.rq-ecard-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;
+  opacity:.85;flex-shrink:0}
+.rq-ecard[data-state="calling"] .rq-ecard-chip{background:#d9eef5;color:#0e7490}
+.rq-ecard[data-state="executing"] .rq-ecard-chip{background:#ddf2e7;color:#0b7a43}
+.rq-ecard[data-state="done"] .rq-ecard-chip{background:#ddf2e7;color:#0b7a43}
+.rq-ecard[data-state="blocked"]{border-color:#f0b6b6;box-shadow:inset 4px 0 0 #dc2626}
+.rq-ecard[data-state="blocked"] .rq-ecard-chip{background:#fdeaea;color:#b91c1c}
 .rq-ecard-skel{margin-top:8px}
-.rq-ecard-skel-line{height:10px;border-radius:5px;background:var(--rq-muted-bg,#eef1f6);margin:6px 0;
+.rq-ecard-skel-line{height:10px;border-radius:5px;background:#edf1f5;margin:6px 0;
   animation:rq-pulse 1.4s ease-in-out infinite}
 .rq-ecard-skel-line:nth-child(2){width:70%}
 .rq-ecard-skel-line:nth-child(3){width:45%}
-.rq-ecard-pulse{margin-top:8px;height:6px;border-radius:3px;overflow:hidden;background:var(--rq-muted-bg,#eef1f6)}
+.rq-ecard-pulse{margin-top:8px;height:6px;border-radius:3px;overflow:hidden;background:#edf1f5}
 .rq-ecard-pulse::before{content:"";display:block;height:100%;width:38%;border-radius:3px;
-  background:var(--rq-info-fg,#2563c4);opacity:.55;animation:rq-sweep 1.6s ease-in-out infinite}
-.rq-ecard-degraded{margin-top:6px;font-size:var(--fs-12,12px);color:var(--rq-warn-fg,#9a6700)}
-.rq-ecard-args{margin-top:8px;color:var(--rq-muted-fg,#5b6472);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
-  font-size:var(--fs-12,12px);white-space:pre-wrap;word-break:break-all;max-height:72px;overflow:hidden}
-.rq-ecard-result{margin-top:8px;white-space:pre-wrap;word-break:break-word;color:var(--rq-text,#252b35)}
+  background:#0e7490;opacity:.6;animation:rq-sweep 1.6s ease-in-out infinite}
+.rq-ecard-degraded{margin-top:6px;font-size:12px;color:#9a6700}
+.rq-ecard-args{margin-top:8px;color:#5b6a79;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+  font-size:12px;white-space:pre-wrap;word-break:break-all;max-height:72px;overflow:hidden;
+  background:#f6f8fa;border:1px solid #e8edf2;border-radius:6px;padding:6px 8px}
+.rq-ecard-result{margin-top:8px;white-space:pre-wrap;word-break:break-word;color:#22303f}
 .rq-ecard-foot{margin-top:8px;display:flex;align-items:center;gap:10px}
-.rq-ecard-link{color:var(--rq-info-fg,#2563c4);text-decoration:none;font-size:var(--fs-12,12px)}
-.rq-ecard-link:hover{text-decoration:underline}
-.rq-ecard-action{display:inline-block;padding:3px 12px;border-radius:6px;border:1px solid var(--rq-danger,#e5484d);
-  color:var(--rq-danger-fg,#c62a2f);background:var(--rq-surface,#fff);font-size:var(--fs-12,12px);text-decoration:none;cursor:pointer}
-.rq-ecard-action:hover{background:var(--rq-danger-bg,#fdebec)}
-.rq-ecard-cancel{margin-left:auto;padding:2px 10px;border-radius:6px;border:1px solid var(--rq-line,#c9cfda);
-  background:var(--rq-surface,#fff);color:var(--rq-muted-fg,#5b6472);font-size:var(--fs-12,12px);cursor:not-allowed}
-.rq-ecard-reason{margin-top:6px;color:var(--rq-danger-fg,#c62a2f)}
+.rq-ecard-link{color:#0e7490;text-decoration:none;font-size:12px;font-weight:500}
+.rq-ecard-link:hover{text-decoration:underline;color:#155e75}
+.rq-ecard-action{display:inline-block;padding:6px 14px;border-radius:8px;border:1px solid #dc2626;
+  color:#b91c1c;background:#fff;font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;
+  transition:background-color .14s ease-out}
+.rq-ecard-action:hover{background:#fdeaea}
+.rq-ecard-action:active{transform:translateY(1px)}
+.rq-ecard-cancel{margin-left:auto;padding:4px 12px;border-radius:8px;border:1px solid #c5cfd9;
+  background:#fff;color:#5b6a79;font-size:12px;cursor:not-allowed}
+.rq-ecard-reason{margin-top:6px;color:#b91c1c;font-weight:500}
 @keyframes rq-pulse{0%,100%{opacity:.55}50%{opacity:1}}
 @keyframes rq-sweep{0%{transform:translateX(-100%)}100%{transform:translateX(280%)}}
 
 .rq-fb{display:inline-flex;align-items:center;gap:4px;margin-left:8px}
-.rq-fb-btn{border:none;background:transparent;cursor:pointer;font-size:var(--fs-13,13px);line-height:1;
-  padding:3px 6px;border-radius:6px;opacity:.55}
-.rq-fb-btn:hover{background:var(--rq-muted-bg,#eef1f6);opacity:1}
-.rq-fb-btn[data-active="true"]{opacity:1;background:var(--rq-info-bg,#e8f1fd)}
-.rq-fb-done{font-size:var(--fs-11,11px);color:var(--rq-faint,#8a92a0)}
+.rq-fb-btn{border:none;background:transparent;cursor:pointer;font-size:14px;line-height:1;
+  padding:4px 8px;border-radius:6px;opacity:.5;transition:background-color .14s ease-out,opacity .14s ease-out}
+.rq-fb-btn:hover{background:#edf1f5;opacity:1}
+.rq-fb-btn:active{transform:translateY(1px)}
+.rq-fb-btn[data-active="true"]{opacity:1;background:#d9eef5}
+.rq-fb-done{font-size:11px;color:#8a97a5}
 
 .rq-badge{position:fixed;right:12px;bottom:12px;z-index:2147483000;padding:4px 10px;border-radius:999px;
-  background:var(--rq-muted-fg,#5b6472);color:var(--rq-surface,#fff);font-size:var(--fs-11,11px);opacity:.75;pointer-events:none}
+  background:#46586a;color:#fff;font-size:11px;opacity:.78;pointer-events:none}
+
+.rq-set{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.rq-set-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rq-set-mode{font-size:12px;padding:2px 10px;border-radius:999px;background:#eef2f6;color:#5b6a79;
+  display:inline-flex;align-items:center;gap:5px}
+.rq-set-mode::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+.rq-set-mode-local{background:#ddf2e7;color:#0b7a43}
+.rq-set-mode-remote{background:#d9eef5;color:#0e7490}
+.rq-set-mode-none{background:#fdeaea;color:#b91c1c}
+.rq-set-hub{color:#5b6a79;font-size:12px}
+.rq-set-btn{padding:6px 14px;min-height:34px;border-radius:8px;border:1px solid #c5cfd9;background:#fff;
+  color:#22303f;font-size:12px;cursor:pointer;transition:background-color .14s ease-out}
+.rq-set-btn:hover{background:#f3f6f9}
+.rq-set-btn:active{transform:translateY(1px)}
+.rq-set-primary{border-color:#0e7490;color:#0e7490;font-weight:500}
+.rq-set-primary:hover{background:#d9eef5}
+.rq-set-hint{color:#8a97a5;font-size:12px;line-height:1.6;margin:0}
+
+.rq-wb{display:flex;flex-direction:column;height:100%;min-height:0;background:#fff}
+.rq-wb-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;
+  border-bottom:1px solid #e6ebf1;font-size:12px;color:#5b6a79;background:#f7f9fb}
+.rq-wb-title{font-weight:600;color:#1b2733}
+.rq-wb-link{color:#0e7490;text-decoration:none;font-weight:500}
+.rq-wb-link:hover{text-decoration:underline;color:#155e75}
+.rq-wb-frame{flex:1;min-height:0;width:100%;border:none;background:#eef1f5}
+
+.rq-unlinked{position:fixed;right:12px;bottom:12px;z-index:2147483000;padding:6px 14px;border-radius:999px;
+  background:#b91c1c;color:#fff;font-size:12px;cursor:pointer;border:none;
+  box-shadow:0 3px 10px rgba(185,28,28,.3);transition:filter .14s ease-out}
+.rq-unlinked:hover{filter:brightness(1.08)}
+.rq-unlinked:active{transform:translateY(1px)}
+
+.rq-ecard-action:focus-visible,.rq-ecard-link:focus-visible,.rq-fb-btn:focus-visible,
+.rq-set-btn:focus-visible,.rq-wb-link:focus-visible,.rq-unlinked:focus-visible{
+  outline:2px solid #0e7490;outline-offset:2px}
 `;
 var injected = false;
 function ensureStyles() {
@@ -504,7 +790,7 @@ function ensureStyles() {
 
 // src/client/index.ts
 var NS = "rq-card";
-var PLUGIN_ID2 = "@dsh-ops/plugin-rq-card";
+var PLUGIN_ID2 = "@ybkk/gate-01";
 var RQ_TOOL_NAMES = [
   // 资产调运（四态主战场）
   "mcp_invoke",
@@ -572,12 +858,39 @@ var RQ_TOOL_NAMES = [
   "audit_alerts_read_all",
   "audit_cost_report",
   "market_plugin_list",
-  "approval_decide"
+  "approval_decide",
+  // 面板（部门工作台 + 战略看板）
+  "panel_agents_list",
+  "panel_msg_send",
+  "panel_task_create",
+  "panel_task_transition",
+  "panel_scene_diag",
+  "panel_widget_data",
+  "panel_agent_invoke",
+  "panel_board_digest",
+  // 宿主连接（M2）
+  "rq_host_status"
 ];
 var DEGRADED = [];
 function markDegraded(what, error) {
   DEGRADED.push(what);
   console.warn(`[rq-card] degraded (${what}):`, error ?? "target slot unavailable");
+}
+var DEGRADED_SEEN = /* @__PURE__ */ new Set();
+function markDegradedOnce(what, error) {
+  if (DEGRADED_SEEN.has(what)) return;
+  DEGRADED_SEEN.add(what);
+  markDegraded(what, error);
+}
+var DIAG_SEEN = /* @__PURE__ */ new Set();
+function diagNote(stage) {
+  if (DIAG_SEEN.has(stage)) return;
+  DIAG_SEEN.add(stage);
+  try {
+    const diag = globalThis.__RQ_CARD_DIAG__;
+    diag?.attempts.push({ at: (/* @__PURE__ */ new Date()).toISOString(), stage });
+  } catch {
+  }
 }
 function safely(what, action) {
   try {
@@ -586,27 +899,60 @@ function safely(what, action) {
     markDegraded(what, error);
   }
 }
-function probeSpec(host, slot) {
-  return host.slots.specDynamic?.(slot);
+function injectBody(what, body) {
+  try {
+    return body() ?? (() => {
+    });
+  } catch (error) {
+    markDegraded(what, error);
+    return () => {
+    };
+  }
 }
-var inject = ["slots", "locale"];
+function probeSpec(ctx, slot) {
+  try {
+    const face = ctx.slots;
+    const spec = typeof face.spec === "function" ? face.spec(slot) : face.specDynamic?.(slot);
+    return typeof spec === "object" && spec !== null ? spec : void 0;
+  } catch {
+    return void 0;
+  }
+}
+var inject = ["slots", "locale", "layout"];
+function mountDegradedDomBadge() {
+  safely("degraded-dom-badge", () => {
+    if (typeof document === "undefined") return;
+    if (document.querySelector(".rq-card-dom-badge")) return;
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "rq-card-dom-badge";
+    el.textContent = "01\u95E8\u5361\u7247\u672A\u751F\u6548\uFF08\u90E8\u5206\u80FD\u529B\u4E0D\u53EF\u7528\uFF09";
+    el.title = `\u964D\u7EA7\u539F\u56E0\uFF1A${DEGRADED.join("\uFF1B")}\uFF08\u70B9\u51FB\u5237\u65B0\u91CD\u8BD5\uFF1B\u8BE6\u60C5\u89C1\u63A7\u5236\u53F0 [rq-card] \u65E5\u5FD7\uFF09`;
+    el.setAttribute("style", "position:fixed;right:12px;bottom:12px;z-index:2147483000;padding:6px 12px;border-radius:14px;border:1px solid #f59e0b;background:#fffbeb;color:#92400e;font-size:12px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12)");
+    el.onclick = () => {
+      location.reload();
+    };
+    document.body.appendChild(el);
+  });
+}
 function apply(ctx) {
-  applyViaPort(createClientHostPort(ctx));
-}
-function applyViaPort(host) {
   safely("styles", () => {
     ensureStyles();
   });
   safely("locale", () => {
-    host.effect(() => host.locale.register(NS, { zh, en, ja }), "rq-card: dictionaries");
+    ctx.effect(() => ctx.locale.register(NS, { zh, en }), "rq-card: dictionaries");
   });
-  const toolviewSpec = probeSpec(host, SLOT_TOOLVIEW);
-  if (toolviewSpec?.kind !== "keyed") {
-    markDegraded(`${SLOT_TOOLVIEW} spec missing or not keyed`, toolviewSpec);
-  } else {
-    for (const tool of RQ_TOOL_NAMES) {
-      safely(`toolview:${tool}`, () => {
-        host.slots.inject(SLOT_TOOLVIEW, () => host.slots.register({
+  for (const tool of RQ_TOOL_NAMES) {
+    safely(`toolview:${tool}`, () => {
+      ctx.slots.inject(SLOT_TOOLVIEW, () => injectBody(`toolview:${tool}`, () => {
+        const spec = probeSpec(ctx, SLOT_TOOLVIEW);
+        if (spec?.kind !== "keyed") {
+          markDegradedOnce(`${SLOT_TOOLVIEW} spec missing or not keyed`, spec);
+          diagNote("inject-kind-mismatch:" + SLOT_TOOLVIEW);
+          return void 0;
+        }
+        diagNote("inject-materialized:" + SLOT_TOOLVIEW);
+        return ctx.slots.register({
           name: SLOT_TOOLVIEW,
           key: tool,
           id: `${TOOLVIEW_ENTRY_PREFIX}${tool}`,
@@ -615,64 +961,249 @@ function applyViaPort(host) {
             // C2 表映射的唯一入口；healthSnapshot 为宿主半后续接线点。
             deriveState: deriveExecutionState
           })
-        }, ExecutionCard));
-      });
-    }
-  }
-  const actionsSpec = probeSpec(host, SLOT_ASSISTANT_ACTIONS);
-  if (actionsSpec?.kind !== "list") {
-    markDegraded(`${SLOT_ASSISTANT_ACTIONS} spec missing or not list`, actionsSpec);
-  } else {
-    safely("assistant-actions", () => {
-      host.slots.inject(SLOT_ASSISTANT_ACTIONS, () => {
-        const controllers = /* @__PURE__ */ new Map();
-        const controllerFor = (sessionId) => {
-          let controller = controllers.get(sessionId);
-          if (controller === void 0) {
-            controller = new RqFeedbackController();
-            controllers.set(sessionId, controller);
-          }
-          return controller;
-        };
-        const dispose = host.slots.register({
-          name: SLOT_ASSISTANT_ACTIONS,
-          id: FEEDBACK_ENTRY_ID,
-          order: 20,
-          locale: NS,
-          inject: (sessionId) => {
-            const controller = controllerFor(sessionId);
-            return {
-              hooks: { rqfb: controller },
-              rate: (messageId, score, note) => controller.rate(messageId, score, note)
-            };
-          }
-        }, RqFeedback);
-        return () => {
-          dispose();
-          controllers.clear();
-        };
-      });
+        }, ExecutionCard);
+      }));
+      if (probeSpec(ctx, SLOT_TOOLVIEW) === void 0) diagNote("inject-pending:" + SLOT_TOOLVIEW);
     });
   }
-  if (DEGRADED.length > 0) {
-    const overlaySpec = probeSpec(host, SLOT_OVERLAY);
-    if (overlaySpec?.kind === "list") {
-      safely("overlay-badge", () => {
-        host.slots.inject(SLOT_OVERLAY, () => host.slots.register({
-          name: SLOT_OVERLAY,
-          id: DEGRADED_BADGE_ID,
-          order: 90,
-          locale: NS
-        }, function RqCardDegradedBadge(props) {
-          const maybeT = props?.t;
-          const translate = typeof maybeT === "function" ? maybeT : (key) => zh[key] ?? key;
-          return (0, import_react2.createElement)("span", { className: "rq-badge" }, translate("badge.degraded"));
-        }));
+  safely("assistant-actions", () => {
+    ctx.slots.inject(SLOT_ASSISTANT_ACTIONS, () => injectBody("assistant-actions", () => {
+      const spec = probeSpec(ctx, SLOT_ASSISTANT_ACTIONS);
+      if (spec?.kind !== "list") {
+        markDegraded(`${SLOT_ASSISTANT_ACTIONS} spec missing or not list`, spec);
+        diagNote("inject-kind-mismatch:" + SLOT_ASSISTANT_ACTIONS);
+        return void 0;
+      }
+      diagNote("inject-materialized:" + SLOT_ASSISTANT_ACTIONS);
+      const controllers = /* @__PURE__ */ new Map();
+      const controllerFor = (sessionId) => {
+        let controller = controllers.get(sessionId);
+        if (controller === void 0) {
+          controller = new RqFeedbackController();
+          controllers.set(sessionId, controller);
+        }
+        return controller;
+      };
+      const dispose = ctx.slots.register({
+        name: SLOT_ASSISTANT_ACTIONS,
+        id: FEEDBACK_ENTRY_ID,
+        order: 20,
+        locale: NS,
+        inject: (sessionId) => {
+          const controller = controllerFor(sessionId);
+          return {
+            hooks: { rqfb: controller },
+            rate: (messageId, score, note) => controller.rate(messageId, score, note)
+          };
+        }
+      }, RqFeedback);
+      return () => {
+        dispose();
+        controllers.clear();
+      };
+    }));
+    if (probeSpec(ctx, SLOT_ASSISTANT_ACTIONS) === void 0) diagNote("inject-pending:" + SLOT_ASSISTANT_ACTIONS);
+  });
+  let overlayMaterialized = false;
+  safely("overlay-badge", () => {
+    ctx.slots.inject(SLOT_OVERLAY, () => injectBody("overlay-badge", () => {
+      const spec = probeSpec(ctx, SLOT_OVERLAY);
+      if (spec?.kind !== "list") {
+        markDegraded(`${SLOT_OVERLAY} spec missing or not list`, spec);
+        diagNote("inject-kind-mismatch:" + SLOT_OVERLAY);
+        mountDegradedDomBadge();
+        return void 0;
+      }
+      overlayMaterialized = true;
+      diagNote("inject-materialized:" + SLOT_OVERLAY);
+      return ctx.slots.register({
+        name: SLOT_OVERLAY,
+        id: DEGRADED_BADGE_ID,
+        order: 90
+      }, function RqCardDegradedBadge() {
+        if (DEGRADED.length === 0) return null;
+        return (0, import_react4.createElement)("span", { className: "rq-badge", title: `\u964D\u7EA7\u539F\u56E0\uFF1A${DEGRADED.join("\uFF1B")}` }, "01\u95E8\u5361\u7247\u672A\u751F\u6548\uFF08\u7EAF\u6587\u672C\u6A21\u5F0F\uFF09");
       });
+    }));
+    if (probeSpec(ctx, SLOT_OVERLAY) === void 0) diagNote("inject-pending:" + SLOT_OVERLAY);
+  });
+  const fallbackTimer = setTimeout(() => {
+    if (!overlayMaterialized && DEGRADED.length > 0) {
+      diagNote("degraded-dom-badge-fallback");
+      mountDegradedDomBadge();
     }
-    console.warn(`[rq-card] degraded mode with ${DEGRADED.length} reason(s); markdown fallback remains available`);
-  }
+  }, 1e4);
+  fallbackTimer.unref?.();
+  const t = (() => {
+    try {
+      return ctx.locale.bind(NS);
+    } catch {
+      return void 0;
+    }
+  })();
+  safely("settings-section", () => {
+    ctx.slots.inject(SLOT_SETTINGS, () => injectBody("settings-section", () => {
+      const spec = probeSpec(ctx, SLOT_SETTINGS);
+      if (spec?.kind !== "list") {
+        markDegraded(`${SLOT_SETTINGS} spec missing or not list`, spec);
+        diagNote("inject-kind-mismatch:" + SLOT_SETTINGS);
+        return void 0;
+      }
+      diagNote("inject-materialized:" + SLOT_SETTINGS);
+      return ctx.slots.register({
+        name: SLOT_SETTINGS,
+        id: "rq-hostlink",
+        order: 30,
+        ...t ? { label: () => t("settings.nav") } : {},
+        locale: NS,
+        inject: () => ({
+          // M5：工作台已整页内嵌在 dsh 主界面，设置分区按钮直接切换原生面板；
+          // 宿主未注册该面板键位（老宿主）时返回 false，由组件回落独立窗口打开。
+          select: () => {
+            try {
+              const layout = ctx.layout;
+              if (typeof layout?.selectPanel !== "function") return false;
+              layout.selectPanel(PANEL_ID);
+              return true;
+            } catch {
+              return false;
+            }
+          },
+          open: (url) => {
+            try {
+              window.open(url, "_blank", "noopener");
+            } catch {
+            }
+          },
+          refresh: () => fetchHostLink()
+        })
+      }, RqSettings);
+    }));
+    if (probeSpec(ctx, SLOT_SETTINGS) === void 0) diagNote("inject-pending:" + SLOT_SETTINGS);
+  });
+  safely("workbench-view", () => {
+    ctx.slots.inject(SLOT_VIEW, () => injectBody("workbench-view", () => {
+      const spec = probeSpec(ctx, SLOT_VIEW);
+      if (spec?.kind !== "list") {
+        markDegraded(`${SLOT_VIEW} spec missing or not list`, spec);
+        diagNote("inject-kind-mismatch:" + SLOT_VIEW);
+        return void 0;
+      }
+      diagNote("inject-materialized:" + SLOT_VIEW);
+      return ctx.slots.register({
+        name: SLOT_VIEW,
+        id: "rq-workbench",
+        order: 20,
+        ...t ? { label: () => t("view.workbench") } : {},
+        locale: NS,
+        inject: () => ({})
+      }, RqWorkbench);
+    }));
+    if (probeSpec(ctx, SLOT_VIEW) === void 0) diagNote("inject-pending:" + SLOT_VIEW);
+  });
+  safely("main-panel", () => {
+    ctx.slots.inject(SLOT_MAIN, () => injectBody("main-panel", () => {
+      const spec = probeSpec(ctx, SLOT_MAIN);
+      if (spec?.kind !== "keyed") {
+        markDegraded(`${SLOT_MAIN} spec missing or not keyed`, spec);
+        diagNote("inject-kind-mismatch:" + SLOT_MAIN);
+        return void 0;
+      }
+      diagNote("inject-materialized:" + SLOT_MAIN);
+      return ctx.slots.register({
+        name: SLOT_MAIN,
+        key: PANEL_ID,
+        locale: NS
+      }, GatePanelPage);
+    }));
+    if (probeSpec(ctx, SLOT_MAIN) === void 0) diagNote("inject-pending:" + SLOT_MAIN);
+  });
+  safely("sidebar-panel-entry", () => {
+    ctx.slots.inject(SLOT_PANELLIST, () => injectBody("sidebar-panel-entry", () => {
+      const spec = probeSpec(ctx, SLOT_PANELLIST);
+      if (spec?.kind !== "list") {
+        markDegraded(`${SLOT_PANELLIST} spec missing or not list`, spec);
+        diagNote("inject-kind-mismatch:" + SLOT_PANELLIST);
+        return void 0;
+      }
+      diagNote("inject-materialized:" + SLOT_PANELLIST);
+      return ctx.slots.register({
+        name: SLOT_PANELLIST,
+        id: PANEL_ID,
+        order: PANEL_SIDEBAR_ORDER,
+        ...t ? { label: () => t("panel") } : {},
+        locale: NS
+      }, GatePanelIcon);
+    }));
+    if (probeSpec(ctx, SLOT_PANELLIST) === void 0) diagNote("inject-pending:" + SLOT_PANELLIST);
+  });
+  safely("unlinked-badge", () => {
+    ctx.slots.inject(SLOT_OVERLAY, () => injectBody("unlinked-badge", () => {
+      const spec = probeSpec(ctx, SLOT_OVERLAY);
+      if (spec?.kind !== "list") return void 0;
+      let disposed = false;
+      void fetchHostLink().then((link) => {
+        if (disposed || link?.mode !== "none") return;
+        ctx.slots.register({
+          name: SLOT_OVERLAY,
+          id: UNLINKED_BADGE_ID,
+          order: 80
+        }, function RqUnlinkedBadge() {
+          return (0, import_react4.createElement)("button", {
+            type: "button",
+            className: "rq-unlinked",
+            // 首选整页切换到本插件面板（未连接时面板首屏即连接向导）；
+            // main 键位未注册（老宿主）时回落新开浏览器页。
+            onClick: () => {
+              try {
+                const layout = ctx.layout;
+                if (typeof layout?.selectPanel === "function") {
+                  layout.selectPanel(PANEL_ID);
+                  return;
+                }
+              } catch {
+              }
+              try {
+                window.open(PANEL_URL, "_blank", "noopener");
+              } catch {
+              }
+            }
+          }, "01\u95E8\uFF1A\u672A\u8FDE\u63A5\u5BBF\u4E3B\uFF0C\u70B9\u51FB\u6253\u5F00\u5411\u5BFC");
+        });
+      });
+      return () => {
+        disposed = true;
+      };
+    }));
+  });
   console.info("[rq-card] client plugin applied:", PLUGIN_ID2);
 }
-return module.exports; } });
+        DIAG.installed = true; // 工厂体完整执行成功才记安装（bundle 抛错不算）
+        return module.exports;
+      } });
+      note(DIAG.installed ? "installed" : "registered-not-materialized");
+      return true;
+    } catch (error) {
+      note("factory-threw", error);
+      return true;
+    }
+  };
+  if (mount()) {
+    // load() 被接受 ≠ 工厂被物化：5s 后仍未安装即亮角标（rc.7 消费链缺陷指纹）
+    if (!DIAG.installed) {
+      setTimeout(function () {
+        if (!DIAG.installed) { note("materialize-missing"); badge("01门卡片未生效（宿主未装载插件）"); }
+      }, 5000);
+    }
+    return;
+  }
+  note("loader-missing");
+  var tries = 0;
+  var timer = setInterval(function () {
+    if (mount() || ++tries >= 40) {
+      clearInterval(timer);
+      if (!DIAG.installed) { note("loader-missing-persistent"); badge("01门卡片未生效（装载器不可达）"); }
+    }
+  }, 250);
+})();
 //# sourceMappingURL=client.js.map

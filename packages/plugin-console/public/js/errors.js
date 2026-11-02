@@ -6,7 +6,7 @@
  * 并断言 全集 ⊆ ERROR_CODES ∪ BINDING_REASONS，漏配即红。模块保持零依赖（selftest 直接 import 校验）。
  * ERROR_CODES 由 COPY 键集派生，注册表与文案同源、永不脱节。
  *
- * 原因码全集（REFACTOR-2026-10-13 阶段 2 完备化，共 43 + 3 条）：
+ * 原因码全集（REFACTOR-2026-10-13 阶段 2 完备化，共 48 + 3 条；2026-11-02 +5 面板轨远端连接/代理码）：
  *   业务原因码（七条，rq-card 会话卡同键——语义冻结勿动）：
  *   nas-authz-deny    NAS 数据权限五步判定 deny（fail-closed）
  *   breaker-open      MCP 服务熔断器开启（连续失败≥3 次置位）
@@ -304,6 +304,38 @@ const COPY = {
     tone: 'warn',
     title: '模型目录只读',
     message: '模型目录由 dsh 配置托管（settings.yaml / llm 适配器），面板侧不可增删改。请在 dsh 侧调整模型配置。',
+    action: null,
+  },
+
+  // ── 01门 远端连接与代理（plugin-rq-card hostlink/向导：形态 C 对外原因码，2026-11-02 合并登记） ──
+  WIZARD_CALL_HEADER_REQUIRED: {
+    tone: 'danger',
+    title: '请求缺少安全校验头',
+    message: '连接向导端点要求页面内发起的请求携带安全头（跨站防御拦截）。请从面板内的连接向导页面操作，不要直接拼地址调用。',
+    action: null,
+  },
+  NOT_REMOTE: {
+    tone: 'warn',
+    title: '当前不是远端连接模式',
+    message: '该操作只在「已连接远端宿主」时可用。请先在连接向导里选择并连接宿主平台。',
+    action: null,
+  },
+  HUB_UNREACHABLE: {
+    tone: 'warn',
+    title: '远端宿主不可达',
+    message: '按当前配置的地址无法连上宿主平台。请检查宿主地址、端口与本机网络后重试；持续失败请联系管理员确认宿主在线。',
+    action: null,
+  },
+  HUB_BAD_RESPONSE: {
+    tone: 'warn',
+    title: '宿主应答格式异常',
+    message: '宿主返回了网页而非数据（地址或挂载前缀可能不匹配）。请在连接向导里重新测试连接，必要时更正挂载前缀。',
+    action: null,
+  },
+  PROXY_PATH_DENIED: {
+    tone: 'danger',
+    title: '该路由不在远端代理白名单内',
+    message: '为保护宿主，远端代理只转发登记过的面板路由（fail-closed）。如该能力本应可用，请联系管理员核对双侧版本是否匹配。',
     action: null,
   },
 

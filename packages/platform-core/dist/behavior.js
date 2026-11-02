@@ -1,5 +1,6 @@
 import { Service } from "@deepseek-ai/cordis";
 import { newId } from "./ids.js";
+import { t } from "../../platform-i18n/dist/index.js";
 const BEHAVIOR_SCHEMA = "behavior.recorded";
 const BEHAVIOR_SCHEMA_VERSION = 1;
 const PAYLOAD_MAX_BYTES = 4096;
@@ -61,7 +62,7 @@ class BehaviorService extends Service {
       at: "TEXT NOT NULL"
     }, { primaryKey: ["consumer", "event_id"] });
     this.registerHttpEndpoints(ctx);
-    ctx.effect(() => {
+    ctx.effect(() => () => {
       this.consumers.clear();
     });
   }
@@ -71,7 +72,7 @@ class BehaviorService extends Service {
     http.register("POST", "/api/behavior/events", (exchange) => {
       const principal = exchange.principal;
       if (!principal || !Array.isArray(principal.permissions)) {
-        exchange.fail(401, "UNAUTHORIZED", "\u7F3A\u5C11 Bearer \u4EE4\u724C\uFF0C\u8BF7\u5148\u767B\u5F55");
+        exchange.fail(401, "UNAUTHORIZED", t("\u7F3A\u5C11 Bearer \u4EE4\u724C\uFF0C\u8BF7\u5148\u767B\u5F55"));
         return;
       }
       const input = exchange.body ?? {};
@@ -86,7 +87,7 @@ class BehaviorService extends Service {
     http.register("GET", "/api/behavior/events", (exchange) => {
       const principal = exchange.principal;
       if (!principal || !Array.isArray(principal.permissions)) {
-        exchange.fail(401, "UNAUTHORIZED", "\u7F3A\u5C11 Bearer \u4EE4\u724C\uFF0C\u8BF7\u5148\u767B\u5F55");
+        exchange.fail(401, "UNAUTHORIZED", t("\u7F3A\u5C11 Bearer \u4EE4\u724C\uFF0C\u8BF7\u5148\u767B\u5F55"));
         return;
       }
       if (!principal.permissions.includes("*") && !principal.permissions.includes("audit.read")) {
@@ -95,7 +96,7 @@ class BehaviorService extends Service {
           point: "audit.read",
           path: exchange.path
         });
-        exchange.fail(403, "FORBIDDEN", "\u7F3A\u5C11\u6743\u9650\u70B9 audit.read\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458\u8C03\u6574\u89D2\u8272", { permission: "audit.read" });
+        exchange.fail(403, "FORBIDDEN", t("\u7F3A\u5C11\u6743\u9650\u70B9 {point}\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458\u8C03\u6574\u89D2\u8272", { point: "audit.read" }), { permission: "audit.read" });
         return;
       }
       const query = exchange.query;
@@ -128,10 +129,10 @@ class BehaviorService extends Service {
     const inserted = this.ctx.txnStore.insertOrIgnore("behavior_events", behaviorRow(event));
     if (!inserted) {
       const existing = this.ctx.txnStore.one("behavior_events", { idempotency_key: event.idempotency_key });
-      if (!existing) throw new Error(`\u5E42\u7B49\u952E\u5F02\u5E38\uFF1A${event.idempotency_key} \u5DF2\u5360\u7528\u4F46\u8BB0\u5F55\u7F3A\u5931`);
+      if (!existing) throw new Error(t("\u5E42\u7B49\u952E\u5F02\u5E38\uFF1A{key} \u5DF2\u5360\u7528\u4F46\u8BB0\u5F55\u7F3A\u5931", { key: event.idempotency_key }));
       const sameContent = existing.subject === event.subject && existing.type === event.type && existing.payload_json === JSON.stringify(event.payload ?? {});
       if (!sameContent) {
-        throw new Error(`\u5E42\u7B49\u952E\u51B2\u7A81\uFF1A${event.idempotency_key} \u5DF2\u7ED1\u5B9A\u4E8B\u4EF6 ${existing.id}\uFF0C\u540C\u952E\u4E0D\u540C\u5185\u5BB9\u88AB\u62D2\u7EDD`);
+        throw new Error(t("\u5E42\u7B49\u952E\u51B2\u7A81\uFF1A{key} \u5DF2\u7ED1\u5B9A\u4E8B\u4EF6 {id}\uFF0C\u540C\u952E\u4E0D\u540C\u5185\u5BB9\u88AB\u62D2\u7EDD", { key: event.idempotency_key, id: existing.id }));
       }
       return { event: rowToEvent(existing), duplicated: true };
     }
@@ -175,8 +176,8 @@ class BehaviorService extends Service {
           this.ctx.platformBus.emit("audit.alert.fired", {
             id: newId("alt"),
             severity: "critical",
-            title: "behavior \u6D88\u8D39\u6B7B\u4FE1",
-            message: `\u6D88\u8D39\u65B9 ${consumerId} \u5904\u7406\u884C\u4E3A\u4E8B\u4EF6 ${event.event_id} \u8FDE\u7EED\u5931\u8D25 ${attempt} \u6B21\uFF0C\u5DF2\u5165\u6B7B\u4FE1\uFF0C\u53EF\u7ECF behavior \u91CD\u6295\u6062\u590D`
+            title: t("behavior \u6D88\u8D39\u6B7B\u4FE1"),
+            message: t("\u6D88\u8D39\u65B9 {consumer} \u5904\u7406\u884C\u4E3A\u4E8B\u4EF6 {id} \u8FDE\u7EED\u5931\u8D25 {attempts} \u6B21\uFF0C\u5DF2\u5165\u6B7B\u4FE1\uFF0C\u53EF\u7ECF behavior \u91CD\u6295\u6062\u590D", { consumer: consumerId, id: event.event_id, attempts: attempt })
           });
         }
       }
@@ -221,7 +222,7 @@ class BehaviorService extends Service {
           id: newId("bdl"),
           event_id: letter.event_id,
           consumer: letter.consumer,
-          error: `\u91CD\u6295\u4ECD\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`,
+          error: t("\u91CD\u6295\u4ECD\u5931\u8D25\uFF1A{message}", { message: error instanceof Error ? error.message : String(error) }),
           attempts: letter.attempts + 1
         });
       }
@@ -259,24 +260,24 @@ class BehaviorService extends Service {
   // -- 内部 -----------------------------------------------------------------
   validate(input) {
     if (!input.type?.trim() || !/^[a-z][a-z0-9_.]*$/.test(input.type)) {
-      throw new Error(`behavior \u4E8B\u4EF6 type \u975E\u6CD5\uFF1A${input.type}\uFF08\u5E94\u4E3A\u70B9\u5206\u5C0F\u5199\u952E\uFF0C\u5982 card.exposed / funnel.step\uFF09`);
+      throw new Error(t("behavior \u4E8B\u4EF6 type \u975E\u6CD5\uFF1A{value}\uFF08\u5E94\u4E3A\u70B9\u5206\u5C0F\u5199\u952E\uFF0C\u5982 card.exposed / funnel.step\uFF09", { value: String(input.type) }));
     }
     if (!input.subject?.trim() || !/^[a-z][a-z0-9]*:[A-Za-z0-9._-]+$/.test(input.subject)) {
-      throw new Error(`behavior \u4E8B\u4EF6 subject \u975E\u6CD5\uFF1A${input.subject}\uFF08\u5E94\u4E3A user:<id> / agent:<id> / machine:<principalId>\uFF09`);
+      throw new Error(t("behavior \u4E8B\u4EF6 subject \u975E\u6CD5\uFF1A{value}\uFF08\u5E94\u4E3A user:<id> / agent:<id> / machine:<principalId>\uFF09", { value: String(input.subject) }));
     }
     if (input.platform !== void 0 && !/^[a-z][a-z0-9_-]*$/.test(input.platform)) {
-      throw new Error(`behavior \u4E8B\u4EF6 platform \u975E\u6CD5\uFF1A${input.platform}\uFF08\u5C0F\u5199\u6807\u8BC6\uFF0C\u5982 rd / quality / console / dingtalk\uFF09`);
+      throw new Error(t("behavior \u4E8B\u4EF6 platform \u975E\u6CD5\uFF1A{value}\uFF08\u5C0F\u5199\u6807\u8BC6\uFF0C\u5982 rd / quality / console / dingtalk\uFF09", { value: input.platform }));
     }
     if (input.payload !== void 0) {
       if (typeof input.payload !== "object" || Array.isArray(input.payload) || input.payload === null) {
-        throw new Error("behavior \u4E8B\u4EF6 payload \u5FC5\u987B\u662F\u5BF9\u8C61");
+        throw new Error(t("behavior \u4E8B\u4EF6 payload \u5FC5\u987B\u662F\u5BF9\u8C61"));
       }
       if (Buffer.byteLength(JSON.stringify(input.payload), "utf8") > PAYLOAD_MAX_BYTES) {
-        throw new Error(`behavior \u4E8B\u4EF6 payload \u8D85\u9650\uFF08>${PAYLOAD_MAX_BYTES} \u5B57\u8282\uFF09\uFF0C\u8BF7\u7CBE\u7B80\u4E0A\u4E0B\u6587`);
+        throw new Error(t("behavior \u4E8B\u4EF6 payload \u8D85\u9650\uFF08>{max} \u5B57\u8282\uFF09\uFF0C\u8BF7\u7CBE\u7B80\u4E0A\u4E0B\u6587", { max: PAYLOAD_MAX_BYTES }));
       }
     }
     if (input.occurred_at !== void 0 && Number.isNaN(new Date(input.occurred_at).getTime())) {
-      throw new Error(`behavior \u4E8B\u4EF6 occurred_at \u975E\u6CD5\uFF1A${input.occurred_at}`);
+      throw new Error(t("behavior \u4E8B\u4EF6 occurred_at \u975E\u6CD5\uFF1A{value}", { value: input.occurred_at }));
     }
   }
 }

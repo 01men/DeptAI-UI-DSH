@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Service } from "@deepseek-ai/cordis";
 import { PlatformEvents } from "../../platform-core/dist/bus.js";
 import { ACTIVITY_LABELS } from "../../platform-core/dist/scenegraph.js";
@@ -168,16 +169,16 @@ class PanelService extends Service {
   agentWithAsset(agentCard) {
     const ref = agentCard.agentRef?.replace(/^agent:/, "") ?? "";
     if (!ref) return { ...agentCard };
-    const asset2 = this.soft("resourceCore")?.list("agent").find((item) => item.id === ref || item.slug === ref || item.name === ref);
-    if (!asset2) return { ...agentCard };
-    const attrs = asset2.attrs;
+    const asset = this.soft("resourceCore")?.list("agent").find((item) => item.id === ref || item.slug === ref || item.name === ref);
+    if (!asset) return { ...agentCard };
+    const attrs = asset.attrs;
     return {
       ...agentCard,
       asset: {
-        id: asset2.id,
-        ...asset2.slug ? { slug: asset2.slug } : {},
-        name: asset2.name,
-        status: String(asset2.status ?? "draft"),
+        id: asset.id,
+        ...asset.slug ? { slug: asset.slug } : {},
+        name: asset.name,
+        status: String(asset.status ?? "draft"),
         ...attrs?.model ? { model: String(attrs.model) } : {}
       }
     };
@@ -269,8 +270,8 @@ class PanelService extends Service {
       await this.invokeAgent(dept, agentCard, message, modelOverride);
     }
   }
-  /** Agent 应答落库 + 事件广播（invokeAgent / streamAgentReply 共用）。 */
-  async insertAgentReply(dept, agentCard, trigger, text, card, usedModel) {
+  /** Agent 应答落库 + 事件广播（invokeAgent / streamAgentReply 共用；V16/D08 分型标注随事件透传）。 */
+  async insertAgentReply(dept, agentCard, trigger, text, card, usedModel, workforce) {
     const record = this.messages().insert({
       id: newId("pmsg"),
       channelId: trigger.channelId,
@@ -294,45 +295,48 @@ class PanelService extends Service {
       text,
       ddSync: "none",
       card: record.card,
-      title: record.card?.title ?? ""
+      title: record.card?.title ?? "",
+      // V16/D08 additive 分型标注（命中受管员工才出现；面板 SSE 扇出原样透传，前端按需消费）
+      ...workforce ? { workforce } : {}
     });
     return record;
   }
   /**
    * Agent 调用前置解析（invokeAgent / streamAgentReply 共用）：资产绑定 → 模型取向 →
-   * 频道上下文 + 部门场景图谱摘要组装。返回 ok:false 时 reason 为可展示的诚实降级文案。
+   * 频道上下文 + 部门场景图谱摘要组装。返回 ok:false 时 reason 为可展示的诚实降级文案；
+   * ok 载荷携带 asset（审计 resourceId 与 V16/D08 分型探测的依据）。
    */
   prepareAgentInvocation(dept, agentCard, trigger, modelOverride, contextNote) {
     const channel = this.channels().get(trigger.channelId);
     const ref = agentCard.agentRef?.replace(/^agent:/, "") ?? "";
-    const asset2 = ref ? this.soft("resourceCore")?.list("agent").find((item) => item.id === ref || item.slug === ref || item.name === ref) : void 0;
-    if (!asset2) return { ok: false, reason: "\u672A\u7ED1\u5B9A Agent \u8D44\u4EA7\uFF08\u8BF7\u5728\u63A7\u5236\u53F0\u300CAgent \u672C\u4F53\u300D\u767B\u8BB0\u5E76\u5728\u6B64\u914D\u7F6E agentRef\uFF09" };
-    const preferred = modelOverride ?? String(asset2.attrs?.model ?? "");
+    const asset = ref ? this.soft("resourceCore")?.list("agent").find((item) => item.id === ref || item.slug === ref || item.name === ref) : void 0;
+    if (!asset) return { ok: false, reason: "\u672A\u7ED1\u5B9A Agent \u8D44\u4EA7\uFF08\u8BF7\u5728\u63A7\u5236\u53F0\u300CAgent \u672C\u4F53\u300D\u767B\u8BB0\u5E76\u5728\u6B64\u914D\u7F6E agentRef\uFF09" };
+    const preferred = modelOverride ?? String(asset.attrs?.model ?? "");
     const resolved = resolvePanelModelGateway(this.ctx);
     const catalog = resolved?.gateway.models?.().all?.() ?? [];
     const online = catalog.filter((item) => item.status === "online");
-    let model2 = preferred;
-    if (!model2 || !catalog.some((item) => item.slug === model2)) {
-      if (online.length > 0) model2 = online[0].slug;
-      else if (resolved?.kind === "dsh") model2 = "default";
+    let model = preferred;
+    if (!model || !catalog.some((item) => item.slug === model)) {
+      if (online.length > 0) model = online[0].slug;
+      else if (resolved?.kind === "dsh") model = "default";
     }
-    if (!model2) return { ok: false, reason: "Agent \u8D44\u4EA7\u672A\u914D\u7F6E\u6A21\u578B\uFF08model \u5C5E\u6027\u4E3A\u7A7A\uFF09\uFF0C\u4E14\u672C\u6B21\u4F1A\u8BDD\u672A\u6307\u5B9A\u6A21\u578B" };
+    if (!model) return { ok: false, reason: "Agent \u8D44\u4EA7\u672A\u914D\u7F6E\u6A21\u578B\uFF08model \u5C5E\u6027\u4E3A\u7A7A\uFF09\uFF0C\u4E14\u672C\u6B21\u4F1A\u8BDD\u672A\u6307\u5B9A\u6A21\u578B" };
     const recent = this.messages().find((m) => m.channelId === trigger.channelId).slice(-8);
     const contextText = recent.map((m) => `${m.senderName}: ${m.text}`).join("\n");
     const sceneSummary = this.sceneSummaryForDept(dept);
     const systemPrompt = [
-      String(asset2.attrs?.systemPrompt ?? `\u4F60\u662F\u4F01\u4E1A\u90E8\u95E8\u534F\u4F5C\u9762\u677F\u4E2D\u7684\u6570\u5B57\u540C\u4E8B\u300C${agentCard.name}\u300D\uFF08${agentCard.desc}\uFF09\u3002`),
+      String(asset.attrs?.systemPrompt ?? `\u4F60\u662F\u4F01\u4E1A\u90E8\u95E8\u534F\u4F5C\u9762\u677F\u4E2D\u7684\u6570\u5B57\u540C\u4E8B\u300C${agentCard.name}\u300D\uFF08${agentCard.desc}\uFF09\u3002`),
       sceneSummary ? `\u672C\u90E8\u95E8\u6302\u8F7D\u7684\u884C\u4E1A\u573A\u666F\u56FE\u8C31\u8981\u70B9\uFF1A
 ${sceneSummary}` : "",
       contextNote ?? "",
       channel ? `\u4EE5\u4E0B\u662F\u9891\u9053\u300C${channel.name}\u300D\u6700\u8FD1\u5BF9\u8BDD\uFF1A
 ${contextText}` : ""
     ].filter(Boolean).join("\n\n");
-    return { ok: true, model: model2, systemPrompt, userText: trigger.text };
+    return { ok: true, model, systemPrompt, userText: trigger.text, asset: { id: asset.id } };
   }
-  /** Agent 调用后的协作计量（D1 裁决键格式；org 主键缺省跳过，计量失败不阻塞协作面）。 */
+  /** Agent 调用后的协作计量（D1 裁决键格式；org 兜底链解析失败才跳过，计量失败不阻塞协作面）。 */
   meterAgentCall(dept, trigger, agentCard) {
-    const orgId = this.callerOrgId(trigger.senderId);
+    const orgId = this.resolveOrgId(trigger.senderId, dept).orgId;
     if (!orgId) return;
     try {
       this.soft("usage")?.record({
@@ -347,7 +351,7 @@ ${contextText}` : ""
     }
   }
   async invokeAgent(dept, agentCard, trigger, modelOverride) {
-    const reply = (text, card, usedModel) => this.insertAgentReply(dept, agentCard, trigger, text, card, usedModel);
+    const reply = (text, card, usedModel, workforce2) => this.insertAgentReply(dept, agentCard, trigger, text, card, usedModel, workforce2);
     const fallbackToHuman = async (reason) => {
       await reply(`\u300C${agentCard.name}\u300D\u6682\u4E0D\u80FD\u81EA\u4E3B\u5E94\u7B54\uFF1A${reason}\u5DF2\u8F6C\u4EBA\u5DE5\u5F85\u529E\uFF0C\u8BF7\u76F8\u5173\u540C\u4E8B\u8DDF\u8FDB\u3002`);
       this.tasks().insert({
@@ -363,19 +367,21 @@ ${contextText}` : ""
     };
     const prepared = this.prepareAgentInvocation(dept, agentCard, trigger, modelOverride);
     if (!prepared.ok) return void fallbackToHuman(prepared.reason);
+    const workforce = await this.managedWorkforceOf(prepared.asset.id);
+    const { orgId, orgSource } = this.resolveOrgId(trigger.senderId, dept);
     try {
       const gateway = resolvePanelModelGateway(this.ctx)?.gateway;
       if (!gateway) throw new Error("\u6A21\u578B\u7F51\u5173\u672A\u63A5\u5165\uFF0801\u95E8\u6F14\u793A\u6001\uFF09\u2014\u2014\u8FDE\u63A5\u5BBF\u4E3B\u540E\u53EF\u7528");
       const result = await gateway.invoke({
         model: prepared.model,
-        orgId: this.callerOrgId(trigger.senderId),
+        orgId,
         subject: trigger.senderId ? `user:${trigger.senderId}` : "panel:runtime",
         messages: [
           { role: "system", content: prepared.systemPrompt },
           { role: "user", content: prepared.userText }
         ]
       });
-      await reply(stripThink(result.content), void 0, result.model);
+      await reply(stripThink(result.content), void 0, result.model, workforce);
       this.auditSafe({
         type: "invoke",
         actorType: "machine",
@@ -383,10 +389,11 @@ ${contextText}` : ""
         actorName: agentCard.name,
         action: "panel.agent.invoke",
         resourceType: "agent",
-        resourceId: asset.id,
+        resourceId: prepared.asset.id,
         resourceName: agentCard.name,
+        // V16：审计口径=问答/协作（panel.agent.invoke 非执行链）；受管员工命中时随 detail 留分型标注
         result: "ok",
-        detail: `model=${result.model} tokens=${result.inputTokens}/${result.outputTokens}`,
+        detail: `model=${result.model} tokens=${result.inputTokens}/${result.outputTokens} org=${orgSource}${workforce ? `\uFF1Bworkforce=\u53D7\u7BA1\u5458\u5DE5(${workforce.employeeId})\uFF0C${workforce.notice}` : ""}`,
         ...trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}
       });
     } catch (error) {
@@ -399,10 +406,10 @@ ${contextText}` : ""
         actorName: agentCard.name,
         action: "panel.agent.invoke",
         resourceType: "agent",
-        resourceId: asset.id,
+        resourceId: prepared.asset.id,
         resourceName: agentCard.name,
         result: "error",
-        detail: `model=${model} \u5931\u8D25\uFF1A${message}`,
+        detail: `model=${prepared.model} \u5931\u8D25\uFF1A${message}`,
         ...trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}
       });
     } finally {
@@ -434,6 +441,8 @@ ${contextText}` : ""
     };
     const prepared = this.prepareAgentInvocation(dept, agentCard, trigger, modelOverride);
     if (!prepared.ok) return void fallback(prepared.reason);
+    const workforce = await this.managedWorkforceOf(prepared.asset.id);
+    const { orgId, orgSource } = this.resolveOrgId(trigger.senderId, dept);
     try {
       const resolved = resolvePanelModelGateway(this.ctx);
       if (!resolved) throw new Error("\u6A21\u578B\u7F51\u5173\u672A\u63A5\u5165\uFF0801\u95E8\u6F14\u793A\u6001\uFF09\u2014\u2014\u8FDE\u63A5\u5BBF\u4E3B\u540E\u53EF\u7528");
@@ -450,6 +459,7 @@ ${contextText}` : ""
       if (typeof gateway.streamEvents === "function") {
         for await (const chunk of gateway.streamEvents({
           model: prepared.model,
+          orgId,
           messages,
           subject: trigger.senderId ? `user:${trigger.senderId}` : "panel:runtime"
         })) {
@@ -462,7 +472,7 @@ ${contextText}` : ""
       } else {
         const result = await gateway.invoke({
           model: prepared.model,
-          orgId: this.callerOrgId(trigger.senderId),
+          orgId,
           subject: trigger.senderId ? `user:${trigger.senderId}` : "panel:runtime",
           messages
         });
@@ -475,11 +485,37 @@ ${contextText}` : ""
         await fallback("\u6A21\u578B\u53EA\u8F93\u51FA\u4E86\u601D\u8003\u8FC7\u7A0B\uFF08<think> \u672A\u95ED\u5408\u6216\u6B63\u6587\u4E3A\u7A7A\uFF09\uFF0C\u6CA1\u6709\u53EF\u5C55\u793A\u7684\u5E94\u7B54\u3002");
         return;
       }
-      await this.insertAgentReply(dept, agentCard, trigger, finalContent, void 0, usedModel || void 0);
+      await this.insertAgentReply(dept, agentCard, trigger, finalContent, void 0, usedModel || void 0, workforce);
       onEvent({ type: "done", agent: agentCard.name });
+      this.auditSafe({
+        type: "invoke",
+        actorType: "machine",
+        actorId: `agent:${agentCard.name}`,
+        actorName: agentCard.name,
+        action: "panel.agent.invoke",
+        resourceType: "agent",
+        resourceId: prepared.asset.id,
+        resourceName: agentCard.name,
+        result: "ok",
+        detail: `model=${usedModel || prepared.model} stream=1 org=${orgSource}${workforce ? `\uFF1Bworkforce=\u53D7\u7BA1\u5458\u5DE5(${workforce.employeeId})\uFF0C${workforce.notice}` : ""}`,
+        ...trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       await fallback(`\u6A21\u578B\u7F51\u5173\u8C03\u7528\u5931\u8D25\uFF08${message}\uFF09\u3002`);
+      this.auditSafe({
+        type: "invoke",
+        actorType: "machine",
+        actorId: `agent:${agentCard.name}`,
+        actorName: agentCard.name,
+        action: "panel.agent.invoke",
+        resourceType: "agent",
+        resourceId: prepared.asset.id,
+        resourceName: agentCard.name,
+        result: "error",
+        detail: `model=${prepared.model} \u5931\u8D25\uFF1A${message}`,
+        ...trigger.sceneCode ? { sceneCode: trigger.sceneCode } : {}
+      });
     } finally {
       this.meterAgentCall(dept, trigger, agentCard);
     }
@@ -488,6 +524,46 @@ ${contextText}` : ""
     if (!userId) return "";
     const user = this.soft("iam")?.users().get(userId);
     return user?.orgId ?? "";
+  }
+  /** 平台首个根组织（无父组织）；组织树未播种（01门演示态）时为 undefined。 */
+  rootOrgId() {
+    try {
+      return this.soft("iam")?.orgs().all().find((org) => !org.parentId)?.id;
+    } catch {
+      return void 0;
+    }
+  }
+  /**
+   * 组织归属解析兜底链（#17，2026-10-29 回植自底座）：调用方用户组织 → 部门绑定组织（R11）→ 平台根组织。
+   * 机器主体 / 外部工具通道没有用户归属，此前 orgId 空串直达 modelgw——模型应答后在计量落账处
+   * 抛「usage 事件 org 必填」，先花钱后报错；现在调用前即解析出真实归属，orgSource 随审计留痕。
+   */
+  resolveOrgId(userId, dept) {
+    const caller = this.callerOrgId(userId);
+    if (caller) return { orgId: caller, orgSource: "caller" };
+    const deptOrg = dept?.orgId ?? "";
+    if (deptOrg) return { orgId: deptOrg, orgSource: `dept:${dept.id}` };
+    const root = this.rootOrgId();
+    if (root) return { orgId: root, orgSource: "platform-root" };
+    return { orgId: "", orgSource: "unresolved" };
+  }
+  /**
+   * V16/D08 受管数字员工结构化探测：按目标 agentId 经 workforce 窄端口服务端反查
+   * （ctx.workforcePolicy.port()?.describeManagedAgent）。端口未就绪 → undefined（保持 legacy
+   * 现状）；未命中 → undefined；端口执行异常 → undefined（问答面 fail-open，治理端口故障
+   * 不阻塞面板应答）。判定只依据服务端反查，与请求是否携带任何 work 上下文无关（冻结契约）。
+   */
+  async managedWorkforceOf(agentId) {
+    try {
+      const registry = this.ctx.workforcePolicy;
+      const port = registry?.port?.() ?? null;
+      if (!port) return void 0;
+      const managed = await port.describeManagedAgent(agentId);
+      if (!managed) return void 0;
+      return { managed: true, employeeId: managed.employeeId, notice: "\u95EE\u7B54\u7ED3\u679C\uFF0C\u4E0D\u6784\u6210\u4EFB\u52A1\u6267\u884C\u6216\u4EA4\u4ED8\u9A8C\u6536" };
+    } catch {
+      return void 0;
+    }
   }
   /**
    * 面板 Agent 点名问答（M3：panel_agent_invoke 工具的服务原语——dsh 标准对话协作主通道）。
@@ -502,14 +578,15 @@ ${contextText}` : ""
       return { ok: false, reason: `\u90E8\u95E8 ${dept.id}\uFF08${dept.label}\uFF09\u540D\u518C\u65E0\u6B64 Agent\u3002\u53EF\u7528\u9635\u5BB9\uFF1A${names.join("\u3001") || "\uFF08\u65E0\uFF09"}` };
     }
     const ref = agentCard.agentRef?.replace(/^agent:/, "") ?? "";
-    const asset2 = ref ? this.soft("resourceCore")?.list("agent").find((item) => item.id === ref || item.slug === ref || item.name === ref) : void 0;
-    if (!asset2) return { ok: false, reason: `Agent\u300C${agentName}\u300D\u672A\u7ED1\u5B9A Agent \u8D44\u4EA7\uFF08agentRef\uFF09\uFF0C\u65E0\u6CD5\u81EA\u4E3B\u5E94\u7B54` };
-    const model2 = options.modelOverride ?? String(asset2.attrs?.model ?? "");
-    if (!model2) return { ok: false, reason: `Agent\u300C${agentName}\u300D\u672A\u914D\u7F6E\u6A21\u578B\uFF08model \u5C5E\u6027\u4E3A\u7A7A\uFF09\uFF0C\u4E14\u672C\u6B21\u672A\u6307\u5B9A\u6A21\u578B` };
-    const orgId = this.callerOrgId(options.userId);
+    const asset = ref ? this.soft("resourceCore")?.list("agent").find((item) => item.id === ref || item.slug === ref || item.name === ref) : void 0;
+    if (!asset) return { ok: false, reason: `Agent\u300C${agentName}\u300D\u672A\u7ED1\u5B9A Agent \u8D44\u4EA7\uFF08agentRef\uFF09\uFF0C\u65E0\u6CD5\u81EA\u4E3B\u5E94\u7B54` };
+    const model = options.modelOverride ?? String(asset.attrs?.model ?? "");
+    if (!model) return { ok: false, reason: `Agent\u300C${agentName}\u300D\u672A\u914D\u7F6E\u6A21\u578B\uFF08model \u5C5E\u6027\u4E3A\u7A7A\uFF09\uFF0C\u4E14\u672C\u6B21\u672A\u6307\u5B9A\u6A21\u578B` };
+    const workforce = await this.managedWorkforceOf(asset.id);
+    const { orgId, orgSource } = this.resolveOrgId(options.userId, dept);
     const sceneSummary = this.sceneSummaryForDept(dept);
     const systemPrompt = [
-      String(asset2.attrs?.systemPrompt ?? `\u4F60\u662F\u4F01\u4E1A\u90E8\u95E8\u534F\u4F5C\u9762\u677F\u4E2D\u7684\u6570\u5B57\u540C\u4E8B\u300C${agentCard.name}\u300D\uFF08${agentCard.desc}\uFF09\u3002`),
+      String(asset.attrs?.systemPrompt ?? `\u4F60\u662F\u4F01\u4E1A\u90E8\u95E8\u534F\u4F5C\u9762\u677F\u4E2D\u7684\u6570\u5B57\u540C\u4E8B\u300C${agentCard.name}\u300D\uFF08${agentCard.desc}\uFF09\u3002`),
       sceneSummary ? `\u672C\u90E8\u95E8\u6302\u8F7D\u7684\u884C\u4E1A\u573A\u666F\u56FE\u8C31\u8981\u70B9\uFF1A
 ${sceneSummary}` : "",
       options.contextNote ?? ""
@@ -518,7 +595,7 @@ ${sceneSummary}` : "",
       const gateway = resolvePanelModelGateway(this.ctx)?.gateway;
       if (!gateway) throw new Error("\u6A21\u578B\u7F51\u5173\u672A\u63A5\u5165\uFF0801\u95E8\u6F14\u793A\u6001\uFF09\u2014\u2014\u8FDE\u63A5\u5BBF\u4E3B\u540E\u53EF\u7528");
       const result = await gateway.invoke({
-        model: model2,
+        model,
         orgId,
         subject: options.userId ? `user:${options.userId}` : "panel:tool",
         messages: [
@@ -533,13 +610,20 @@ ${sceneSummary}` : "",
         actorName: agentName,
         action: "panel.agent.invoke",
         resourceType: "agent",
-        resourceId: asset2.id,
+        resourceId: asset.id,
         resourceName: agentName,
+        // V16：审计口径=问答/协作；受管员工命中时随 detail 留分型标注
         result: "ok",
-        detail: `model=${result.model}\uFF08askAgent \u76F4\u7B54\uFF09`,
+        detail: `model=${result.model}\uFF08askAgent \u76F4\u7B54\uFF09org=${orgSource}${workforce ? `\uFF1Bworkforce=\u53D7\u7BA1\u5458\u5DE5(${workforce.employeeId})\uFF0C${workforce.notice}` : ""}`,
         ...options.sceneCode ? { sceneCode: options.sceneCode } : {}
       });
-      return { ok: true, reply: stripThink(result.content), model: result.model };
+      return {
+        ok: true,
+        reply: stripThink(result.content),
+        model: result.model,
+        // V16/D08 additive 分型字段：命中受管数字员工才出现（legacy 路径无此键）
+        ...workforce ? { workforce } : {}
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.auditSafe({
@@ -549,10 +633,10 @@ ${sceneSummary}` : "",
         actorName: agentName,
         action: "panel.agent.invoke",
         resourceType: "agent",
-        resourceId: asset2.id,
+        resourceId: asset.id,
         resourceName: agentName,
         result: "error",
-        detail: `model=${model2} \u5931\u8D25\uFF1A${message}`,
+        detail: `model=${model} \u5931\u8D25\uFF1A${message}`,
         ...options.sceneCode ? { sceneCode: options.sceneCode } : {}
       });
       return { ok: false, reason: `\u6A21\u578B\u7F51\u5173\u8C03\u7528\u5931\u8D25\uFF08${message}\uFF09` };
@@ -605,8 +689,9 @@ ${sceneSummary}` : "",
   async invokeSkill(skillName, message, options = {}) {
     const name = skillName.trim();
     if (!name) return { ok: false, reason: "\u6280\u80FD\u540D\u4E3A\u7A7A\uFF08\u7528 /\u6280\u80FD\u540D \u6216 panel_skill_invoke \u70B9\u540D\uFF09" };
-    const orgId = this.callerOrgId(options.userId);
-    const invokeable = this.listInvokeableSkills(orgId || void 0);
+    const { orgId } = this.resolveOrgId(options.userId);
+    const viewerOrg = this.callerOrgId(options.userId);
+    const invokeable = this.listInvokeableSkills(viewerOrg || void 0);
     const skill = invokeable.find((item) => item.name === name) ?? invokeable.find((item) => item.slug === name);
     if (!skill) {
       const hint = this.soft("skillHub")?.skills().all().find((item) => item.status === "published" && (item.name === name || item.slug === name));
@@ -618,11 +703,16 @@ ${sceneSummary}` : "",
     const version = record?.versions.find((item) => item.version === skill.version && item.status === "published");
     const content = version?.content?.trim() ?? "";
     if (!content) return { ok: false, reason: `\u6280\u80FD\u300C${skill.name}\u300D\u5F53\u524D\u7248\u672C\uFF08${skill.version}\uFF09\u65E0\u6307\u4EE4\u5185\u5BB9\uFF0C\u65E0\u6CD5\u76F4\u8C03` };
-    let model2 = options.modelOverride?.trim() ?? "";
-    if (!model2) {
+    const skillLoad = {
+      skillId: skill.id,
+      version: skill.version,
+      contentHash: createHash("sha256").update(content).digest("hex")
+    };
+    let model = options.modelOverride?.trim() ?? "";
+    if (!model) {
       const online = resolvePanelModelGateway(this.ctx)?.gateway.models().all().filter((item) => item.status === "online" && item.endpoint.trim() !== "") ?? [];
       if (online.length === 0) return { ok: false, reason: "\u6A21\u578B\u76EE\u5F55\u6682\u65E0\u5728\u7EBF\u6A21\u578B\u2014\u2014\u8BF7\u7BA1\u7406\u5458\u5728\u300C\u6A21\u578B\u7BA1\u7406\u300D\u4E2D\u63A5\u5165\u540E\u518D\u76F4\u8C03\u6280\u80FD" };
-      model2 = online[0].slug;
+      model = online[0].slug;
     }
     const systemPrompt = [
       `\u4F60\u5728\u6267\u884C\u4F01\u4E1A\u6280\u80FD\u5E73\u53F0\u4E0A\u67B6\u7684\u6280\u80FD\u300C${skill.name}\u300D\uFF08${skill.summary}\uFF09\u3002\u4E25\u683C\u6309\u4EE5\u4E0B\u6280\u80FD\u6307\u4EE4\u5B8C\u6210\u4EFB\u52A1\uFF1A`,
@@ -633,7 +723,7 @@ ${sceneSummary}` : "",
       const gateway = resolvePanelModelGateway(this.ctx)?.gateway;
       if (!gateway) throw new Error("\u6A21\u578B\u7F51\u5173\u672A\u63A5\u5165\uFF0801\u95E8\u6F14\u793A\u6001\uFF09\u2014\u2014\u8FDE\u63A5\u5BBF\u4E3B\u540E\u53EF\u7528");
       const result = await gateway.invoke({
-        model: model2,
+        model,
         orgId,
         subject: options.userId ? `user:${options.userId}` : "panel:tool",
         messages: [
@@ -651,10 +741,17 @@ ${sceneSummary}` : "",
         resourceId: skill.id,
         resourceName: skill.name,
         result: "ok",
-        detail: `model=${result.model} version=${skill.version}`,
+        detail: `model=${result.model} version=${skill.version} contentHash=${skillLoad.contentHash}`,
         ...options.sceneCode ? { sceneCode: options.sceneCode } : {}
       });
-      return { ok: true, reply: stripThink(result.content), model: result.model, skill: { name: skill.name, version: skill.version } };
+      return {
+        ok: true,
+        reply: stripThink(result.content),
+        model: result.model,
+        skill: { name: skill.name, version: skill.version },
+        // D09/V16 additive：证据化加载指纹（skillId/version/contentHash）
+        skillLoad
+      };
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.auditSafe({
@@ -667,7 +764,7 @@ ${sceneSummary}` : "",
         resourceId: skill.id,
         resourceName: skill.name,
         result: "error",
-        detail: `model=${model2} \u5931\u8D25\uFF1A${reason}`,
+        detail: `model=${model} \u5931\u8D25\uFF1A${reason}`,
         ...options.sceneCode ? { sceneCode: options.sceneCode } : {}
       });
       return { ok: false, reason: `\u6A21\u578B\u7F51\u5173\u8C03\u7528\u5931\u8D25\uFF08${reason}\uFF09` };
@@ -773,6 +870,12 @@ ${sceneSummary}` : "",
   }
   createTask(input) {
     this.dept(input.dept);
+    if (input.execIssueId) {
+      const hub = this.execHub();
+      if (!hub) throw new Error("\u6267\u884C\u4E2D\u67A2\u672A\u63A5\u5165\uFF0801\u95E8\u6F14\u793A\u6001\uFF09\u2014\u2014\u643A\u5E26 execIssueId \u7684\u4EFB\u52A1\u9700\u8981\u5BBF\u4E3B\u6267\u884C\u4E2D\u67A2");
+      if (!hub.issues().get(input.execIssueId)) throw new Error(`\u6267\u884C\u4E2D\u67A2\u4EFB\u52A1\u4E0D\u5B58\u5728\uFF1A${input.execIssueId}`);
+    }
+    if (input.reworkOf && !this.tasks().get(input.reworkOf)) throw new Error(`\u8FD4\u5DE5\u6765\u6E90\u4EFB\u52A1\u4E0D\u5B58\u5728\uFF1A${input.reworkOf}`);
     const record = this.tasks().insert({
       id: newId("ptask"),
       dept: input.dept,
@@ -782,6 +885,10 @@ ${sceneSummary}` : "",
       assigneeType: input.assigneeType ?? "human",
       ...input.assigneeName ? { assigneeName: input.assigneeName } : {},
       ...input.sceneCode ? { sceneCode: input.sceneCode } : {},
+      ...input.execIssueId ? { execIssueId: input.execIssueId } : {},
+      ...input.goalId ? { goalId: input.goalId } : {},
+      ...input.evidenceRefs?.length ? { evidenceRefs: input.evidenceRefs } : {},
+      ...input.reworkOf ? { reworkOf: input.reworkOf } : {},
       createdBy: input.createdBy
     });
     this.auditSafe({
@@ -794,16 +901,37 @@ ${sceneSummary}` : "",
       resourceId: record.id,
       resourceName: input.title,
       result: "ok",
-      detail: `\u6CF3\u9053 ${input.lane ?? "todo"}${input.assigneeName ? `\uFF0C\u6307\u6D3E ${input.assigneeName}` : ""}`,
+      detail: `\u6CF3\u9053 ${input.lane ?? "todo"}${input.assigneeName ? `\uFF0C\u6307\u6D3E ${input.assigneeName}` : ""}${input.execIssueId ? `\uFF0C\u8840\u7F18 exec:${input.execIssueId}` : ""}`,
       ...input.sceneCode ? { sceneCode: input.sceneCode } : {}
     });
     return record;
+  }
+  /** exec-hub 软读（执行中枢投影）：缺席（01门演示态）→ undefined，端点级诚实降级。 */
+  execHub() {
+    return this.soft("execHub");
+  }
+  /** 面板泳道 → exec-hub 任务状态镜像（todo/doing/review/done ↔ todo/in_progress/review/done）。 */
+  laneToIssueStatus(lane) {
+    return lane === "doing" ? "in_progress" : lane;
   }
   transitionTask(taskId, lane, actorId) {
     const task = this.tasks().get(taskId);
     if (!task) throw new Error(`\u4EFB\u52A1\u4E0D\u5B58\u5728\uFF1A${taskId}`);
     if (!TASK_LANES.includes(lane)) throw new Error(`\u975E\u6CD5\u6CF3\u9053\uFF1A${lane}`);
     const updated = this.tasks().update(taskId, { lane });
+    let mirror = "";
+    if (task.execIssueId) {
+      const hub = this.execHub();
+      if (!hub) mirror = "\uFF1Bexec-hub \u7F3A\u5E2D\uFF0C\u4EC5\u672C\u5730\u6D41\u8F6C";
+      else {
+        try {
+          hub.transitionIssue(task.execIssueId, this.laneToIssueStatus(lane), `panel:${actorId}`);
+          mirror = `\uFF1B\u955C\u50CF exec:${task.execIssueId} \u2192 ${this.laneToIssueStatus(lane)}`;
+        } catch (error) {
+          mirror = `\uFF1B\u955C\u50CF\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`;
+        }
+      }
+    }
     this.ctx.platformBus.emit(PlatformEvents.PanelTaskUpdated, { taskId, dept: task.dept, lane, actorId, title: task.title });
     this.auditSafe({
       type: "change",
@@ -815,10 +943,83 @@ ${sceneSummary}` : "",
       resourceId: taskId,
       resourceName: task.title,
       result: "ok",
-      detail: `${task.lane} \u2192 ${lane}`,
+      detail: `${task.lane} \u2192 ${lane}${mirror}`,
       ...task.sceneCode ? { sceneCode: task.sceneCode } : {}
     });
     return updated;
+  }
+  /**
+   * 验收裁决（DSH issue#4 修订，2026-10-29）：签认关闭（accepted）/ 打回返工（rework）。
+   * 结论落面板任务 + 镜像回写 exec-hub（accepted→done；rework→in_progress 重开返工）；
+   * 同一任务不可重复裁决；镜像失败如实留痕不阻塞结论（对账靠 audit detail）。
+   */
+  taskVerdict(taskId, verdict, input) {
+    const task = this.tasks().get(taskId);
+    if (!task) throw new Error(`\u4EFB\u52A1\u4E0D\u5B58\u5728\uFF1A${taskId}`);
+    if (task.verdict) throw new Error(`\u4EFB\u52A1\u5DF2\u6709\u9A8C\u6536\u7ED3\u8BBA\uFF08${task.verdict === "accepted" ? "\u7B7E\u8BA4" : "\u8FD4\u5DE5"}\uFF09\uFF0C\u4E0D\u53EF\u91CD\u590D\u88C1\u51B3`);
+    const updated = this.tasks().update(taskId, {
+      verdict,
+      verdictBy: input.actorId,
+      verdictAt: (/* @__PURE__ */ new Date()).toISOString(),
+      ...input.opinion ? { verdictOpinion: input.opinion } : {}
+    });
+    let mirror = "exec-hub \u7F3A\u5E2D\uFF0C\u4EC5\u672C\u5730\u843D\u7ED3\u8BBA";
+    const hub = task.execIssueId ? this.execHub() : void 0;
+    if (hub && task.execIssueId) {
+      const target = verdict === "accepted" ? "done" : "in_progress";
+      try {
+        hub.transitionIssue(task.execIssueId, target, `panel:${input.actorId}`);
+        mirror = `\u955C\u50CF exec:${task.execIssueId} \u2192 ${target}`;
+      } catch (error) {
+        mirror = `\u955C\u50CF\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`;
+      }
+    }
+    this.ctx.platformBus.emit(PlatformEvents.PanelTaskUpdated, {
+      taskId,
+      dept: task.dept,
+      lane: updated.lane,
+      actorId: input.actorId,
+      title: task.title,
+      verdict,
+      ...task.execIssueId ? { execIssueId: task.execIssueId } : {}
+    });
+    this.auditSafe({
+      type: "change",
+      actorType: input.actorId.startsWith("agent:") ? "machine" : "human",
+      actorId: input.actorId,
+      actorName: input.actorId,
+      action: "panel.task.verdict",
+      resourceType: "panel_task",
+      resourceId: taskId,
+      resourceName: task.title,
+      result: "ok",
+      detail: `\u9A8C\u6536\u7ED3\u8BBA ${verdict === "accepted" ? "\u7B7E\u8BA4\u5173\u95ED" : "\u6253\u56DE\u8FD4\u5DE5"}${input.opinion ? `\uFF08${input.opinion}\uFF09` : ""}\uFF1B${mirror}`,
+      ...task.sceneCode ? { sceneCode: task.sceneCode } : {}
+    });
+    return updated;
+  }
+  /**
+   * 部门目标投影（DSH issue#4 修订，2026-10-29）：读透 exec-hub（不复制权威状态）——
+   * 目标（含 metric 基线/目标值）+ 任务（含血缘 goalAncestry/执行锁）+ 面板侧关联任务 ID。
+   * 范围：部门绑定组织 → 该组织子树；未绑定 → 全量（与部门范围权限同口径）。
+   * exec-hub 缺席 → null（调用方 503 DEGRADED 诚实降级）。
+   */
+  deptGoalsProjection(dept) {
+    const hub = this.execHub();
+    if (!hub) return null;
+    const iam = this.soft("iam");
+    const orgScoped = dept.orgId && iam ? (orgId) => this.orgSubtreeContains(dept.orgId, orgId) : () => true;
+    const panelTaskByIssue = /* @__PURE__ */ new Map();
+    for (const task of this.tasks().find((item) => item.dept === dept.id)) {
+      if (!task.execIssueId) continue;
+      panelTaskByIssue.set(task.execIssueId, [...panelTaskByIssue.get(task.execIssueId) ?? [], task.id]);
+    }
+    const goals = hub.goals().all().filter((goal) => orgScoped(goal.orgId)).map((goal) => ({ ...goal }));
+    const issues = hub.issues().all().filter((issue) => orgScoped(issue.orgId)).map((issue) => ({
+      ...issue,
+      panelTaskIds: panelTaskByIssue.get(String(issue.id)) ?? []
+    }));
+    return { goals, issues };
   }
   // -- 场景诊断（会话 × 图谱联动） -------------------------------------------------
   /** 场景编号规范引用（如 QB01-A-2-5）——会话产出沉淀回转型路线图的联动点。 */
