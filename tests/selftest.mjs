@@ -10393,6 +10393,24 @@ try {
         check('hostlink：timeoutMs 覆盖单级判定（覆盖窗内无健康响应即拒）',
           linkSlowOverride.status === 400 && /不可达/.test(String(linkSlowOverride.body?.error?.message ?? '')),
           JSON.stringify({ status: linkSlowOverride.status, body: linkSlowOverride.body }))
+        // -- issue #9（2026-11-03）：hubProxyBase 数据面/浏览器面分流——hubBase 不可达仍可连接
+        //    （探测/代理走 proxyBase 数据面），浏览器面展示与令牌作用域仍保持 hubBase --
+        {
+          const pbDir = join('data-selftest', 'hostlink-proxybase')
+          await mkdir(pbDir, { recursive: true })
+          const pbSvc = new rqCard.HostLinkService(new Context(), { dataDir: pbDir, proxyBase: hubA })
+          const pbRemote = await pbSvc.setRemote('http://127.0.0.1:1')
+          check('hostlink：hubProxyBase 分流（hubBase 不可达仍可连接，探测走数据面 proxyBase）',
+            pbRemote.config.mode === 'remote' && pbRemote.config.hubBase === 'http://127.0.0.1:1'
+            && pbRemote.probe.reachable === true && pbRemote.probe.version === '9.9.9-hubA'
+            && pbSvc.dataBase() === hubA,
+            JSON.stringify({ config: pbRemote.config, probe: pbRemote.probe, dataBase: pbSvc.dataBase() }))
+          const pbSvc2 = new rqCard.HostLinkService(new Context(), { dataDir: pbDir })
+          const pbFallback = await pbSvc2.setRemote(hubA)
+          check('hostlink：未配 proxyBase 回落 hubBase（缺省行为不变）',
+            pbFallback.config.hubBase === hubA && pbFallback.probe.reachable === true && pbSvc2.dataBase() === hubA,
+            JSON.stringify({ dataBase: pbSvc2.dataBase() }))
+        }
         await wfetchSim('POST', '/gate01/rqcard/link/remote', { body: { hubBase: hubA } }) // 还原宿主 A 供后续断言
 
         // -- 远端代理：白名单转发 + Authorization 透传 + 白名单外 403 --

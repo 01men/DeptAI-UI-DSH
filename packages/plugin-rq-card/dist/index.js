@@ -19,7 +19,7 @@ const name = "rq-card";
 const inject = ["httpServer", "tools", "opsStorage"];
 function apply(ctx, config = {}) {
   const http = ctx.httpServer;
-  const link = new HostLinkService(ctx, { dataDir: config.dataDir, scanPorts: config.scanPorts });
+  const link = new HostLinkService(ctx, { dataDir: config.dataDir, scanPorts: config.scanPorts, proxyBase: config.hubProxyBase });
   const wizardGuard = (exchange) => {
     const raw = exchange.headers[RQCARD_CALL_HEADER];
     const value = String(Array.isArray(raw) ? raw[0] : raw ?? "");
@@ -36,7 +36,7 @@ function apply(ctx, config = {}) {
   http.register("GET", "/rqcard/link", async (exchange) => {
     if (!wizardGuard(exchange)) return;
     const cfg = link.getConfig();
-    const probe = cfg.mode === "remote" && cfg.hubBase ? await link.probeHub(cfg.hubBase).catch(() => null) : null;
+    const probe = cfg.mode === "remote" && cfg.hubBase ? await link.probeHub(link.dataBase() || cfg.hubBase).catch(() => null) : null;
     exchange.ok({
       mode: cfg.mode,
       hubBase: cfg.hubBase ?? null,

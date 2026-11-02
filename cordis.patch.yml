@@ -64,3 +64,7 @@
     # 永远解析不到 → 1 entry did not activate）；根包名在一切安装形态下必然顶层在位。
     - id: rq-card
       name: '@ybkk/gate-01'
+      # 同宿主分离部署（issue #9，2026-11-03）：公网域名作浏览器面、回环作数据面时，
+      # 打开下行注释为 rq-card 配置数据面地址（代理/探测走它；向导展示与令牌作用域仍用 hubBase）：
+      # config:
+      #   hubProxyBase: 'http://127.0.0.1:7302'

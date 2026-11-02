@@ -42,11 +42,18 @@ class HostLinkService {
   configFile;
   config;
   scanPorts;
+  /** 数据面服务侧地址（null = 回落 config.hubBase）。 */
+  proxyBase;
+  /** 代理/探测实际取用的数据面基址（issue #9 分流点；对向导状态面同样公开）。 */
+  dataBase() {
+    return this.proxyBase ?? this.config.hubBase ?? "";
+  }
   constructor(ctx, options = {}) {
     this.ctx = ctx;
     this.configFile = join(options.dataDir ?? ctx.opsStorage.dataDirPath, "gate01-host-link.json");
     this.config = this.load();
     this.scanPorts = options.scanPorts ?? DEFAULT_SCAN_PORTS;
+    this.proxyBase = options.proxyBase ? normalizeHubBase(options.proxyBase) : null;
   }
   /** 当前配置（对外只读）。 */
   getConfig() {
@@ -74,9 +81,10 @@ class HostLinkService {
   async setRemote(hubBaseInput, label, opts = {}) {
     const hubBase = normalizeHubBase(hubBaseInput);
     const override = typeof opts.timeoutMs === "number" && Number.isFinite(opts.timeoutMs) ? Math.min(PROBE_TIMEOUT_OVERRIDE_MAX_MS, Math.max(PROBE_TIMEOUT_OVERRIDE_MIN_MS, Math.round(opts.timeoutMs))) : null;
-    let probe = await this.probeHub(hubBase, override ?? PROBE_TIMEOUT_MS * 4);
+    const probeBase = this.proxyBase ?? hubBase;
+    let probe = await this.probeHub(probeBase, override ?? PROBE_TIMEOUT_MS * 4);
     if (!probe.reachable && override === null) {
-      probe = await this.probeHub(hubBase, PROBE_TIMEOUT_SLOW_MS);
+      probe = await this.probeHub(probeBase, PROBE_TIMEOUT_SLOW_MS);
     }
     if (!probe.reachable) {
       throw new Error(`\u5BBF\u4E3B\u4E0D\u53EF\u8FBE\uFF1A${hubBase}\uFF08\u5065\u5EB7\u68C0\u67E5\u65E0\u54CD\u5E94\uFF0C\u8BF7\u786E\u8BA4\u5730\u5740/\u7AEF\u53E3/\u9632\u706B\u5899\uFF1B\u8DE8\u7F51\u5BBF\u4E3B\u7F51\u7EDC\u6162\u65F6\u5DF2\u653E\u5BBD\u5230 6s/\u524D\u7F00\u590D\u63A2\u8FC7\u4E00\u8F6E\uFF0C\u4ECD\u4E0D\u901A\u591A\u534A\u662F\u5730\u5740\u6216\u7F51\u7EDC\u4E0D\u901A\uFF09`);
@@ -178,7 +186,7 @@ class HostLinkService {
       return;
     }
     const query = exchange.query.toString();
-    const target = `${this.config.hubBase}${this.config.hubMountPrefix ?? ""}${path}${query ? `?${query}` : ""}`;
+    const target = `${this.dataBase() || this.config.hubBase}${this.config.hubMountPrefix ?? ""}${path}${query ? `?${query}` : ""}`;
     const streamPath = path === "/api/panel/stream";
     const headers = { accept: streamPath ? "text/event-stream" : "application/json" };
     const authorization = exchange.headers.authorization;

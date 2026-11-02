@@ -81,6 +81,12 @@ export interface RqCardConfig {
   dataDir?: string
   /** LAN 扫描候选端口（默认 [7300, 3080]；测试可注入）。 */
   scanPorts?: number[]
+  /**
+   * 数据面服务侧地址（issue #9，2026-11-03）：代理/健康探测取用；浏览器面
+   * （向导展示、link 下发、令牌作用域键）仍用 hubBase。同宿主分离部署
+   * （公网域名浏览器面 + 回环数据面）时配置，缺省回落 hubBase。
+   */
+  hubProxyBase?: string
 }
 
 export const name = 'rq-card'
@@ -95,7 +101,7 @@ export const inject = ['httpServer', 'tools', 'opsStorage']
  */
 export function apply(ctx: Context, config: RqCardConfig = {}) {
   const http = ctx.httpServer
-  const link = new HostLinkService(ctx, { dataDir: config.dataDir, scanPorts: config.scanPorts })
+  const link = new HostLinkService(ctx, { dataDir: config.dataDir, scanPorts: config.scanPorts, proxyBase: config.hubProxyBase })
 
   /** 向导调用头校验（CSRF 防线，见 hostlink.ts 文件头「自带防线」第 1 条）。 */
   const wizardGuard = (exchange: HttpExchange): boolean => {
@@ -117,7 +123,7 @@ export function apply(ctx: Context, config: RqCardConfig = {}) {
   http.register('GET', '/rqcard/link', async (exchange) => {
     if (!wizardGuard(exchange)) return
     const cfg = link.getConfig()
-    const probe = cfg.mode === 'remote' && cfg.hubBase ? await link.probeHub(cfg.hubBase).catch(() => null) : null
+    const probe = cfg.mode === 'remote' && cfg.hubBase ? await link.probeHub(link.dataBase() || cfg.hubBase).catch(() => null) : null
     exchange.ok({
       mode: cfg.mode,
       hubBase: cfg.hubBase ?? null,

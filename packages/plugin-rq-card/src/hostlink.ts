@@ -120,6 +120,12 @@ export interface HostLinkOptions {
   dataDir?: string
   /** 扫描候选端口覆盖（测试注入用）。 */
   scanPorts?: number[]
+  /**
+   * 数据面服务侧地址（issue #9，2026-11-03）：代理（proxy）与健康探测（setRemote/link 状态）
+   * 取本地址，浏览器面（向导展示、link 下发、令牌作用域键）仍用 hubBase。
+   * 同宿主分离部署（公网域名作浏览器面 + 回环作数据面）时配置，缺省回落 hubBase。
+   */
+  proxyBase?: string
 }
 
 export class HostLinkService {
@@ -127,12 +133,21 @@ export class HostLinkService {
   private configFile: string
   private config: HostLinkConfig
   private readonly scanPorts: number[]
+  /** 数据面服务侧地址（null = 回落 config.hubBase）。 */
+  private readonly proxyBase: string | null
+
+  /** 代理/探测实际取用的数据面基址（issue #9 分流点；对向导状态面同样公开）。 */
+  dataBase(): string {
+    return this.proxyBase ?? this.config.hubBase ?? ''
+  }
 
   constructor(ctx: Context, options: HostLinkOptions = {}) {
     this.ctx = ctx
     this.configFile = join(options.dataDir ?? ctx.opsStorage.dataDirPath, 'gate01-host-link.json')
     this.config = this.load()
     this.scanPorts = options.scanPorts ?? DEFAULT_SCAN_PORTS
+    // 部署级配置错误在装配期响亮失败（错地址比静默回落更易发现）
+    this.proxyBase = options.proxyBase ? normalizeHubBase(options.proxyBase) : null
   }
 
   /** 当前配置（对外只读）。 */
@@ -167,9 +182,12 @@ export class HostLinkService {
     const override = typeof opts.timeoutMs === 'number' && Number.isFinite(opts.timeoutMs)
       ? Math.min(PROBE_TIMEOUT_OVERRIDE_MAX_MS, Math.max(PROBE_TIMEOUT_OVERRIDE_MIN_MS, Math.round(opts.timeoutMs)))
       : null
-    let probe = await this.probeHub(hubBase, override ?? PROBE_TIMEOUT_MS * 4)
+    // 探测目标 = 数据面地址：proxyBase（部署配置）优先，否则本次正在连接的 hubBase 实参——
+    // 不可回落旧 config.hubBase（那是上一个连接的地址，探测它会把「不可达新地址」误判成可达）
+    const probeBase = this.proxyBase ?? hubBase
+    let probe = await this.probeHub(probeBase, override ?? PROBE_TIMEOUT_MS * 4)
     if (!probe.reachable && override === null) {
-      probe = await this.probeHub(hubBase, PROBE_TIMEOUT_SLOW_MS)
+      probe = await this.probeHub(probeBase, PROBE_TIMEOUT_SLOW_MS)
     }
     if (!probe.reachable) {
       throw new Error(`宿主不可达：${hubBase}（健康检查无响应，请确认地址/端口/防火墙；跨网宿主网络慢时已放宽到 6s/前缀复探过一轮，仍不通多半是地址或网络不通）`)
@@ -274,7 +292,8 @@ export class HostLinkService {
     }
     const query = exchange.query.toString()
     // 远端登录入口（钉钉扫码页）按宿主真实挂载前缀构造——前缀判定由 probeHub 严格判据保证
-    const target = `${this.config.hubBase}${this.config.hubMountPrefix ?? ''}${path}${query ? `?${query}` : ''}`
+    // 数据面/浏览器面分流（issue #9）：代理转发走数据面地址（proxyBase ?? hubBase）
+    const target = `${this.dataBase() || this.config.hubBase}${this.config.hubMountPrefix ?? ''}${path}${query ? `?${query}` : ''}`
     const streamPath = path === '/api/panel/stream'
     const headers: Record<string, string> = { accept: streamPath ? 'text/event-stream' : 'application/json' }
     const authorization = exchange.headers.authorization

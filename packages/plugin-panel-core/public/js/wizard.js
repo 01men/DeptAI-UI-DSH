@@ -243,13 +243,18 @@ async function renderRemoteCard(root, base) {
   }
 }
 
-/** 远端连接成功后的登录步骤：账号密码（代理全闭环）+ 钉钉扫码（宿主页完成，G1 回跳前向兼容）。 */
+/** 远端连接成功后的登录步骤：账号密码（代理全闭环）+ 钉钉扫码（宿主页完成）。 */
 function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
   const hubPanelBase = `${hubBase}${hubMountPrefix}`
-  // G1 前向兼容（交接清单 handoff-f-remainder G1-a）：把本机面板绝对地址作为 next 带给宿主登录页——
-  // 宿主已采纳回跳增强时，扫码/登录完成即按 next 自动回到本机 dsh 并携带一次性 entry_ticket
-  // （boot.js 兑换建立会话）；未采纳的宿主按防 open redirect 白名单忽略跨源 next（落宿主默认页），
-  // 行为与从前一致、无害。
+  // 跨源 next 回跳的现实边界（issue #8，2026-11-03 诚实化）：宿主侧防 open redirect 白名单
+  // （console landing.js sanitizeCrossOriginNext）只放行回环/私网面板地址——内网宿主扫码后
+  // 自动回本机；公网域名宿主不回跳（一次性票据不进公网跳转链），完成后走「我已完成扫码」
+  // 校验 + 账号密码登录。hubBase 形态判定用与白名单同一启发式，仅作提示文案分流（非安全边界）。
+  const hubHostname = (() => { try { return new URL(hubBase).hostname } catch { return '' } })()
+  const hubIsLanOrLoopback = /^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|\[::1\]$)/.test(hubHostname)
+  const scanReturnHint = hubIsLanOrLoopback
+    ? '内网/本机宿主：扫码完成后自动回到本页；若未自动返回请点下方「我已完成扫码」。'
+    : '公网域名宿主：出于防跳转安全边界（仅内网/回环可信），扫码完成后不会自动回跳，请点下方「我已完成扫码」并按提示用账号密码登录（同一宿主账号，经本机代理全闭环）。'
   const localPanelUrl = `${location.origin}${base}/panel/`
   body.innerHTML = `
     <div class="wz-ok">✅ 已连接服务器 <b>${esc(hubBase)}</b>${version ? `（v${esc(version)}）` : ''}</div>
@@ -259,7 +264,7 @@ function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
       <button class="btn primary" id="wzLoginGo">登录</button>
     </div>
     <button class="btn wz-dd" id="wzLoginDd">💬 用钉钉扫码登录</button>
-    <p class="wz-hint">没有账号？请联系管理员开通。账号登录成功后自动进入本工作台；钉钉扫码会打开登录页，完成后自动回到本页，若未自动返回请点下方「我已完成扫码」。</p>
+    <p class="wz-hint">没有账号？请联系管理员开通。账号登录成功后自动进入本工作台。钉钉扫码会打开登录页：${esc(scanReturnHint)}</p>
     <button class="btn wz-back" id="wzLoginCheck">我已完成扫码——校验本机会话</button>
     <button class="btn wz-back" id="wzLoginBack">← 重新选择服务器</button>
     <div id="wzLoginErr" class="wz-err"></div>`
@@ -281,7 +286,7 @@ function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
     setConnectionScope(hubBase)
     setRemoteProxy(true)
     if (!session.token) {
-      errBox.textContent = '本机没有该连接的会话：宿主页的扫码会话无法跨站带回（浏览器同源隔离）。请用上方账号密码登录（同一宿主账号，经本机代理全闭环）；宿主侧 G1 回跳增强上线后扫码将自动带回本机。'
+      errBox.textContent = `本机没有该连接的会话：宿主页的扫码会话无法跨站带回（浏览器同源隔离）。${hubIsLanOrLoopback ? '当前为内网/本机宿主，正常应已自动回跳带票；未带回多为登录未完成，请重试或' : '当前为公网域名宿主，基于防跳转安全边界（仅内网/回环可信）不会自动回跳，请'}用上方账号密码登录（同一宿主账号，经本机代理全闭环）。`
       return
     }
     try {
@@ -289,7 +294,7 @@ function renderRemoteLogin(body, base, { hubBase, hubMountPrefix, version }) {
       window.location.reload()
     } catch {
       session.clear()
-      errBox.textContent = '本机会话已失效：宿主页的扫码会话无法跨站带回（浏览器同源隔离）。请用上方账号密码重新登录（同一宿主账号，经本机代理全闭环）。'
+      errBox.textContent = `本机会话已失效：宿主页的扫码会话无法跨站带回（浏览器同源隔离）。${hubIsLanOrLoopback ? '内网/本机宿主请重试扫码，或' : '公网域名宿主不会自动回跳，请'}用上方账号密码重新登录（同一宿主账号，经本机代理全闭环）。`
     }
   }
   body.querySelector('#wzLoginBack').onclick = () => {
