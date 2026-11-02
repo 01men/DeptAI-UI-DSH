@@ -91,7 +91,7 @@ export function apply(ctx: Context) {
     },
     output: { type: 'object', additionalProperties: true },
     async execute(args) {
-      const skill = await ctx.skillHub.publish(args.skillId, args.version, { id: 'platform', name: 'agent-tool' })
+      const skill = await ctx.skillHub.publish(args.skillId, args.version, { id: 'platform', name: typeof args.actor === 'string' && args.actor ? args.actor : 'agent-tool' })
       const target = skill.versions.find((item) => item.version === args.version)
       return { id: skill.id, status: skill.status, package: target?.package ?? null }
     },
@@ -108,7 +108,7 @@ export function apply(ctx: Context) {
     },
     output: { type: 'object', additionalProperties: true },
     async execute(args) {
-      const skill = ctx.skillHub.install(args.skillId, args.version, args.agentId, 'agent-tool')
+      const skill = ctx.skillHub.install(args.skillId, args.version, args.agentId, typeof args.actor === 'string' && args.actor ? args.actor : 'agent-tool')
       return { id: skill.id, installs: skill.stats.installs, note: translate('依赖已登记到资源依赖图') }
     },
   }))
@@ -124,7 +124,7 @@ export function apply(ctx: Context) {
     },
     output: { type: 'object', additionalProperties: true },
     async execute(args) {
-      const result = ctx.skillHub.deprecate(args.skillId, 'agent-tool', args.reason, args.force)
+      const result = ctx.skillHub.deprecate(args.skillId, typeof args.actor === 'string' && args.actor ? args.actor : 'agent-tool', args.reason, args.force)
       return {
         id: result.skill.id, status: result.skill.status,
         referencingAgents: result.referencingAgents,

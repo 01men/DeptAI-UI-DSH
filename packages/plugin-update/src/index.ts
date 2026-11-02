@@ -1,7 +1,7 @@
 /**
  * @dsh-ops/plugin-update —— 平台自更新插件（版本检查 / 更新通知 / 一键升级）。
  *
- * 面向两类安装形态（上游均为 GitHub 仓库 01men/ybkk-AIOS）：
+ * 面向两类安装形态（上游均为 GitHub 仓库 01men/ybkkasi）：
  *   - source（git 源码检出）：版本比对 + GitHub compare API 给出「落后 N 个提交及摘要」；
  *     支持控制台/CLI/Agent 一键升级（git pull --ff-only + npm install + 提示重启），
  *     支持 dry-run 预演，全程审计留痕
@@ -44,7 +44,7 @@ export interface UpdateConfig {
   autoCheck?: boolean
   /** 自动检查间隔小时数（默认 24；运行期可调，0 视为关闭自动检查）。 */
   intervalHours?: number
-  /** 上游仓库 owner/name（默认 01men/ybkk-AIOS）。 */
+  /** 上游仓库 owner/name（默认 01men/ybkkasi，与 git remote / package.json.repository 一致）。 */
   repo?: string
   /** 上游默认分支（默认 main）。 */
   branch?: string
@@ -64,7 +64,7 @@ export interface ResolvedSource {
   timeoutMs: number
 }
 
-const DEFAULT_REPO = '01men/ybkk-AIOS'
+const DEFAULT_REPO = '01men/ybkkasi'
 const DEFAULT_BRANCH = 'main'
 const DEFAULT_API_BASE = 'https://api.github.com'
 const DEFAULT_RAW_BASE = 'https://raw.githubusercontent.com'
@@ -81,6 +81,40 @@ export function resolveSource(config: UpdateConfig): ResolvedSource {
     apiBase: (process.env.DSH_UPDATE_API_BASE ?? config.apiBase ?? DEFAULT_API_BASE).replace(/\/+$/, ''),
     rawBase: (process.env.DSH_UPDATE_RAW_BASE ?? config.rawBase ?? DEFAULT_RAW_BASE).replace(/\/+$/, ''),
     timeoutMs: Math.max(Number(config.timeoutMs) || 10_000, 2_000),
+  }
+}
+
+/** contents 回退响应形态（GitHub contents API：base64 内容）。 */
+interface ContentsResponse { content?: string; encoding?: string; version?: string }
+
+/**
+ * 远端版本号获取（导出供自测直测回退路径）：raw package.json 优先，失败回退
+ * GitHub contents API（base64 解码）。返回实际命中的来源（github-raw / github-api-contents）。
+ */
+export async function fetchUpstreamVersion(source: ResolvedSource, headers: Record<string, string>, signal?: AbortSignal): Promise<{ version: string; via: string }> {
+  const rawUrl = `${source.rawBase}/${source.repo}/${source.branch}/package.json`
+  try {
+    const res = await fetch(rawUrl, { headers, signal })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const pkg = await res.json() as { version?: string }
+    const version = String(pkg.version ?? '')
+    if (!version) throw new Error(translate('远端 package.json 无 version 字段'))
+    return { version, via: 'github-raw' }
+  } catch (rawError) {
+    const rawMessage = rawError instanceof Error ? rawError.message : String(rawError)
+    const apiUrl = `${source.apiBase}/repos/${source.repo}/contents/package.json?ref=${encodeURIComponent(source.branch)}`
+    try {
+      const res = await fetch(apiUrl, { headers, signal })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json() as ContentsResponse
+      if (data.encoding !== 'base64' || !data.content) throw new Error(translate('contents 响应缺少 base64 内容'))
+      const pkg = JSON.parse(Buffer.from(data.content, 'base64').toString('utf8')) as { version?: string }
+      const version = String(pkg.version ?? '')
+      if (!version) throw new Error(translate('远端 package.json 无 version 字段'))
+      return { version, via: 'github-api-contents' }
+    } catch (apiError) {
+      throw new Error(translate('raw {raw} / contents 回退 {message}', { raw: rawMessage, message: apiError instanceof Error ? apiError.message : String(apiError) }))
+    }
   }
 }
 
@@ -339,15 +373,12 @@ export class UpdateService extends Service {
       let commits: UpstreamCommit[] = []
       const errors: string[] = []
 
-      // 1) 远端版本号（raw package.json，两种安装形态通用）
+      // 1) 远端版本号（raw 优先；raw 不可达时回退 contents API——两个域名网络可达性常不一致，
+      //    2026-11-02 实测 raw 失败但 api.github.com 正常；两路都失败才记「版本获取失败」）
       try {
-        const rawUrl = `${this.source.rawBase}/${this.source.repo}/${this.source.branch}/package.json`
-        const res = await fetch(rawUrl, { headers, signal })
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const pkg = await res.json() as { version?: string }
-        latestVersion = String(pkg.version ?? '')
-        if (!latestVersion) throw new Error(translate('远端 package.json 无 version 字段'))
-        sources.push('github-raw')
+        const fetched = await fetchUpstreamVersion(this.source, headers, signal)
+        latestVersion = fetched.version
+        sources.push(fetched.via)
       } catch (error) {
         errors.push(translate('版本获取失败：{message}', { message: error instanceof Error ? error.message : String(error) }))
       }

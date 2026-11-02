@@ -237,7 +237,10 @@ export function registerSkillRoutes(ctx: Context, deps: ConsoleRouteDeps): void 
     const skill = ctx.skillHub.detail(exchange.params['id']!)
     // P1-02：包下载按同一可见性裁决（普通成员只能拿可见 Skill 的包，跨组织/受限项拒绝）
     if (!skillVisibleTo(skill, exchange)) throw new Error(t('Skill 不存在：{id}', { id: skill.id }))
-    return ctx.skillHub.download(skill.id, version ?? skill.currentVersion, { id: info.userId ?? info.principalId, name: info.name })
+    const result = ctx.skillHub.download(skill.id, version ?? skill.currentVersion, { id: info.userId ?? info.principalId, name: info.name })
+    // 使用留痕（2026-11-02）：下载即使用事实，逐次落审计（成员经 actorId 关联）
+    changeLog(exchange, 'skill.download', 'skill', skill.id, skill.name, `v${version ?? skill.currentVersion} · by=${info.name}`)
+    return result
   })
 
   /** skill.zip 包下载：与 NAS 上架产物同源（提交携带的原始包或 SKILL.md 现场打包）。 */
@@ -245,7 +248,13 @@ export function registerSkillRoutes(ctx: Context, deps: ConsoleRouteDeps): void 
     const skill = ctx.skillHub.detail(exchange.params['id']!)
     // P1-02：原始包下载按同一可见性裁决（与 download/install 同口径，不可见按不存在处理）
     if (!skillVisibleTo(skill, exchange)) throw new Error(t('Skill 不存在：{id}', { id: exchange.params['id'] }))
-    const pkg = ctx.skillHub.packageOf(skill.id, exchange.query.get('version') ?? skill.currentVersion)
+    const info = caller(exchange)
+    const pkgVersion = exchange.query.get('version') ?? skill.currentVersion
+    const pkg = ctx.skillHub.packageOf(skill.id, pkgVersion)
+    // 使用留痕（2026-11-02）：skill.zip 包获取此前零留痕——补下载流水登记（与 download 同口径，
+    // 供热力/授权判定消费）+ 审计（成员经 actorId 关联）
+    ctx.skillHub.recordPackageFetch(skill.id, pkgVersion, { id: info.userId ?? info.principalId, name: info.name })
+    changeLog(exchange, 'skill.package.fetch', 'skill', skill.id, skill.name, `v${pkgVersion} · by=${info.name} · ${pkg.buffer.length}B`)
     // 中文 slug 文件名：ASCII 回退 + RFC 5987 UTF-8 形式（非 Latin1 字符直接进头会损坏响应）
     exchange.res.writeHead(200, {
       'content-type': 'application/zip',

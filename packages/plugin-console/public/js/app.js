@@ -92,6 +92,8 @@ const NAV = [
     { path: '#/agents', label: 'Agent 本体', icon: 'bot', perm: 'agent.read' },
     { path: '#/apps', label: 'AI 应用', icon: 'app', perm: 'app.read' },
     { path: '#/mcp', label: 'MCP 服务', icon: 'plug', perm: 'mcp.service.read' },
+    // 个人接入令牌与 MCP 调用配置（归属 MCP 服务板块：配置的是本平台 /mcp 工具面的接入）
+    { path: '#/me', label: '我的接入', icon: 'user', perm: 'console.login' },
     { path: '#/nas', label: 'NAS 存储', icon: 'server', perm: 'nas.read' },
     { path: '#/connectors', label: '连接器', icon: 'plug', perm: 'connector.catalog.read' },
   ] },
@@ -118,9 +120,6 @@ const NAV = [
     { path: '#/access', label: '平台接入', icon: 'fingerprint', perm: 'connect.manage' },
     { path: '#/connections', label: '宿主服务连接', icon: 'server', perm: 'console.login' },
     { path: '#/platform', label: '插件与工具', icon: 'puzzle', perm: 'console.login' },
-  ] },
-  { section: '个人', items: [
-    { path: '#/me', label: '我的接入', icon: 'user', perm: 'console.login' },
   ] },
 ]
 

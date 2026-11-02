@@ -39,6 +39,31 @@ demo.ybkkasi.com 挂上 01门（DeptAI-UI-DSH，dsh demo profile :7778，远端�
   看板/任务/频道/SSE 全通），客户全程零输入。部署与验收记录：
   `docs/internal/gate01-demo-deploy-20261101.md`。
 
+## [Unreleased] · 工具面留痕关联成员 + 同人审批放开 + 升级检测修复 + Officers 每日提报（2026-11-02）
+
+用户实测五项反馈一并落地：
+
+- **工具面调用留痕（补审计断链）**：`/mcp` 与 REST `/api/tools/execute` 此前调用成功零留痕
+  （仅权限拒绝有事件）——新增 `tool.invoked` 平台事件（每次调用成功/失败，含调用者身份与耗时），
+  audit 订阅逐次落 `tool.invoke`；**actorId 即成员 userId，human PAT 调用直接与成员关联**。
+  skill 下载链路补审计：POST download 补 changeLog；GET package（skill.zip 直下）此前零留痕——
+  补下载流水登记 + 审计；工具面 skill_install/publish/deprecate 写死 'agent-tool' 的归因失效
+  一并修复（消费桥接注入的调用者身份）。
+- **同人审批全类型放开（R12 终审移除）**：删除 plugin-audit 最后一处职责分离硬编码
+  （agent.online 雇佣语义的同人拒绝）——AI 原生组织人少，管理员自提自批直接通过；
+  权限点与高风险 confirmed 二次确认语义不变。
+- **升级检测修复**：默认上游仓库名 `01men/ybkk-AIOS`（不存在→compare 404）修正为
+  `01men/ybkkasi`（与 git remote/package.json.repository 一致）；raw.githubusercontent 不可达时
+  **回退 GitHub contents API 取版本**（base64 解码，导出 fetchUpstreamVersion 供自测直测）——
+  latest 不再沿用陈旧缓存（1.1.0），版本+提交双口径恢复可信。
+- **Officers 每日提报一键挂载**：新增幂等脚本 `scripts/onboard-officer-reporting.mjs`——
+  三官各建每日 cron 例行（`0 1 * * *` UTC=北京 09:00）+ 每日循环任务（metrics-report 自报指令
+  进上下文包）+ 机器主体 scopes 补 exec.read/write + 心跳 30 分钟；`--weknora-key=` 一键重配
+  WeKnora 凭据（上游 403=key 失效，需 WeKnora 控制台重新签发后带上参数重跑）。
+  控制台「我的接入」归入资源板块「MCP 服务」之后。
+- **自测**：+3 断言（contents 回退直测/PAT 工具面调用留痕关联成员/skill 下载留痕），
+  R12 断言反转为同人通过；1822/1822 全绿。
+
 ## [Unreleased] · transition 权限按动作分支 + 员工自助 MCP 调用配置（2026-11-02）
 
 全局 API/MCP 对齐审查发现两项权限口径问题（REST/工具两面对同一动作要求不同权限点；目录点

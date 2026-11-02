@@ -520,6 +520,16 @@ export class SkillHubService extends Service {
     return { content: target.content }
   }
 
+  /** 包获取留痕（2026-11-02）：skill.zip 直下（GET /package）与 SKILL.md 下载同口径登记
+   *  下载流水 + 统计 + 计量——此前包直下零留痕，使用凭证/授权判定（asset-reports skillGranted）
+   *  依赖 downloads 流水，漏记会导致「已获取但报未授权」。 */
+  recordPackageFetch(skillId: string, version: string, user: { id: string; name: string }): void {
+    const skill = this.requireSkill(skillId)
+    const record = this.downloads().insert({ id: newId('dwl'), skillId, version, userId: user.id, userName: user.name })
+    this.skills().update(skillId, { stats: { ...skill.stats, downloads: skill.stats.downloads + 1 } })
+    this.meterSkillUsage(skill, 'downloads', `skill:dl:${record.id}`, `user:${user.id}`)
+  }
+
   /** 安装到 Agent：登记依赖关系（资源依赖图自动回填）。 */
   install(skillId: string, version: string, agentId: string, actor: string): SkillRecord {
     const skill = this.requireSkill(skillId)
