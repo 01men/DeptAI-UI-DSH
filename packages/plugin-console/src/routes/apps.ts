@@ -11,12 +11,14 @@ import { scopedOrgFilterOf } from './iam.ts'
 
 export interface AppRouteDeps extends ConsoleRouteDeps {
   requestOrigin: (exchange: HttpExchange) => string | undefined
+  /** 分支权限判定（实现留 createRestGate，同 nas.ts 一端点多分支模式） */
+  requirePermission: (exchange: HttpExchange, point: string) => boolean
   enrichTopology: (node: any) => any
   appSsoGuard: (exchange: HttpExchange, op: 'create' | 'update' | 'rotate' | 'enable' | 'disable', input?: { redirectUris?: string[]; postLogoutUris?: string[] }) => boolean
 }
 
 export function registerAppRoutes(ctx: Context, deps: AppRouteDeps): void {
-  const { http, guarded, body, changeLog, caller, requestOrigin, enrichTopology, appSsoGuard } = deps
+  const { http, guarded, body, changeLog, caller, requestOrigin, requirePermission, enrichTopology, appSsoGuard } = deps
   // -- App ----------------------------------------------------------------
   // R11 多公司收口：非 `*` 管理员按本组织子树过滤应用台账（与 /api/agents 同口径）
   guarded('GET', '/api/apps', 'app.read', (exchange) => {
@@ -226,24 +228,40 @@ export function registerAppRoutes(ctx: Context, deps: AppRouteDeps): void {
     return snapshot
   })
 
-  guarded('POST', '/api/apps/:id/transition', 'app.write', (exchange) => {
-    if (!assertAppOwner(exchange, exchange.params['id']!)) return
+  // 生命周期流转：按动作分支权限（启用目录点 app.offline，对齐 agent 域 offline 独立点口径）：
+  // offline 守 app.offline，其余（submit_trial/retrial/online/archive）守 app.write。
+  // 绕过 guarded() 的统一包装需自带 try/catch（业务异常转 400）；权限判定先于 owner 校验
+  // （RBAC 探针语义：无权限一律 403，不得以「资源不存在」400 泄漏）。
+  http.register('POST', '/api/apps/:id/transition', async (exchange) => {
     const { action, note } = body<{ action: string; note?: string }>(exchange)
+    if (!requirePermission(exchange, action === 'offline' ? 'app.offline' : 'app.write')) return
     const info = caller(exchange)
     const id = exchange.params['id']!
-    if (action === 'online') {
-      const approval = ctx.appRegistry.requestOnline(id, { id: info.userId ?? info.principalId, name: info.name })
-      return { approval, note: t('发布为 L4 操作，已创建审批单') }
+    try {
+      // owner 校验在 try 内（资源不存在的业务异常转 400 而非 500）；权限判定始终在最前（探针 403 语义）
+      if (!assertAppOwner(exchange, id)) return
+      let result: unknown
+      if (action === 'online') {
+        const approval = ctx.appRegistry.requestOnline(id, { id: info.userId ?? info.principalId, name: info.name })
+        result = { approval, note: t('发布为 L4 操作，已创建审批单') }
+      } else if (action === 'offline') {
+        const approval = ctx.appRegistry.requestOffline(id, { id: info.userId ?? info.principalId, name: info.name }, note ?? '')
+        result = { approval, note: t('下架为 L4 操作，已创建审批单') }
+      } else if (action === 'submit_trial') {
+        result = ctx.resourceCore.transition('app', id, 'submit_trial', info.name).entity
+      } else if (action === 'retrial') {
+        result = ctx.resourceCore.transition('app', id, 'retrial', info.name).entity
+      } else if (action === 'archive') {
+        result = ctx.appRegistry.archive(id, info.name)
+      } else {
+        throw new Error(t('未知操作：{action}', { action }))
+      }
+      // 裸 http.register 不经 guarded() 的 ok 包装：返回值必须自行写响应（否则客户端挂起到超时）
+      if (!exchange.res.writableEnded) exchange.ok(result)
+    } catch (error) {
+      exchange.fail(400, 'BAD_REQUEST', error instanceof Error ? error.message : String(error))
     }
-    if (action === 'offline') {
-      const approval = ctx.appRegistry.requestOffline(id, { id: info.userId ?? info.principalId, name: info.name }, note ?? '')
-      return { approval, note: t('下架为 L4 操作，已创建审批单') }
-    }
-    if (action === 'submit_trial') return ctx.resourceCore.transition('app', id, 'submit_trial', info.name).entity
-    if (action === 'retrial') return ctx.resourceCore.transition('app', id, 'retrial', info.name).entity
-    if (action === 'archive') return ctx.appRegistry.archive(id, info.name)
-    throw new Error(t('未知操作：{action}', { action }))
-  })
+  }, { access: 'guarded', permission: 'app.write,app.offline' })
 
   // -- 应用能力绑定（W2-T4，MCP 治理契约 §10） ------------------------------
   // 服务摘要只投影非 headers 字段——headers 一概不回显：脱敏管道 maskServiceHeaders 定义于

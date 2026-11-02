@@ -68,6 +68,7 @@ const renderConnections = lazy('./pages/connections.js', 'renderConnections')
 const renderGateway = lazy('./pages/gateway.js', 'renderGateway')
 const renderUsage = lazy('./pages/usage.js', 'renderUsage')
 const renderAccess = lazy('./pages/access.js', 'renderAccess')
+const renderMe = lazy('./pages/me.js', 'renderMe')
 const renderOauthAuthorize = lazy('./pages/oauth.js', 'renderOauthAuthorize')
 const renderOauthError = lazy('./pages/oauth.js', 'renderOauthError')
 const renderOauthLogout = lazy('./pages/oauth.js', 'renderOauthLogout')
@@ -117,6 +118,9 @@ const NAV = [
     { path: '#/access', label: '平台接入', icon: 'fingerprint', perm: 'connect.manage' },
     { path: '#/connections', label: '宿主服务连接', icon: 'server', perm: 'console.login' },
     { path: '#/platform', label: '插件与工具', icon: 'puzzle', perm: 'console.login' },
+  ] },
+  { section: '个人', items: [
+    { path: '#/me', label: '我的接入', icon: 'user', perm: 'console.login' },
   ] },
 ]
 
@@ -212,6 +216,7 @@ function navigate() {
     gateway: renderGateway,
     usage: renderUsage,
     access: renderAccess,
+    me: renderMe,
   }
   const builder = builders[page] ?? renderDashboard
   renderShell(page, params, builder)

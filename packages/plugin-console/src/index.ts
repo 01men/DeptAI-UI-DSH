@@ -393,15 +393,15 @@ export function apply(ctx: Context) {
 
   registerIamRoutes(ctx, { http, guarded, body, changeLog, caller })
 
-  registerAuthnRoutes(ctx, { http, guarded, body, changeLog, caller })
+  registerAuthnRoutes(ctx, { http, guarded, body, changeLog, caller, requestOrigin })
 
   registerMcpRoutes(ctx, { http, guarded, body, changeLog, caller, maskServiceHeaders })
 
   registerSkillRoutes(ctx, { http, guarded, body, changeLog, caller })
   registerNasRoutes(ctx, { http, guarded, body, changeLog, caller, requirePermission, requestOrigin })
-  registerAgentRoutes(ctx, { http, guarded, body, changeLog, caller, requestOrigin, enrichTopology })
+  registerAgentRoutes(ctx, { http, guarded, body, changeLog, caller, requestOrigin, requirePermission, enrichTopology })
   registerEntryTicketRoutes(ctx, { http, guarded, body, changeLog, caller, agentSsoGuard })
-  registerAppRoutes(ctx, { http, guarded, body, changeLog, caller, requestOrigin, enrichTopology, appSsoGuard })
+  registerAppRoutes(ctx, { http, guarded, body, changeLog, caller, requestOrigin, requirePermission, enrichTopology, appSsoGuard })
   registerAuditRoutes(ctx, { http, guarded, body, changeLog, caller })
   registerOpsRoutes(ctx, { http, guarded, body, changeLog, caller })
   registerUsageRoutes(ctx, { http, guarded, body, changeLog, caller })

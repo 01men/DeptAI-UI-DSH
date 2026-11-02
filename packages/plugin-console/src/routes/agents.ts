@@ -13,12 +13,14 @@ import { scopedOrgFilterOf } from './iam.ts'
 
 export interface AgentRouteDeps extends ConsoleRouteDeps {
   requestOrigin: (exchange: HttpExchange) => string | undefined
+  /** 分支权限判定（实现留 createRestGate，同 nas.ts 一端点多分支模式） */
+  requirePermission: (exchange: HttpExchange, point: string) => boolean
   /** 拓扑节点名称/状态补全（skill/mcp_service 类型，定义留 index.ts） */
   enrichTopology: (node: any) => any
 }
 
 export function registerAgentRoutes(ctx: Context, deps: AgentRouteDeps): void {
-  const { http, guarded, body, changeLog, caller, requestOrigin, enrichTopology } = deps
+  const { http, guarded, body, changeLog, caller, requestOrigin, requirePermission, enrichTopology } = deps
   // -- Agent --------------------------------------------------------------
   /** 机器身份读台账审计：接入提示词以「带机器令牌 GET /api/agents」为接入验证话术，此处让其成为事实。
    *  只记机器身份（人类控制台读操作高频，全量记录成噪音；机器读台账低频且带治理含义）。 */
@@ -380,23 +382,37 @@ export function registerAgentRoutes(ctx: Context, deps: AgentRouteDeps): void {
     return { deleted: true }
   })
 
-  guarded('POST', '/api/agents/:id/transition', 'agent.approve', (exchange) => {
-    if (!assertAgentOwner(exchange, exchange.params['id']!)) return
+  // 生命周期流转：按动作分支权限（对齐工具面 agent_offline 的 agent.offline 口径——
+  // 同一动作 REST/工具两面口径一致）：offline 守 agent.offline，其余（submit_trial/online/archive）
+  // 守 agent.approve。绕过 guarded() 的统一包装需自带 try/catch（业务异常转 400）。
+  http.register('POST', '/api/agents/:id/transition', async (exchange) => {
     const { action, note } = body<{ action: string; note?: string }>(exchange)
+    if (!requirePermission(exchange, action === 'offline' ? 'agent.offline' : 'agent.approve')) return
     const info = caller(exchange)
     const id = exchange.params['id']!
-    if (action === 'online') {
-      const approval = ctx.agentRegistry.requestOnline(id, { id: info.userId ?? info.principalId, name: info.name })
-      return { approval, note: t('上线为 L4 操作，已创建审批单') }
+    try {
+      // owner 校验在 try 内（资源不存在的业务异常转 400 而非 500）；权限判定始终在最前（探针 403 语义）
+      if (!assertAgentOwner(exchange, id)) return
+      let result: unknown
+      if (action === 'online') {
+        const approval = ctx.agentRegistry.requestOnline(id, { id: info.userId ?? info.principalId, name: info.name })
+        result = { approval, note: t('上线为 L4 操作，已创建审批单') }
+      } else if (action === 'offline') {
+        const approval = ctx.agentRegistry.requestOffline(id, { id: info.userId ?? info.principalId, name: info.name }, note ?? '')
+        result = { approval, note: t('下线为 L4 操作，已创建审批单') }
+      } else if (action === 'submit_trial') {
+        result = ctx.agentRegistry.trial(id, info.name, [])
+      } else if (action === 'archive') {
+        result = ctx.agentRegistry.archive(id, info.name)
+      } else {
+        throw new Error(t('未知操作：{action}', { action }))
+      }
+      // 裸 http.register 不经 guarded() 的 ok 包装：返回值必须自行写响应（否则客户端挂起到超时）
+      if (!exchange.res.writableEnded) exchange.ok(result)
+    } catch (error) {
+      exchange.fail(400, 'BAD_REQUEST', error instanceof Error ? error.message : String(error))
     }
-    if (action === 'offline') {
-      const approval = ctx.agentRegistry.requestOffline(id, { id: info.userId ?? info.principalId, name: info.name }, note ?? '')
-      return { approval, note: t('下线为 L4 操作，已创建审批单') }
-    }
-    if (action === 'submit_trial') return ctx.agentRegistry.trial(id, info.name, [])
-    if (action === 'archive') return ctx.agentRegistry.archive(id, info.name)
-    throw new Error(t('未知操作：{action}', { action }))
-  })
+  }, { access: 'guarded', permission: 'agent.approve,agent.offline' })
 
   guarded('POST', '/api/agents/:id/obo-token', 'agent.write', (exchange) => {
     const info = caller(exchange)

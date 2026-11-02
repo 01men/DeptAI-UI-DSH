@@ -9,9 +9,15 @@ import { AppRegistryService } from '../../../plugin-app/src/index.ts'
 import { DelegationError } from '../../../plugin-authn/src/index.ts'
 import { t } from '../../../platform-i18n/src/index.ts'
 import type { ConsoleRouteDeps } from './deps.ts'
+import type { HttpExchange } from '../../../platform-core/src/index.ts'
 
-export function registerAuthnRoutes(ctx: Context, deps: ConsoleRouteDeps): void {
-  const { http, guarded, body, changeLog, caller } = deps
+export interface AuthnRouteDeps extends ConsoleRouteDeps {
+  /** 自助 MCP 配置的回调 URL 组装（实现留 index.ts，与 onboarding-prompt 同源） */
+  requestOrigin: (exchange: HttpExchange) => string | undefined
+}
+
+export function registerAuthnRoutes(ctx: Context, deps: AuthnRouteDeps): void {
+  const { http, guarded, body, changeLog, caller, requestOrigin } = deps
   // -- Authn --------------------------------------------------------------
   guarded('GET', '/api/authn/principals', 'authn.principal.read', () => ({
     principals: ctx.authn.principals().all().map((principal) => {
@@ -113,6 +119,89 @@ export function registerAuthnRoutes(ctx: Context, deps: ConsoleRouteDeps): void 
     })
     changeLog(exchange, 'authn.token.issue', 'token', record.jti, record.jti, input.reason ?? '')
     return { token, jti: record.jti, expiresAt: record.expiresAt }
+  })
+
+  // -- 个人接入令牌（员工自助 MCP 调用配置，2026-11-02）--------------------------------
+  // 员工为「自己」签发带备注的长效令牌，生成标准 MCP 客户端配置 JSON（一键复制）。
+  // 权限对齐是构造性的：human 令牌在 verify 时实时按角色解析权限（plugin-authn verify），
+  // 角色变更即时生效、吊销即时失效。守卫 console.login（全员自助，不新增权限点）；
+  // 明文只返回一次（对齐 connect 接入码先例），列表恒掩码。
+  const PAT_DEFAULT_TTL_HOURS = 720 // 30 天
+  const PAT_MAX_TTL_HOURS = Math.max(1, Number(process.env.MCP_PAT_MAX_TTL_HOURS ?? 2160) || 2160) // 上限 90 天，env 可调
+  const PAT_MAX_ACTIVE_PER_USER = 10
+
+  guarded('POST', '/api/authn/mcp-tokens', 'console.login', (exchange) => {
+    const info = caller(exchange)
+    const input = body<{ label?: string; ttlHours?: number }>(exchange)
+    const label = String(input.label ?? '').trim()
+    if (label === '' || label.length > 100) throw new Error(t('label 必填（≤100 字，用于在令牌列表中识别用途）'))
+    const activePats = ctx.authn.tokens().find((token) =>
+      token.principalId === info.principalId && token.issuedBy === 'mcp-config' && !token.revokedAt && token.expiresAt > new Date().toISOString())
+    if (activePats.length >= PAT_MAX_ACTIVE_PER_USER) {
+      throw new Error(t('个人接入令牌已达上限（{max} 条），请先在「我的接入」吊销不再使用的令牌', { max: String(PAT_MAX_ACTIVE_PER_USER) }))
+    }
+    const requested = Number(input.ttlHours ?? PAT_DEFAULT_TTL_HOURS)
+    if (!Number.isFinite(requested) || requested <= 0) throw new Error(t('ttlHours 必须为正数（小时）'))
+    const ttlHours = Math.min(Math.floor(requested), PAT_MAX_TTL_HOURS)
+    const { token, record } = ctx.authn.issueToken(info.principalId, {
+      kind: 'access',
+      ttlHours,
+      issuedBy: 'mcp-config',
+      label,
+    })
+    const origin = requestOrigin(exchange) ?? 'http://127.0.0.1:7300'
+    changeLog(exchange, 'authn.mcp_token.issue', 'token', record.jti.slice(0, 8), label, `ttl=${ttlHours}h`)
+    return {
+      token,
+      jti: record.jti,
+      label,
+      expiresAt: record.expiresAt,
+      config: {
+        mcpServers: {
+          'ybk-aios': {
+            type: 'http',
+            url: `${origin}/mcp`,
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        },
+      },
+    }
+  })
+
+  // 列表守卫用 console.read（被 console.login 蕴含，真实用户零感知；属演示只读白名单基线点，
+  // demo-route-audit 判定面）——访客仅能拿到自己主体下的空列表，无个人信息泄露面
+  guarded('GET', '/api/authn/mcp-tokens', 'console.read', (exchange) => {
+    const info = caller(exchange)
+    const tokens = ctx.authn.tokens().find((token) => token.principalId === info.principalId && token.issuedBy === 'mcp-config')
+      .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))
+    return {
+      total: tokens.length,
+      tokens: tokens.map((token) => ({
+        // jti 全值返回本人（吊销操作凭据；与 admin 令牌列表 GET /api/authn/tokens 同等暴露面——
+        // 仅持 jti 无令牌本体不具备任何调用能力），jtiMasked 仅展示用
+        jti: token.jti,
+        jtiMasked: `${token.jti.slice(0, 8)}…`,
+        label: token.label ?? '',
+        issuedAt: token.issuedAt,
+        expiresAt: token.expiresAt,
+        lastUsedAt: token.lastUsedAt ?? null,
+        revokedAt: token.revokedAt ?? null,
+      })),
+    }
+  })
+
+  guarded('DELETE', '/api/authn/mcp-tokens/:jti', 'console.login', (exchange) => {
+    const info = caller(exchange)
+    const jti = exchange.params['jti']!
+    const token = ctx.authn.tokens().get(jti)
+    // 非本人的令牌按不存在处理（不泄露他人令牌存在性）；管理员吊销走既有 DELETE /api/authn/tokens/:jti
+    if (!token || token.principalId !== info.principalId) {
+      exchange.fail(404, 'NOT_FOUND', t('令牌不存在：{jti}', { jti: jti.slice(0, 8) }))
+      return
+    }
+    ctx.authn.revokeToken(jti, t('员工自助吊销（我的接入）'))
+    changeLog(exchange, 'authn.mcp_token.revoke', 'token', jti.slice(0, 8), token.label ?? '')
+    return { revoked: true }
   })
 
   // 委托令牌交换（MCP 治理契约 §3，RFC 8693 风格）：公开路径 + 自带 Bearer 校验

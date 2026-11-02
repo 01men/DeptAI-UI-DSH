@@ -20,6 +20,30 @@ demo.ybkkasi.com 挂上 01门（DeptAI-UI-DSH，dsh demo profile :7778，远端�
   看板/任务/频道/SSE 全通），客户全程零输入。部署与验收记录：
   `docs/internal/gate01-demo-deploy-20261101.md`。
 
+## [Unreleased] · transition 权限按动作分支 + 员工自助 MCP 调用配置（2026-11-02）
+
+全局 API/MCP 对齐审查发现两项权限口径问题（REST/工具两面对同一动作要求不同权限点；目录点
+app.offline 零执行面），连同「员工在平台自主生成 MCP 调用配置」诉求一并落地：
+
+- **transition 权限分支（A/B 修复）**：`POST /api/agents/:id/transition` 改为一端点多分支——
+  action=offline 守 `agent.offline`（对齐工具面 agent_offline），其余动作守 `agent.approve`；
+  `POST /api/apps/:id/transition` 同款启用目录点 `app.offline`（下架）其余守 `app.write`。
+  权限判定先于 owner 校验（RBAC 探针 403 语义不变），组合权限标注进路由矩阵与 openapi。
+- **app_offline 工具（+1 工具，98）**：仿 agent_offline——L4 审批单 + 影响面说明，桥接面服务端
+  注入发起人身份；目录 app.offline 孤儿点转正，agent/app 两域下线语义一致。
+- **个人接入令牌（+3 路由，499）**：`POST/GET/DELETE /api/authn/mcp-tokens`——员工为「自己」签发
+  带备注的长效令牌（缺省 30 天、上限 90 天 `MCP_PAT_MAX_TTL_HOURS` 可调、每人活跃 ≤10 条），
+  签发即返回标准 mcpServers JSON（Streamable HTTP + Bearer）供外部 MCP 客户端一键复制。
+  **权限与角色实时对齐是构造性的**：human 令牌在 verify 时按当前角色实时解析权限——角色变更
+  即时生效、吊销立即失效，配置永远不超越本人角色。明文仅返回一次（对齐接入码先例）；列表恒掩码；
+  自助吊销仅限本人（非本人按 404）；管理员侧沿用既有令牌台账与吊销面。
+- **控制台「我的接入」（#/me）**：全员可见新页面——身份卡（生效权限点数）+ 生成表单（备注/有效期）
+  + 一次性配置弹窗（明文 JSON + 一键复制 + 安全警示）+ 我的令牌表（掩码/状态/吊销）；
+  演示态隐藏签发入口（只读口径）。列表守卫 console.read（演示只读白名单基线点，真实用户零感知）。
+- **自测**：新增 24 条断言（签发形态/TTL 钳制/label 门禁/权限内外访问/角色扩收权实时跟随/
+  掩码列表/越权吊销 404/吊销即失效/数量上限/A-B 双侧分支正反路径/工具面 app_offline/矩阵
+  组合标注），1819/1819 全绿；路由数 499、工具数 98 防漂移闸同步。
+
 ## [Unreleased] · 资产使用凭证：Agent 获取授权 → 主动提报 → 台账经营关联全链路（2026-10-31）
 
 此前 skill.zip 下载到 Agent 本地执行后平台完全无感知（只有下载流水，无使用记录）；现有

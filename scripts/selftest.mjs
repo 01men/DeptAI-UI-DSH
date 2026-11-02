@@ -9498,6 +9498,124 @@ try {
       JSON.stringify(aurToolPayload).slice(0, 240))
   }
 
+  // ================================================================ 个人接入令牌与 transition 权限分支（2026-11-02）
+  // ① 员工自助 MCP 调用配置（PAT：签发/权限实时对齐/吊销/上限）；② A 修复回归（agents transition
+  // 按 action 分支权限，对齐工具面 agent_offline）；③ B 修复回归（apps transition 分支启用 app.offline）。
+  section('个人接入令牌与 transition 权限分支（自助配置/实时对齐）')
+  {
+    const patAdminLogin = await api('POST', '/api/auth/login', { body: { username: 'admin', password: 'Ybk@2026' } })
+    check('PAT 自测：管理员登录', patAdminLogin.ok)
+    const patAdmin = patAdminLogin.data.token
+    const patOrgId = patAdminLogin.data.user.orgId
+
+    // —— 准备：普通员工（member 角色）——
+    const patRoles = (await api('GET', '/api/iam/roles', { token: patAdmin })).data.roles
+    const memberRole = patRoles.find((role) => role.code === 'member') ?? patRoles.find((role) => role.name === '普通用户')
+    const patEmpCreate = await api('POST', '/api/iam/users', { token: patAdmin, body: { username: 'pat_emp', displayName: '自助接入员工', orgId: patOrgId, password: 'Ybk@2026', roleIds: [memberRole.id] } })
+    check('PAT 自测：员工账号就绪（member 角色）', patEmpCreate.ok && Boolean(patEmpCreate.data?.id))
+    const patEmpId = patEmpCreate.data.id
+    const patEmp = (await api('POST', '/api/auth/login', { body: { username: 'pat_emp', password: 'Ybk@2026' } })).data.token
+    const patApprover = (await api('POST', '/api/auth/login', { body: { username: 'approver02', password: 'Ybk@2026' } })).data.token
+
+    // —— 签发与配置形态 ——
+    const patIssue = await api('POST', '/api/authn/mcp-tokens', { token: patEmp, body: { label: 'IDE 接入', ttlHours: 168 } })
+    check('自助签发：member 生成 MCP 配置（200，url 以 /mcp 收尾 + Bearer 头 + 备注/令牌/幂等面齐备）',
+      patIssue.ok && String(patIssue.data?.config?.mcpServers?.['ybk-aios']?.url ?? '').endsWith('/mcp')
+      && String(patIssue.data?.config?.mcpServers?.['ybk-aios']?.headers?.Authorization ?? '').startsWith('Bearer dst1.')
+      && patIssue.data?.label === 'IDE 接入' && Boolean(patIssue.data?.token) && Boolean(patIssue.data?.jti),
+      JSON.stringify(patIssue.error ?? {}).slice(0, 200))
+    const patToken = patIssue.data.token
+    check('自助签发：有效期≈7 天（168h ±1h）', Math.abs(Date.parse(patIssue.data.expiresAt) - Date.now() - 168 * 3600_000) < 3600_000, patIssue.data.expiresAt)
+    const patNoLabel = await api('POST', '/api/authn/mcp-tokens', { token: patEmp, body: {} })
+    check('自助签发：label 必填（400）', patNoLabel.status === 400, String(patNoLabel.status))
+    const patClamp = await api('POST', '/api/authn/mcp-tokens', { token: patEmp, body: { label: '超长有效期钳制', ttlHours: 99999 } })
+    check('自助签发：ttlHours 超上限被钳到 ≤90 天', patClamp.ok && Date.parse(patClamp.data.expiresAt) - Date.now() <= 2161 * 3600_000, patClamp.data?.expiresAt)
+
+    // —— 权限实时对齐（配置权限 = 当前角色，verify 侧实时解析）——
+    const patOkCall = await api('GET', '/api/overview', { token: patToken })
+    check('权限对齐：PAT 可访问角色内接口（overview 200）', patOkCall.status === 200, String(patOkCall.status))
+    const patDeniedCall = await api('POST', '/api/agents', { token: patToken, body: { name: 'PAT 越权探针' } })
+    check('权限对齐：PAT 访问角色外接口被拒（403，与 member 角色一致）', patDeniedCall.status === 403, String(patDeniedCall.status))
+    const tmpRole = await api('POST', '/api/iam/roles', { token: patAdmin, body: { code: 'pat_tmp_audit_read', name: 'PAT 临时审计读', permissions: ['audit.read'] } })
+    const tmpRoleId = tmpRole.data.id ?? tmpRole.data.role?.id
+    await api('PATCH', `/api/iam/users/${patEmpId}`, { token: patAdmin, body: { roleIds: [memberRole.id, tmpRoleId] } })
+    const patAfterGrant = await api('GET', '/api/audit/logs?limit=1', { token: patToken })
+    check('实时对齐：角色扩权后同一 PAT 立即可读审计（200，无需换发）', patAfterGrant.status === 200, String(patAfterGrant.status))
+    await api('PATCH', `/api/iam/users/${patEmpId}`, { token: patAdmin, body: { roleIds: [memberRole.id] } })
+    const patAfterRevokeRole = await api('GET', '/api/audit/logs?limit=1', { token: patToken })
+    check('实时对齐：角色回收后同一 PAT 立即失去审计读（403）', patAfterRevokeRole.status === 403, String(patAfterRevokeRole.status))
+
+    // —— 列表 / 吊销 / 越权 / 上限 ——
+    const patList = await api('GET', '/api/authn/mcp-tokens', { token: patEmp })
+    check('自助列表：仅本人 PAT（jti 掩码 + label + 状态齐备）', patList.ok && patList.data.total >= 2
+      && patList.data.tokens.every((row) => Boolean(row.jtiMasked) && row.jtiMasked.endsWith('…') && typeof row.label === 'string'),
+      JSON.stringify(patList.data?.total))
+    const adminPat = await api('POST', '/api/authn/mcp-tokens', { token: patAdmin, body: { label: '管理员自测' } })
+    const patCrossDelete = await api('DELETE', `/api/authn/mcp-tokens/${adminPat.data.jti}`, { token: patEmp })
+    check('自助吊销：撤他人令牌按不存在处理（404，不泄露存在性）', patCrossDelete.status === 404, String(patCrossDelete.status))
+    const burnPat = await api('POST', '/api/authn/mcp-tokens', { token: patEmp, body: { label: '待吊销' } })
+    await api('DELETE', `/api/authn/mcp-tokens/${burnPat.data.jti}`, { token: patEmp })
+    const patAfterDelete = await api('GET', '/api/auth/me', { token: burnPat.data.token })
+    check('自助吊销：吊销后原 PAT 立即失效（401）', patAfterDelete.status === 401, String(patAfterDelete.status))
+    let patCapHit = false
+    for (let i = 0; i < 12; i++) {
+      const capProbe = await api('POST', '/api/authn/mcp-tokens', { token: patEmp, body: { label: `上限探针 ${i}` } })
+      if (capProbe.status === 400) { patCapHit = true; break }
+    }
+    check('自助签发：活跃 PAT 数量上限（10 条）生效', patCapHit)
+
+    // —— A 修复回归：agents transition 按 action 分支权限 ——
+    const offRole = await api('POST', '/api/iam/roles', { token: patAdmin, body: { code: 'pat_agent_offline_only', name: '仅Agent下线（自测）', permissions: ['console.login', 'agent.write', 'agent.offline'] } })
+    const apprOnlyRole = await api('POST', '/api/iam/roles', { token: patAdmin, body: { code: 'pat_agent_approve_only', name: '仅Agent上线审批（自测）', permissions: ['console.login', 'agent.write', 'agent.approve'] } })
+    const offRoleId = offRole.data.id ?? offRole.data.role?.id
+    const apprOnlyRoleId = apprOnlyRole.data.id ?? apprOnlyRole.data.role?.id
+    const bobCreate = await api('POST', '/api/iam/users', { token: patAdmin, body: { username: 'pat_bob', displayName: '仅下线员', orgId: patOrgId, password: 'Ybk@2026', roleIds: [offRoleId] } })
+    const bob = (await api('POST', '/api/auth/login', { body: { username: 'pat_bob', password: 'Ybk@2026' } })).data.token
+    const bobAgent = await api('POST', '/api/agents', { token: bob, body: { name: '分支权限自测体', attrs: { description: 'transition 分支权限回归', model: 'deepseek-chat', riskLevel: 'low', dataClass: 'internal', trialGroups: ['灰度试点组'], headless: true, avatar: '🤖' } } })
+    check('A 回归：仅下线员注册自己的 Agent（agent.write）', bobAgent.ok, JSON.stringify(bobAgent.error))
+    const bobAgentId = bobAgent.data.agent.id
+    await api('POST', `/api/agents/${bobAgentId}/transition`, { token: patAdmin, body: { action: 'submit_trial' } })
+    const onlineReq = await api('POST', `/api/agents/${bobAgentId}/transition`, { token: patAdmin, body: { action: 'online' } })
+    const onlineDecide = await api('POST', `/api/approvals/${onlineReq.data.approval.id}/decide`, { token: patApprover, body: { decision: 'approve', opinion: '分支权限回归', confirmed: true, finalReview: true } })
+    check('A 回归：管理员发起上线 + 异人审批通过（Agent online）', onlineDecide.ok, JSON.stringify(onlineDecide.error ?? {}).slice(0, 160))
+    const bobOffline = await api('POST', `/api/agents/${bobAgentId}/transition`, { token: bob, body: { action: 'offline', note: '仅持 agent.offline' } })
+    check('A 回归：仅 agent.offline 的负责人发起下线成功（200 出审批单——REST/工具两面对齐）',
+      bobOffline.ok && Boolean(bobOffline.data?.approval?.id), JSON.stringify(bobOffline.error ?? {}).slice(0, 160))
+    const bobOnlineAgain = await api('POST', `/api/agents/${bobAgentId}/transition`, { token: bob, body: { action: 'online' } })
+    check('A 回归：仅 agent.offline 发起上线被拒（403，需 agent.approve）', bobOnlineAgain.status === 403, String(bobOnlineAgain.status))
+    const carolCreate = await api('POST', '/api/iam/users', { token: patAdmin, body: { username: 'pat_carol', displayName: '仅审批员', orgId: patOrgId, password: 'Ybk@2026', roleIds: [apprOnlyRoleId] } })
+    const carol = (await api('POST', '/api/auth/login', { body: { username: 'pat_carol', password: 'Ybk@2026' } })).data.token
+    const carolOffline = await api('POST', `/api/agents/${bobAgentId}/transition`, { token: carol, body: { action: 'offline', note: '仅持 agent.approve' } })
+    check('A 回归：仅 agent.approve 发起下线被拒（403，需 agent.offline）', carolOffline.status === 403, String(carolOffline.status))
+
+    // —— B 修复回归：apps transition 分支（启用目录点 app.offline）——
+    const appOffRole = await api('POST', '/api/iam/roles', { token: patAdmin, body: { code: 'pat_app_offline_only', name: '仅App下架（自测）', permissions: ['console.login', 'app.write', 'app.offline'] } })
+    const appOffRoleId = appOffRole.data.id ?? appOffRole.data.role?.id
+    await api('PATCH', `/api/iam/users/${bobCreate.data.id}`, { token: patAdmin, body: { roleIds: [offRoleId, appOffRoleId] } })
+    const bobApp = await api('POST', '/api/apps', { token: bob, body: { name: '分支权限自测应用', attrs: { description: 'B 分支回归', appType: 'web', riskLevel: 'low', dataClass: 'internal' } } })
+    check('B 回归：仅下架员注册自己的应用（app.write）', bobApp.ok, JSON.stringify(bobApp.error))
+    const bobAppId = bobApp.data.app.id
+    const bobAppOffline = await api('POST', `/api/apps/${bobAppId}/transition`, { token: bob, body: { action: 'offline', note: '仅持 app.offline' } })
+    check('B 回归：仅 app.offline 发起下架成功（200 出审批单，目录点 app.offline 启用）',
+      bobAppOffline.ok && Boolean(bobAppOffline.data?.approval?.id), JSON.stringify(bobAppOffline.error ?? {}).slice(0, 160))
+    const carolAppOffline = await api('POST', `/api/apps/${bobAppId}/transition`, { token: carol, body: { action: 'offline', note: '无 app.offline' } })
+    check('B 回归：无 app.offline 发起下架被拒（403）', carolAppOffline.status === 403, String(carolAppOffline.status))
+
+    // —— 工具面与矩阵标注 ——
+    const patToolsList = await rawReq('POST', '/mcp', {
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${bob}` },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }),
+    })
+    const patToolNames = (jsonBody(patToolsList).result?.tools ?? []).map((tool) => tool.name)
+    check('B 回归：/mcp 工具面含 app_offline（app.offline 持有者可见）', patToolNames.includes('app_offline'), `工具数=${patToolNames.length}`)
+    const patMatrix = (await api('GET', '/api/platform/route-matrix', { token: patAdmin })).data
+    const patAgentTr = patMatrix.guarded.find((route) => route.path === '/api/agents/:id/transition' && route.method === 'POST')
+    const patAppTr = patMatrix.guarded.find((route) => route.path === '/api/apps/:id/transition' && route.method === 'POST')
+    check('组合权限标注：两条 transition 路由矩阵声明双权限点',
+      patAgentTr?.permission === 'agent.approve,agent.offline' && patAppTr?.permission === 'app.write,app.offline',
+      `${patAgentTr?.permission} / ${patAppTr?.permission}`)
+  }
+
   section('凭证零进平台（红线一 · T-24 全目录扫描）')
   // SIGTERM 触发 main.ts 的 flushNow（把内存中的待写集合全部原子落盘）后退出，
   // 再扫描数据目录——保证连「尚未刷盘的最新写入」也在扫描覆盖之内。

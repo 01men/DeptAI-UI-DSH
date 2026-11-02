@@ -1287,7 +1287,7 @@
   "执行体已创建": "Harness created",
   "确认该任务交付达到验收标准：结论与理由写入审计日志，任务归档为验收通过。": "Confirm this delivery meets the acceptance criteria: conclusion and reason are written to the audit log; the task is archived as acceptance-passed.",
   "驳回该任务交付：结论与理由写入审计日志，由发起方跟进整改后重新发起协作。": "Reject this delivery: conclusion and reason are written to the audit log; the initiator follows up on rework and starts a new collaboration.",
-  "正在装载 29 个插件包 · 94 个权限点 · 495 个 REST 路由 · 97 个 MCP 工具": "Loading 29 plugin packages · 94 permission points · 495 REST routes · 97 MCP tools",
+    "正在装载 29 个插件包 · 94 个权限点 · 499 个 REST 路由 · 98 个 MCP 工具": "Loading 29 plugin packages · 94 permission points · 499 REST routes · 98 MCP tools",
   "运行时": "Runtime",
   "取消": "Cancel",
   "删除": "Delete",

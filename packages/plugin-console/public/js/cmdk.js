@@ -120,6 +120,7 @@ function buildStaticItems(q) {
     { title: '角色权限', hash: '#/iam?tab=roles', icon: 'shield', perm: 'iam.org.read' },
     { title: '三方集成（钉钉同步）', hash: '#/iam?tab=connectors', icon: 'link', perm: 'iam.org.read' },
     { title: '平台接入', hash: '#/access', icon: 'fingerprint', perm: 'connect.manage' },
+    { title: '我的接入', hash: '#/me', icon: 'user', perm: 'console.login' },
     { title: '宿主服务连接', hash: '#/connections', icon: 'server', perm: 'console.login' },
     { title: '认证与令牌', hash: '#/authn', icon: 'key', perm: 'authn.principal.read' },
     { title: '插件与工具', hash: '#/platform', icon: 'puzzle' },

@@ -97,7 +97,7 @@ export function registerBridgeRoutes(ctx: Context, deps: ConsoleRouteDeps): void
     if (name === 'approval_decide' || name === 'skill_approve') {
       args.approverId = principalId
       args.approverName = info.name
-    } else if (name === 'agent_offline' || name === 'mcp_offline' || name === 'iam_sync_run') {
+    } else if (name === 'agent_offline' || name === 'app_offline' || name === 'mcp_offline' || name === 'iam_sync_run') {
       args.requesterId = principalId
       args.requesterName = info.name
       args.actor = info.name

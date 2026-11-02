@@ -15,6 +15,7 @@ endpoints:
   - GET /api/skills/usage-heatmap（技能热力图：skill × 日 使用矩阵）
   - GET /api/fleet/ledger?type=&search=（usage.read；设计适配 5.2 六类资产统一台账：health/lifecycle/grayPercent/calls30d/tokens30d/cost30d/usageReports30d/trend[14]/dau/autonomy——usage 事件真实聚合，无数据 0/空数组）
   - POST /api/assets/usage-reports（usage.write；资产使用凭证提报：Agent 使用 skill/MCP 后主动上报使用事实，机器主体须已获取该资产——skill install/download、mcp 权限组，幂等键防重，2026-10-31） · GET /api/assets/usage-reports?assetType=&assetKey=&agentId=&from=&to=&limit=（usage.read；凭证流水查询/经营对账）
+  - POST /api/authn/mcp-tokens（console.login；员工自助 MCP 调用配置：签发带备注的个人接入令牌并返回一键复制的 mcpServers JSON，权限与角色实时对齐，明文仅此一次，2026-11-02） · GET /api/authn/mcp-tokens（console.login；本人令牌列表，恒掩码） · DELETE /api/authn/mcp-tokens/:jti（console.login；仅本人自助吊销，非本人按 404）
   - GET /api/usage/report?days=28&dim=tokens|cost（usage.read；设计适配 5.5 用量与成本报表：日序列/部门分摊占比环比/Top 资产/单位 DAU 成本，全部 usage 事件真实聚合）
   - GET /api/modelgw/routes-usage（modelgw.read；设计适配 5.4 模型路由 30 天消耗：tokens30d/share/cost30d 按 model 聚合，零消耗路由诚实列 0）
   - GET /api/usage/collaborations（usage.read；C4 协作链计量：context 单链明细或窗口 Top 协作链，contextId 归集一次跨员工协作总成本）

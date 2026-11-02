@@ -67,6 +67,7 @@ export function apply(ctx: Context) {
         tokens: tokens.map((token) => ({
           jti: token.jti, kind: token.kind, issuedAt: token.issuedAt,
           expiresAt: token.expiresAt, revokedAt: token.revokedAt ?? null, issuedBy: token.issuedBy,
+          ...(token.label !== undefined ? { label: token.label } : {}),
         })),
       }
     },

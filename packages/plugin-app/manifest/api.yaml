@@ -14,12 +14,13 @@ endpoints:
   - GET /api/apps/:id/org-sync（组织架构同步快照：组织树+在职成员，?ifNoneMatch= 零载荷变更轮询；应用自助复用平台组织模块，经 console 暴露）
   - # 平台侧自动折算：entry-ticket 兑换 / OIDC 发码 → DAU；浏览器 beacon → PV/UV（端点经 console 聚合暴露）
 tools:
+  - app_cost_breakdown
   - app_list
-  - app_topology
   - app_metrics
   - app_metrics_report
-  - app_cost_breakdown
+  - app_offline
   - app_register
+  - app_topology
 services:
   - key: appRegistry
     access: ctx.appRegistry

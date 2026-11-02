@@ -77,6 +77,8 @@ export interface TokenRecord extends RecordBase {
   delegatedUserId?: string
   /** 委托令牌增量（MCP 治理契约 §3）：受众快照（mcp:service:<slug> / plugin:<id>）。 */
   delegationAudience?: string
+  /** 个人接入令牌备注（员工自助 MCP 配置签发，additive；非该通道签发不下发）。 */
+  label?: string
 }
 
 /** OAuth state 记录（防 CSRF，一次性消费）。 */
@@ -893,6 +895,8 @@ export class AuthnService extends Service {
     /** 委托令牌增量（MCP 治理契约 §3）：被代理用户 / 受众快照（缺省不产出，存量行为不变）。 */
     delegatedUserId?: string
     delegationAudience?: string
+    /** 个人接入令牌备注（员工自助 MCP 配置通道，落 TokenRecord 供列表自见）。 */
+    label?: string
   }): { token: string; record: TokenRecord } {
     const principal = this.principals().get(principalId)
     if (!principal) throw new Error(t('身份不存在：{id}', { id: principalId }))
@@ -938,6 +942,7 @@ export class AuthnService extends Service {
       ...(options.chainId !== undefined ? { chainId: options.chainId } : {}),
       ...(options.delegatedUserId !== undefined ? { delegatedUserId: options.delegatedUserId } : {}),
       ...(options.delegationAudience !== undefined ? { delegationAudience: options.delegationAudience } : {}),
+      ...(options.label !== undefined ? { label: options.label } : {}),
     })
     return { token, record }
   }

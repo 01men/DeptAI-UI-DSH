@@ -39,6 +39,27 @@ export function apply(ctx: Context) {
   }))
 
   t.register(defineTool({
+    name: 'app_offline',
+    description: '下架 AI 应用（L4 高危：生成审批单，审批通过后自动执行；联动下线能力服务并禁用 SSO 客户端）。必须给出 reason。',
+    permission: 'app.offline',
+    parameters: {
+      appId: { type: 'string', required: true, description: '应用 ID' },
+      reason: { type: 'string', required: true, description: '下架原因' },
+      requesterId: { type: 'string', required: true, description: '发起人用户 ID（桥接面由服务端注入）' },
+      requesterName: { type: 'string', required: true, description: '发起人姓名（桥接面由服务端注入）' },
+    },
+    output: { type: 'object', additionalProperties: true },
+    async execute(args) {
+      const approval = ctx.appRegistry.requestOffline(args.appId, { id: args.requesterId, name: args.requesterName }, args.reason)
+      const impact = ctx.resourceCore.impact('app', args.appId)
+      return {
+        approvalId: approval.id, status: approval.status, impact,
+        note: '审批通过后将：下架应用 → 联动下线能力服务 → 禁用 SSO 客户端 → 保留审计数据',
+      }
+    },
+  }))
+
+  t.register(defineTool({
     name: 'app_topology',
     description: '查看应用依赖拓扑：应用 → Agent → MCP/Skill 一图穿透（异常节点标注）。',
     permission: 'app.read',
