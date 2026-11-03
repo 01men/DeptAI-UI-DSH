@@ -6,7 +6,8 @@
   [![npm](https://img.shields.io/npm/v/@ybkk/gate-01?label=npm&color=1554e8)](https://www.npmjs.com/package/@ybkk/gate-01)
   [![license](https://img.shields.io/badge/license-MIT-07c160)](LICENSE)
   [![dsh](https://img.shields.io/badge/dsh-%E2%89%A50.1.0--rc.7-1554e8)](docs/plan-gate01.md)
-  [![selftest](https://img.shields.io/badge/selftest-1300%2B%20passing-07c160)](tests/selftest.mjs)
+  [![selftest](https://img.shields.io/badge/selftest-2012%20passing-07c160)](tests/selftest.mjs)
+  <a href="https://01men.github.io/DeptAI-UI-DSH/"><img src="https://img.shields.io/badge/demo-live%20%E2%80%A2%20GitHub%20Pages-1554e8" alt="01门在线演示（GitHub Pages）"></a>
 
   ```bash
   dsh plugin add github:01men/DeptAI-UI-DSH
@@ -38,6 +39,8 @@
 
 ## 快速开始
 
+**在线演示**：<https://01men.github.io/DeptAI-UI-DSH/> —— 01门控制台落地页（14 行业图谱包与治理台账的实际界面），无需安装 dsh 即可浏览。
+
 ```bash
 dsh plugin add github:01men/DeptAI-UI-DSH
 ```
@@ -56,7 +59,7 @@ dsh plugin add github:01men/DeptAI-UI-DSH
 
 ## 工程质量
 
-- 🧪 **1300+ 项端到端自测全绿**（2026-10-29 实测 1367/1367；每次交付前全量回归 + 插件清单五面校验）
+- 🧪 **2012 项端到端自测全绿**（2026-11-03 实测 2012/2012；每次交付前全量回归 + 插件清单五面校验）
 - 📦 **fresh-install 铁律** — 每次交付前在「全新安装的 dsh」上验证插件安装与完整体验（装机模拟含在自测内）
 - 🚫 **零安装期执行** — 预构建 dist 产物，无生命周期脚本、无运行时编译
 - 🧯 **fail-closed + 诚实降级** — 安全语义默认拒绝，能力缺口如实呈现，操作全程审计留痕
