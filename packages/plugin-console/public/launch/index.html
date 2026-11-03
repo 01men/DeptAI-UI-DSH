@@ -17,6 +17,8 @@
 <meta name="twitter:description" content="One control plane for every MCP server, skill, agent, and AI app. Self-hosted, MIT.">
 <meta name="twitter:image" content="https://demo.ybkkasi.com/launch/img/ph-thumbnail-1200x630.jpg">
 <link rel="icon" href="/ybk-mark.png">
+<!-- 联系方式组件（零依赖 Web Component，/contact-channels/ 同目录含二维码资源与说明） -->
+<script src="/contact-channels/contact-channels.js" defer></script>
 <style>
 :root{
   --bg:#f8f6f3; --surface:#fffdfb; --border:#e0ddd8; --border-strong:#d1cdc6;
@@ -130,6 +132,7 @@ footer .links{display:flex;gap:20px;justify-content:center;margin-bottom:14px;fl
     <a href="#shots">Screens</a>
     <a href="#run">Self-host</a>
     <a href="#faq">FAQ</a>
+    <a href="#contact">Contact</a>
     <a href="https://github.com/01men/ybkkasi" target="_blank" rel="noopener">GitHub</a>
   </div>
 </div></nav>
@@ -282,6 +285,34 @@ npm run selftest              <span class="c"># 1822 assertions</span></pre>
   <details><summary>What about credential hosting and rotation?</summary><p>Long-lived third-party credentials (API keys, internal service tokens) now have a platform home: registered values are AES-256-GCM encrypted at rest, retrieval requires a dedicated permission point (app.credential.fetch) with per-access audit, and rotation is a same-key overwrite (old value invalid immediately). Short-lived workload identity (SPIFFE-style) for agent runtimes remains on the roadmap; agent platform identities today use rotatable machine credentials.</p></details>
 </div></section>
 
+<hr class="sep">
+
+<section id="contact"><div class="wrap">
+  <div class="sec-head">
+    <div class="kicker">Contact</div>
+    <h2>Questions, feedback, or an enterprise pilot?</h2>
+    <p>Reach us on any channel below — GitHub issues are preferred for bugs, the community groups for everything else.</p>
+  </div>
+  <contact-channels theme="light" accent="#0a5f87" style="--cc-bg:var(--surface);--cc-radius:var(--r-lg)">
+    <script type="application/json">
+    {
+      "brand": null,
+      "heading": "联系我们 · Contact us",
+      "channels": [
+        { "type": "email",    "label": "Email",                   "value": "ybkk01@126.com" },
+        { "type": "wechat",   "label": "企业微信群 WeChat group", "value": "https://work.weixin.qq.com/ca/cawcdecedba18d0ddb" },
+        { "type": "telegram", "label": "Telegram",                "value": "https://t.me/+YvW7087WEq9kMTg9" },
+        { "type": "github",   "label": "GitHub",                  "value": "https://github.com/01men/ybkkasi" }
+      ],
+      "cards": [
+        { "label": "元冰可公众号 · Official account", "image": "/contact-channels/assets/qrcode-official.jpg", "hint": "扫码关注 · Scan to follow" },
+        { "label": "Telegram 交流群 · Group",         "image": "/contact-channels/assets/qrcode-telegram.png", "hint": "扫码加群 · Scan to join", "href": "https://t.me/+YvW7087WEq9kMTg9" }
+      ]
+    }
+    </script>
+  </contact-channels>
+</div></section>
+
 <footer><div class="wrap">
   <div class="cta2">
     <a class="btn btn-p" href="https://demo.ybkkasi.com" target="_blank" rel="noopener">Open the live demo →</a>
@@ -294,6 +325,7 @@ npm run selftest              <span class="c"># 1822 assertions</span></pre>
     <a href="https://github.com/01men/ybkkasi/issues" target="_blank" rel="noopener">Issues</a>
     <a href="https://github.com/01men/ybkkasi/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
     <a href="https://demo.ybkkasi.com" target="_blank" rel="noopener">Demo console</a>
+    <a href="#contact">Contact</a>
   </div>
   <p>YBK · 元冰可 — Enterprise AI Asset Governance · v1.5.0 · MIT licensed · Hangzhou YuanBingKe Technology</p>
 </div></footer>

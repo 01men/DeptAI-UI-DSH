@@ -3,6 +3,20 @@
 本文件记录对外可感知的版本节点。过程性批次明细（QA 报告、交接单、批次计划）见
 `docs/internal/`（不构成对外契约）；早期完整发布说明见 `docs/internal/release-notes-*.md`。
 
+## [Unreleased] · 官网与仓库挂接企业联系方式（2026-11-03）
+
+demo.ybkkasi.com 介绍页（/launch）与三语 README 落上官方联系渠道，让客户找得到人：
+
+- **`<contact-channels>` 组件入库**（`packages/plugin-console/public/contact-channels/`）：
+  零依赖 Web Component（Shadow DOM 样式隔离、暗/亮双主题），内置邮箱 / 企业微信群 /
+  Telegram 群渠道与公众号、Telegram 群二维码；任意页面一个 script 标签即可复用，
+  用法见同目录 README.md。
+- **介绍页 Contact 区块**（/launch · `#contact`）：浅色主题 + 品牌色（#0a5f87）适配，
+  顶部导航与页脚加 Contact 锚点；邮箱点击直达邮件客户端（悬停可复制），微信 / Telegram /
+  GitHub 图标直达对应入口，二维码点击放大查看。
+- **三语 README「联系我们 / Contact / お問い合わせ」**：渠道表 + 公众号与 Telegram 群
+  二维码；中文主 README 顶部快捷锚点同步增加「联系我们」。
+
 ## [Unreleased] · 审批中心同目标在途单收口（2026-11-02）
 
 线上事实：负责人提交「Agent 上线：workbudyy-ybkk-macmini」后，治理执行官 Agent 对同一 agentId

@@ -143,4 +143,19 @@ Endpoint and tool counts change with version and caller permissions, so they are
 
 [Architecture](../../ARCHITECTURE.md) · [Enterprise deployment](deploy-enterprise.md) · [Changelog](../../../CHANGELOG.md) · [Contributing](../../../CONTRIBUTING.md) · [i18n governance](../README.md) · [日本語](../ja/README.md) · [中文](../../../README.md)
 
+## Contact
+
+For business inquiries, enterprise deployment support, usage questions, or bug reports, reach us on any channel below (GitHub issues preferred for bugs):
+
+| Channel | Entry |
+| --- | --- |
+| Email | [ybkk01@126.com](mailto:ybkk01@126.com) |
+| WeChat Work group | [Join via link](https://work.weixin.qq.com/ca/cawcdecedba18d0ddb) |
+| Telegram group | [t.me/+YvW7087WEq9kMTg9](https://t.me/+YvW7087WEq9kMTg9) |
+| GitHub | [01men/ybkkasi](https://github.com/01men/ybkkasi) · [Issues](https://github.com/01men/ybkkasi/issues) |
+
+| Official WeChat account (scan to follow) | Telegram group (scan to join) |
+| --- | --- |
+| <img src="../../../packages/plugin-console/public/contact-channels/assets/qrcode-official.jpg" width="200" alt="Official WeChat account QR code"> | <img src="../../../packages/plugin-console/public/contact-channels/assets/qrcode-telegram.png" width="200" alt="Telegram group QR code"> |
+
 This project is released under the [MIT License](../../../LICENSE).

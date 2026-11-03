@@ -24,7 +24,8 @@
   <a href="#快速开始">快速开始</a> ·
   <a href="#接入-dsh">接入 dsh</a> ·
   <a href="#面向-agent-和开发者">Agent 接入</a> ·
-  <a href="docs/deploy-enterprise.md">部署指南</a>
+  <a href="docs/deploy-enterprise.md">部署指南</a> ·
+  <a href="#联系我们">联系我们</a>
 </p>
 
 [![元冰可控制台：查看用量与成本，数据为演示数据](packages/plugin-console/public/launch/img/20-usage-cost.jpg)](https://demo.ybkkasi.com/)
@@ -138,5 +139,22 @@ AI 原生组织需要在五个方面重塑生产关系，平台在每一项下�
 ## 文档与社区
 
 [架构说明](docs/ARCHITECTURE.md) · [企业部署](docs/deploy-enterprise.md) · [更新记录](CHANGELOG.md) · [贡献指南](CONTRIBUTING.md) · [i18n 治理](docs/i18n/README.md) · [English](docs/i18n/en/README.md) · [日本語](docs/i18n/ja/README.md) · [Agent](README.agent.md)
+
+## 联系我们
+
+商业合作、企业部署支持、使用问题或 bug 反馈，任一渠道均可（bug 建议优先提 [GitHub issue](https://github.com/01men/ybkkasi/issues)）：
+
+| 渠道 | 入口 |
+| --- | --- |
+| 邮箱 | [ybkk01@126.com](mailto:ybkk01@126.com) |
+| 企业微信群 | [扫码或点击入群](https://work.weixin.qq.com/ca/cawcdecedba18d0ddb) |
+| Telegram 交流群 | [t.me/+YvW7087WEq9kMTg9](https://t.me/+YvW7087WEq9kMTg9) |
+| GitHub | [01men/ybkkasi](https://github.com/01men/ybkkasi) · [Issues](https://github.com/01men/ybkkasi/issues) |
+
+| 元冰可公众号（扫码关注） | Telegram 交流群（扫码加入） |
+| --- | --- |
+| <img src="packages/plugin-console/public/contact-channels/assets/qrcode-official.jpg" width="200" alt="元冰可公众号二维码"> | <img src="packages/plugin-console/public/contact-channels/assets/qrcode-telegram.png" width="200" alt="Telegram 交流群二维码"> |
+
+> 演示站 [demo.ybkkasi.com](https://demo.ybkkasi.com/) 的介绍页（/launch）底部同样挂有以上联系方式（`<contact-channels>` 组件，见 `packages/plugin-console/public/contact-channels/README.md`），可在任意页面复用。
 
 本项目采用 [MIT License](LICENSE)。
