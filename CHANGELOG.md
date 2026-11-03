@@ -1,9 +1,13 @@
 # 更新日志
 
+## [Unreleased]
+
+（本节为空：自 v1.6.0 起的新变更在此累积）
+
 本文件记录对外可感知的版本节点。过程性批次明细（QA 报告、交接单、批次计划）见
 `docs/internal/`（不构成对外契约）；早期完整发布说明见 `docs/internal/release-notes-*.md`。
 
-## [Unreleased] · 官网与仓库挂接企业联系方式（2026-11-03）
+## [1.6.0] · 2026-11-03 · 面板架构统一收编 + 审批在途单收口 + 演示免密入场
 
 demo.ybkkasi.com 介绍页（/launch）与三语 README 落上官方联系渠道，让客户找得到人：
 
@@ -17,7 +21,7 @@ demo.ybkkasi.com 介绍页（/launch）与三语 README 落上官方联系渠道
 - **三语 README「联系我们 / Contact / お問い合わせ」**：渠道表 + 公众号与 Telegram 群
   二维码；中文主 README 顶部快捷锚点同步增加「联系我们」。
 
-## [Unreleased] · 审批中心同目标在途单收口（2026-11-02）
+### 审批中心同目标在途单收口（2026-11-02）
 
 线上事实：负责人提交「Agent 上线：workbudyy-ybkk-macmini」后，治理执行官 Agent 对同一 agentId
 另开一张上线单并由评审官批掉——Agent 已 online，负责人那张却永久挂在待审批（再点通过会被状态机
@@ -36,7 +40,7 @@ demo.ybkkasi.com 介绍页（/launch）与三语 README 落上官方联系渠道
 - 控制台：`superseded` 徽标「已收口」、时间线文案与收口依据可点跳转；SLA 看板不把收口计入已决分母；
   MCP `approval_list` 状态枚举同步。随包单测 +6（`approval.test.mjs` 15 例）。
 
-## [Unreleased] · 演示一键免密入场 01门工作台 + 控制台 01门入口（2026-11-01）
+### 演示一键免密入场 01门工作台 + 控制台 01门入口（2026-11-01）
 
 demo.ybkkasi.com 挂上 01门（DeptAI-UI-DSH，dsh demo profile :7778，远端绑定演示底座）后，
 客户直达面板会落「连接向导」要求输账号密码。本次把登陆这一步从演示体验里拿掉：
@@ -53,7 +57,7 @@ demo.ybkkasi.com 挂上 01门（DeptAI-UI-DSH，dsh demo profile :7778，远端�
   看板/任务/频道/SSE 全通），客户全程零输入。部署与验收记录：
   `docs/internal/gate01-demo-deploy-20261101.md`。
 
-## [Unreleased] · 工具面留痕关联成员 + 同人审批放开 + 升级检测修复 + Officers 每日提报（2026-11-02）
+### 工具面留痕关联成员 + 同人审批放开 + 升级检测修复 + Officers 每日提报（2026-11-02）
 
 用户实测五项反馈一并落地：
 
@@ -78,7 +82,7 @@ demo.ybkkasi.com 挂上 01门（DeptAI-UI-DSH，dsh demo profile :7778，远端�
 - **自测**：+3 断言（contents 回退直测/PAT 工具面调用留痕关联成员/skill 下载留痕），
   R12 断言反转为同人通过；1822/1822 全绿。
 
-## [Unreleased] · transition 权限按动作分支 + 员工自助 MCP 调用配置（2026-11-02）
+### transition 权限按动作分支 + 员工自助 MCP 调用配置（2026-11-02）
 
 全局 API/MCP 对齐审查发现两项权限口径问题（REST/工具两面对同一动作要求不同权限点；目录点
 app.offline 零执行面），连同「员工在平台自主生成 MCP 调用配置」诉求一并落地：
@@ -102,7 +106,7 @@ app.offline 零执行面），连同「员工在平台自主生成 MCP 调用配
   掩码列表/越权吊销 404/吊销即失效/数量上限/A-B 双侧分支正反路径/工具面 app_offline/矩阵
   组合标注），1819/1819 全绿；路由数 499、工具数 98 防漂移闸同步。
 
-## [Unreleased] · 资产使用凭证：Agent 获取授权 → 主动提报 → 台账经营关联全链路（2026-10-31）
+### 资产使用凭证：Agent 获取授权 → 主动提报 → 台账经营关联全链路（2026-10-31）
 
 此前 skill.zip 下载到 Agent 本地执行后平台完全无感知（只有下载流水，无使用记录）；现有
 metrics-report 是 DAU 运营口径，不是资产粒度的使用凭证——「Agent 登记后获取 skill/MCP 资产、
@@ -131,7 +135,7 @@ metrics-report 是 DAU 运营口径，不是资产粒度的使用凭证——「
   路径/MCP 权限组路径/human 代报/幂等重放与异容/查询过滤/台账关联/审计落账/工具面端到端），
   落地页断言数 1767 → 1793。
 
-## [Unreleased] · 应用外部凭证托管：数字员工可存取的长期第三方凭据平台落点（2026-10-31，#19）
+### 应用外部凭证托管：数字员工可存取的长期第三方凭据平台落点（2026-10-31，#19）
 
 GitHub issue #19（enhancement）实测反馈：数字员工/接入应用要调用「用长期固定凭据鉴权的外部
 自研服务」时，平台没有任何可存取落点（`/api/secrets`、`/api/vault` 404；app attrs 白名单无
@@ -157,7 +161,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
   删除联动清库），落地页断言数 1749 → 1767；随包单测 `credentials.test.mjs` 6 条（含
   篡改检测 fail-closed 与重启解密往返）。
 
-## [Unreleased] · Agent 身份纳管第三通道 headless + SSO 页负责人侧 entryUrl 登记（2026-10-31）
+### Agent 身份纳管第三通道 headless + SSO 页负责人侧 entryUrl 登记（2026-10-31）
 
 用户实测反馈：Work Body 等纯后台 Agent 接入后点「上线」被门禁拦住，而签发 SSO 客户端强制
 要回调地址——没有交互界面的执行体既签发不了客户端也没有 entryUrl 可登记，无路可走。本批
@@ -176,7 +180,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - **自测**：新增 9 条断言（三无拒绝新文案 / 声明放行 / boolean 类型护栏 / 撤销后执行期复核
   失败 / 重新声明上线成功），落地页断言数同步 1740 → 1749。
 
-## [Unreleased] · 产品首页回退到上一版（生态树）并换上科技蓝配色（2026-10-30）
+### 产品首页回退到上一版（生态树）并换上科技蓝配色（2026-10-30）
 
 维护者反馈「这版（冰晶）首页不好看」，按裁决回退公共产品首页，同时把上一版的浅蓝/青蓝
 色调换成冰晶主题的科技蓝：
@@ -197,7 +201,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - 集成测试（`theme-integration.test.mjs`）首页段随之改写为生态树版断言，并顺带修掉一条
   依赖已删首页单测的 CI 引用。
 
-## [Unreleased] · 执行中枢投影批次：面板任务血缘/验收裁决/目标读透（DeptAI-UI-DSH issue#3/#4 修订，2026-10-29）
+### 执行中枢投影批次：面板任务血缘/验收裁决/目标读透（DeptAI-UI-DSH issue#3/#4 修订，2026-10-29）
 
 落仓库反馈两_open issue 的最小修订集——面板=执行中枢投影，不复制权威状态（唯一任务事实源红线）：
 
@@ -219,7 +223,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - 已知边界（后续批次）：高风险动作的面板内审批闸口、kill switch/暂停派单/人工接管
   （issue#4 建议第 3/4 条）未在本批落地。
 
-## [Unreleased] · 面板架构统一：底座侧部门面板整体收编为 DeptAI-UI-DSH 面板轨实现（2026-10-29）
+### 面板架构统一：底座侧部门面板整体收编为 DeptAI-UI-DSH 面板轨实现（2026-10-29）
 
 维护者拍板「当前项目的部门面板全部砍掉，统一使用 01men/DeptAI-UI-DSH 的面板架构」。
 底座仓 `packages/plugin-panel-core` 不再维护独立分叉——整包替换为面板轨（DeptAI-UI-DSH）
@@ -256,7 +260,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
   26 能力族 + 59 条面板路由、/panel 302 归一、IAW 壳页伺服、面板自持登录链全通；
   selftest 面板三节（数据面/扩展面/J1 直调）+ #17 机器主体点名全绿。
 
-## [Unreleased] · README 定位重写：从「堆工具」到「新生产关系的运行底座」（2026-10-29）
+### README 定位重写：从「堆工具」到「新生产关系的运行底座」（2026-10-29）
 
 - 根 README 以「新生产力 vs 旧生产关系」重写产品定位：新增「堆工具为什么不管用」
   （生产关系三问：人与生产资料、分工协作、价值分配）与「元冰可 AIOS 是什么：新生产关系的运行底座」两节；
@@ -268,7 +272,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - English 版同步翻译重写（源文标注 2026-10-29 positioning rewrite）；日本語版 `stale: true`
   标注补记定位重写，待下次校正统一更新；Agent 视图按既有分工不承载产品定位，无需改动。
 
-## [Unreleased] · 面板域扩展整体收编：战略看板 / 制造工具箱 / 本地钉钉面 / Agent 流式应答（DeptAI-UI-DSH 前台 #2 底座半，2026-10-29）
+### 面板域扩展整体收编：战略看板 / 制造工具箱 / 本地钉钉面 / Agent 流式应答（DeptAI-UI-DSH 前台 #2 底座半，2026-10-29）
 
 维护者拍板「全部收编生效」后，DeptAI-UI-DSH 前台仓 panel-core 的 21 条扩展路由整体并入 main
 （此前按 handoff F 清单留定制分支；并入后 gate-01 前台对 main 宿主的 23 条缺口全部闭环，
@@ -301,7 +305,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - selftest 1697/1697 全绿（本批新增 29 断言：流式事件链/隐式派发跳过/幂等计量/跨部门拒绝 7 条，
   看板聚合与越权、mfg 真实执行/导出/放行越权、ddws 诚实降级与绑定 22 条；错误文案映射扫描同步扩容）。
 
-## [Unreleased] · #13/#14 复核残留闭环：契约自描述 + 面板自持登录面 + 存量计价识别（2026-10-29）
+### #13/#14 复核残留闭环：契约自描述 + 面板自持登录面 + 存量计价识别（2026-10-29）
 
 复核报告（截图）指出两项已关闭 issue 仍有残留，逐项核实属实并修复：
 
@@ -336,7 +340,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - selftest 1668/1668 全绿（本批新增 8 断言：契约 routes[] 与能力族对账、面板自持登录/刷新
   401→200、存量零费率读侧识别与取整为 0 不混读；清单 lint 同步登记两条新路由）。
 
-## [Unreleased] · README 三视图：中文 / English / Agent（2026-10-29）
+### README 三视图：中文 / English / Agent（2026-10-29）
 
 - **README 拆成三种视图**，共用同一套事实，面向不同读者：
   - 根 [README.md](README.md)（简体中文，默认）、[docs/i18n/en/README.md](docs/i18n/en/README.md)（English）
@@ -357,7 +361,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - 联动：`llms.txt` 阅读入口补 Agent 视图与英文版；npm `files` 增补 `README.agent.md` 与
   `docs/i18n`（离线部署不再缺件）；`docs/i18n/README.md` 目录结构登记新页。
 
-## [Unreleased] · 协作主通道组织兜底与计量 fail-fast（issue #17，2026-10-29）
+### 协作主通道组织兜底与计量 fail-fast（issue #17，2026-10-29）
 
 - **面板三处模型调用组织兜底链**（频道点名 / 工具面 askAgent / 技能直调）：调用方用户组织 →
   部门绑定组织（R11）→ 平台根组织，`orgSource` 随审计留痕——机器主体 / 外部工具通道没有用户
@@ -367,7 +371,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
   （该形态同时导致该次成本未入账，污染 #14 的成本口径）。
 - selftest：modelgw 空 org 拒绝、机器主体点名 Agent 成功、panel:* 计量入账。
 
-## [Unreleased] · README 整改与 CLI 预演安全（PR #12 合并，2026-10-29）
+### README 整改与 CLI 预演安全（PR #12 合并，2026-10-29）
 
 - **README 重写**：突出数字员工协作、可信治理、真实界面与最短接入路径，移除重复介绍、
   过期数字与历史过程叙述；Agent 索引同步精简。
@@ -378,7 +382,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
   离线部署不再缺件。
 - **部署文档纠错**：修正 dsh 挂载路径与多进程共享数据目录的错误说明。
 
-## [Unreleased] · 控制台四套可切换主题（PR #11 合并，2026-10-29）
+### 控制台四套可切换主题（PR #11 合并，2026-10-29）
 
 - 控制台新增四套界面主题：**经典原版 / 澄明经营总览 / 星图协作关系 / 夜航治理观察**——驾驶舱内
   单击切换，其他页面走顶栏切换；选择存浏览器本地，独立于平台身份主题，原有五个工作台视图、
@@ -391,7 +395,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
   定时器生命周期回归；合并冲突解决口径：exec-hub/connect/CLI/文档的修复块一律以 main 已落地
   版本（#7/#9/#10）为准，仅保留主题与测试增量，selftest 1657/1657 全绿。
 
-## [Unreleased] · GitHub 反馈修复批次二（issue #13 / #14 / #15 / #16，2026-10-29）
+### GitHub 反馈修复批次二（issue #13 / #14 / #15 / #16，2026-10-29）
 
 **#16 exec 域组织血缘断链（goals/projects/issues 空串 orgId 落库）**
 
@@ -443,7 +447,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 
 断言总数 1645 → **1657 全绿**（Node 24.21.0 实测；含四个 issue 的行为级回归与 #15 挂载形态断言修正）。
 
-## [Unreleased] · GitHub 反馈修复批次（issue #7 / #8 / #9 / #10，2026-10-29）
+### GitHub 反馈修复批次（issue #7 / #8 / #9 / #10，2026-10-29）
 
 **#10 定时器静默失效（cordis ctx.effect 误用，波及全仓库 10 处）**
 
@@ -491,7 +495,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 
 断言总数 1621 → **1645 全绿**（Node 24.21.0 实测；含 #10 内置定时器隔离实例与 #7/#8/#9 行为级回归）。
 
-## [Unreleased] · 治理令牌自愈刷新健壮化与告警出口收敛（gov-token / gov-refresh，2026-10-28）
+### 治理令牌自愈刷新健壮化与告警出口收敛（gov-token / gov-refresh，2026-10-28）
 
 - `scripts/refresh-governance-mcp-tokens.mjs`（治理双身份 MCP 令牌自愈刷新入库，org 自动化
   gov-token 作业每小时调用）三处健壮化：
@@ -506,7 +510,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
   本地 webhook / secret 配置。
 - selftest：管理员编辑 Skill 断言对齐分类统一口径（「研发效能」→「研发」，原值保留进 tags）。
 
-## [Unreleased] · Skill 市场改名 + exec_claim 软读修复 + 自动化闭环实测（2026-10-28）
+### Skill 市场改名 + exec_claim 软读修复 + 自动化闭环实测（2026-10-28）
 
 - 控制台板块改名「AI 市场 → Skill 市场」：导航 / 命令面板 / 页头 / 三语键 / 冒烟用例名同步。
 - `exec_claim` 受管探测改 `ctx.reflect.get` 软读：修复装配 workforce 后调用必炸
@@ -517,7 +521,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 - 实测：三官心跳 30 分钟全部 healthy；血缘 / 唤醒 / run / A2A 任务追踪公网可读；ybkk 子域复核 200
   （方案 V2.2 已落地）；闭环审查与修订记录见 `docs/internal/ybkk-subdomain-closed-loop-review-20261028.md`。
 
-## [Unreleased] · 各资产板块标签分类统一（2026-10-28）
+### 各资产板块标签分类统一（2026-10-28）
 
 - 平台资产统一业务分类口径固定为 11 项：**财务 / 行政 / 人事 / 销售 / 运营 / 战略 / 生产 / 研发 /
   质量 / 制造 / 其他**（`platform-core/src/taxonomy.ts` 单点定义）。Skill 市场 / Agent 本体 / AI 应用 /
@@ -533,7 +537,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
   （原值保留进 tags）并为存量 MCP 服务补缺省分类；演示 seed 的技能/Agent/应用/MCP 分类同步换新口径。
 - 三语文案补齐（en-US / ja-JP）；selftest 1621 项全绿。
 
-## [Unreleased] · GitHub 反馈修复批次（issue #4 / #5 / #6，2026-10-27）
+### GitHub 反馈修复批次（issue #4 / #5 / #6，2026-10-27）
 
 **#6 OpenAPI 接口面发现 + SPA 兜底收口**
 
@@ -575,7 +579,7 @@ secret 字段；connector 凭证保险库 write-only 且平台无回读），明
 
 断言总数 1610 → **1621 全绿**（Node 24.21.0 与 22.14.0 双版本实测）。
 
-## [Unreleased] · AI 自治治理闭环（MCP 工具面补全）
+### AI 自治治理闭环（MCP 工具面补全）
 
 **登记/评审工具面（+6 个 MCP 工具，86 → 92）**
 

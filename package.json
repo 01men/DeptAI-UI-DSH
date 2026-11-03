@@ -1,6 +1,6 @@
 {
   "name": "dsh-enterprise-ops",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "type": "module",
   "description": "企业 AI 资源统一管理平台 —— 基于 DeepSeek Harness「一切皆插件」架构",
