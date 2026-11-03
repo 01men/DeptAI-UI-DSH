@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /blog/
+Allow: /docs
+Allow: /launch/
+Allow: /$
+Disallow: /api/
+Disallow: /#/
+
+Sitemap: https://ybkkasi.com/sitemap.xml

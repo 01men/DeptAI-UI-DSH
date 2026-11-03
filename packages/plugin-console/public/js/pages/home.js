@@ -113,7 +113,7 @@ export function renderHome(app) {
       <div class="home-sec-head home-reveal">
         <div class="home-sec-kicker">架构理念</div>
         <h2>一切皆插件，治理与生俱来</h2>
-        <p>平台自身由 29 个插件组成：业务域即插即用、按需生长；资源从注册那一刻起就进入身份、权限与审计的治理轨道。</p>
+        <p>平台自身由 30 个插件组成：业务域即插即用、按需生长；资源从注册那一刻起就进入身份、权限与审计的治理轨道。</p>
       </div>
       <div class="home-arch home-reveal">
         <div class="home-points">
@@ -238,6 +238,7 @@ export function renderHome(app) {
           <a href="#sec-arch">架构理念</a>
           <a href="#sec-start">快速开始</a>
           <a href="#/panels">部门面板</a>
+          <a href="/blog/">技术笔记</a>
           <a href="https://github.com/01men/ybkkasi" target="_blank" rel="noopener" id="home-footer-github">GitHub 源码 · MIT</a>
         </div>
       </div>

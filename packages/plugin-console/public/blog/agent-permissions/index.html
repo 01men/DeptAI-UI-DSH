@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 需要的权限是动态的，传统权限模型在这里崩掉</title>
+<meta name="description" content="Agent 需要的权限是动态的，传统权限模型在这里崩掉">
+<link rel="canonical" href="https://ybkkasi.com/blog/agent-permissions/">
+<meta property="og:title" content="Agent 需要的权限是动态的，传统权限模型在这里崩掉">
+<meta property="og:description" content="Agent 需要的权限是动态的，传统权限模型在这里崩掉">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ybkkasi.com/blog/agent-permissions/">
+<link rel="icon" href="/ybk-mark.png">
+<style>
+:root{--bg:#f8f6f3;--surface:#fffdfb;--border:#e0ddd8;--t1:#231f1d;--t2:#4d4643;--t3:#706864;
+--brand:#0a5f87;--brand-deep:#084a68;--brand-soft:#e8f1f6;--ok:#2F9E44;
+--font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:var(--font);line-height:1.75;-webkit-font-smoothing:antialiased}
+a{color:var(--brand);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:760px;margin:0 auto;padding:0 22px}
+header.site{border-bottom:1px solid var(--border);background:rgba(248,246,243,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:10}
+header.site .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;color:var(--t1)}
+.brand img{width:22px;height:22px;border-radius:6px}
+.brand span.sub{font-size:11px;letter-spacing:2px;color:#7E9AD2;font-weight:500}
+.nav{display:flex;gap:18px;font-size:13.5px}
+.nav a{color:var(--t2)}
+main{padding:52px 0 80px}
+.meta{font-size:12.5px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.meta em{font-style:normal;color:var(--brand);font-weight:600}
+h1.post{font-size:31px;line-height:1.32;letter-spacing:-.015em;margin-bottom:26px;font-weight:700}
+article h2{font-size:20.5px;margin:44px 0 15px;padding-top:16px;border-top:1px solid var(--border);letter-spacing:-.01em}
+article h3{font-size:17px;margin:28px 0 10px}
+article p{margin:0 0 17px;color:var(--t2);font-size:16px}
+article strong{color:var(--t1);font-weight:650}
+article ul,article ol{margin:0 0 18px 22px;color:var(--t2);font-size:16px}
+article li{margin-bottom:8px}
+article code{font-family:var(--mono);font-size:13.5px;background:#efece7;padding:1.5px 5px;border-radius:4px;color:#0a4a68}
+article pre{background:#201f1d;border-radius:8px;padding:15px 17px;overflow-x:auto;margin:0 0 20px}
+article pre code{background:none;color:#e8e4de;font-size:13px;padding:0;line-height:1.65}
+article table{width:100%;border-collapse:collapse;margin:0 0 20px;font-size:14px;table-layout:fixed}
+article th,article td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top;word-break:break-word}
+article th{background:var(--brand-soft);font-weight:600;color:var(--brand-deep);font-size:13px}
+article hr{border:none;border-top:1px solid var(--border);margin:34px 0}
+article a{border-bottom:1px solid rgba(10,95,135,.28)}
+.post-list{list-style:none}
+.post-list li{border-top:1px solid var(--border);padding:24px 0}
+.post-list li:first-child{border-top:none;padding-top:0}
+.post-list h2{font-size:20px;font-weight:650;margin:0 0 8px;border:none;padding:0}
+.post-list h2 a{color:var(--t1);border:none}
+.post-list h2 a:hover{color:var(--brand);text-decoration:none}
+.post-list p{color:var(--t3);font-size:14px;margin:0}
+.post-list .d{font-size:12.5px;color:var(--t3);letter-spacing:.05em;margin-bottom:7px}
+footer.site{border-top:1px solid var(--border);padding:26px 0;font-size:12.5px;color:var(--t3)}
+footer.site .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
+@media(max-width:640px){h1.post{font-size:24px}article h2{font-size:18.5px}article p,article li{font-size:15px}main{padding:34px 0 60px}}
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="/"><img src="/ybk-mark.png" alt=""><span>元冰可</span><span class="sub">YBK</span></a>
+  <nav class="nav">
+    <a href="/blog/">技术笔记</a>
+    <a href="https://ybkkasi.com/docs">文档</a>
+    <a href="https://github.com/01men/ybkkasi">GitHub</a>
+    <a href="https://demo.ybkkasi.com/">演示</a>
+  </nav>
+</div></header>
+<main><div class="wrap">
+<div class="meta">技术笔记 · <em>iam</em></div>
+<h1 class="post">Agent 需要的权限是动态的，传统权限模型在这里崩掉</h1>
+<article>
+<h1>Agent 需要的权限是动态的，传统权限模型在这里崩掉</h1>
+<p>先说一个让人不舒服的结论：给 Agent 做权限，难点不是&quot;给它什么权限&quot;，而是&quot;这个权限什么时候失效&quot;。</p>
+<p>我们做过 RBAC，做过 ABAC，也在企业里见过各种权限系统。这套东西给人用是够的：一个人入职，给个角色，他就能访问对应的东西；他离职，把角色摘掉。人不会在下午三点突然决定去读写另一个部门的数据库。</p>
+<p>Agent 会。</p>
+<hr>
+<h2>一、传统模型有三个隐含假设，Agent 全部违反</h2>
+<p>RBAC 在 1992 年定型，它成立的前提是三条隐含假设：</p>
+<p><strong>假设一：主体是稳定的。</strong> 一个账号对应一个人，人的职责半年不变一次。角色可以粗到&quot;部门&quot;这个级别，因为部门成员的工作内容相似。</p>
+<p><strong>假设二：会话是长时段的。</strong> 人早上登录，晚上退出，中间八小时权限不变。权限变更在&quot;下一次登录&quot;生效是可以接受的延迟。</p>
+<p><strong>假设三：一次授权对应一片资源。</strong> 给&quot;财务角色&quot;读财务报表的权限，这个权限覆盖的是财务报表这一类东西，不是某一笔凭证。</p>
+<p>Agent 把三条全踩了。</p>
+<p><strong>它不稳定。</strong> 同一个 Agent，在早上八点做的是日报汇总，需要读三个业务库；十点被一个临时任务调用，需要写一张订单表；下午三点做的是售后工单分类，只需要读一张 MySQL 视图。它不是&quot;一个角色&quot;,它是&quot;一天里换了五个身份&quot;。</p>
+<p><strong>它没有长时段的会话概念。</strong> 一次 Agent 调用可能持续 40 毫秒。如果权限在调用之间变化，最长 TTL 不能超过这次调用的寿命。我们最终的入场票据 TTL 默认是 180 秒，硬上限 600 秒，自助类票据上限 120 秒。这不是保守，是因为票据活得比调用久就是在制造攻击窗口。</p>
+<p><strong>它的授权最细的粒度是&quot;这一次工具调用&quot;。</strong> 不是&quot;这一类资源&quot;。Agent 调一个 MCP 工具，参数里带着具体要看哪一行数据、要写哪个字段。授权&quot;允许访问订单表&quot;和授权&quot;允许把 order_id=8812 的收货地址改成苏州&quot;是两个量级的事情。</p>
+<p>结论很直接：如果把 Agent 硬塞进&quot;用户-角色-权限点&quot;这套模型，能跑通，但每个转弯处都会漏。</p>
+<hr>
+<h2>二、我们踩过的坑：把&quot;未知&quot;当成&quot;可读&quot;</h2>
+<p>这是最值得讲的一个 bug，因为它不是设计失误，是一个看起来非常合理的默认值。</p>
+<p>早期我们的 MCP 网关从远端服务同步 <code>tools/list</code>，拿到工具清单。清单里每个工具可以申报自己的风险等级：read / write / admin。问题在于，很多第三方 MCP 服务根本不申报。</p>
+<p>当时的处理是：<strong>没申报的，一律当 read。</strong></p>
+<p>这个默认值在开发环境完全没问题——大部分工具确实是读。但它同时意味着：<strong>任何有写能力的工具，只要不申报，就能绕过审批直接进入调用面。</strong> 攻击者不需要攻破任何东西，只需要让同步进来的工具&quot;忘记&quot;申报。</p>
+<p>现在我们的口径是反过来的：</p>
+<pre><code>/** 网关闸门 facts.risk 一律取本登记的生效值（effectiveRisk）；无生效登记 → &#x27;unknown&#x27;。 */</code></pre>
+<p>未登记的工具风险是 <code>unknown</code>，不是 <code>read</code>。<code>unknown</code> 在不同语境下行为不同：<strong>只读语境放行，写语境返回 <code>RISK_UNREGISTERED</code> 拒绝。</strong></p>
+<p>这个改动上线后，我们的登记队列里立刻出现两百多个 <code>unknown</code> 工具，全部在写语境下被拒。业务侧第一反应是&quot;你们把系统搞坏了&quot;。但正确的那句话是：<strong>这些工具从来就没有被授权过，只是以前没人检查。</strong></p>
+<p>写能力要恢复，必须走一条状态机：</p>
+<pre><code>pending_domain --(领域审批, risk=read)--&gt; effective
+pending_domain --(领域审批, risk=write|admin)--&gt; pending_security --(安全审批)--&gt; effective
+pending_domain / pending_security --(拒绝)--&gt; rejected（终态，可重新登记开新单）
+effective --(退场)--&gt; retired</code></pre>
+<p>有几条细节比状态机本身更重要：</p>
+<p><strong>审批人身份必须来自服务端解析的 caller，不接受请求参数指定。</strong> 否则就是&quot;我可以替你审批&quot;。</p>
+<p><strong>同一 (serviceId, toolName) 至多一条非 retired 记录。</strong> effective 必须先退场才能重新登记，避免同一个工具挂着两条互相矛盾的生效结论。</p>
+<p><strong>rejected 不阻断新登记。</strong> 拒绝的结论锁的是&quot;这一次申报&quot;，不是&quot;这个工具永远不行&quot;。</p>
+<p><strong>退场会立刻让闸门回到 unknown。</strong> 也就是说写语境下立刻恢复拒绝。登记既能生效，也能收回——这一条很少被设计，但它是&quot;可撤销&quot;的前提。</p>
+<hr>
+<h2>三、权限的正确形状：三个维度同时收紧</h2>
+<p>做完上面这些，我们把 Agent 的权限拆成了三个互相独立的维度。任何一个维度单独调都是不够的。</p>
+<h3>维度一：作用域绑定场景，不绑定人</h3>
+<p>这是我们和大多数实现分歧最大的地方。</p>
+<p>常规做法是给角色加细粒度权限点。但我们发现，角色这个维度根本无法表达&quot;同一批人在不同业务场景下该有不同的权限&quot;——因为角色是人的属性，场景是任务的属性。</p>
+<p>所以我们加了场景级 ABAC 层。策略条目长这样：</p>
+<pre><code>interface ScenePolicyEntry {
+  principalType: &#x27;role&#x27; | &#x27;user&#x27;
+  principalId: string        // &#x27;*&#x27; 为通配
+  actions: string[]          // 与权限点同形，或业务自定义动作键
+  effect: &#x27;allow&#x27; | &#x27;deny&#x27;
+}</code></pre>
+<p>判定顺序是死的：</p>
+<ol><li>场景<strong>没有任何策略</strong> → 返回 <code>default</code>，回落到角色 RBAC 和部门范围权限（存量行为不变）</li><li>场景有策略 → <strong>deny 条目优先</strong>，命中即拒</li><li>allow 命中 → 放行</li><li>都不命中 → <strong>拒绝</strong>（fail-closed）</li></ol>
+<p>第 4 条是关键。一个场景一旦开始配置策略，它就进入了&quot;默认拒绝&quot;的世界。这很反直觉，配置策略本该是&quot;多给一点权限&quot;，结果却是&quot;整体收紧&quot;。但这正是我们要的语义：<strong>你敢为一个场景立规矩，就得把该放行的都写清楚。</strong></p>
+<p><code>default</code> 这个返回值也是刻意的。它不是&quot;允许&quot;也不是&quot;拒绝&quot;，它是&quot;这一层没有意见&quot;。调用方必须继续走 RBAC 链路，而不是看到 <code>default</code> 就当通过。</p>
+<p>另外，场景策略同时满足角色 RBAC 才算通过。场景判定是<strong>收敛</strong>，不是替代。</p>
+<h3>维度二：有效期短于调用，且一次性</h3>
+<p>我们对票据做了三层限制：</p>
+<ul><li>全局 TTL：默认 180 秒，可配，硬夹在 30–600 秒之间（<code>Math.min(600, Math.max(30, ...))</code>）</li><li>票种上限：自助类票据额外压到 ≤120 秒，<strong>这个上限无视环境变量</strong>——防止有人把 env 调高绕过</li><li>一次性：兑换即消费</li></ul>
+<p>有一处设计取舍值得说：票据熵是 256 bit，我们<strong>没有做 IP 限流</strong>。原因是错误尝试没有爆破收益（256 bit 熵），而限流只会伤到共享出口 IP 的正常用户。这是一个&quot;安全措施不做&quot;的决定，但它有明确理由——不是忘了做。</p>
+<p>对比一下人用的 token：access token 30 分钟，refresh token 7 天。差了 3 个数量级。这不是双重标准，是因为人的会话本来就长，而 Agent 的会话本来就短。<strong>TTL 应该匹配被授权行为的生命周期，而不是匹配&quot;方便&quot;。</strong></p>
+<h3>维度三：组织归属 fail-closed，且支持兼任只读</h3>
+<p>这一条在真实企业里比前两条更容易出事。</p>
+<p>我们的用户模型支持一人多部门：<code>orgRemoteId</code> 是主归属（优先取钉钉主部门），<code>extraOrgRemoteIds</code> 是兼任挂靠。权限校验时，<strong>兼任部门只有只读权限</strong>。</p>
+<p>组织归属的校验也是 fail-closed 的：非平台管理员（无 <code>*</code> 权限）只能管理<strong>本组织子树内</strong>的对象。越界直接拒，不是&quot;过滤掉&quot;。</p>
+<p>为什么强调这个？因为 SaaS 时代的多租户是靠&quot;数据隔离&quot;保证的——查询时带上 tenant_id。但企业内网的 Agent 平台不是多租户，它是<strong>单实例多组织</strong>，所有数据在同一个库里，隔离全靠每次调用的组织校验。一旦某个接口漏了这一步，就是跨部门数据泄露。</p>
+<hr>
+<h2>四、动态权限真正的难点：撤销</h2>
+<p>到这里，如果只理解成&quot;权限要短、要细、要按场景&quot;，那是把一个困难问题简化成了配置问题。</p>
+<p>真正的难点是撤销。</p>
+<p>考虑这个场景：一个 Agent 正在执行一个长任务，中途它的权限被管理员收回了。任务怎么办？</p>
+<ul><li>立刻中断？可能留下半写的数据</li><li>跑完再中断？那&quot;收回&quot;就是假的</li><li>让任务继续但拒绝新的子调用？这是我们选的</li></ul>
+<p>第三种做法的代价是：你必须有能力在<strong>任何时刻</strong>回答&quot;这个正在跑的任务，当前持有的权限集合是什么&quot;。这要求权限不是启动时快照，而是每次调用实时解析。</p>
+<p>我们的实现是每次校验都去查当前的登记值、当前的策略、当前的用户状态。代价是每个调用多几次本地查询（我们用的是进程内集合，不是网络往返）。收益是撤销是真的即时生效，不是&quot;下次登录生效&quot;。</p>
+<p>顺带一个我们发现的问题：<strong>乐观锁不是可选的。</strong> 场景策略带 <code>version</code> 字段，并发编辑用 <code>expectedVersion</code> 对账，冲突直接抛错。为什么？因为两个管理员同时改一个场景的策略，后写的覆盖前写的，而&quot;被覆盖掉的那条 deny&quot;恰恰是最危险的那类丢失——你不会收到任何告警，只是某个本该被拒的调用通过了。</p>
+<hr>
+<h2>五、诚实地说，这套东西做不到什么</h2>
+<p>写这类文章最容易滑向&quot;我们的方案完美解决了问题&quot;。所以这一段必须写清楚。</p>
+<p><strong>我们没法阻止 Agent 在权限范围内做蠢事。</strong> 授权&quot;允许写订单表&quot;，Agent 就有权把订单表写错。权限系统管的是&quot;能不能&quot;,不是&quot;该不该&quot;。这个边界必须让业务方知道，否则会误以为上了管控台就安全了。</p>
+<p><strong>我们的场景策略表达力有限。</strong> 只支持角色/用户 × 动作 × allow/deny，没有条件表达式，没有时间窗口，没有数值约束。想做&quot;金额 &gt; 5 万才需要二次审批&quot;，现在得在应用层做。</p>
+<p><strong>两级审批允许同一人连审。</strong> 我们早期是强制&quot;四眼原则&quot;，后来按业务要求取消了——因为小团队根本凑不出两个审批人，结果是大家共用一个管理员账号，四眼变成零眼。这是个妥协，不是成就。真实的风控应该由审计日志事后覆盖，而不是靠流程假装。</p>
+<p><strong><code>unknown</code> 会让存量系统大面积报错。</strong> 这是&quot;未知即拒绝&quot;的必然代价，我们接受它，但它确实意味着接入成本。这一点在文档里写得很清楚，也不打算美化。</p>
+<p><strong>我们没有做权限的可视化追溯。</strong> 现在能查&quot;某个权限点被哪些角色持有&quot;，但查不了&quot;某个资源为什么对这个人可见&quot;——后者需要反向推理链路，我们没做。</p>
+<p>—— 以上这些边界，前三条已经写进仓库 README 的「运行边界」章节，后两条还只在这篇文章里。它们迟早都要进 README。</p>
+<hr>
+<h2>六、如果只记一句话</h2>
+<p>给 Agent 做权限，不要从&quot;它需要什么&quot;开始想，要从&quot;它什么时候不该有&quot;开始想。</p>
+<p>传统权限模型的思路是累加：这个人需要 A、需要 B、需要 C，加上去。Agent 的思路必须是收敛：这个调用需要什么，只有这一件事，用完就没了。</p>
+<p>一个 40 毫秒的调用，配一个 7 天的 token，中间的所有设计都是空的。</p>
+<hr>
+<p>实现全在这，MIT，可以自己起一个看：</p>
+<p><a href="https://github.com/01men/ybkkasi">https://github.com/01men/ybkkasi</a></p>
+<p>当前口径：30 个插件包 / 94 个权限点 / 98 个 MCP 工具 / 6 个内置角色。风险登记、场景策略、票据签发都在 <code>packages/plugin-iam</code>、<code>packages/plugin-mcp</code>、<code>packages/plugin-authn</code> 里，代码不算多，读得完。</p>
+</article>
+<p style="margin-top:40px;font-size:13.5px;color:var(--t3)">源码 MIT：<a href="https://github.com/01men/ybkkasi">github.com/01men/ybkkasi</a> · 免登只读演示：<a href="https://demo.ybkkasi.com/">demo.ybkkasi.com</a></p>
+</div></main>
+<footer class="site"><div class="wrap">
+  <span>© 2026 杭州元冰可科技有限公司 · 企业 AI 资产治理</span>
+  <span>MIT · <a href="https://github.com/01men/ybkkasi">github.com/01men/ybkkasi</a></span>
+</div></footer>
+</body>
+</html>

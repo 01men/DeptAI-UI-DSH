@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模型账单月底出来，没人说得清哪个部门花的</title>
+<meta name="description" content="模型账单月底出来，没人说得清哪个部门花的">
+<link rel="canonical" href="https://ybkkasi.com/blog/cost-attribution/">
+<meta property="og:title" content="模型账单月底出来，没人说得清哪个部门花的">
+<meta property="og:description" content="模型账单月底出来，没人说得清哪个部门花的">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://ybkkasi.com/blog/cost-attribution/">
+<link rel="icon" href="/ybk-mark.png">
+<style>
+:root{--bg:#f8f6f3;--surface:#fffdfb;--border:#e0ddd8;--t1:#231f1d;--t2:#4d4643;--t3:#706864;
+--brand:#0a5f87;--brand-deep:#084a68;--brand-soft:#e8f1f6;--ok:#2F9E44;
+--font:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:var(--font);line-height:1.75;-webkit-font-smoothing:antialiased}
+a{color:var(--brand);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:760px;margin:0 auto;padding:0 22px}
+header.site{border-bottom:1px solid var(--border);background:rgba(248,246,243,.92);backdrop-filter:blur(8px);position:sticky;top:0;z-index:10}
+header.site .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;color:var(--t1)}
+.brand img{width:22px;height:22px;border-radius:6px}
+.brand span.sub{font-size:11px;letter-spacing:2px;color:#7E9AD2;font-weight:500}
+.nav{display:flex;gap:18px;font-size:13.5px}
+.nav a{color:var(--t2)}
+main{padding:52px 0 80px}
+.meta{font-size:12.5px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+.meta em{font-style:normal;color:var(--brand);font-weight:600}
+h1.post{font-size:31px;line-height:1.32;letter-spacing:-.015em;margin-bottom:26px;font-weight:700}
+article h2{font-size:20.5px;margin:44px 0 15px;padding-top:16px;border-top:1px solid var(--border);letter-spacing:-.01em}
+article h3{font-size:17px;margin:28px 0 10px}
+article p{margin:0 0 17px;color:var(--t2);font-size:16px}
+article strong{color:var(--t1);font-weight:650}
+article ul,article ol{margin:0 0 18px 22px;color:var(--t2);font-size:16px}
+article li{margin-bottom:8px}
+article code{font-family:var(--mono);font-size:13.5px;background:#efece7;padding:1.5px 5px;border-radius:4px;color:#0a4a68}
+article pre{background:#201f1d;border-radius:8px;padding:15px 17px;overflow-x:auto;margin:0 0 20px}
+article pre code{background:none;color:#e8e4de;font-size:13px;padding:0;line-height:1.65}
+article table{width:100%;border-collapse:collapse;margin:0 0 20px;font-size:14px;table-layout:fixed}
+article th,article td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top;word-break:break-word}
+article th{background:var(--brand-soft);font-weight:600;color:var(--brand-deep);font-size:13px}
+article hr{border:none;border-top:1px solid var(--border);margin:34px 0}
+article a{border-bottom:1px solid rgba(10,95,135,.28)}
+.post-list{list-style:none}
+.post-list li{border-top:1px solid var(--border);padding:24px 0}
+.post-list li:first-child{border-top:none;padding-top:0}
+.post-list h2{font-size:20px;font-weight:650;margin:0 0 8px;border:none;padding:0}
+.post-list h2 a{color:var(--t1);border:none}
+.post-list h2 a:hover{color:var(--brand);text-decoration:none}
+.post-list p{color:var(--t3);font-size:14px;margin:0}
+.post-list .d{font-size:12.5px;color:var(--t3);letter-spacing:.05em;margin-bottom:7px}
+footer.site{border-top:1px solid var(--border);padding:26px 0;font-size:12.5px;color:var(--t3)}
+footer.site .wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
+@media(max-width:640px){h1.post{font-size:24px}article h2{font-size:18.5px}article p,article li{font-size:15px}main{padding:34px 0 60px}}
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="/"><img src="/ybk-mark.png" alt=""><span>元冰可</span><span class="sub">YBK</span></a>
+  <nav class="nav">
+    <a href="/blog/">技术笔记</a>
+    <a href="https://ybkkasi.com/docs">文档</a>
+    <a href="https://github.com/01men/ybkkasi">GitHub</a>
+    <a href="https://demo.ybkkasi.com/">演示</a>
+  </nav>
+</div></header>
+<main><div class="wrap">
+<div class="meta">技术笔记 · <em>cost</em></div>
+<h1 class="post">模型账单月底出来，没人说得清哪个部门花的</h1>
+<article>
+<h1>模型账单月底出来，没人说得清哪个部门花的</h1>
+<p>月底，财务把模型 API 的账单发到群里。</p>
+<p>一共四个部门在用。谁花了多少？没人答得上来。</p>
+<p>账单上只有三样东西：API key 的尾号、模型名、金额。而 key 是三个月前某个人为了方便，一次性申请的一个&quot;全公司共用&quot;的 key。于是这张账单在技术上是完整的，在管理上是废纸。</p>
+<p>我们做过一个内部统计：在没有归口设计的团队里，能一句话答出&quot;上月哪个部门 AI 花得最多&quot;的比例，比想象中低得多。多数人的答案是&quot;大概研发多一点吧&quot;。</p>
+<p>这篇文章讲我们把这个数字变得能答得上来的过程，包括中间做错的两次。</p>
+<hr>
+<h2>一、事后归因注定失败，因为账本里没有组织</h2>
+<p>第一反应通常是加一层报表：把账单拉下来，按 key 分组，人工映射到部门。</p>
+<p>这个方案在真实环境里活不过一个月，原因有三个，每一个都是结构性的：</p>
+<p><strong>key 的粒度不等于组织的粒度。</strong> 一个 key 可能被三个团队共用，也可能一个团队申请了七个 key。按 key 分组，你得到的是 key 的分布，不是部门的分布。</p>
+<p><strong>组织会变，key 不会。</strong> 三月成立的&quot;AI 创新小组&quot;六月并入了产品部。账单还在按老 key 分，报表跟着错。你没法回溯改历史，因为 key 和组织的映射关系没有生效时间。</p>
+<p><strong>最贵的那部分常常没有 key。</strong> 通过网关、MCP 服务、批处理任务产生的消耗，走的是服务间凭证而不是人手上的 key。</p>
+<p>所以正确的顺序是反过来的：<strong>归口字段必须在消耗发生的那一刻就写下来，而不是月底再去猜。</strong></p>
+<p>我们的做法是让计量事件必须带一个 <code>org</code> 字段，而且它是硬校验：</p>
+<pre><code>private validate(input: UsageRecordInput): void {
+  if (!input.org?.trim()) throw new Error(&#x27;usage 事件 org 必填&#x27;)
+  if (!input.subject?.trim()) throw new Error(&#x27;usage 事件 subject 必填（user:&lt;id&gt; / agent:&lt;id&gt;）&#x27;)
+  if (!input.principal?.trim()) throw new Error(&#x27;usage 事件 principal 必填（org:&lt;id&gt; / plugin:&lt;id&gt; / platform）&#x27;)
+  ...
+}</code></pre>
+<p>报错不静默降级，直接抛。</p>
+<p>这条看起来很粗暴，代价也真实：任何接入计量的代码（模型网关、MCP 网关、连接器、NAS、A2A 协作链）都必须先知道自己在为谁干活。有些调用点在早期根本拿不到组织信息——那时我们的选择是<strong>让调用失败</strong>，而不是写一条 <code>org=&#x27;&#x27;</code> 的事件进去。</p>
+<p>因为我们算过：一条 org 为空的事件，事后要修复，需要的人力和争议，远大于让代码在开发期就报错。</p>
+<hr>
+<h2>二、三个维度不是三个&quot;分组字段&quot;，是三种归口语义</h2>
+<p>最容易做错的地方在这里。你以为&quot;按部门、按 Agent、按 Skill 统计&quot;是三次 <code>GROUP BY</code>，其实是三种完全不同的语义。</p>
+<p>我们的计量事件 schema 里有这么几个字段：</p>
+<table><thead><tr><th>字段</th><th>含义</th><th>举例</th></tr></thead><tbody><tr><td><code>org</code></td><td>部门归口字段</td><td><code>org_xxx</code></td></tr><tr><td><code>subject</code></td><td>最终使用者，on-behalf-of 终点</td><td><code>agent:agt_xxx</code> / <code>user:u_xxx</code></td></tr><tr><td><code>principal</code></td><td>计费责任主体</td><td><code>org:xxx</code> / <code>plugin:xxx</code> / <code>app:xxx</code></td></tr><tr><td><code>resource</code></td><td>被消耗的资产</td><td><code>model:qwen-plus</code> / <code>mcp:xxx</code> / <code>skill:xxx</code></td></tr></tbody></table>
+<p>关键点：<strong><code>subject</code> 是&quot;谁在用&quot;，<code>org</code> 是&quot;记在谁头上&quot;，两者可以不一致。</strong></p>
+<p>一个销售部的 Agent，被市场部的人调用，成本记销售部还是市场部？答案取决于你的管理口径，而不是数据结构。数据结构的责任是<strong>把两个事实都存下来</strong>，让口径可以随时切换；而不是提前替业务做决定。</p>
+<p>所以报表里我们先冻结了三个维度，并且写进契约文档（<code>docs/contract-j4-usage-report.md</code>，冻结日期 2026-09-09）：</p>
+<ul><li><strong>部门 byOrg</strong>：取 <code>org</code></li><li><strong>Agent byAgent</strong>：取 <code>subject</code> 且前缀为 <code>agent:</code></li><li><strong>Skill bySkill</strong>：取 <code>resource</code> 且前缀为 <code>skill:</code></li></ul>
+<p>三个维度都统计 tokens，但 tokens 的取法是&quot;计量键名含 <code>tokens</code> 的米值求和&quot;——覆盖 <code>tokens</code>、<code>input_tokens</code>、<code>output_tokens</code>，同一事件多键累加，<code>calls</code> 这类非 tokens 米不参与。</p>
+<p>为什么用&quot;键名含 tokens&quot;而不是写死三个键名？因为计量字典是可扩展的。以后接进来一个按&quot;缓存命中 token&quot;计费的服务商，键名是 <code>cached_tokens</code>，报表不用改代码就能算对。</p>
+<p>这个决定的代价是：如果有人把计量键叫 <code>tokens_estimate</code>（估算值），它也会被算进真实用量。我们接受这个风险，因为键名规范在写入侧是有约束的（<code>^[a-z][a-z0-9_.]*$</code>），估算值不该进入计量管道。</p>
+<hr>
+<h2>三、重复计费比漏计更糟，所以先落库再分发</h2>
+<p>计量管道有一条容易被忽略的要求：<strong>at-least-once 投递 + 消费端幂等</strong>。</p>
+<p>我们不追求&quot;恰好一次&quot;。分布式系统里追求恰好一次，通常意味着要么引入两阶段提交（慢且脆），要么在某个环节静默丢数据（更糟）。</p>
+<p>我们选的是：<strong>先写 SQLite 落库，再从总线分发。</strong> 宕机时最多丢&quot;分发&quot;这一步，事件本身在库里；重放一遍即可，不会重复计数。</p>
+<p>防重复靠幂等键，由调用方自带：</p>
+<pre><code>idempotency_key: `mcp:${record.id}`      // MCP 调用
+idempotency_key: `modelgw:${newId(&#x27;mi&#x27;)}` // 模型网关</code></pre>
+<p>幂等键在引擎层是唯一索引，重复投递不会重复计数。消费端失败重试 3 次进死信集合，可以按时间窗重放——重放同样不会双计。</p>
+<p>这里有个反直觉的取舍：<strong>幂等键由产生方生成，而不是由计量管道统一生成。</strong> 统一生成看起来更整洁，但它会让&quot;同一笔业务被两个组件各报一次&quot;变成两条独立事件，永远合并不了。让产生方负责，才能表达&quot;这就是同一件事&quot;。</p>
+<p>代价是：产生方如果拿错 id（比如用毫秒时间戳拼了一个 id），幂等就失效。我们接受这个代价，因为在我们的场景里，产生方手里一定有业务单号，而计量管道永远不会有。</p>
+<hr>
+<h2>四、为什么我们的&quot;应收金额&quot;恒等于 0</h2>
+<p>这一条很多人不理解，包括我们自己内部也吵过。</p>
+<p>报表里有一列叫 <code>charge_cents</code>（应收金额），它恒为 0。另一列 <code>cost_cents</code>（内部成本参考）才有真实数字。</p>
+<p>原因是商业模式：平台不转售 token、不分账。价格簿的 list 侧统一零价快照，<code>charge_cents</code> 恒 0；cost 侧按采购成本折算，只用于内部成本穿透，不对任何人呈现为&quot;账单&quot;。</p>
+<p>为什么保留一个恒为 0 的列，而不是干脆删掉？</p>
+<p>因为它定义了接口契约的形状。删掉列容易，将来想加回来，所有消费方都要改。留着它，并且在文档里明确写&quot;零价快照恒 0&quot;，语义是清晰的：这一列存在，但它不承载结算含义。</p>
+<p>配套的还有一条硬校验，防止口径漂移：</p>
+<pre><code>if (input.nonbillable === true &amp;&amp; !(price.list === 0 &amp;&amp; price.cost === 0)) {
+  throw new Error(&#x27;非计费事件只允许命中零费率价格簿规则&#x27;)
+}</code></pre>
+<p>意思是你不能&quot;标了非计费，却按计费规则入账&quot;。零费率规则产出的事件自动带上 <code>rate.nonbillable=true</code>，报表里单独统计 <code>nonbillable_events</code> 列——反馈、知识包使用这类观测事件在这里，不污染成本口径。</p>
+<p>在 demo 实例上，本月 364 条计量事件里有 262 条是非计费事件。如果这两类混在一起，成本数字会完全失真。</p>
+<hr>
+<h2>五、第一次做错：交叉矩阵的总计对不上</h2>
+<p>FinOps 视图里有个部门 × 模型的交叉矩阵，用来回答&quot;哪个部门在哪个模型上花最多&quot;。</p>
+<p>第一版做完，矩阵所有格子的和，比全口径成本小了一个数量级。</p>
+<p>原因是我们把&quot;其他&quot;兜底行算错了。当时的代码逻辑是：</p>
+<ul><li>矩阵取 Top 8 部门 × Top 8 模型</li><li>超出的行/列并入&quot;其他&quot;</li></ul>
+<p>问题在于，&quot;其他&quot;行的值我们最初用<strong>该部门的全资源成本</strong>减去 Top 模型直角和。而矩阵其他部分只统计 <code>model:</code> 域的成本。于是一个部门如果还有大量 MCP 调用成本（<code>mcp:</code> 前缀），这部分成本会被算进&quot;其他&quot;行，但矩阵的直角区域又没有对应的格子——矩阵总计就混入了非模型成本，和 byModel 的合计对不上。</p>
+<p>修正后的注释写得很直白：</p>
+<pre><code>// 「其他」行/列 = 该部门/模型在 model 域的全量 − Top8 直角和（注意行口径必须同为 model 域，
+// 不能用 byOrg 全资源成本，否则矩阵混入非模型成本、总计失守）</code></pre>
+<p>这条不是一个聪明的问题，是一个<strong>必须靠断言盯住</strong>的问题。我们在 selftest 里加了不变量断言：矩阵所有格子之和必须等于 byModel 合计，而不是全口径合计。</p>
+<p>这类&quot;看起来能对上但其实口径混了&quot;的错误，测试功能是发现不了的，只能靠定义不变量。</p>
+<hr>
+<h2>六、第二次做错：脏费率把成本台账写成了 NaN</h2>
+<p>价格簿是可运营配置的。运营在后台改费率，如果误填了一个非数值，或者 <code>units_per_step</code> 填成 0，计价就会算出 <code>NaN</code> 或 <code>Infinity</code>。</p>
+<p>第一版我们只在写入侧校验。结果出现了历史脏数据：已经入账的事件里 <code>cost_cents</code> 是 <code>null</code>/非有限值，读侧一求和，整个月的成本就变成 <code>NaN</code>。</p>
+<p><code>NaN</code> 最坏的地方是它会传播：任何一个 <code>SUM</code> 里有 <code>NaN</code>，结果是 <code>NaN</code>；图表渲染成空白；断言比较 <code>NaN === NaN</code> 为 false，测试直接红在莫名其妙的地方。</p>
+<p>修法是读侧加固（我们内部叫 REL-11）：</p>
+<pre><code>const rawCostCents = event.pricing.cost_cents
+const safeCostCents = Number.isFinite(rawCostCents) ? rawCostCents : 0
+if (!Number.isFinite(rawCostCents) &amp;&amp; !this.warnedDirtyCostResources.has(event.resource)) {
+  this.warnedDirtyCostResources.add(event.resource)
+  this.fire({ severity: &#x27;warning&#x27;, title: &#x27;脏事件成本按 0 归集&#x27; })
+}</code></pre>
+<p>两个细节值得说：</p>
+<ol><li><strong>按 0 归集，不是跳过。</strong> 跳过会让事件数和对账口径不一致（有事件没成本），按 0 至少保证&quot;这笔存在但成本未知&quot;。</li><li><strong>同一资源只告警一次。</strong> 一千条脏事件刷一千条告警，等于没有告警。</li></ol>
+<p>另外，价格簿的 list/cost/step 三个字段各自独立校验，非法值当次按 0 计价，快照里记录的是<strong>实际采用的修正值</strong>——不能把原来的非法值写进快照，否则 JSON 序列化成 <code>null</code> 会继续污染对账。</p>
+<hr>
+<h2>七、空转检测：我们明确说它是近似口径</h2>
+<p>成本报告里最容易变成&quot;假精确&quot;的是空转检测——&quot;花了钱但没产生业务结果的调用&quot;。</p>
+<p>我们的 v1 实现口径是：模型调用发生后 30 分钟内，同一主体没有任何非模型资源动作（<code>skill:</code>/<code>mcp:</code>/<code>nas:</code>/<code>app:</code>/<code>connector:</code>/<code>kb:</code>），且它的 <code>trace_id</code> 也没关联到任何动作事件 → 计为疑似空转。</p>
+<p>窗口可调（1 分钟到 24 小时），默认 30 分钟。</p>
+<p>这个口径有明确的误报：<strong>纯对话不算空转。</strong> 用户问一句、模型答一句、没有工具调用——按上面的规则，它会被计入空转。这是我们已知的、写在代码注释里的误报，页面上也必须标注&quot;近似口径、需人工复核&quot;。</p>
+<p>精确口径要等证据引擎的 <code>task_success</code> / <code>task_fail</code> 结果回传落地。在那之前，我们宁可呈现一个&quot;标着不精确&quot;的数字，也不呈现一个&quot;看起来精确但其实是猜的&quot;数字。</p>
+<p>顺带说，在 demo 实例上这个月的空转事件是 0 条，占比 0%。这个数字好看，但不说明我们的实现优秀——它说明 demo 的种子数据里每个模型调用后面都跟着动作事件。真实环境不会这么干净。</p>
+<hr>
+<h2>八、诚实边界：能归口，不等于人能看懂</h2>
+<p>这是我今天最想写清楚的一点，因为它决定了这套东西在真实企业里能不能用。</p>
+<p>技术上我们已经能按部门聚合成本了。但在 demo 实例的报表接口里，部门列返回的是这样的值：</p>
+<pre><code>org_mvckdqiz53isnw1r
+org_mvckdqiz53iqzua3</code></pre>
+<p>这是内部 id，不是&quot;市场部&quot;。</p>
+<p><strong>这意味着：归口字段有值，不等于人能读懂。</strong></p>
+<p>从 <code>org_id</code> 到&quot;市场部&quot;还差一层组织目录（org directory），而这层目录会变——部门改名、合并、拆分、历史数据要不要跟着改、改的时候按什么时点算。这是 HR 系统的问题，不是计量系统的问题。</p>
+<p>我们目前的做法是<strong>不猜</strong>：报表返回 id，控制台前端做名字映射，映射关系来自资源台账里登记的组织记录。如果组织没登记，前端就显示 id。这不优雅，但它是诚实的——它告诉使用者&quot;这条成本归属到了这个组织实体，但这个实体还没有人类可读的名字&quot;。</p>
+<p>其他我们做不到的，一并写清楚：</p>
+<ul><li><strong>单进程，没有水平扩展。</strong> 存储双形态（JSON 集合 / SQLite），都是单进程。多节点 HA 需要 Postgres 后端，目前只是规划，没实现。</li><li><strong>不做账单、不转售、不分账。</strong> 之前的钱包/分账子系统已经下线封存了。你要发票、要按部门出对账单，这套系统给不了，它只给内部成本穿透。</li><li><strong>模型网关只转发 OpenAI 兼容的 <code>/chat/completions</code>。</strong> 没配 endpoint 时直接报错，绝不生成假 completion 充数。</li><li><strong>计量不等于计费精度。</strong> 我们按采购成本参考折算，不是财务认可的核算口径。真要做财务入账，中间还有汇率、折扣阶梯、阶梯定价回溯这些没处理的东西。</li></ul>
+<p>写这些不是为了显坦诚，是因为<strong>成本类系统最怕的就是&quot;看起来准&quot;</strong>。一个报表说&quot;市场部花了 4,200&quot;，如果底层口径没交代清楚，这个数字会被拿去开会、被写进预算、被用来评价某个团队。错了没人知道。</p>
+<hr>
+<h2>九、现在这套东西能回答什么</h2>
+<p>一句话版本：</p>
+<ul><li>本月哪个部门 AI 花得最多 → 能答，带环比（上月对比 + 百分比，上月为 0 时返回 <code>null</code> 而不是 <code>+∞</code>）</li><li>这个部门主要花在哪个模型上 → 能答，每部门 Top 3 模型及成本占比</li><li>部门 × 模型的交叉分布 → 能答，Top 8 × Top 8 加兜底格，总计校验过</li><li>哪些调用可能白花了钱 → 能答，但标注&quot;近似口径、需人工复核&quot;</li><li>这笔钱对应哪张发票 → 答不了，不在范围内</li><li>这个组织实体叫什么名字 → 取决于你有没有登记组织目录</li></ul>
+<p>技术上实现的规模：30 个插件包、499 条 REST 路由、98 个 MCP 工具、94 个权限点。成本这条链路只是其中 <code>usage</code> + <code>audit</code> + <code>finops</code> 三个面。</p>
+<p>代码是 MIT 的，可以自己去看实现怎么写的：<strong><a href="https://github.com/01men/ybkkasi">https://github.com/01men/ybkkasi</a></strong></p>
+<p>免登只读的 demo 实例上，<code>/api/finops/overview</code> 这个接口不用登录就能拉到上面那些数字——如果你想确认我说的和代码干的是不是一回事，那个接口是最短的验证路径。</p>
+<hr>
+<h2>最后</h2>
+<p>「模型账单月底出来，没人说得清哪个部门花的」这个问题，看起来是个报表问题，实际上是个<strong>数据在产生时就没带归口</strong>的问题。</p>
+<p>报表能做的只有聚合，做不了追认。</p>
+<p>如果这篇文章只能留一句话：<strong>归口字段要在消耗发生那一刻强制写上，而且允许它让调用失败。</strong> 月底再来对账，你面对的是一堆没有组织的钱。</p>
+</article>
+<p style="margin-top:40px;font-size:13.5px;color:var(--t3)">源码 MIT：<a href="https://github.com/01men/ybkkasi">github.com/01men/ybkkasi</a> · 免登只读演示：<a href="https://demo.ybkkasi.com/">demo.ybkkasi.com</a></p>
+</div></main>
+<footer class="site"><div class="wrap">
+  <span>© 2026 杭州元冰可科技有限公司 · 企业 AI 资产治理</span>
+  <span>MIT · <a href="https://github.com/01men/ybkkasi">github.com/01men/ybkkasi</a></span>
+</div></footer>
+</body>
+</html>
