@@ -66,7 +66,11 @@
     "selftest": "node tests/selftest.mjs",
     "lint:manifests": "node scripts/lint-manifests.mjs",
     "manifests": "node scripts/gen-manifests.mjs",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "test:cli": "node --test cli/tests/dry-run.test.mjs",
+    "lint:boot-order": "node scripts/check-boot-order.mjs",
+    "lint:cjk": "node scripts/lint-cjk-coverage.mjs",
+    "lint:i18n": "node scripts/lint-i18n-coverage.mjs"
   },
   "engines": {
     "node": ">=22.6"
