@@ -12,6 +12,7 @@
   <a href="https://github.com/01men/ybkkasi/actions/workflows/quality-gate.yml"><img src="https://github.com/01men/ybkkasi/actions/workflows/quality-gate.yml/badge.svg?branch=main" alt="主分支质量检查状态"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可证"></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%E2%89%A522.6-339933" alt="Node.js 22.6 或更高版本"></a>
+  <a href="https://star-history.com/#01men/ybkkasi&Date"><img src="https://api.star-history.com/svg?repos=01men/ybkkasi&type=Date" alt="Star History" width="120"></a>
 </p>
 
 <p align="center">
