@@ -1,0 +1,66 @@
+name: pages-deploy
+
+# 01门落地页（landing）发布到 GitHub Pages。
+#
+# 目的：README 首屏的「在线演示」指向本 Pages 站，让读者不装 dsh 也能看到 01门
+# 控制台的实际界面（14 行业图谱包、治理台账、SLA 看板等截图与文案）。
+#
+# 页面来源：packages/plugin-console/public/launch/ —— 纯静态（零后端依赖、零外部 JS），
+# 与服务端 /launch 路由同源同一份文件，两处不会漂移。
+#
+# 路径适配：服务端把 landing 挂在 /launch 下（故资源写 /launch/img/*、/ybk-mark.png）；
+# Pages 站点在仓库根，部署时把 launch/ 的内容提到站点根、并把绝对路径改写为相对路径，
+# 使同一份源文件在两处都能正确取到图。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/plugin-console/public/launch/**'
+      - '.github/workflows/pages-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare static site (flatten launch/ to root, rewrite absolute paths)
+        run: |
+          mkdir -p _site
+          cp -R packages/plugin-console/public/launch/. _site/
+          # 标志图在 public 根，不在 launch/ 下——一并取来
+          if [ -f packages/plugin-console/public/ybk-mark.png ]; then
+            cp packages/plugin-console/public/ybk-mark.png _site/ybk-mark.png
+          fi
+          # 绝对路径 → 相对路径（Pages 站点根 == 仓库根）
+          python3 - <<'PY'
+          import pathlib, re
+          for f in pathlib.Path('_site').rglob('*.html'):
+              t = f.read_text(encoding='utf-8')
+              t = t.replace('"/launch/', '"').replace('"/ybk-mark.png"', '"ybk-mark.png"')
+              f.write_text(t, encoding='utf-8')
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
