@@ -140,6 +140,15 @@ AI 原生组织需要在五个方面重塑生产关系，平台在每一项下�
 
 [架构说明](docs/ARCHITECTURE.md) · [企业部署](docs/deploy-enterprise.md) · [更新记录](CHANGELOG.md) · [贡献指南](CONTRIBUTING.md) · [i18n 治理](docs/i18n/README.md) · [English](docs/i18n/en/README.md) · [日本語](docs/i18n/ja/README.md) · [Agent](README.agent.md)
 
+## 技术笔记
+
+做这套东西踩过的坑，写成了长文，不在别处，就在本仓 Discussions 和官网：
+
+| 主题 | 一句话 |
+| --- | --- |
+| [模型账单月底出来，没人说得清哪个部门花的](https://ybkkasi.com/blog/cost-attribution/) | 归口字段必须在消耗发生那一刻强制写上，并且允许它让调用失败。[Discussion #22](https://github.com/01men/ybkkasi/discussions/22) |
+| [Agent 需要的权限是动态的，传统权限模型在这里崩掉](https://ybkkasi.com/blog/agent-permissions/) | 一个 40 毫秒的调用配一个 7 天的 token，中间所有设计都是空的。[Discussion #23](https://github.com/01men/ybkkasi/discussions/23) |
+
 ## 联系我们
 
 商业合作、企业部署支持、使用问题或 bug 反馈，任一渠道均可（bug 建议优先提 [GitHub issue](https://github.com/01men/ybkkasi/issues)）：
