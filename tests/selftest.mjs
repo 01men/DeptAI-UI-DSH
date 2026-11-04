@@ -160,6 +160,12 @@ const authorizeConfirm = async (token, reqId, consent) => {
 const GH_PORT = 7361
 const ghStub = createServer((req, res) => {
   const url = req.url ?? ''
+  if (url.includes('/contents/package.json')) {
+    // contents API 回退形态（2026-11-02）：base64 包体，供 fetchUpstreamVersion 回退直测
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end(JSON.stringify({ encoding: 'base64', content: Buffer.from(JSON.stringify({ name: 'dsh-enterprise-ops', version: '8.8.8' })).toString('base64') }))
+    return
+  }
   if (url.endsWith('/package.json')) {
     res.writeHead(200, { 'content-type': 'application/json' })
     res.end(JSON.stringify({ name: 'dsh-enterprise-ops', version: '9.9.9' }))
@@ -3136,15 +3142,13 @@ try {
   check('直达票据：伪造票据被拒', redeemForged.status === 400)
 
   // L4 上线（R12 复议收窄，2026-10-14）：agent.online（雇佣语义）恢复职责分离——提交人自审 400；
-  // 其余类型维持同人审批放开。上线单由第二审批人（approver02，super_admin）异人通过并自动执行。
-  // （2026-09-15 曾全面放开同人审批；R12 依据 Paperclip「雇佣/高危需独立审批」语义收窄。）
+  // 同人审批全类型放开（2026-11-02 业务裁决）：AI 原生组织人少，管理员自提自批直接通过。
+  // （2026-09-15 曾放开；2026-10-14 R12 复议收窄仅 agent.online；本次按最新裁决移除限制。）
   const onlineRequest = await api('POST', `/api/agents/${selfAgent.id}/transition`, { token: admin, body: { action: 'online', note: '自测上线' } })
   check('上线生成 L4 审批单', onlineRequest.ok && onlineRequest.data.approval.status === 'pending')
 
-  const selfApprove = await api('POST', `/api/approvals/${onlineRequest.data.approval.id}/decide`, { token: admin, body: { decision: 'approve', opinion: '自审尝试（应被 R12 职责分离拦截）', confirmed: true } })
-  check('R12：发起人自审 agent.online 被拒（职责分离恢复）', !selfApprove.ok && selfApprove.status === 400 && String(selfApprove.error?.message ?? '').includes('职责分离'), JSON.stringify(selfApprove.error ?? {}).slice(0, 160))
-  const crossApprove = await api('POST', `/api/approvals/${onlineRequest.data.approval.id}/decide`, { token: approver, body: { decision: 'approve', opinion: '异人审批通过（R12 之后口径）', confirmed: true, finalReview: true } })
-  check('异人审批通过并自动执行上线（R12 新口径）', crossApprove.ok && crossApprove.data.status === 'executed', JSON.stringify(crossApprove.error ?? {}).slice(0, 160))
+  const selfApprove = await api('POST', `/api/approvals/${onlineRequest.data.approval.id}/decide`, { token: admin, body: { decision: 'approve', opinion: '管理员自提自批（2026-11-02 裁决）', confirmed: true } })
+  check('同人审批：发起人自审 agent.online 直接通过并执行（免异人）', selfApprove.ok && selfApprove.data.status === 'executed', JSON.stringify(selfApprove.error ?? {}).slice(0, 160))
   const agentAfter = await api('GET', `/api/agents/${selfAgent.id}`, { token: admin })
   check('Agent 状态已上线', agentAfter.data.status === 'online')
 
@@ -4381,6 +4385,20 @@ try {
   check('P2-03 无可回滚快照被拒（本进程未执行过 apply）', updRollbackNoSnap.status === 400 && /快照/.test(updRollbackMsg), updRollbackMsg.slice(0, 160))
   const updDryPin = await api('POST', '/api/update/apply', { token: admin, body: { dryRun: true } })
   check('P2-03 dryRun 透出 pin/签名策略口径', updDryPin.ok && updDryPin.data.requireSignedCommits === false && String(updDryPin.data.pin).includes('pin'), JSON.stringify(updDryPin.data ?? {}).slice(0, 220))
+
+  // 回退直测（2026-11-02）：raw 不可达（死端口）→ contents API 回退取版本——
+  // 真实场景即 raw.githubusercontent 不可达但 api.github.com 可达，版本号不再沿用陈旧缓存
+  {
+    const { fetchUpstreamVersion } = await import('../packages/plugin-update/src/index.ts')
+    const deadRawSource = { repo: '01men/ybkkasi', branch: 'main', apiBase: `http://127.0.0.1:${GH_PORT}`, rawBase: 'http://127.0.0.1:9', timeoutMs: 3000 }
+    try {
+      const fetched = await fetchUpstreamVersion(deadRawSource, {}, undefined)
+      check('升级检测：raw 不可达时 contents API 回退取版本（8.8.8 via github-api-contents）',
+        fetched.version === '8.8.8' && fetched.via === 'github-api-contents', JSON.stringify(fetched))
+    } catch (error) {
+      check('升级检测：raw 不可达时 contents API 回退取版本（8.8.8 via github-api-contents）', false, String(error).slice(0, 160))
+    }
+  }
 
   // 组5 E-05：dryRun 不外呼不落 .git——refs 快照 + FETCH_HEAD 前后一致（pin 解析只走本地既有 refs）
   {
@@ -9682,6 +9700,29 @@ try {
     })
     const patToolNames = (jsonBody(patToolsList).result?.tools ?? []).map((tool) => tool.name)
     check('B 回归：/mcp 工具面含 app_offline（app.offline 持有者可见）', patToolNames.includes('app_offline'), `工具数=${patToolNames.length}`)
+
+    // —— 使用留痕（2026-11-02）：PAT 经 /mcp 的工具调用与 skill 下载逐次落审计并关联成员 ——
+    const patSkillList = (await api('GET', '/api/skills', { token: patToken })).data?.skills ?? []
+    const patSkillTarget = patSkillList.find((row) => row.status === 'published')
+    check('使用留痕前置：member 可见已上架 Skill（市场种子）', Boolean(patSkillTarget), `可见 ${patSkillList.length} 个`)
+    if (patSkillTarget) {
+      await api('POST', `/api/skills/${patSkillTarget.id}/download`, { token: patToken, body: {} })
+    }
+    await rawReq('POST', '/mcp', {
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${patToken}` },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'skill_search', arguments: { q: '自测' } } }),
+    })
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    const patTraceAudit = await api('GET', '/api/audit/logs?type=invoke&q=tool.invoke&limit=50', { token: patAdmin })
+    check('使用留痕：PAT 工具面调用落 tool.invoke 审计且关联成员（actorId=userId）',
+      patTraceAudit.ok && patTraceAudit.data.items.some((row) => row.resourceId === 'skill_search' && row.actorId === patEmpId && row.actorType === 'human'),
+      JSON.stringify(patTraceAudit.data?.total))
+    if (patSkillTarget) {
+      const patDlAudit = await api('GET', '/api/audit/logs?type=change&q=skill.download&limit=50', { token: patAdmin })
+      check('使用留痕：skill 下载落审计（skill.download，成员关联）',
+        patDlAudit.ok && patDlAudit.data.items.some((row) => row.resourceId === patSkillTarget.id && row.actorId === patEmpId),
+        JSON.stringify(patDlAudit.data?.total))
+    }
     const patMatrix = (await api('GET', '/api/platform/route-matrix', { token: patAdmin })).data
     const patAgentTr = patMatrix.guarded.find((route) => route.path === '/api/agents/:id/transition' && route.method === 'POST')
     const patAppTr = patMatrix.guarded.find((route) => route.path === '/api/apps/:id/transition' && route.method === 'POST')

@@ -406,3 +406,19 @@ curl -s http://localhost:7300/docs/app-sso-integration.md   # ホワイトリス
 
 > 本日本語版は 2026-10-15 を基準日としています。中文原典が実質改訂された場合は、本訳稿に
 > `stale: true` を付して更新を予定します（i18n ガバナンス §四.5）。
+
+## 12. お問い合わせ
+
+商用協業・企業導入支援・利用上の質問・バグ報告は、以下のいずれのチャネルからでもどうぞ
+（バグは [GitHub issue](https://github.com/01men/ybkkasi/issues) を推奨）:
+
+| チャネル | 入口 |
+| --- | --- |
+| メール | [ybkk01@126.com](mailto:ybkk01@126.com) |
+| WeChat Work グループ | [リンクから参加](https://work.weixin.qq.com/ca/cawcdecedba18d0ddb) |
+| Telegram グループ | [t.me/+YvW7087WEq9kMTg9](https://t.me/+YvW7087WEq9kMTg9) |
+| GitHub | [01men/ybkkasi](https://github.com/01men/ybkkasi) · [Issues](https://github.com/01men/ybkkasi/issues) |
+
+| 公式 WeChat アカウント（スキャンしてフォロー） | Telegram グループ（スキャンして参加） |
+| --- | --- |
+| <img src="../../../packages/plugin-console/public/contact-channels/assets/qrcode-official.jpg" width="200" alt="公式 WeChat アカウント QR コード"> | <img src="../../../packages/plugin-console/public/contact-channels/assets/qrcode-telegram.png" width="200" alt="Telegram グループ QR コード"> |

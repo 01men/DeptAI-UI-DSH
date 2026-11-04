@@ -303,6 +303,24 @@ export class AuditService extends Service {
     ctx.platformBus.on(PlatformEvents.AppSecretAccess, auditOf('change', 'app.credential.access'))
     // 资产使用凭证（2026-10-31）：Agent 提报使用事实逐次留痕（使用凭证=资产经营侧的重要证据）
     ctx.platformBus.on(PlatformEvents.UsageAssetReported, auditOf('invoke', 'asset.usage.report'))
+    // 平台工具面调用留痕（2026-11-02）：/mcp 与 REST 工具桥每次调用逐次落账（actorId=成员
+    // userId，human PAT 调用直接与成员关联）；actorType 按 ConnectorInvoked 同口径映射
+    ctx.platformBus.on(PlatformEvents.ToolInvoked, (payload) => {
+      const p = payload as { name: string; isError: boolean; durationMs?: number; surface?: string; error?: string; actorType?: string; actorId?: string; actorName?: string; actChain?: Array<{ name: string; type: string }> }
+      this.record({
+        type: 'invoke',
+        actorType: p.actorType === 'human' ? 'human' : p.actorType === 'machine' ? 'machine' : 'system',
+        actorId: p.actorId ?? '',
+        actorName: p.actorName ?? '',
+        action: 'tool.invoke',
+        resourceType: 'tool',
+        resourceId: p.name,
+        resourceName: p.name,
+        result: p.isError ? 'error' : 'ok',
+        detail: `${p.surface ?? 'tool'} 调用${p.isError ? '失败' : '成功'} · ${p.durationMs ?? 0}ms${p.error ? ` · ${p.error}` : ''}`,
+        ...(p.actChain && p.actChain.length > 0 ? { actChain: p.actChain } : {}),
+      })
+    })
     ctx.platformBus.on(PlatformEvents.McpUnhealthy, (payload) => {
       const p = payload as { serviceId: string; name: string; consecutiveFails: number }
       this.record({
@@ -955,12 +973,10 @@ export class AuditService extends Service {
     const approval = this.approvals().get(id)
     if (!approval) throw new Error(t('审批单不存在：{id}', { id }))
     if (approval.status !== 'pending') throw new Error(t('审批单已处理（{status}）', { status: approval.status }))
-    // 同人审批放开（原 QA A-05「提交人与审批人不得为同一账号」自审自批拦截已按业务决策取消，
-    // 2026-09-15）——2026-10-14 R12 复议收窄：仅 agent.online（雇佣语义）恢复职责分离，
-    // 提交人不得自行通过/驳回自己的 Agent 上线单；其余类型维持放开，权限点校验不变。
-    if (approval.kind === 'agent.online' && approverId && approverId === approval.requesterId) {
-      throw new Error(t('职责分离（R12 复议恢复，2026-10-14）：Agent 上线（雇佣语义）审批的提交人与审批人不得为同一账号'))
-    }
+    // 同人审批全类型放开（2026-11-02 业务裁决）：AI 原生组织人员规模小，管理员可对自己
+    // 提报的审批单（含 agent.online 雇佣语义）直接完成审批——2026-09-15 曾放开、2026-10-14
+    // R12 复议收窄仅 agent.online 保留职责分离，本次按最新裁决移除最后一处限制；
+    // 权限点（approval.decide）与高风险 confirmed 二次确认语义不变。
     const isHighRisk = approval.riskLevel === 'high'
     if (decision === 'approve' && isHighRisk && options.confirmed !== true) {
       throw new Error(t('高风险审批通过需二次确认（confirmed=true），请在前端确认弹窗中复核后提交'))

@@ -5,7 +5,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { t } from '../../../platform-i18n/src/index.ts'
 import type { ConsoleRouteDeps } from './deps.ts'
-import { platformVersionInfo, lookupsFromHost, resolveUnifiedPrincipal, toCallerInfo, buildOpenApiDocument } from '../../../platform-core/src/index.ts'
+import { platformVersionInfo, lookupsFromHost, resolveUnifiedPrincipal, toCallerInfo, buildOpenApiDocument, PlatformEvents } from '../../../platform-core/src/index.ts'
 import type { CallerInfo, HttpExchange } from '../../../platform-core/src/index.ts'
 import { noteForwardedPrincipal } from '../../../plugin-connect/src/host.ts'
 import { consolePermissionAllows } from './mcp-dataplane.ts'
@@ -120,6 +120,33 @@ export function registerBridgeRoutes(ctx: Context, deps: ConsoleRouteDeps): void
     return args
   }
 
+  /** 工具面调用留痕（2026-11-02）：/mcp 与 REST 工具桥共用——每次调用（成功/失败）emit
+   *  ToolInvoked，audit 订阅逐次落 tool.invoke。actorId 取 userId ?? principalId：
+   *  human PAT 调用即成员 userId，审计天然与成员关联。fail-open：留痕失败不阻断调用。 */
+  const emitToolInvoked = (
+    host: { platformBus: { emit: (name: string, payload: unknown) => unknown } },
+    info: CallerInfo,
+    toolName: string,
+    result: { isError?: boolean; durationMs?: number; error?: { message?: string } },
+    surface: string,
+  ): void => {
+    try {
+      host.platformBus.emit(PlatformEvents.ToolInvoked, {
+        actorType: info.kind,
+        actorId: info.userId ?? info.principalId,
+        actorName: info.name,
+        actChain: info.actChain,
+        name: toolName,
+        isError: result.isError === true,
+        durationMs: result.durationMs ?? 0,
+        ...(result.error?.message ? { error: result.error.message } : {}),
+        surface,
+      })
+    } catch (error) {
+      host.platformBus.emit(PlatformEvents.BusListenerError, { event: PlatformEvents.ToolInvoked, listener: 'emitToolInvoked', attempt: 1, error: String(error) })
+    }
+  }
+
   // console.read（2026-10-17，同 /api/platform/info 口径：纯读目录，演示态可读）
   guarded('GET', '/api/tools/schemas', 'console.read', () => ({
     tools: ctx.tools.schemas().map((tool) => ({ name: tool.name, description: tool.description, permission: tool.permission, parameters: tool.parameters })),
@@ -152,6 +179,7 @@ export function registerBridgeRoutes(ctx: Context, deps: ConsoleRouteDeps): void
       noteForwardedPrincipal(ctx.logger('connect'), info.principalId, forwardedPrincipalId)
     }
     const result = await ctx.tools.execute({ name: input.name, arguments: args, principal: info })
+    emitToolInvoked(ctx, info, input.name, result, exchange.path)
     return result
   })
 
@@ -268,6 +296,7 @@ export function registerBridgeRoutes(ctx: Context, deps: ConsoleRouteDeps): void
           return reply({ content: [{ type: 'text', text: t('缺少权限点 {permission}（调用方 {caller}），调用被拒绝', { permission: required, caller: info.name }) }], isError: true })
         }
         const result = await ctx.tools.execute({ name, arguments: injectToolIdentity(name, args, info), principal: info })
+        emitToolInvoked(ctx, info, name, result, '/mcp')
         return reply({
           content: result.content.length > 0 ? result.content : [{ type: 'text', text: JSON.stringify(result.value ?? null) }],
           isError: result.isError,
