@@ -20,6 +20,9 @@ const PlatformEvents = {
   AppSecretAccess: "app.secret.access",
   // 资产使用凭证（2026-10-31）：Agent 使用 skill/MCP 后主动提报的使用事实（逐次审计订阅落账）
   UsageAssetReported: "usage.asset.reported",
+  // 平台工具面调用留痕（2026-11-02）：/mcp 与 /api/tools/execute 每次工具调用的事实（成功与失败，
+  // payload 含调用者身份——human PAT 调用 actorId 即成员 userId，审计订阅落 tool.invoke）
+  ToolInvoked: "tool.invoked",
   // 连接器纳管（open-connector 融合；前缀已在本文件预留清单）
   ConnectorOddExit: "connector.odd_exit",
   ConnectorPolicyMirrorFailed: "connector.policy_mirror_failed",
