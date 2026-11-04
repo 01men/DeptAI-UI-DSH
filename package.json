@@ -61,12 +61,16 @@
     }
   },
   "scripts": {
-    "start": "node src/main.ts",
+    "start": "node --experimental-strip-types src/main.ts",
     "build:dist": "node scripts/build-dist.mjs",
-    "selftest": "node tests/selftest.mjs",
-    "lint:manifests": "node scripts/lint-manifests.mjs",
+    "selftest": "node --experimental-strip-types tests/selftest.mjs",
+    "lint:manifests": "node --experimental-strip-types scripts/lint-manifests.mjs",
     "manifests": "node scripts/gen-manifests.mjs",
-    "release": "node scripts/release.mjs"
+    "release": "node scripts/release.mjs",
+    "test:cli": "node --test cli/tests/dry-run.test.mjs",
+    "lint:boot-order": "node --experimental-strip-types scripts/check-boot-order.mjs",
+    "lint:cjk": "node scripts/lint-cjk-coverage.mjs",
+    "lint:i18n": "node scripts/lint-i18n-coverage.mjs"
   },
   "engines": {
     "node": ">=22.6"

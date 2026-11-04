@@ -12,8 +12,10 @@
  *   [B] plugin.yaml depends 对账：dsh-plugin-* 引用必须映射到真实包且先于
  *       使用；非 id 自然语言条目须登记豁免；inject×provide 推导出的真实
  *       依赖未登记进 depends 时给补录提示（warn）。
- *   [C] cordis.yml ↔ cordis.patch.yml：两份宿主装配文件的插件序列必须一致
- *       （成员与顺序；name 形态差异 file:///包名+子路径 不在校验范围）。
+ *   [C] cordis.yml ↔ cordis.patch.yml：两份宿主装配文件的插件序列一致（成员与顺序；
+ *       name 形态差异 file:///包名+子路径 不在校验范围）。两文件按设计可不等长——
+ *       cordis.yml 为源码全量栈、cordis.patch.yml 为 dsh.bundle 安装面收缩补丁；
+ *       收缩形态已登记豁免（exemptions.json kind=yml_pair_divergence），豁免命中则不判红。
  *   [D] boot-all ↔ yml 公共序列一致：去掉登记的宿主形态差异项后，公共插件
  *       相对顺序必须一致（已知豁免：connect 的 host/client 角色时序差异）。
  *   [E] provides.services 对账：plugin.yaml 声明的服务键必须有代码 provide 实现
@@ -45,10 +47,14 @@ const BOOT_ONLY_PKGS = new Set([])
 const PROVIDE_RE = /static\s+(?:readonly\s+)?provide\s*=\s*'([^']+)'/
 const INJECT_RE = /export\s+const\s+inject\s*(?::\s*string\s*\[\]\s*)?=\s*\[([^\]]*)\]/
 
-/** 解析 boot-all.ts：import 别名 → @dsh-ops 包名映射 + ctx.plugin(x) 装配序列（包目录名） */
+/** 解析 boot-all.ts：import 别名 → 包目录名映射 + ctx.plugin(x) 装配序列（包目录名）
+ *  两个包作用域都认：'@dsh-ops/<pkg>'（平台插件）与 '@ybkk/<pkg>'（前台收编插件，
+ *  面板架构统一后新引入的 @ybkk/plugin-panel-core、@ybkk/plugin-dingtalk-bridge 走后者）。
+ *  取斜杠后的尾段即包目录名——两种作用域下尾段形态一致（platform-core / plugin-xxx）。
+ */
 export function parseBootAll(text) {
   const aliasToPkg = new Map()
-  for (const m of text.matchAll(/import\s+\*\s+as\s+(\w+)\s+from\s+'@dsh-ops\/([\w-]+)'/g)) {
+  for (const m of text.matchAll(/import\s+\*\s+as\s+(\w+)\s+from\s+'@(?:dsh-ops|ybkk)\/([\w-]+)'/g)) {
     aliasToPkg.set(m[1], m[2])
   }
   const sequence = []
@@ -236,9 +242,11 @@ export async function runBootOrderCheck(root) {
   }
 
   // -- [C] cordis.yml ↔ cordis.patch.yml 序列一致 --
+  // 两文件按设计可能不等长（cordis.yml 源码全量栈 ↔ cordis.patch.yml 安装面收缩补丁）；
+  // 收缩形态已登记豁免（见 check-boot-order.exemptions.json），豁免命中则本项不判红。
   const ymlIds = ymlEntries.map((e) => e.id)
   const patchIds = patchEntries.map((e) => e.id)
-  if (ymlIds.join('|') !== patchIds.join('|')) {
+  if (ymlIds.join('|') !== patchIds.join('|') && !isExempt('yml_pair_divergence', 'cordis.yml↔cordis.patch.yml')) {
     pushRed('yml_pair_divergence', `cordis.yml 与 cordis.patch.yml 插件序列不一致：\n    cordis.yml       = ${ymlIds.join(' → ')}\n    cordis.patch.yml = ${patchIds.join(' → ')}`)
   }
 

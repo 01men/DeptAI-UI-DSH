@@ -6,7 +6,7 @@
   [![npm](https://img.shields.io/npm/v/@ybkk/gate-01?label=npm&color=1554e8)](https://www.npmjs.com/package/@ybkk/gate-01)
   [![license](https://img.shields.io/badge/license-MIT-07c160)](LICENSE)
   [![dsh](https://img.shields.io/badge/dsh-%E2%89%A50.1.0--rc.7-1554e8)](docs/plan-gate01.md)
-  [![selftest](https://img.shields.io/badge/selftest-1300%2B%20passing-07c160)](tests/selftest.mjs)
+  [![selftest](https://img.shields.io/badge/selftest-2012%20passing-07c160)](tests/selftest.mjs)
 
   ```bash
   dsh plugin add github:01men/DeptAI-UI-DSH
@@ -69,7 +69,7 @@ dsh plugin add github:01men/DeptAI-UI-DSH
 
 ## Engineering quality
 
-- 🧪 **1300+ end-to-end self-tests, all green** (1367/1367 measured on 2026-10-29; full regression plus
+- 🧪 **2012 end-to-end self-tests, all green** (2012/2012 measured on 2026-11-03; full regression plus
   manifest linting before every delivery)
 - 📦 **Fresh-install invariant** — every delivery is verified on a *freshly installed* dsh via the plugin
   flow (installation simulation is part of the self-test)
